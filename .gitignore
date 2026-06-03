@@ -1,0 +1,6 @@
+# Polyphony run artifacts (prompts, engine outputs, findings, logs)
+.polyphony/
+
+# OS / editor cruft
+.DS_Store
+*.swp

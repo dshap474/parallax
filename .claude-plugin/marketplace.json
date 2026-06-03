@@ -1,0 +1,16 @@
+{
+  "name": "polyphony-marketplace",
+  "owner": { "name": "Daniel Shapiro", "url": "https://github.com/dshap474" },
+  "description": "Polyphony — a multi-model build pipeline plugin for Claude Code.",
+  "plugins": [
+    {
+      "name": "polyphony",
+      "source": "./",
+      "description": "Multi-model build pipeline: Claude writes, Codex reviews read-only (Grok in v0.2).",
+      "version": "0.1.0",
+      "category": "development",
+      "keywords": ["multi-model", "code-review", "orchestration"],
+      "license": "MIT"
+    }
+  ]
+}

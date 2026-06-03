@@ -1,0 +1,10 @@
+{
+  "name": "polyphony",
+  "version": "0.1.0",
+  "description": "Multi-model build pipeline for Claude Code — Claude orchestrates and writes; Codex reviews read-only (Grok in v0.2). Cross-model review catches bugs single-model review misses.",
+  "author": { "name": "Daniel Shapiro", "url": "https://github.com/dshap474" },
+  "homepage": "https://github.com/dshap474/polyphony",
+  "repository": "https://github.com/dshap474/polyphony",
+  "license": "MIT",
+  "keywords": ["multi-model", "code-review", "orchestration", "codex", "subagents", "claude-code"]
+}

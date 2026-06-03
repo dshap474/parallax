@@ -6,12 +6,12 @@ not bundle, host, or proxy any model. You bring your own `codex` (and, for the G
 
 ## Tiers
 
-| Tier | Install | Enables | Status |
+| Tier | Install | Enables | Required? |
 |---|---|---|---|
-| **0 — default** | `codex` CLI + auth | `team-dev` (full cross-model review) | **v0.1, supported** |
-| **1 — Grok** | + `grok` CLI + auth | `ultra-dev`, `team-dev`'s optional review panel | **v0.2** |
+| **Codex** | `codex` CLI + auth | `team-dev` (full cross-model review) | **required** |
+| **Grok** | + `grok` CLI + auth | `ultra-dev`, `team-dev`'s optional review panel | optional |
 
-You can run the entire `team-dev` pipeline with only Tier 0.
+You can run the entire `team-dev` pipeline with the Codex tier alone.
 
 ## Codex CLI (required)
 
@@ -34,11 +34,11 @@ cat /tmp/poly-probe.md
 
 A 400 means `gpt-5.5` isn't available on your auth — fix that before relying on Codex.
 
-## Grok CLI (Grok tier, v0.2)
+## Grok CLI (Grok tier)
 
 `ultra-dev` and `team-dev`'s optional panel use Grok read-only via the `composer-ro`
-engine. **This engine is currently a stub** (`references/engines.md`) — smoke-test grok's
-read-only behavior on your install before relying on it. Two known headless gotchas:
+engine (**verified** against grok 0.2.16 — `references/engines.md`). Install the `grok`
+CLI and authenticate it. Two headless gotchas to know:
 
 - **Disable the orchestrator's Bash sandbox for grok calls.** Inside a sandboxed shell,
   grok's workers die (`Transport channel closed / AuthorizationRequired`) and the run

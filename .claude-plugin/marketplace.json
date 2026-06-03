@@ -6,7 +6,7 @@
     {
       "name": "polyphony",
       "source": "./",
-      "description": "Multi-model build pipeline: Claude writes, Codex reviews read-only (Grok in v0.2).",
+      "description": "Multi-model build pipeline: Claude writes, Codex and Grok review read-only.",
       "version": "0.1.0",
       "category": "development",
       "keywords": ["multi-model", "code-review", "orchestration"],

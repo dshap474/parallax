@@ -55,9 +55,9 @@ Run the shared pipeline in `references/pipeline.md` with the roster below. Invoc
 - **Preflight** before Stage 1: `command -v codex` + a one-shot `gpt-5.5` availability
   probe (see `engines.md`). No grok, no writer-model risk.
 
-## Optional: the Grok review panel (v0.2)
+## Optional: the Grok review panel
 
 A broader variant fans the review stage out to a Codex + Grok panel (the "TeamDev" combo
-in the project history). It needs the `grok` CLI and a verified `composer-ro` engine, and
-ships in **v0.2** — see `docs/REQUIREMENTS.md`. The default combo above is the supported
-v0.1 path.
+in the project history). It needs the `grok` CLI (the `composer-ro` engine is verified —
+`references/engines.md`). The default combo above is the codex-only path that needs no
+grok — see `docs/REQUIREMENTS.md`.

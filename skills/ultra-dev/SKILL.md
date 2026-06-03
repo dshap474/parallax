@@ -14,10 +14,9 @@ user-invocable: true
 
 # ultra-dev — max-effort model panel
 
-> **Grok tier (v0.2).** ultra-dev fans out to a panel of three models and **requires the
-> `grok` CLI plus a verified `composer-ro` engine** (`references/engines.md` marks it a
-> stub — smoke-test grok read-only first). Until grok is configured, use **`team-dev`**
-> (Claude + Codex only). See `docs/REQUIREMENTS.md`.
+> **Grok tier.** ultra-dev fans out to a panel of three models and **requires the `grok`
+> CLI** (the `composer-ro` engine is verified — see `references/engines.md`). If grok
+> isn't installed, use **`team-dev`** (Claude + Codex only). See `docs/REQUIREMENTS.md`.
 
 **Max-effort model panel.** Where a single-reviewer pipeline uses one reviewer per lane,
 ultra-dev fans out to a **panel of three models** at both plan and review time. Claude is
@@ -84,8 +83,8 @@ applies refine + debug + correctness together in the refactor.
   panel is 9 concurrent (within the agent concurrency cap — excess queue).
 - **Grok is read-only** (`composer-ro`): invoke with no-edit permissions
   (`--permission-mode plan` or `--disallowed-tools`). The orchestrator's Bash sandbox must
-  be disabled for grok calls (see the Composer notes in `engines.md`). **`composer-ro` is
-  a stub — smoke-test it before the first run.**
+  be disabled for grok calls (see the Composer notes in `engines.md`). `composer-ro` is
+  verified (grok 0.2.16; `--permission-mode plan` = read-only).
 - **Cost:** the heaviest pipeline — 5 planners + 9 reviewers + 2 writes per run. Use when
   breadth of review justifies the spend; for normal work prefer `team-dev`.
 - **Preflight:** `command -v codex`, the `grok` binary, and a `gpt-5.5` + `composer-ro`

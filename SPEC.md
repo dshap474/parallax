@@ -83,9 +83,10 @@ single model-swap point).
 | **TeamDev** | `team-dev` *(opt-in)* | Claude + Codex/Grok feedback | Claude direct | 6-reviewer panel (`codex-ro` + `composer-ro` × refine/debug/correctness) | Claude direct | codex + **grok** |
 | **UltraDev** | `ultra-dev` | 5-model plan panel | fresh `worker` | 9-reviewer panel (3×3 incl. `reviewer`) | Claude direct | codex + **grok** |
 
-**Packaging decision (see §14):** v0.1 ships `team-dev` defaulted to
-**ClaudeBuildCodexReview** so first run needs only `codex`. TeamDev (grok panel) and
-`ultra-dev` are the "add more models" tier, enabled once Grok is configured.
+**Packaging decision (resolved §14):** `team-dev` defaults to **ClaudeBuildCodexReview** so
+first run needs only `codex`. TeamDev (grok panel) and `ultra-dev` are the optional
+"add more models" Grok tier (`composer-ro` verified 2026-06-03). One v0.1.0 package — Grok
+is an optional dependency, not a separate release.
 
 ---
 
@@ -328,40 +329,40 @@ Polyphony orchestrates external CLIs. `docs/REQUIREMENTS.md` must cover:
 
 ## 13. Versioning, license, security
 
-- **Versioning:** semver in `plugin.json`. v0.1 = Claude+Codex; v0.2 = +Grok tiers.
-- **License:** MIT or Apache-2.0 (decision §14). Confirm the review briefs derived from
-  the private `panel-review` skill are clear to relicense before publishing.
+- **Versioning:** semver in `plugin.json`. One package at **v0.1.0**; the Grok tier is an
+  optional dependency *within* it, not a separate release.
+- **License:** **MIT** (resolved). Confirm the review briefs derived from the private
+  `panel-review` skill are clear to relicense before publishing.
 - **Security:** read-only sandboxes for all reviewers; never inherit `danger-full-access`
   / `approval_policy=never`; document the grok Bash-sandbox-disable tradeoff. Dual-use
   note: this is a dev productivity tool; reviewers cannot write.
 
 ---
 
-## 14. Open decisions
+## 14. Resolved decisions
 
-1. **team-dev default combo** — *Recommended:* ship default = ClaudeBuildCodexReview
-   (codex-only, zero-friction first run); TeamDev panel is opt-in. *Alternative:* keep
-   team-dev = TeamDev (grok) to match local setup, but first run then requires grok.
-2. **Ship grok in v0.1 or defer to v0.2** — depends on finishing `composer-ro`.
-   *Recommended:* v0.1 Claude+Codex only; grok lands in v0.2 once smoke-tested.
-3. **License:** MIT (max permissive) vs Apache-2.0 (patent grant). *Recommended:* MIT.
-4. **Repo host / owner handle** — fill `<you>` in the manifests.
-5. **Shared-refs sync** — script (`sync-references.sh`) vs manual discipline.
-   *Recommended:* the script (cheap, prevents drift).
+1. **team-dev default combo** — ✅ ClaudeBuildCodexReview (codex-only, zero-friction first
+   run); TeamDev grok panel is opt-in.
+2. **Grok release** — ✅ folded into the single v0.1.0 package as an **optional** tier
+   (`composer-ro` verified 2026-06-03 against grok 0.2.16). Not a separate release.
+3. **License** — ✅ MIT.
+4. **Owner handle** — ✅ `dshap474` (manifests + homepage/repository set).
+5. **Shared-refs sync** — ✅ `scripts/sync-references.sh` (edit `_source/`, then sync).
 
 ---
 
 ## 15. Build milestones
 
-1. **Scaffold** — repo skeleton, `plugin.json`, `marketplace.json`, LICENSE, README stub.
-2. **Skills** — move `team-dev` + `ultra-dev` in as plain skills; default team-dev to the
-   no-grok combo; wire `_source/references` + `sync-references.sh`.
-3. **Subagents** — author `agents/reviewer.md` + `agents/worker.md`.
-4. **Engines** — finish `composer-ro` (or quarantine it and gate grok tiers off for v0.1).
-5. **Docs** — REQUIREMENTS, ARCHITECTURE, BENCHMARK, CONTRIBUTING.
-6. **Verify** — clean-install in a fresh Claude Code; confirm `/polyphony:team-dev` runs
+1. ✅ **Scaffold** — repo skeleton, `plugin.json`, `marketplace.json`, LICENSE, README.
+2. ✅ **Skills** — `team-dev` + `ultra-dev` as plain skills; team-dev defaults to the
+   no-grok combo; `_source/references` + `sync-references.sh` wired.
+3. ✅ **Subagents** — `agents/reviewer.md` + `agents/worker.md`.
+4. ✅ **Engines** — `composer-ro` verified (grok read-only, plan mode, writes nothing).
+5. ✅ **Docs** — REQUIREMENTS, ARCHITECTURE, BENCHMARK, CONTRIBUTING.
+6. ⏳ **Verify** — clean-install in a fresh Claude Code; confirm `/polyphony:team-dev` runs
    on a codex-only machine; confirm namespacing and `/agents` registration.
-7. **Publish** — tag v0.1.0, push, smoke-test the marketplace-add + install path.
+7. ⏳ **Publish** — tag v0.1.0, push, smoke-test the marketplace-add + install path
+   (only on explicit `$github-*` invocation).
 
 ---
 

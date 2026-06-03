@@ -10,7 +10,7 @@ from **reviewing** and gives them to *different* models:
 
 - **One writer** — Claude. It plans, writes (directly or via a fresh worker), and applies
   all fixes. Having a single writer keeps the code coherent.
-- **Independent reviewers** — Codex (and Grok in v0.2), plus a fresh Claude reviewer. They
+- **Independent reviewers** — Codex (and Grok, optionally), plus a fresh Claude reviewer. They
   are **read-only** and **fresh** (they never saw the code being written), so their
   judgment isn't anchored to the author's.
 
@@ -56,7 +56,7 @@ The full stage spec lives in each skill's `references/pipeline.md`. Two rules ma
   | `worker` | bundled `polyphony:worker` subagent | write |
   | `reviewer` | bundled `polyphony:reviewer` subagent | read-only |
   | `codex-ro` | `codex` CLI, `gpt-5.5`/high | read-only |
-  | `composer-ro` | `grok` CLI (v0.2, stub) | read-only |
+  | `composer-ro` | `grok` CLI (optional tier) | read-only |
 
 - A **combo** is a roster mapping every role to an engine. The two skills are two combos:
 

@@ -69,7 +69,7 @@ Add `agents/<name>.md` with frontmatter (`name`, `description` with trigger cond
 
 ## Roadmap / help wanted
 
-- **v0.2 — finish `composer-ro`.** The Grok read-only engine is a stub. Verify grok's
-  read-only invocation headless (the sandbox-disable + verify-by-file gotchas in
-  `REQUIREMENTS.md`), then enable the Grok tier (`ultra-dev` + `team-dev`'s panel).
+- **`composer-ro` is verified** (grok 0.2.16, `--permission-mode plan` = read-only) — the
+  Grok tier (`ultra-dev` + `team-dev`'s panel) is live. Headless hardening welcome.
 - Toolchain adapters for non-Python repos in the verification step.
+- A clean-room `/plugin install` smoke test on a fresh machine.

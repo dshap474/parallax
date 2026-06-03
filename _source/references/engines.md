@@ -2,7 +2,7 @@
 
 Every combo assigns pipeline roles to **engines** (see the combo's ENGINE ROSTER). This file is the one place that holds *how to invoke each engine*. **To swap a model** for a role, point that roster row at a different engine here, or edit the engine's block. **To add a model**, add a new engine block here and reference it from a roster.
 
-Polyphony ships five engines: `claude-orch`, `reviewer`, `worker` (Claude), `codex-ro` (Codex CLI), and `composer-ro` (Grok CLI — **v0.2 tier**, see below).
+Polyphony ships five engines: `claude-orch`, `reviewer`, `worker` (Claude), `codex-ro` (Codex CLI), and `composer-ro` (Grok CLI — optional Grok tier, see below).
 
 ## Safety (non-negotiable)
 
@@ -62,14 +62,16 @@ codex exec --ignore-user-config --sandbox read-only --skip-git-repo-check \
 
 > **Availability caveat:** `gpt-5.3-codex` is **not available** on a ChatGPT-account Codex auth (API 400). Polyphony only runs Codex **read-only** with `gpt-5.5`, so there is no writer-model availability risk — confirm `gpt-5.5` with the preflight probe.
 
-### `composer-ro` — Grok Composer read-only (**v0.2 tier — stub, verify before use**)
-Used by `ultra-dev` and `team-dev`'s optional Grok panel. **Not used by `team-dev`'s default codex-only combo.** Invoke read-only — `--permission-mode plan` (no edits) or strip edit tools via `--disallowed-tools`:
+### `composer-ro` — Grok Composer read-only (verified 2026-06-03, grok 0.2.16)
+Used by `ultra-dev` and `team-dev`'s optional Grok panel. **Not used by `team-dev`'s default codex-only combo.** Read-only via `--permission-mode plan` (plan mode blocks all edits); plain output (the default) is just the model's final message.
 ```bash
-grok --cwd <REPO> --permission-mode plan --prompt-file <PROMPT.md> > <OUT.txt> 2>/dev/null
+grok --cwd <REPO> --permission-mode plan --reasoning-effort high \
+  --prompt-file <PROMPT.md> > <OUT.txt> 2>/dev/null
 ```
-- **The orchestrator must disable its own Bash sandbox for this call.** Inside a sandboxed shell, grok's workers die with `Transport channel closed / AuthorizationRequired` and the run silently no-ops (exit 0, **no file**). In Claude Code, pass `dangerouslyDisableSandbox: true` on the Bash call.
-- `AuthorizationRequired` lines on stderr are non-fatal noise. Verify success by the written file, not by stderr being clean.
-- **This block is a stub:** smoke-test grok's read-only behavior on your install before relying on it. Until verified, run `team-dev`'s default codex-only combo. (Tracked for v0.2.)
+(Use `-p "<PROMPT>"` for a short inline prompt instead of `--prompt-file`. Raise/lower `--reasoning-effort` {low|medium|high|xhigh|max} per lane.) Read the captured stdout — plain format emits only the final message, no JSON envelope.
+- **The orchestrator must disable its own Bash sandbox for this call.** Inside a sandboxed shell, grok's workers die with `Transport channel closed / AuthorizationRequired` and the run silently no-ops (exit 0, **no output**). In Claude Code, pass `dangerouslyDisableSandbox: true` on the Bash call.
+- **Verify by the output, not stderr.** Even on success, grok prints non-fatal `AuthorizationRequired` worker lines to stderr (background workers) — ignore them; the main worker completes and the final message lands on stdout. Redirect stderr to `/dev/null`.
+- **Verified:** plan-mode review returns a clean findings list and writes nothing (confirmed: target file unchanged, no new files). This is the read-only reviewer for the Grok tier.
 
 ---
 

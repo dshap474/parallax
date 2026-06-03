@@ -2,8 +2,8 @@
 
 **A multi-model build pipeline for [Claude Code](https://docs.claude.com/en/docs/claude-code).**
 Many independent voices, one composition: Claude orchestrates and writes the code, while
-Codex (and, in v0.2, Grok) review it read-only at every gate. The orchestrator merges
-their findings and applies the fixes.
+Codex and Grok review it read-only at every gate. The orchestrator merges their findings
+and applies the fixes.
 
 > **The thesis — the engine that *reviews* matters more than the one that *writes*.** In
 > our own benchmark, **Codex reviewing Claude-authored code caught a real logic bug Claude's
@@ -18,7 +18,7 @@ Two user-invoked skills and the two subagents they drive:
 | Skill | What it does | Needs |
 |---|---|---|
 | **`/polyphony:team-dev`** | Everyday build pipeline. Claude plans → fresh worker writes → Claude refines → Codex + Claude review → Claude fixes. | `codex` CLI |
-| **`/polyphony:ultra-dev`** | Heavyweight panel: a 5-model plan panel and a 9-reviewer panel. Most coverage, highest cost. | `codex` + `grok` (v0.2) |
+| **`/polyphony:ultra-dev`** | Heavyweight panel: a 5-model plan panel and a 9-reviewer panel. Most coverage, highest cost. | `codex` + `grok` |
 
 Subagents `polyphony:reviewer` (read-only) and `polyphony:worker` (write) ship with the
 plugin, so the pipeline is self-contained.
@@ -40,14 +40,14 @@ Then, in any repo:
 ## Requirements
 
 Polyphony orchestrates **external model CLIs you install and authenticate yourself** — it
-doesn't bundle or host any model. The v0.1 default path (`team-dev`) needs only the
-**`codex`** CLI. The Grok tier (`ultra-dev`, and `team-dev`'s optional review panel) lands
-in **v0.2**. Full setup, auth, and hardening notes: [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
+doesn't bundle or host any model. `team-dev` needs only the **`codex`** CLI; the optional
+Grok tier (`ultra-dev`, and `team-dev`'s optional review panel) adds **`grok`**. Full
+setup, auth, and hardening notes: [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
 
 | Tier | Install | Enables |
 |---|---|---|
-| **0 — default** | `codex` CLI + auth | `team-dev` (full cross-model review) |
-| **1 — v0.2** | + `grok` CLI + auth | `ultra-dev`, `team-dev`'s Grok panel |
+| **Required** | `codex` CLI + auth | `team-dev` (full cross-model review) |
+| **Optional (Grok)** | + `grok` CLI + auth | `ultra-dev`, `team-dev`'s Grok panel |
 
 A preflight step probes what's available and **degrades gracefully** — a missing engine
 drops its review lane, it doesn't crash the run.
@@ -86,8 +86,8 @@ via `scripts/sync-references.sh` — run it after editing a brief. See
 
 ## Status
 
-**v0.1** — Claude + Codex, `team-dev` is the supported path. **v0.2** — adds the Grok tier
-(`ultra-dev` + the `team-dev` panel) once the `composer-ro` engine is verified.
+**v0.1.0.** `team-dev` runs on `codex` alone; `ultra-dev` and `team-dev`'s optional review
+panel add `grok`. All engines (`codex-ro`, `composer-ro`) are verified read-only.
 
 ## License
 

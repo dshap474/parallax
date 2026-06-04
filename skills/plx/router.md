@@ -11,7 +11,7 @@ Use:
 1. User request from `SKILL.md`.
 2. Deterministic intake output.
 3. Current repo state.
-4. Available engines from preflight.
+4. Available engines (resolved by preflight, which runs *after* you pick a candidate mode — see Preflight policy; use it to confirm or degrade, not as a precondition for mode choice).
 5. Engine-per-role config in `${CLAUDE_SKILL_DIR}/parallax.yaml` (which engines the chosen mode will use).
 6. Existing project guidance: `AGENTS.md`, `CLAUDE.md`, README, package files, tests.
 

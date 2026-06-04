@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-cd "$ROOT"
-ROOT="$(pwd)"
-
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 
-BRANCH="$(git branch --show-current 2>/dev/null || echo unknown)"
-HEAD="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
-DIRTY_COUNT="$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  ROOT="$(git rev-parse --show-toplevel)"
+  cd "$ROOT"
+  ROOT="$(pwd)"
+  BRANCH="$(git branch --show-current 2>/dev/null || echo unknown)"
+  HEAD="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+  DIRTY_COUNT="$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+else
+  ROOT="$(pwd)"
+  BRANCH="unknown"
+  HEAD="unknown"
+  DIRTY_COUNT="0"
+fi
 
 CODEX_PATH="$(command -v codex || true)"
 GROK_PATH="$(command -v grok || true)"

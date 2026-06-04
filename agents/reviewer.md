@@ -21,8 +21,9 @@ files.
   convention docs). Re-derive your own judgment; do not assume a prior conclusion is correct.
 - **Stay in your lane.** If the brief is *debug*, hunt bugs and robustness gaps. If
   *correctness*, judge whether the code solves the right problem per the spec. If *plan
-  critique*, stress-test the approach before any code exists. Don't drift into a full-repo
-  audit — examine the directly connected surface (callers, callees, touched tests,
+  critique*, stress-test the approach before any code exists. If *refine*, look for
+  simplification, deletion, convention alignment, and structural cleanup opportunities.
+  Don't drift into a full-repo audit — examine the directly connected surface (callers, callees, touched tests,
   entrypoints that reach the change).
 - **Read first.** Verify every claim against the actual cited code before reporting it. A
   bug you can't point to a line for is a hypothesis, not a finding.

@@ -1,84 +1,81 @@
 # Architecture
 
-Polyphony is a **role-based build pipeline** that runs across multiple models. This doc
-explains the moving parts: the pipeline, roles, engines, and combos.
+Parallax is a router-first, role-based coding workflow for Claude Code.
 
-## The core idea
+The public surface is one skill:
 
-Most "AI writes code" workflows use one model end to end. Polyphony separates **writing**
-from **reviewing** and gives them to *different* models:
-
-- **One writer** — Claude. It plans, writes (directly or via a fresh worker), and applies
-  all fixes. Having a single writer keeps the code coherent.
-- **Independent reviewers** — Codex (and Grok, optionally), plus a fresh Claude reviewer. They
-  are **read-only** and **fresh** (they never saw the code being written), so their
-  judgment isn't anchored to the author's.
-
-The orchestrator (the Claude main loop) is the synthesis hub: it merges plans, merges
-review findings, and applies edits.
-
-> **Why:** in practice the reviewer engine catches more than the writer engine. A model
-> reviewing its *own* output rationalizes its mistakes; a different model, blind to the
-> author's reasoning, doesn't. See [`BENCHMARK.md`](BENCHMARK.md).
-
-## The pipeline (shared, engine-agnostic)
-
-```
-1 Plan ─▶ 2 Plan-review ─▶ 3 Code ─▶ 4 Refine ─▶ 5 Review ─▶ 6 Fix
+```text
+/parallax:llx <task>
 ```
 
-| # | Stage | Role | Edits repo? |
-|---|---|---|---|
-| 1 | Plan | orchestrator | no |
-| 2 | Plan-review | read-only reviewer | no |
-| 3 | Code | writer | **yes** |
-| 4 | Refine | writer (direct) | **yes** |
-| 5 | Review | read-only reviewers (Debug ∥ Correctness, parallel) | no |
-| 6 | Fix | writer (direct) | **yes** |
+Internally, `llx` selects a mode:
 
-The full stage spec lives in each skill's `references/pipeline.md`. Two rules matter most:
+```text
+quick | team | panel | ultra | review-only
+```
 
-- **Neutral Context Rule** (Stages 2 & 5): a fresh reviewer gets *only* the artifact, the
-  original task/spec, and its lane brief — never the orchestrator's analysis or conclusions.
-  It must re-derive judgment.
-- **One-turn parallel review** (Stage 5): all reviewers fire in a single orchestrator turn
-  (background CLI calls + spawned subagents together), then results are collected. This is
-  the pipeline's one true parallel point.
+## Core Idea
 
-## Roles → engines → combos
+Most AI coding workflows let one model write and review end to end. Parallax separates writing from review:
 
-- A **role** is a pipeline slot (Plan, Plan-review, Code, Refine, Debug, Correctness, Fix).
-- An **engine** is a concrete invocation that can fill a role. Polyphony ships five:
+- **Claude writes** through the orchestrator or a fresh `worker` subagent.
+- **Codex and Grok review read-only** through wrapper scripts.
+- **Fresh Claude reviewers** can provide additional read-only review lanes.
 
-  | Engine | Model / tool | Shape |
-  |---|---|---|
-  | `claude-orch` | the Claude main loop (you) | write / synthesize |
-  | `worker` | bundled `polyphony:worker` subagent | write |
-  | `reviewer` | bundled `polyphony:reviewer` subagent | read-only |
-  | `codex-ro` | `codex` CLI, `gpt-5.5`/high | read-only |
-  | `composer-ro` | `grok` CLI (optional tier) | read-only |
+The orchestrator synthesizes plans and findings, then applies fixes in one coherent pass.
 
-- A **combo** is a roster mapping every role to an engine. The two skills are two combos:
+## Role-Based Pipeline
 
-  | Combo (skill) | Code | Review lanes | Writer |
-  |---|---|---|---|
-  | `team-dev` | fresh `worker` | `codex-ro` (plan + debug + correctness) + `reviewer` (debug) | Claude |
-  | `ultra-dev` | fresh `worker` | 9-reviewer panel: `reviewer` + `codex-ro` + `composer-ro` × refine/debug/correctness | Claude |
+The shared pipeline is still engine-agnostic:
 
-Engine invocations (and all the headless hardening) live in `references/engines.md`. To
-swap a model for a role, point that roster row at a different engine — the pipeline and
-briefs don't change.
+```text
+Plan -> Plan-review -> Code -> Refine -> Review -> Fix
+```
 
-## Why a single writer, read-only reviewers
+| Stage | Role | Edits repo? |
+|---|---|---|
+| Plan | orchestrator | no |
+| Plan-review | read-only reviewer | no |
+| Code | worker or orchestrator | yes |
+| Refine | orchestrator | yes |
+| Review | read-only reviewers | no |
+| Fix | orchestrator | yes |
 
-- **Coherence:** one author keeps the code's style and structure consistent.
-- **Safety:** reviewers run in read-only sandboxes and physically cannot edit, so a
-  misbehaving external CLI can't corrupt the repo.
-- **No writer-model risk:** because Codex/Grok never write, model-availability quirks (e.g.
-  a writer model being unavailable on some auth) can't break a run.
+`skills/llx/router.md` chooses the mode. `skills/llx/modes.md` defines the workflow topology. `skills/llx/references/engines.md` defines engine invocation rules.
 
-## The briefs
+## Modes
 
-Five engine-agnostic briefs define *what each lane looks for*, independent of which model
-runs it: `coding-spec-template.md`, `refine-guide.md`, `debug.md`, `correctness.md`,
-`review-briefs.md` (synthesis + finding schema). They're shared across combos.
+| Mode | Purpose | External engines |
+|---|---|---|
+| `quick` | small safe edits | none |
+| `team` | default substantial work | Codex |
+| `panel` | extra scrutiny | Codex + optional Grok |
+| `ultra` | major/high-risk changes | Codex + Grok |
+| `review-only` | audit/debug/critique without edits | selected read-only lanes |
+
+## Safety Model
+
+- Claude is the only writer.
+- Codex calls go through `skills/llx/scripts/codex-ro.sh`.
+- Grok calls go through `skills/llx/scripts/grok-ro.sh`.
+- Review prompts are assembled with neutral context only.
+- All artifacts stay in `.parallax/runs/<run-id>/`.
+- There is no `.parallax/cache`.
+
+## Hooks Policy
+
+Parallax v0.1 does not install hooks.
+
+Safety comes from:
+
+- one public `llx` skill
+- deterministic wrapper scripts
+- read-only Codex/Grok invocations
+- per-run artifacts
+- Claude as sole writer
+
+A future version may add a `PreToolUse` safety hook to block raw unsafe `codex` or `grok` commands, but that is intentionally out of scope for v0.1.
+
+## References
+
+The reference briefs are duplicated into `skills/llx/references/` for runtime reliability. `_source/references/` is the canonical source; use `bash scripts/sync-references.sh` after editing it.

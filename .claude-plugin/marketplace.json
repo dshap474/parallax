@@ -6,10 +6,10 @@
     {
       "name": "parallax",
       "source": "./",
-      "description": "One llx skill routes coding tasks through Claude, Codex, and Grok workflows.",
+      "description": "One plx skill routes coding tasks through Claude, Codex, and Grok workflows.",
       "version": "0.1.0",
       "category": "development",
-      "keywords": ["multi-model", "code-review", "orchestration", "llx"],
+      "keywords": ["multi-model", "code-review", "orchestration", "plx"],
       "license": "MIT"
     }
   ]

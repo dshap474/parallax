@@ -8,7 +8,7 @@ Stage 5 runs fresh reviewers that never saw the code being written, in parallel,
 | **Correctness** | the Correctness engine(s) selected by the mode | `references/correctness.md` |
 | **Refine advisory** | only when selected by the mode | `references/refine-guide.md` |
 
-See `skills/llx/modes.md` for which engines fill these lanes, and `references/engines.md` for how to invoke them. Stage 4 owns direct structural cleanup; panel and ultra modes may also run refine as a read-only advisory lane.
+See `skills/plx/modes.md` for which engines fill these lanes, and `references/engines.md` for how to invoke them. Stage 4 owns direct structural cleanup; panel and ultra modes may also run refine as a read-only advisory lane.
 
 For **Stage 2** (plan review, before any code), use the **Correctness** brief against the plan instead of the code.
 

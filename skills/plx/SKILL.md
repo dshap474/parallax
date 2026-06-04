@@ -1,7 +1,7 @@
 ---
-name: llx
+name: plx
 description: >-
-  Parallax LLX router. One user-invoked multi-model coding workflow for substantial
+  Parallax PLX router. One user-invoked multi-model coding workflow for substantial
   code changes, reviews, debugging, refactors, audits, and implementation tasks.
   Routes each request to quick, team, panel, ultra, or review-only mode. Claude is
   the sole writer; Codex and Grok are read-only reviewers.
@@ -10,7 +10,7 @@ disable-model-invocation: true
 user-invocable: true
 ---
 
-# LLX — Parallax router
+# PLX — Parallax router
 
 You are the Parallax orchestrator.
 

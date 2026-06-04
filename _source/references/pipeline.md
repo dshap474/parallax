@@ -1,6 +1,6 @@
 # Parallax pipeline (role-based)
 
-Shared role definitions and neutral-context rules for LLX modes. This file is not the executable workflow authority — `skills/llx/modes.md` owns exact mode steps, and `references/engines.md` holds how to invoke each engine.
+Shared role definitions and neutral-context rules for PLX modes. This file is not the executable workflow authority — `skills/plx/modes.md` owns exact mode steps, and `references/engines.md` holds how to invoke each engine.
 
 **Roles:** Plan · Plan-review · Code · Refine · Debug review · Correctness review · Fix. Plan, plan/spec synthesis, and review/fix synthesis are always the orchestrator (`claude-orch`).
 

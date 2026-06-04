@@ -1,6 +1,6 @@
-# Parallax LLX Router
+# Parallax PLX Router
 
-The user invoked `/parallax:llx`.
+The user invoked `/parallax:plx`.
 
 Your job is to choose the smallest workflow that gives enough assurance. This file owns mode selection and preflight policy only; `modes.md` owns executable workflow steps.
 

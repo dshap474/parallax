@@ -6,7 +6,7 @@ Parallax is a Claude Code plugin with one public skill, two subagents, shared re
 
 ```text
 .claude-plugin/   plugin.json + marketplace.json
-skills/llx/       public router skill, mode docs, references, scripts
+skills/plx/       public router skill, mode docs, references, scripts
 agents/           reviewer.md, worker.md
 docs/             human-facing docs
 _source/          canonical references
@@ -23,23 +23,23 @@ Edit `_source/references/`, then sync:
 
 ```bash
 bash scripts/sync-references.sh
-git add _source/references skills/llx/references
+git add _source/references skills/plx/references
 ```
 
-Do not edit `skills/llx/references/` directly unless you are intentionally debugging sync output.
+Do not edit `skills/plx/references/` directly unless you are intentionally debugging sync output.
 
 ## Common Changes
 
 ### Add or Change a Mode
 
-Do not add public skills for new modes. Add the mode behavior to `skills/llx/modes.md` and add routing rules to `skills/llx/router.md`.
+Do not add public skills for new modes. Add the mode behavior to `skills/plx/modes.md` and add routing rules to `skills/plx/router.md`.
 
 ### Add Runtime Plumbing
 
-Add deterministic helpers under `skills/llx/scripts/`. External model execution must stay inside wrappers:
+Add deterministic helpers under `skills/plx/scripts/`. External model execution must stay inside wrappers:
 
-- Codex: `skills/llx/scripts/codex-ro.sh`
-- Grok: `skills/llx/scripts/grok-ro.sh`
+- Codex: `skills/plx/scripts/codex-ro.sh`
+- Grok: `skills/plx/scripts/grok-ro.sh`
 
 ### Add or Change an Engine
 
@@ -53,8 +53,8 @@ Add `agents/<name>.md` with frontmatter. Installed agents appear under the `para
 
 Run the acceptance checks from `docs/SPEC.md` before release. At minimum verify:
 
-- only `/parallax:llx` is public
-- `skills/llx/scripts/*.sh` are executable
+- only `/parallax:plx` is public
+- `skills/plx/scripts/*.sh` are executable
 - `parallax-intake.sh` prints an absolute run directory under `.parallax/runs/<run-id>/`
 - references sync cleanly
 - raw external model commands appear only in their wrappers outside docs

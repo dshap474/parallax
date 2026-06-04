@@ -5,10 +5,10 @@ Parallax is a router-first, role-based coding workflow for Claude Code.
 The public surface is one skill:
 
 ```text
-/parallax:llx <task>
+/parallax:plx <task>
 ```
 
-Internally, `llx` selects a mode:
+Internally, `plx` selects a mode:
 
 ```text
 quick | team | panel | ultra | review-only
@@ -41,7 +41,7 @@ Plan -> Plan-review -> Code -> Refine -> Review -> Fix
 | Review | read-only reviewers | no |
 | Fix | orchestrator | yes |
 
-`skills/llx/router.md` chooses the mode. `skills/llx/modes.md` is the canonical executable workflow authority. `skills/llx/references/pipeline.md` holds shared role invariants, and `skills/llx/references/engines.md` defines engine invocation rules.
+`skills/plx/router.md` chooses the mode. `skills/plx/modes.md` is the canonical executable workflow authority. `skills/plx/references/pipeline.md` holds shared role invariants, and `skills/plx/references/engines.md` defines engine invocation rules.
 
 ## Modes
 
@@ -56,8 +56,8 @@ Plan -> Plan-review -> Code -> Refine -> Review -> Fix
 ## Safety Model
 
 - Claude is the only writer.
-- Codex calls go through `skills/llx/scripts/codex-ro.sh`.
-- Grok calls go through `skills/llx/scripts/grok-ro.sh`.
+- Codex calls go through `skills/plx/scripts/codex-ro.sh`.
+- Grok calls go through `skills/plx/scripts/grok-ro.sh`.
 - Review prompts are assembled with neutral context only.
 - All artifacts stay in the absolute run directory created under `.parallax/runs/<run-id>/`.
 - There is no `.parallax/cache`.
@@ -68,7 +68,7 @@ Parallax v0.1 does not install hooks.
 
 Safety comes from:
 
-- one public `llx` skill
+- one public `plx` skill
 - deterministic wrapper scripts
 - read-only Codex/Grok invocations
 - per-run artifacts
@@ -78,4 +78,4 @@ A future version may add a `PreToolUse` safety hook to block raw unsafe `codex` 
 
 ## References
 
-The reference briefs are duplicated into `skills/llx/references/` for runtime reliability. `_source/references/` is the canonical source; use `bash scripts/sync-references.sh` after editing it.
+The reference briefs are duplicated into `skills/plx/references/` for runtime reliability. `_source/references/` is the canonical source; use `bash scripts/sync-references.sh` after editing it.

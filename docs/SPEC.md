@@ -7,10 +7,10 @@ Status: draft v0.1
 Parallax packages a multi-model coding workflow as an installable Claude Code plugin. It exposes one public skill:
 
 ```text
-/parallax:llx <task>
+/parallax:plx <task>
 ```
 
-`llx` performs deterministic intake, then routes the task to one internal mode:
+`plx` performs deterministic intake, then routes the task to one internal mode:
 
 ```text
 quick | team | panel | ultra | review-only
@@ -20,11 +20,11 @@ Claude is the only writer. Codex and Grok are read-only reviewers.
 
 ## What Ships
 
-- 1 public skill: `llx`
+- 1 public skill: `plx`
 - 2 subagents: `reviewer`, `worker`
 - 5 modes: `quick`, `team`, `panel`, `ultra`, `review-only`
 - Deterministic scripts for intake, preflight, prompt assembly, output collection, and read-only external reviewers
-- Shared reference briefs synced from `_source/references/` into `skills/llx/references/`
+- Shared reference briefs synced from `_source/references/` into `skills/plx/references/`
 
 ## Target Tree
 
@@ -37,7 +37,7 @@ Claude is the only writer. Codex and Grok are read-only reviewers.
 │   ├── reviewer.md
 │   └── worker.md
 ├── skills/
-│   └── llx/
+│   └── plx/
 │       ├── SKILL.md
 │       ├── router.md
 │       ├── modes.md
@@ -70,7 +70,7 @@ Claude is the only writer. Codex and Grok are read-only reviewers.
 }
 ```
 
-The skill path `skills/llx/SKILL.md` maps to `/parallax:llx`.
+The skill path `skills/plx/SKILL.md` maps to `/parallax:plx`.
 
 ## Runtime Rules
 
@@ -79,9 +79,9 @@ The skill path `skills/llx/SKILL.md` maps to `/parallax:llx`.
 - No `.parallax/cache`.
 - Intake creates an absolute run directory under `<repo>/.parallax/runs/<run-id>/`.
 - Do not use `uv run` inside a sandbox.
-- Codex execution goes through `skills/llx/scripts/codex-ro.sh`.
-- Grok execution goes through `skills/llx/scripts/grok-ro.sh`.
-- Review and plan prompts are built with `skills/llx/scripts/make-review-prompt.sh`.
+- Codex execution goes through `skills/plx/scripts/codex-ro.sh`.
+- Grok execution goes through `skills/plx/scripts/grok-ro.sh`.
+- Review and plan prompts are built with `skills/plx/scripts/make-review-prompt.sh`.
 - Every mode writes `results.md` in the run directory.
 
 ## Acceptance Criteria
@@ -89,11 +89,11 @@ The skill path `skills/llx/SKILL.md` maps to `/parallax:llx`.
 ### File Structure
 
 ```bash
-test -f skills/llx/SKILL.md
-test -f skills/llx/router.md
-test -f skills/llx/modes.md
-test -d skills/llx/references
-test -d skills/llx/scripts
+test -f skills/plx/SKILL.md
+test -f skills/plx/router.md
+test -f skills/plx/modes.md
+test -d skills/plx/references
+test -d skills/plx/scripts
 test ! -d skills/team-dev
 test ! -d skills/ultra-dev
 ```
@@ -101,18 +101,18 @@ test ! -d skills/ultra-dev
 ### Executable Scripts
 
 ```bash
-test -x skills/llx/scripts/parallax-intake.sh
-test -x skills/llx/scripts/preflight.sh
-test -x skills/llx/scripts/codex-ro.sh
-test -x skills/llx/scripts/grok-ro.sh
-test -x skills/llx/scripts/make-review-prompt.sh
-test -x skills/llx/scripts/collect-outputs.sh
+test -x skills/plx/scripts/parallax-intake.sh
+test -x skills/plx/scripts/preflight.sh
+test -x skills/plx/scripts/codex-ro.sh
+test -x skills/plx/scripts/grok-ro.sh
+test -x skills/plx/scripts/make-review-prompt.sh
+test -x skills/plx/scripts/collect-outputs.sh
 ```
 
 ### Intake
 
 ```bash
-RUN_DIR="$(skills/llx/scripts/parallax-intake.sh | awk -F': ' '/run_dir:/ {print $2}')"
+RUN_DIR="$(skills/plx/scripts/parallax-intake.sh | awk -F': ' '/run_dir:/ {print $2}')"
 test "${RUN_DIR:0:1}" = "/"
 ```
 
@@ -136,8 +136,8 @@ test ! -d .parallax/cache
 
 ```bash
 bash scripts/sync-references.sh
-diff -q _source/references/pipeline.md skills/llx/references/pipeline.md
-diff -q _source/references/engines.md skills/llx/references/engines.md
+diff -q _source/references/pipeline.md skills/plx/references/pipeline.md
+diff -q _source/references/engines.md skills/plx/references/engines.md
 ```
 
 ### Runtime Wrapper Safety
@@ -162,7 +162,7 @@ After local install:
 Expected:
 
 ```text
-/parallax:llx appears
+/parallax:plx appears
 /parallax:team-dev does not appear
 /parallax:ultra-dev does not appear
 parallax:reviewer appears in /agents
@@ -174,7 +174,7 @@ parallax:worker appears in /agents
 Codex-only team smoke:
 
 ```text
-/parallax:llx make a small nontrivial change in this repo
+/parallax:plx make a small nontrivial change in this repo
 ```
 
 Expected: `team` mode, Codex preflight passes, Grok absence does not crash, Codex review lanes run read-only, Claude writes/fixes, and `results.md` is written.
@@ -182,7 +182,7 @@ Expected: `team` mode, Codex preflight passes, Grok absence does not crash, Code
 Quick mode smoke:
 
 ```text
-/parallax:llx fix this typo in README
+/parallax:plx fix this typo in README
 ```
 
 Expected: `quick` mode, no Codex call, no Grok call, Claude edits directly, and `results.md` is written.
@@ -190,7 +190,7 @@ Expected: `quick` mode, no Codex call, no Grok call, Claude edits directly, and 
 Ultra degradation smoke without Grok:
 
 ```text
-/parallax:llx use ultra mode to redesign this module
+/parallax:plx use ultra mode to redesign this module
 ```
 
 Expected: clear Grok requirement or explicit degradation to panel/team; no empty Grok output treated as success.
@@ -198,6 +198,6 @@ Expected: clear Grok requirement or explicit degradation to panel/team; no empty
 Prompt assembly smoke:
 
 ```bash
-skills/llx/scripts/make-review-prompt.sh --lane plan --brief skills/llx/references/coding-spec-template.md --artifact README.md --task README.md --out /tmp/parallax-plan-prompt.md
+skills/plx/scripts/make-review-prompt.sh --lane plan --brief skills/plx/references/coding-spec-template.md --artifact README.md --task README.md --out /tmp/parallax-plan-prompt.md
 test -s /tmp/parallax-plan-prompt.md
 ```

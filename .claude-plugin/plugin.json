@@ -1,10 +1,10 @@
 {
   "name": "parallax",
   "version": "0.1.0",
-  "description": "Parallax — a multi-model coding-agent orchestration plugin. Claude writes; Codex and Grok review read-only. One llx skill routes each task to the right workflow.",
+  "description": "Parallax — a multi-model coding-agent orchestration plugin. Claude writes; Codex and Grok review read-only. One plx skill routes each task to the right workflow.",
   "author": { "name": "Daniel Shapiro", "url": "https://github.com/dshap474" },
   "homepage": "https://github.com/dshap474/parallax",
   "repository": "https://github.com/dshap474/parallax",
   "license": "MIT",
-  "keywords": ["multi-model", "code-review", "orchestration", "codex", "grok", "subagents", "claude-code", "parallax", "llx"]
+  "keywords": ["multi-model", "code-review", "orchestration", "codex", "grok", "subagents", "claude-code", "parallax", "plx"]
 }

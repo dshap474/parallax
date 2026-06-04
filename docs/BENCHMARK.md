@@ -12,7 +12,7 @@ A deliberately under-specified ticket — "add a `lollipop` chart type to a Pyth
 |---|---|---|---|
 | Codex writes, Claude/Codex review | strong | 19/19 | 1 all-negative baseline crop |
 | Grok writes, dual review | weak: 16/19, 3 crashes | 19/19 | 3 Highs around NaN/inf and labels |
-| Claude writes, Codex reviews (`llx` team mode) | strongest: 19/19 | 19/19 | 1 real logic bug |
+| Claude writes, Codex reviews (`plx` team mode) | strongest: 19/19 | 19/19 | 1 real logic bug |
 
 All workflows reached the same final quality: 19/19, lint-clean, tests green. The useful signal was upstream of the final artifact.
 
@@ -26,7 +26,7 @@ The headline case: Codex reviewing Claude-authored code found a truthiness bug i
 
 ## Takeaway
 
-With a strong writer, the default `llx` team mode is enough for ordinary work. The heavier panel and ultra modes are for broader risk, ambiguity, or high-stakes changes.
+With a strong writer, the default `plx` team mode is enough for ordinary work. The heavier panel and ultra modes are for broader risk, ambiguity, or high-stakes changes.
 
 ## Caveats
 

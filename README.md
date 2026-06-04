@@ -2,7 +2,7 @@
 
 Multi-model coding-agent orchestration for Claude Code.
 
-Claude writes. Codex and Grok review read-only. One public skill, `llx`, routes each task to the smallest workflow that gives enough assurance.
+Claude writes. Codex and Grok review read-only. One public skill, `plx`, routes each task to the smallest workflow that gives enough assurance.
 
 ## Install
 
@@ -15,12 +15,12 @@ Claude writes. Codex and Grok review read-only. One public skill, `llx`, routes 
 Then, in any repo:
 
 ```text
-/parallax:llx add a lollipop chart type to the plotting library
+/parallax:plx add a lollipop chart type to the plotting library
 ```
 
 ## What happens
 
-`llx` performs deterministic intake, then selects one mode:
+`plx` performs deterministic intake, then selects one mode:
 
 | Mode | Use case | Engines |
 |---|---|---|
@@ -38,8 +38,8 @@ Parallax orchestrates external model CLIs you install and authenticate yourself.
 
 | Tier | Install | Enables |
 |---|---|---|
-| Codex | `codex` CLI + auth | `llx` team mode |
-| Grok | `grok` CLI + auth | `llx` panel and ultra modes |
+| Codex | `codex` CLI + auth | `plx` team mode |
+| Grok | `grok` CLI + auth | `plx` panel and ultra modes |
 
 Quick mode can run without Codex. Team mode requires Codex. Panel degrades if Grok is missing. Ultra requires Codex and Grok unless you explicitly degrade. See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
 
@@ -58,18 +58,18 @@ The public UX is one router skill. Internally, modes choose the workflow topolog
 ```text
 parallax/
 ├── .claude-plugin/{plugin.json, marketplace.json}
-├── skills/llx/{SKILL.md, router.md, modes.md, references/, scripts/}
+├── skills/plx/{SKILL.md, router.md, modes.md, references/, scripts/}
 ├── agents/{reviewer.md, worker.md}
 ├── docs/{ARCHITECTURE, REQUIREMENTS, BENCHMARK, CONTRIBUTING, SPEC}.md
 ├── _source/references/
 └── scripts/sync-references.sh
 ```
 
-`_source/references/` is canonical. Run `bash scripts/sync-references.sh` after editing references so `skills/llx/references/` stays in sync.
+`_source/references/` is canonical. Run `bash scripts/sync-references.sh` after editing references so `skills/plx/references/` stays in sync.
 
 ## Status
 
-v0.1.0 draft. The package is structured around `/parallax:llx`; clean install and live smoke checks are the remaining release gates.
+v0.1.0 draft. The package is structured around `/parallax:plx`; clean install and live smoke checks are the remaining release gates.
 
 ## License
 

@@ -34,7 +34,7 @@ No worker unless the edit grows beyond quick scope.
 
 ## Mode: team
 
-This is the default `llx` team behavior.
+This is the default `plx` team behavior.
 
 Steps:
 
@@ -87,7 +87,7 @@ If Grok is missing, continue as `team`.
 
 ## Mode: ultra
 
-This is `llx` ultra behavior.
+This is `plx` ultra behavior.
 
 Steps:
 

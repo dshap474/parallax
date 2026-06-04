@@ -6,16 +6,16 @@ Parallax orchestrates external model CLIs that you install and authenticate. It 
 
 | Tier | Install | Enables | Required? |
 |---|---|---|---|
-| Codex | `codex` CLI + auth | `llx` team mode | required for default multi-model mode |
-| Grok | `grok` CLI + auth | `llx` panel/ultra modes | optional |
+| Codex | `codex` CLI + auth | `plx` team mode | required for default multi-model mode |
+| Grok | `grok` CLI + auth | `plx` panel/ultra modes | optional |
 
 Quick mode can run without Codex. Team mode requires Codex. Panel degrades if Grok is missing. Ultra requires Codex and Grok unless the run is explicitly degraded.
 
 ## Codex
 
-Install and authenticate the Codex CLI (`codex` on `PATH`). Parallax validates Codex per run with `skills/llx/scripts/preflight.sh --run-dir <run-dir> --require-codex`, where `<run-dir>` is the absolute path printed by intake.
+Install and authenticate the Codex CLI (`codex` on `PATH`). Parallax validates Codex per run with `skills/plx/scripts/preflight.sh --run-dir <run-dir> --require-codex`, where `<run-dir>` is the absolute path printed by intake.
 
-Parallax runs Codex only through `skills/llx/scripts/codex-ro.sh`, which uses:
+Parallax runs Codex only through `skills/plx/scripts/codex-ro.sh`, which uses:
 
 - `--ignore-user-config`
 - explicit read-only sandboxing
@@ -29,7 +29,7 @@ Parallax runs Codex only through `skills/llx/scripts/codex-ro.sh`, which uses:
 
 Install and authenticate the Grok CLI (`grok` on `PATH`) to enable panel and ultra modes.
 
-Parallax runs Grok only through `skills/llx/scripts/grok-ro.sh`, which uses plan permission mode and requires non-empty output to count as success. The wrapper writes stdout to the requested output file and stderr to a log.
+Parallax runs Grok only through `skills/plx/scripts/grok-ro.sh`, which uses plan permission mode and requires non-empty output to count as success. The wrapper writes stdout to the requested output file and stderr to a log.
 
 When invoking the Grok wrapper from Claude Code, disable the Claude Bash sandbox for that wrapper call only. Existing verification showed Grok can silently no-op inside that sandbox while still exiting 0. Treat non-empty output as success; stderr may contain non-fatal worker noise.
 

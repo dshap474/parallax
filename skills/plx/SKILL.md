@@ -47,7 +47,8 @@ Then execute that mode from `${CLAUDE_SKILL_DIR}/modes.md`. Use `${CLAUDE_SKILL_
 - Use bundled scripts for deterministic shell plumbing.
 - Do not manually construct raw `codex exec` or `grok` commands.
 - Do not use hooks.
-- Do not use `.parallax/cache`.
+- Do not write Parallax state into the target repo.
+- Do not create `.parallax/`, `.parallax/cache`, or `.parallax/runs`.
+- Use shell temp directories only for wrapper implementation details, and clean them up before returning.
 - Do not use `uv run` in a sandbox.
-- Keep all run artifacts inside the run directory printed by intake.
 - Final response must include: mode selected, work done, reviews run, fixes applied, verification, residual risk.

@@ -12,9 +12,10 @@ This file is the canonical executable workflow authority. `router.md` chooses th
 - Use `${CLAUDE_SKILL_DIR}/scripts/codex-ro.sh` for Codex.
 - Use `${CLAUDE_SKILL_DIR}/scripts/grok-ro.sh` for Grok.
 - When invoking `grok-ro.sh` through Bash inside Claude Code, disable the Claude Bash sandbox for that wrapper call only.
-- Store prompts, logs, outputs, findings, specs, diffs, and final results in the absolute run directory printed by intake.
-- Every mode writes `<run-dir>/results.md` with selected mode, artifacts, reviews run, fixes or findings, verification, and residual risk.
-- Modes that run external reviewers should run `${CLAUDE_SKILL_DIR}/scripts/collect-outputs.sh --run-dir <run-dir>` before writing `results.md`.
+- Do not write Parallax state into the target repo.
+- Use chat, Claude working context, or shell temp directories for transient prompts and reviewer outputs.
+- If a shell command needs files, create them under `mktemp -d` and clean them before returning.
+- Final results are returned in chat, not persisted to `results.md`.
 
 ## Mode: quick
 
@@ -25,8 +26,7 @@ Steps:
 3. Write a minimal plan.
 4. Edit directly with Claude.
 5. Run narrowest relevant checks.
-6. Write `results.md`.
-7. Return final summary.
+6. Return final summary.
 
 No Codex.
 No Grok.
@@ -60,8 +60,7 @@ Steps:
 10. Synthesize findings using `references/review-briefs.md`.
 11. Claude applies fixes directly.
 12. Run narrowest relevant checks.
-13. Run `${CLAUDE_SKILL_DIR}/scripts/collect-outputs.sh --run-dir <run-dir>`.
-14. Write `results.md`.
+13. Return final summary.
 
 ## Mode: panel
 
@@ -80,8 +79,7 @@ Steps:
 3. Synthesize correctness first, then refine, then debug.
 4. Claude fixes.
 5. Verify.
-6. Run `${CLAUDE_SKILL_DIR}/scripts/collect-outputs.sh --run-dir <run-dir>`.
-7. Write `results.md`.
+6. Return final summary.
 
 If Grok is missing, continue as `team`.
 
@@ -111,8 +109,7 @@ Steps:
    - debug surviving code
 8. Claude applies one coherent refactor/fix pass.
 9. Verify.
-10. Run `${CLAUDE_SKILL_DIR}/scripts/collect-outputs.sh --run-dir <run-dir>`.
-11. Write `results.md`.
+10. Return final summary.
 
 ## Mode: review-only
 
@@ -127,6 +124,5 @@ Steps:
    - security note only if obvious; this is not a full security audit
 4. Run selected reviewers read-only.
 5. Synthesize findings.
-6. Run `${CLAUDE_SKILL_DIR}/scripts/collect-outputs.sh --run-dir <run-dir>` if any external reviewer ran.
-7. Write `results.md`.
-8. Do not edit unless the user explicitly asked for fixes.
+6. Return final summary.
+7. Do not edit unless the user explicitly asked for fixes.

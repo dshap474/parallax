@@ -59,8 +59,8 @@ Plan -> Plan-review -> Code -> Refine -> Review -> Fix
 - Codex calls go through `skills/plx/scripts/codex-ro.sh`.
 - Grok calls go through `skills/plx/scripts/grok-ro.sh`.
 - Review prompts are assembled with neutral context only.
-- All artifacts stay in the absolute run directory created under `.parallax/runs/<run-id>/`.
-- There is no `.parallax/cache`.
+- Parallax does not create `.parallax/`, `.parallax/cache`, or `.parallax/runs`.
+- Runtime prompts, logs, and external model outputs are chat context or temp files that are cleaned up before commands return.
 
 ## Hooks Policy
 
@@ -71,7 +71,7 @@ Safety comes from:
 - one public `plx` skill
 - deterministic wrapper scripts
 - read-only Codex/Grok invocations
-- per-run artifacts
+- no repo-local runtime state
 - Claude as sole writer
 
 A future version may add a `PreToolUse` safety hook to block raw unsafe `codex` or `grok` commands, but that is intentionally out of scope for v0.1.

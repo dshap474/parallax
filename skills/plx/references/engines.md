@@ -9,14 +9,14 @@ Parallax ships five engines: `claude-orch`, `reviewer`, `worker` (Claude), `code
 - **Codex:** every call must go through `scripts/codex-ro.sh`. The wrapper carries `--ignore-user-config` and an explicit read-only sandbox. Never inherit the user's global Codex config — it may default to full access.
 - **Grok / Composer:** every call must go through `scripts/grok-ro.sh`. The wrapper uses plan permission mode and `--cwd`. Never pass `--yolo`.
 - **Read-only roles** (plan-review, debug, correctness, refine *advisors*) use a read-only / plan sandbox. Only **writer roles** (Code, and the orchestrator's direct edits) get write access — and in Parallax the only writers are Claude.
-- Work artifacts go in the absolute run directory created by Parallax intake under `.parallax/runs/<run-id>/`. Prompts in, engine output captured to a file you then read.
+- Do not write Parallax state into the target repo. Use wrapper `--stdout` modes or shell temp directories created with `mktemp -d`, then clean them up before returning.
 
 ## Preflight (run once, before Stage 1)
 
 Fail fast instead of discovering a broken engine mid-pipeline:
 
-- **CLI present:** run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --run-dir <run-dir> ...` after `router.md` selects the candidate mode.
-- **Model available:** `preflight.sh` runs per-run cheap probes and writes `preflight.md` plus `preflight.env`. A 400 means that model isn't available on this auth — switch models before proceeding.
+- **CLI present:** run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --repo <repo> ...` after `router.md` selects the candidate mode.
+- **Model available:** `preflight.sh` runs cheap probes with temporary files and prints the result to stdout. A 400 means that model isn't available on this auth — switch models before proceeding.
 - **Degrade gracefully:** if an optional engine is absent, drop its review lane and say so — never crash the run.
 
 ## Verification (who runs the repo's checks)
@@ -26,14 +26,14 @@ The orchestrator (and `worker` when self-verifying) runs the repo's existing che
 ## Timing (optional, for cost/latency measurement)
 
 To measure a run, bracket each wrapper call and keep the token line the engine already prints in the wrapper log.
-Record per-stage seconds + tokens in the run's `results.md`. This isolates engine time from orchestrator time — the only honest combo cost comparison.
+Report per-stage seconds + tokens in the final chat summary. This isolates engine time from orchestrator time — the only honest combo cost comparison.
 
 ## Output discipline
 
 Feed only each engine's **final text** back to the orchestrator — never the raw event/JSON envelope. The envelope (`thought`, `sessionId`, `requestId`, `stopReason`, event frames) wastes input tokens and adds noise.
 
-- **codex** → read only the output file from `scripts/codex-ro.sh`; logs stay in `<run-dir>/logs/`. Don't use `--json` (JSONL events).
-- **grok / composer** → read only the output file from `scripts/grok-ro.sh`; logs stay in `<run-dir>/logs/`. Don't use JSON unless a future wrapper explicitly supports it.
+- **codex** → prefer `scripts/codex-ro.sh --stdout`; otherwise point `--out` and `--log` at a temp directory and delete it after reading. Don't use `--json` (JSONL events).
+- **grok / composer** → prefer `scripts/grok-ro.sh --stdout`; otherwise point `--out` and `--log` at a temp directory and delete it after reading. Don't use JSON unless a future wrapper explicitly supports it.
 
 ---
 
@@ -49,7 +49,7 @@ A fresh Claude subagent via the **Agent tool**, using Parallax's bundled **`revi
 A fresh, write-capable Claude subagent via the **Agent tool**, using Parallax's bundled **`worker`** agent (`parallax:worker`). Used for the **Code** stage in team/panel/ultra mode: hand it the per-task spec **only** (neutral — no orchestrator analysis, no review history), let it implement, then it de-spawns. Keeps the orchestrator's context lean and the first pass uncontaminated. It may run the repo's checks to self-verify — with the repo's venv/toolchain binaries, never `uv run` (see Verification). For a quick task, the orchestrator may write directly and skip the worker.
 
 ### `codex-ro` — Codex reviewer / advisor (read-only)
-Use `${CLAUDE_SKILL_DIR}/scripts/codex-ro.sh --repo <REPO> --prompt <PROMPT.md> --out <OUT.md> --log <LOG>`. **Read only `<OUT.md>`**. Bump/keep `--effort high` for review work.
+Use `${CLAUDE_SKILL_DIR}/scripts/codex-ro.sh --repo <REPO> --prompt <PROMPT.md> --stdout`. Bump/keep `--effort high` for review work. If you need separate logs for debugging, use `--out` and `--log` inside a temp directory and clean it up.
 
 > **Availability caveat:** `gpt-5.3-codex` is **not available** on a ChatGPT-account Codex auth (API 400). Parallax only runs Codex **read-only** with `gpt-5.5`, so there is no writer-model availability risk — confirm `gpt-5.5` with the preflight probe.
 

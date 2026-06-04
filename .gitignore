@@ -1,6 +1,3 @@
-# Parallax run artifacts
-.parallax/
-
 # OS / editor cruft
 .DS_Store
 *.swp

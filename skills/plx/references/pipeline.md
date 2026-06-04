@@ -4,7 +4,7 @@ Shared role definitions and neutral-context rules for PLX modes. This file is no
 
 **Roles:** Plan · Plan-review · Code · Refine · Debug review · Correctness review · Fix. Plan, plan/spec synthesis, and review/fix synthesis are always the orchestrator (`claude-orch`).
 
-Work artifacts (prompts, engine outputs, findings) go in the absolute run directory created by Parallax intake. Add `.parallax/` to `.gitignore`.
+Parallax does not persist repo-local runtime state. Keep prompts, engine outputs, and findings in chat or temporary shell directories that are deleted before returning.
 
 | # | Stage | Role | Edits repo? |
 |---|---|---|---|

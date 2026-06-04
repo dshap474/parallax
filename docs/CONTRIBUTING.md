@@ -55,10 +55,11 @@ Run the acceptance checks from `docs/SPEC.md` before release. At minimum verify:
 
 - only `/parallax:plx` is public
 - `skills/plx/scripts/*.sh` are executable
-- `parallax-intake.sh` prints an absolute run directory under `.parallax/runs/<run-id>/`
+- `parallax-intake.sh` prints repo metadata without creating files
+- `preflight.sh --repo <repo>` uses temporary files only
 - references sync cleanly
 - raw external model commands appear only in their wrappers outside docs
-- no hooks or `.parallax/cache` exist
+- no hooks or `.parallax/` runtime state exists
 
 ## Release Notes
 

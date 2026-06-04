@@ -30,7 +30,7 @@ Then, in any repo:
 | `ultra` | major/high-risk changes | Claude + Codex + Grok panel |
 | `review-only` | reviews, audits, debugging without edits | read-only reviewers |
 
-Every reviewer is fresh, neutral-context, and read-only. All run artifacts stay under `.parallax/runs/<run-id>/` in the target repo.
+Every reviewer is fresh, neutral-context, and read-only. Parallax does not write repo-local runtime state; temporary prompt/output files live only in shell temp directories and are cleaned up before commands return.
 
 ## Requirements
 

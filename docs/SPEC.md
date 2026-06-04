@@ -23,7 +23,7 @@ Claude is the only writer. Codex and Grok are read-only reviewers.
 - 1 public skill: `plx`
 - 2 subagents: `reviewer`, `worker`
 - 5 modes: `quick`, `team`, `panel`, `ultra`, `review-only`
-- Deterministic scripts for intake, preflight, prompt assembly, output collection, and read-only external reviewers
+- Deterministic scripts for intake, preflight, prompt assembly, and read-only external reviewers
 - Shared reference briefs synced from `_source/references/` into `skills/plx/references/`
 
 ## Target Tree
@@ -76,13 +76,15 @@ The skill path `skills/plx/SKILL.md` maps to `/parallax:plx`.
 
 - No public mode-specific skills.
 - No hooks in v0.1.
-- No `.parallax/cache`.
-- Intake creates an absolute run directory under `<repo>/.parallax/runs/<run-id>/`.
+- No repo-local runtime state.
+- Do not create `.parallax/`, `.parallax/cache`, or `.parallax/runs`.
+- Intake prints repo metadata to stdout only.
+- Preflight and wrappers use shell temp directories only and clean them up before returning.
 - Do not use `uv run` inside a sandbox.
 - Codex execution goes through `skills/plx/scripts/codex-ro.sh`.
 - Grok execution goes through `skills/plx/scripts/grok-ro.sh`.
 - Review and plan prompts are built with `skills/plx/scripts/make-review-prompt.sh`.
-- Every mode writes `results.md` in the run directory.
+- Final results are returned in chat, not written to `results.md`.
 
 ## Acceptance Criteria
 
@@ -106,30 +108,31 @@ test -x skills/plx/scripts/preflight.sh
 test -x skills/plx/scripts/codex-ro.sh
 test -x skills/plx/scripts/grok-ro.sh
 test -x skills/plx/scripts/make-review-prompt.sh
-test -x skills/plx/scripts/collect-outputs.sh
+test ! -e skills/plx/scripts/collect-outputs.sh
 ```
 
 ### Intake
 
 ```bash
-RUN_DIR="$(skills/plx/scripts/parallax-intake.sh | awk -F': ' '/run_dir:/ {print $2}')"
-test "${RUN_DIR:0:1}" = "/"
+INTAKE="$(skills/plx/scripts/parallax-intake.sh)"
+printf '%s\n' "$INTAKE" | grep -q "repo: /"
+printf '%s\n' "$INTAKE" | grep -q "codex_present:"
+printf '%s\n' "$INTAKE" | grep -q "grok_present:"
 ```
 
 Expected:
 
 ```text
-<run-dir>/state.env exists
-<run-dir>/intake.md exists
-printed run_dir
+printed repo
 printed codex_present yes/no
 printed grok_present yes/no
+no files or directories created
 ```
 
-### No Cache
+### No Runtime State
 
 ```bash
-test ! -d .parallax/cache
+test ! -d .parallax
 ```
 
 ### Sync References
@@ -171,13 +174,20 @@ parallax:worker appears in /agents
 
 ### Smoke Tests
 
+Preflight smoke:
+
+```bash
+skills/plx/scripts/preflight.sh --repo "$(pwd)" --require-codex
+test ! -d .parallax
+```
+
 Codex-only team smoke:
 
 ```text
 /parallax:plx make a small nontrivial change in this repo
 ```
 
-Expected: `team` mode, Codex preflight passes, Grok absence does not crash, Codex review lanes run read-only, Claude writes/fixes, and `results.md` is written.
+Expected: `team` mode, Codex preflight passes, Grok absence does not crash, Codex review lanes run read-only, Claude writes/fixes, no `.parallax/` directory is created, and final results are returned in chat.
 
 Quick mode smoke:
 
@@ -185,7 +195,7 @@ Quick mode smoke:
 /parallax:plx fix this typo in README
 ```
 
-Expected: `quick` mode, no Codex call, no Grok call, Claude edits directly, and `results.md` is written.
+Expected: `quick` mode, no Codex call, no Grok call, Claude edits directly, no `.parallax/` directory is created, and final results are returned in chat.
 
 Ultra degradation smoke without Grok:
 
@@ -200,4 +210,6 @@ Prompt assembly smoke:
 ```bash
 skills/plx/scripts/make-review-prompt.sh --lane plan --brief skills/plx/references/coding-spec-template.md --artifact README.md --task README.md --out /tmp/parallax-plan-prompt.md
 test -s /tmp/parallax-plan-prompt.md
+skills/plx/scripts/make-review-prompt.sh --lane plan --brief skills/plx/references/coding-spec-template.md --artifact README.md --task README.md --stdout >/tmp/parallax-plan-prompt-stdout.md
+test -s /tmp/parallax-plan-prompt-stdout.md
 ```

@@ -84,15 +84,15 @@ Do not edit files unless user explicitly approves fixes.
 After choosing a candidate mode:
 
 - `quick`: no external preflight needed.
-- `team`: run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --run-dir <run-dir> --require-codex`.
-- `panel`: run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --run-dir <run-dir> --require-codex --optional-grok`.
-- `ultra`: run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --run-dir <run-dir> --require-codex --require-grok`.
-- `review-only`: run preflight with `--run-dir <run-dir>` only for the engines needed by the selected review lanes.
+- `team`: run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --repo <repo> --require-codex`.
+- `panel`: run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --repo <repo> --require-codex --optional-grok`.
+- `ultra`: run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --repo <repo> --require-codex --require-grok`.
+- `review-only`: run preflight with `--repo <repo>` only for the engines needed by the selected review lanes.
 
 If a required engine is unavailable, stop with a clear message.
 If an optional engine is unavailable, drop that lane and continue.
 
-`<run-dir>` is the absolute run directory printed by deterministic intake.
+`<repo>` is the absolute repo path printed by deterministic intake.
 
 ## Output discipline
 
@@ -101,7 +101,7 @@ At the start of execution, state:
 ```text
 Selected mode: <mode>
 Reason: <one sentence>
-Run dir: <path>
+Repo: <path>
 ```
 
 At the end, report:

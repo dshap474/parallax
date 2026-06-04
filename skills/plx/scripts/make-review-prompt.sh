@@ -7,6 +7,7 @@ ARTIFACT=""
 TASK=""
 OUT=""
 REPO_GUIDANCE=""
+STDOUT=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -15,6 +16,7 @@ while [[ $# -gt 0 ]]; do
     --artifact) ARTIFACT="$2"; shift 2 ;;
     --task) TASK="$2"; shift 2 ;;
     --out) OUT="$2"; shift 2 ;;
+    --stdout) STDOUT=1; shift ;;
     --repo-guidance) REPO_GUIDANCE="$2"; shift 2 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
@@ -28,15 +30,15 @@ esac
 [[ -s "$BRIEF" ]] || { echo "brief missing/empty: $BRIEF" >&2; exit 2; }
 [[ -s "$ARTIFACT" ]] || { echo "artifact missing/empty: $ARTIFACT" >&2; exit 2; }
 [[ -s "$TASK" ]] || { echo "task missing/empty: $TASK" >&2; exit 2; }
-[[ -n "$OUT" ]] || { echo "--out required" >&2; exit 2; }
+if [[ "$STDOUT" -eq 0 ]]; then
+  [[ -n "$OUT" ]] || { echo "--out or --stdout required" >&2; exit 2; }
+fi
 if [[ -n "$REPO_GUIDANCE" && ! -s "$REPO_GUIDANCE" ]]; then
   echo "repo guidance missing/empty: $REPO_GUIDANCE" >&2
   exit 2
 fi
 
-mkdir -p "$(dirname "$OUT")"
-
-{
+emit_prompt() {
   echo "### Lane"
   echo "$LANE"
   echo
@@ -66,6 +68,12 @@ mkdir -p "$(dirname "$OUT")"
     echo "Return Task, Findings, Rationale, Suggested validation."
     echo "Each finding must include Location, Object, Stage, Action, Severity, Confidence, Evidence, Why it matters, Main-agent instruction."
   fi
-} > "$OUT"
+}
 
-echo "OK prompt=$OUT"
+if [[ "$STDOUT" -eq 1 ]]; then
+  emit_prompt
+else
+  mkdir -p "$(dirname "$OUT")"
+  emit_prompt > "$OUT"
+  echo "OK prompt=$OUT"
+fi

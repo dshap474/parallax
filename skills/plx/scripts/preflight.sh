@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RUN_DIR=""
+REPO=""
 REQUIRE_CODEX=0
 OPTIONAL_GROK=0
 REQUIRE_GROK=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --run-dir) RUN_DIR="$2"; shift 2 ;;
+    --repo) REPO="$2"; shift 2 ;;
     --require-codex) REQUIRE_CODEX=1; shift ;;
     --optional-grok) OPTIONAL_GROK=1; shift ;;
     --require-grok) REQUIRE_GROK=1; shift ;;
@@ -16,74 +16,74 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$RUN_DIR" ]] || { echo "--run-dir required" >&2; exit 2; }
-mkdir -p "$RUN_DIR"
-RUN_DIR="$(cd "$RUN_DIR" && pwd)"
-mkdir -p "$RUN_DIR"/{prompts,outputs,logs}
-
-STATE_REPO="$(sed -n 's/^PARALLAX_REPO=//p' "$RUN_DIR/state.env" 2>/dev/null | tail -1 || true)"
-if [[ -n "$STATE_REPO" && -d "$STATE_REPO" ]]; then
-  REPO="$STATE_REPO"
-else
-  REPO="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-fi
+[[ -n "$REPO" ]] || { echo "--repo required" >&2; exit 2; }
+[[ -d "$REPO" ]] || { echo "repo not found: $REPO" >&2; exit 2; }
+REPO="$(cd "$REPO" && pwd)"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PREFLIGHT_MD="$RUN_DIR/preflight.md"
-PREFLIGHT_ENV="$RUN_DIR/preflight.env"
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/parallax-preflight.XXXXXX")"
+trap 'rm -rf "$TMP_DIR"' EXIT
+mkdir -p "$TMP_DIR"/{prompts,outputs,logs}
 
 CODEX_OK=0
 GROK_OK=0
 STATUS=0
 
+print_log_tail() {
+  local log_file="$1"
+  [[ -s "$log_file" ]] || return 0
+  echo "  log tail:"
+  sed -n '1,20p' "$log_file" | sed 's/^/  > /'
+}
+
 probe_codex() {
   if ! command -v codex >/dev/null 2>&1; then
-    echo "- codex: missing" >> "$PREFLIGHT_MD"
+    echo "- codex: missing"
     return 1
   fi
 
-  printf '%s\n' "reply OK" > "$RUN_DIR/prompts/codex-probe.md"
+  printf '%s\n' "reply OK" > "$TMP_DIR/prompts/codex-probe.md"
   if "$SCRIPT_DIR/codex-ro.sh" \
     --repo "$REPO" \
-    --prompt "$RUN_DIR/prompts/codex-probe.md" \
-    --out "$RUN_DIR/outputs/codex-probe.md" \
-    --log "$RUN_DIR/logs/codex-probe.log" \
-    --effort low >/dev/null && [[ -s "$RUN_DIR/outputs/codex-probe.md" ]]; then
-    echo "- codex: ok" >> "$PREFLIGHT_MD"
+    --prompt "$TMP_DIR/prompts/codex-probe.md" \
+    --out "$TMP_DIR/outputs/codex-probe.md" \
+    --log "$TMP_DIR/logs/codex-probe.log" \
+    --effort low >/dev/null && [[ -s "$TMP_DIR/outputs/codex-probe.md" ]]; then
+    echo "- codex: ok"
     CODEX_OK=1
     return 0
   fi
 
-  echo "- codex: probe failed; see $RUN_DIR/logs/codex-probe.log" >> "$PREFLIGHT_MD"
+  echo "- codex: probe failed"
+  print_log_tail "$TMP_DIR/logs/codex-probe.log"
   return 1
 }
 
 probe_grok() {
   if ! command -v grok >/dev/null 2>&1; then
-    echo "- grok: missing" >> "$PREFLIGHT_MD"
+    echo "- grok: missing"
     return 1
   fi
 
-  printf '%s\n' "reply OK" > "$RUN_DIR/prompts/grok-probe.md"
+  printf '%s\n' "reply OK" > "$TMP_DIR/prompts/grok-probe.md"
   if "$SCRIPT_DIR/grok-ro.sh" \
     --repo "$REPO" \
-    --prompt "$RUN_DIR/prompts/grok-probe.md" \
-    --out "$RUN_DIR/outputs/grok-probe.txt" \
-    --log "$RUN_DIR/logs/grok-probe.log" \
-    --effort low >/dev/null && [[ -s "$RUN_DIR/outputs/grok-probe.txt" ]]; then
-    echo "- grok: ok" >> "$PREFLIGHT_MD"
+    --prompt "$TMP_DIR/prompts/grok-probe.md" \
+    --out "$TMP_DIR/outputs/grok-probe.txt" \
+    --log "$TMP_DIR/logs/grok-probe.log" \
+    --effort low >/dev/null && [[ -s "$TMP_DIR/outputs/grok-probe.txt" ]]; then
+    echo "- grok: ok"
     GROK_OK=1
     return 0
   fi
 
-  echo "- grok: probe failed or empty output; see $RUN_DIR/logs/grok-probe.log" >> "$PREFLIGHT_MD"
+  echo "- grok: probe failed or empty output"
+  print_log_tail "$TMP_DIR/logs/grok-probe.log"
   return 1
 }
 
-{
-  echo "### Parallax preflight"
-  echo "- run_dir: $RUN_DIR"
-  echo "- repo: $REPO"
-} > "$PREFLIGHT_MD"
+echo "### Parallax preflight"
+echo "- repo: $REPO"
+echo "- temp_artifacts: ephemeral"
 
 if [[ "$REQUIRE_CODEX" -eq 1 ]]; then
   probe_codex || STATUS=1
@@ -95,13 +95,7 @@ elif [[ "$OPTIONAL_GROK" -eq 1 ]]; then
   probe_grok || true
 fi
 
-{
-  echo "PARALLAX_PREFLIGHT_RUN_DIR=$RUN_DIR"
-  echo "PARALLAX_PREFLIGHT_REPO=$REPO"
-  echo "PARALLAX_PREFLIGHT_OK=$([[ "$STATUS" -eq 0 ]] && echo 1 || echo 0)"
-  echo "PARALLAX_CODEX_OK=$CODEX_OK"
-  echo "PARALLAX_GROK_OK=$GROK_OK"
-} > "$PREFLIGHT_ENV"
-
-cat "$PREFLIGHT_MD"
+echo "- preflight_ok: $([[ "$STATUS" -eq 0 ]] && echo yes || echo no)"
+echo "- codex_ok: $([[ "$CODEX_OK" -eq 1 ]] && echo yes || echo no)"
+echo "- grok_ok: $([[ "$GROK_OK" -eq 1 ]] && echo yes || echo no)"
 exit "$STATUS"

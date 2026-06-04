@@ -1,0 +1,60 @@
+# Parallax engine configuration
+#
+# Binds pipeline ROLES to ENGINES, per mode. The orchestrator reads this file
+# after intake and resolves each role to its configured engine before executing
+# the mode (see SKILL.md). The values below are the shipped defaults — they
+# reproduce Parallax's original behavior exactly. Edit a value to swap the engine
+# for that role in that mode; delete a key to fall back to the mode's documented
+# default in modes.md.
+#
+# Engines:
+#   claude  — the writer (`code`) runs as the orchestrator/`worker` subagent;
+#             a review role runs as a fresh read-only `reviewer` subagent.
+#   codex   — Codex CLI. Review roles -> scripts/codex-ro.sh (read-only).
+#             Writer role -> scripts/codex-rw.sh (workspace-write sandbox).
+#   grok    — Grok CLI. Review roles -> scripts/grok-ro.sh (plan/read-only).
+#             Writer role -> scripts/grok-rw.sh (acceptEdits sandbox).
+#
+# Roles:
+#   code                — the WRITER. Takes exactly ONE engine: `claude` or `codex`.
+#                         Whichever is set here EDITS the repo for the Code stage; a
+#                         non-Claude writer routes the per-task spec through the
+#                         matching *-rw.sh wrapper, then the orchestrator reviews the
+#                         diff. NOTE: `code: grok` is currently UNSUPPORTED — grok's
+#                         edit workers fail with AuthorizationRequired in this
+#                         environment (grok still works fine as a read-only reviewer).
+#   plan / plan-review  — read-only plan stress-test lanes. Take a LIST.
+#   review-debug        — read-only debug review lanes. Take a LIST.
+#   review-correctness  — read-only correctness review lanes. Take a LIST.
+#   review-refine       — optional read-only refine-advisory lanes. Take a LIST.
+#
+# Always the orchestrator (not configurable): Stage 1 plan synthesis, refine
+# synthesis, and fix synthesis. Review/plan roles are ALWAYS read-only regardless
+# of engine — only the `code` role ever writes.
+
+modes:
+  quick:
+    code: claude
+
+  team:
+    plan-review: [codex]
+    code: claude
+    review-debug: [codex, claude]
+    review-correctness: [codex]
+
+  panel:
+    code: claude
+    review-debug: [codex, claude, grok]
+    review-correctness: [codex, grok]
+
+  ultra:
+    plan: [claude, codex, grok]
+    code: claude
+    review-debug: [claude, codex, grok]
+    review-correctness: [claude, codex, grok]
+    review-refine: [codex, grok]
+
+  review-only:
+    review-debug: [codex, claude]
+    review-correctness: [codex, claude]
+    review-refine: [codex, claude]

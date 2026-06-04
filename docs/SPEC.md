@@ -16,14 +16,15 @@ Parallax packages a multi-model coding workflow as an installable Claude Code pl
 quick | team | panel | ultra | review-only
 ```
 
-Claude is the only writer. Codex and Grok are read-only reviewers.
+Review and plan lanes are read-only for every engine; only the writer (`code`) role edits the repo. By default the writer is Claude, but `skills/plx/parallax.yaml` can bind it to Codex or Grok per mode (scoped-write wrappers).
 
 ## What Ships
 
 - 1 public skill: `plx`
 - 2 subagents: `reviewer`, `worker`
 - 5 modes: `quick`, `team`, `panel`, `ultra`, `review-only`
-- Deterministic scripts for intake, preflight, prompt assembly, and read-only external reviewers
+- 1 engine-per-role config: `skills/plx/parallax.yaml`
+- Deterministic scripts for intake, preflight, prompt assembly, read-only external reviewers, and opt-in scoped-write external writers
 - Runtime reference briefs in `skills/plx/references/`
 
 ## Target Tree
@@ -41,6 +42,7 @@ Claude is the only writer. Codex and Grok are read-only reviewers.
 │       ├── SKILL.md
 │       ├── router.md
 │       ├── modes.md
+│       ├── parallax.yaml
 │       ├── references/
 │       └── scripts/
 ├── docs/

@@ -63,7 +63,7 @@ emit_prompt() {
   echo "### Output shape"
   if [[ "$LANE" == "plan" ]]; then
     echo "Return Task, Proposed plan, Risks, Acceptance checks."
-    echo "The proposed plan must be implementation-ready, scoped to the task, and must preserve Claude as the only writer."
+    echo "The proposed plan must be implementation-ready and scoped to the task. The plan is implemented by the configured writer engine and reviewed read-only by the others; do not assume which model writes."
   else
     echo "Return Task, Findings, Rationale, Suggested validation."
     echo "Each finding must include Location, Object, Stage, Action, Severity, Confidence, Evidence, Why it matters, Main-agent instruction."

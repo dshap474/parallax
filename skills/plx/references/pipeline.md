@@ -27,7 +27,7 @@ Hand the plan to a **fresh** Plan-review engine to stress-test it *before any co
 
 ## Stage 3 — Code (Code engine, write)
 
-Delegate each coding task to the Code engine, feeding it the per-task spec. The Code engine is a fresh write-capable Claude worker (`worker`) or — for quick mode — the orchestrator editing directly. A fresh worker keeps the orchestrator's context lean and the first pass uncontaminated. Independent tasks run in parallel (one per task); dependent tasks run in order, passing prior outputs forward. Invoke per `references/engines.md`. For risky changes, run in a disposable `git worktree` and review the diff before merging.
+Delegate each coding task to the Code engine, feeding it the per-task spec. The Code engine is whichever engine `parallax.yaml` assigns to `code` for the selected mode (default Claude): a fresh write-capable Claude worker (`worker`), the orchestrator editing directly (quick), or — when configured — a non-Claude writer via `codex-rw.sh` / `grok-rw.sh`. A fresh worker keeps the orchestrator's context lean and the first pass uncontaminated. Independent tasks run in parallel (one per task); dependent tasks run in order, passing prior outputs forward. Invoke per `references/engines.md`. For risky changes, run in a disposable `git worktree` and review the diff before merging.
 
 ## Stage 4 — Refine
 

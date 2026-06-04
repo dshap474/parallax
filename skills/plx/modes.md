@@ -2,16 +2,25 @@
 
 This file is the canonical executable workflow authority. `router.md` chooses the mode and preflight policy; this file defines what to do after selection.
 
+## Engine binding
+
+Before executing a mode, resolve each role to its engine from `${CLAUDE_SKILL_DIR}/parallax.yaml` under `modes.<selected-mode>`:
+
+- The engine names written into the step text below describe the **default** config. If `parallax.yaml` overrides a role, use the configured engine instead.
+- `code` (writer) takes one engine. If it is `claude`, the worker/orchestrator writes as documented. If it is `codex` or `grok`, route the per-task spec through `scripts/codex-rw.sh` / `scripts/grok-rw.sh`, then review the resulting diff before continuing.
+- Review and plan roles take a list; run one lane per listed engine. These are **always read-only** regardless of engine — never route a review lane through a `*-rw.sh` wrapper.
+- A role absent from `parallax.yaml` falls back to the default in this file.
+
 ## Shared rules
 
-- Claude is the only writer.
-- External engines are reviewers/advisors only.
+- Only the writer (`code`) role edits the repo; every other role is a read-only reviewer/advisor.
+- Review and plan lanes are read-only for every engine, including any non-Claude writer when it is acting as a reviewer.
 - Fresh reviewers receive neutral context only.
 - Use `${CLAUDE_SKILL_DIR}/references/review-briefs.md` for review prompt shape.
 - Use `${CLAUDE_SKILL_DIR}/scripts/make-review-prompt.sh` to build external model prompts.
-- Use `${CLAUDE_SKILL_DIR}/scripts/codex-ro.sh` for Codex.
-- Use `${CLAUDE_SKILL_DIR}/scripts/grok-ro.sh` for Grok.
-- When invoking `grok-ro.sh` through Bash inside Claude Code, disable the Claude Bash sandbox for that wrapper call only.
+- Use `${CLAUDE_SKILL_DIR}/scripts/codex-ro.sh` / `grok-ro.sh` for Codex/Grok review lanes.
+- Use `${CLAUDE_SKILL_DIR}/scripts/codex-rw.sh` / `grok-rw.sh` only when `parallax.yaml` sets the `code` writer to that engine.
+- When invoking `grok-ro.sh` or `grok-rw.sh` through Bash inside Claude Code, disable the Claude Bash sandbox for that wrapper call only.
 - Do not write Parallax state into the target repo.
 - Use chat, Claude working context, or shell temp directories for transient prompts and reviewer outputs.
 - If a shell command needs files, create them under `mktemp -d` and clean them before returning.
@@ -24,13 +33,11 @@ Steps:
 1. Read request.
 2. Inspect target files.
 3. Write a minimal plan.
-4. Edit directly with Claude.
+4. Apply the edit with the `code` engine (default `claude`: edit directly). If the config sets `code` to `codex`/`grok`, write a minimal per-task spec and route it through the matching `*-rw.sh` wrapper, then review the diff.
 5. Run narrowest relevant checks.
 6. Return final summary.
 
-No Codex.
-No Grok.
-No worker unless the edit grows beyond quick scope.
+Default config: Claude only — no Codex, no Grok, no worker unless the edit grows beyond quick scope.
 
 ## Mode: team
 
@@ -46,7 +53,7 @@ Steps:
    - brief: `references/correctness.md`
 4. Run Codex read-only plan review.
 5. Reconcile only Critical/High or materially valid findings.
-6. Delegate code to fresh `worker` with the final per-task spec only.
+6. Delegate code to the `code` engine with the final per-task spec only (default `worker`; a non-Claude `code` engine runs via its `*-rw.sh` wrapper — see Engine binding).
 7. Claude directly refines using `references/refine-guide.md`.
 8. Build review pack from:
    - original request
@@ -96,7 +103,7 @@ Steps:
    - Grok plan x1 using `${CLAUDE_SKILL_DIR}/scripts/make-review-prompt.sh --lane plan`
    - Optional additional Grok plan variants only if cost justified
 3. Claude synthesizes one final spec.
-4. Fresh `worker` implements final spec.
+4. The `code` engine implements the final spec (default fresh `worker`; a non-Claude `code` engine runs via its `*-rw.sh` wrapper — see Engine binding).
 5. Claude assembles review pack.
 6. Run review panel:
    - refine: Claude reviewer + Codex + Grok

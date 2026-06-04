@@ -41,7 +41,7 @@ Plan -> Plan-review -> Code -> Refine -> Review -> Fix
 | Review | read-only reviewers | no |
 | Fix | orchestrator | yes |
 
-`skills/plx/router.md` chooses the mode. `skills/plx/modes.md` is the canonical executable workflow authority. `skills/plx/references/pipeline.md` holds shared role invariants, and `skills/plx/references/engines.md` defines engine invocation rules.
+`skills/plx/router.md` chooses the mode. `skills/plx/modes.md` is the canonical executable workflow authority. `skills/plx/references/pipeline.md` holds shared role invariants, and `skills/plx/references/engines.md` defines engine invocation rules. `skills/plx/parallax.yaml` binds each role to an engine per mode; the orchestrator resolves it before executing.
 
 ## Modes
 
@@ -55,9 +55,9 @@ Plan -> Plan-review -> Code -> Refine -> Review -> Fix
 
 ## Safety Model
 
-- Claude is the only writer.
-- Codex calls go through `skills/plx/scripts/codex-ro.sh`.
-- Grok calls go through `skills/plx/scripts/grok-ro.sh`.
+- Role determines repo access, not engine. Review and plan lanes are read-only for every engine; only the writer (`code`) role edits the repo, and exactly one engine fills it per mode.
+- Codex/Grok review calls go through `skills/plx/scripts/codex-ro.sh` / `grok-ro.sh` (read-only).
+- A non-Claude writer (when `parallax.yaml` sets `code: codex`/`grok`) goes through `skills/plx/scripts/codex-rw.sh` (scoped `workspace-write`) / `grok-rw.sh` (`acceptEdits`) — edits confined to the target repo, never full-access/bypass. Default config keeps Claude the sole writer.
 - Review prompts are assembled with neutral context only.
 - Parallax does not create `.parallax/`, `.parallax/cache`, or `.parallax/runs`.
 - Runtime prompts, logs, and external model outputs are chat context or temp files that are cleaned up before commands return.
@@ -70,9 +70,9 @@ Safety comes from:
 
 - one public `plx` skill
 - deterministic wrapper scripts
-- read-only Codex/Grok invocations
+- read-only Codex/Grok review invocations; scoped-write wrappers for an opt-in non-Claude writer
 - no repo-local runtime state
-- Claude as sole writer
+- only the `code` role writes (Claude by default)
 
 A future version may add a `PreToolUse` safety hook to block raw unsafe `codex` or `grok` commands, but that is intentionally out of scope for v0.1.
 

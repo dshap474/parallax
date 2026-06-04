@@ -3,8 +3,8 @@ name: plx
 description: >-
   Parallax PLX router. One user-invoked multi-model coding workflow for substantial
   code changes, reviews, debugging, refactors, audits, and implementation tasks.
-  Routes each request to quick, team, panel, ultra, or review-only mode. Claude is
-  the sole writer; Codex and Grok are read-only reviewers.
+  Routes each request to quick, team, panel, ultra, or review-only mode. Review lanes
+  are read-only; the writer engine per mode is configurable (Claude by default).
 argument-hint: "<coding task, review request, debug request, refactor, or audit>"
 disable-model-invocation: true
 user-invocable: true
@@ -29,6 +29,7 @@ Use the intake above, then read:
 - `${CLAUDE_SKILL_DIR}/router.md`
 - `${CLAUDE_SKILL_DIR}/modes.md`
 - `${CLAUDE_SKILL_DIR}/references/engines.md`
+- `${CLAUDE_SKILL_DIR}/parallax.yaml` — the engine-per-role configuration
 
 Choose exactly one mode:
 
@@ -38,12 +39,12 @@ Choose exactly one mode:
 - `ultra`
 - `review-only`
 
-Then execute that mode from `${CLAUDE_SKILL_DIR}/modes.md`. Use `${CLAUDE_SKILL_DIR}/references/pipeline.md` only for shared role definitions and neutral-context rules.
+Then resolve each pipeline role to its engine from `parallax.yaml` for the selected mode (see `modes.md` → "Engine binding"), and execute that mode from `${CLAUDE_SKILL_DIR}/modes.md`. Use `${CLAUDE_SKILL_DIR}/references/pipeline.md` only for shared role definitions and neutral-context rules.
 
 ## Hard constraints
 
-- Claude is the only writer.
-- Codex and Grok are read-only.
+- Review and plan roles are always read-only, whatever engine fills them. Invoke them only through the `*-ro.sh` wrappers (Codex) or `grok-ro.sh` (Grok), or fresh read-only `reviewer` subagents (Claude).
+- Only the writer (`code`) role edits the repo. It uses whichever engine `parallax.yaml` assigns: Claude (orchestrator/`worker`), or — for a non-Claude writer — the matching write-capable wrapper (`codex-rw.sh` / `grok-rw.sh`). Default config keeps every writer Claude.
 - Use bundled scripts for deterministic shell plumbing.
 - Do not manually construct raw `codex exec` or `grok` commands.
 - Do not use hooks.

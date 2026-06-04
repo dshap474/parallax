@@ -12,7 +12,8 @@ Use:
 2. Deterministic intake output.
 3. Current repo state.
 4. Available engines from preflight.
-5. Existing project guidance: `AGENTS.md`, `CLAUDE.md`, README, package files, tests.
+5. Engine-per-role config in `${CLAUDE_SKILL_DIR}/parallax.yaml` (which engines the chosen mode will use).
+6. Existing project guidance: `AGENTS.md`, `CLAUDE.md`, README, package files, tests.
 
 ## Mode selection
 
@@ -81,9 +82,11 @@ Do not edit files unless user explicitly approves fixes.
 
 ## Preflight policy
 
-After choosing a candidate mode:
+Preflight requirements follow the **engines actually used by the selected mode in `parallax.yaml`**, not a fixed per-mode list. The lines below are the defaults; if the config changes which engines a mode uses, adjust the flags to match (require the writer engine and any required review engine; make optional engines optional). The same CLI/auth backs an engine's `-ro` and `-rw` wrappers, so the read-only probe is a sufficient availability check for a non-Claude writer.
 
-- `quick`: no external preflight needed.
+After choosing a candidate mode (default-config flags shown):
+
+- `quick`: no external preflight needed (unless the config sets a non-Claude `code` writer — then require that engine).
 - `team`: run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --repo <repo> --require-codex`.
 - `panel`: run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --repo <repo> --require-codex --optional-grok`.
 - `ultra`: run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --repo <repo> --require-codex --require-grok`.

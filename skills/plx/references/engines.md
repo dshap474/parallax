@@ -1,14 +1,15 @@
 # Engine cookbook
 
-Every PLX mode assigns pipeline roles to **engines**. This file is the one place that holds *how to invoke each engine*. **To swap a model** for a role, point that mode row at a different engine here, or edit the engine's block. **To add a model**, add a new engine block here and reference it from `modes.md`.
+Every PLX mode assigns pipeline roles to **engines**. This file is the one place that holds *how to invoke each engine*. **The role→engine binding lives in `skills/plx/parallax.yaml`**, per mode — that is where you swap which engine fills a role. This file holds *how to invoke* each engine; **to add a model**, add an engine block here and reference its name from `parallax.yaml`.
 
-Parallax ships five engines: `claude-orch`, `reviewer`, `worker` (Claude), `codex-ro` (Codex CLI), and `composer-ro` / `grok-ro` (Grok CLI — optional Grok tier, see below).
+Parallax ships these engines: `claude-orch`, `reviewer`, `worker` (Claude), `codex-ro` / `codex-rw` (Codex CLI), and `composer-ro` / `grok-ro` / `grok-rw` (Grok CLI — optional Grok tier, see below). The `-ro` engines are read-only reviewers; the `-rw` engines are write-capable and are used **only** when `parallax.yaml` assigns the writer (`code`) role to that engine.
 
 ## Safety (non-negotiable)
 
-- **Codex:** every call must go through `scripts/codex-ro.sh`. The wrapper carries `--ignore-user-config` and an explicit read-only sandbox. Never inherit the user's global Codex config — it may default to full access.
-- **Grok / Composer:** every call must go through `scripts/grok-ro.sh`. The wrapper uses plan permission mode and `--cwd`. Never pass `--yolo`.
-- **Read-only roles** (plan-review, debug, correctness, refine *advisors*) use a read-only / plan sandbox. Only **writer roles** (Code, and the orchestrator's direct edits) get write access — and in Parallax the only writers are Claude.
+- **Role determines access, not engine.** Review and plan roles (plan-review, debug, correctness, refine *advisors*, plan panel) are **always read-only** for every engine. Only the writer (`code`) role gets write access, and exactly one engine fills it per mode.
+- **Codex review:** every review call must go through `scripts/codex-ro.sh` (`--ignore-user-config` + explicit read-only sandbox). Never inherit the user's global Codex config — it may default to full access.
+- **Grok / Composer review:** every review call must go through `scripts/grok-ro.sh` (plan permission mode + `--cwd`). Never pass `--yolo`.
+- **Non-Claude writer:** when `parallax.yaml` sets `code` to `codex`/`grok`, the writer call goes through `scripts/codex-rw.sh` (scoped `workspace-write` sandbox, `--ignore-user-config`) or `scripts/grok-rw.sh` (`acceptEdits` permission mode, `--cwd`). These write **only** within the target repo. Never `danger-full-access`, never `bypassPermissions`/`--yolo`, never `--dangerously-bypass-approvals-and-sandbox`. With the default config the writer is always Claude and these wrappers are never invoked.
 - Do not write Parallax state into the target repo. Use wrapper `--stdout` modes or shell temp directories created with `mktemp -d`, then clean them up before returning.
 
 ## Preflight (run once, before Stage 1)
@@ -51,7 +52,10 @@ A fresh, write-capable Claude subagent via the **Agent tool**, using Parallax's 
 ### `codex-ro` — Codex reviewer / advisor (read-only)
 Use `${CLAUDE_SKILL_DIR}/scripts/codex-ro.sh --repo <REPO> --prompt <PROMPT.md> --stdout`. Bump/keep `--effort high` for review work. If you need separate logs for debugging, use `--out` and `--log` inside a temp directory and clean it up.
 
-> **Availability caveat:** `gpt-5.3-codex` is **not available** on a ChatGPT-account Codex auth (API 400). Parallax only runs Codex **read-only** with `gpt-5.5`, so there is no writer-model availability risk — confirm `gpt-5.5` with the preflight probe.
+> **Availability caveat:** `gpt-5.3-codex` is **not available** on a ChatGPT-account Codex auth (API 400). Parallax runs Codex with `gpt-5.5` — confirm it with the preflight probe.
+
+### `codex-rw` — Codex writer (write, opt-in)
+Used **only** when `parallax.yaml` sets `code: codex`. Use `${CLAUDE_SKILL_DIR}/scripts/codex-rw.sh --repo <REPO> --prompt <SPEC.md> --stdout`. Same flags as `codex-ro` but with a scoped `workspace-write` sandbox — Codex edits files in `<REPO>` and nowhere else. Feed it the per-task spec only (neutral context), then the orchestrator reviews the diff exactly as it would review a `worker`'s output.
 
 ### `composer-ro` / `grok-ro` — Grok Composer read-only (verified 2026-06-03, grok 0.2.16)
 Used by `plx` panel and ultra modes. Read-only via the `grok-ro.sh` wrapper. Plain output is just the model's final message.
@@ -59,9 +63,15 @@ Used by `plx` panel and ultra modes. Read-only via the `grok-ro.sh` wrapper. Pla
 - **Verify by the output, not stderr.** Even on success, grok prints non-fatal `AuthorizationRequired` worker lines to stderr (background workers) — ignore them; the main worker completes and the final message lands on stdout.
 - **Verified:** plan-mode review returns a clean findings list and writes nothing (confirmed: target file unchanged, no new files). This is the read-only reviewer for the Grok tier.
 
+### `grok-rw` — Grok writer (write, **unsupported**)
+> **Status (verified 2026-06-04, grok 0.2.16): `code: grok` does not work.** Grok's file-editing runs in background workers that die with `AuthorizationRequired / Transport channel closed` even with the Bash sandbox disabled, so writes silently produce no edits. `scripts/grok-rw.sh` exists and **fails loudly** on that signature rather than reporting phantom success. Use `code: claude` or `code: codex` for the writer. Grok remains fully usable as a read-only **reviewer** (`grok-ro`), where only the main worker's text is needed.
+
+If the grok-CLI auth issue is later fixed: `${CLAUDE_SKILL_DIR}/scripts/grok-rw.sh --repo <REPO> --prompt <SPEC.md> --stdout` mirrors `grok-ro` but with `--permission-mode acceptEdits` instead of `plan`, and the same Bash-sandbox caveat applies (`dangerouslyDisableSandbox: true`).
+
 ---
 
 ## Notes on swapping
 
+- Swap engines per role in `skills/plx/parallax.yaml` (`modes.<mode>.<role>`), not in this file. This file only documents *how* each engine is invoked.
 - Reasoning/effort defaults live in each block above; a roster may note a per-combo override.
-- The **role**, not the engine, is what the pipeline references. As long as a writer role points at a writer engine and a review role points at a read-only engine, any model can fill any role.
+- The **role**, not the engine, is what the pipeline references. The writer (`code`) role takes one engine and is the only role that edits; review/plan roles take a list and are always read-only. Any model can fill any role within those constraints.

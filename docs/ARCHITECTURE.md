@@ -78,4 +78,4 @@ A future version may add a `PreToolUse` safety hook to block raw unsafe `codex` 
 
 ## References
 
-The reference briefs are duplicated into `skills/plx/references/` for runtime reliability. `_source/references/` is the canonical source; use `bash scripts/sync-references.sh` after editing it.
+The reference briefs live directly in `skills/plx/references/`, which is the path the installed skill reads at runtime.

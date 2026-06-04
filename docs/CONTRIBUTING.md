@@ -9,24 +9,13 @@ Parallax is a Claude Code plugin with one public skill, two subagents, shared re
 skills/plx/       public router skill, mode docs, references, scripts
 agents/           reviewer.md, worker.md
 docs/             human-facing docs
-_source/          canonical references
-scripts/          repo maintenance helpers
 ```
 
 Only the two manifests belong under `.claude-plugin/`. Do not put `skills/`, `agents/`, or hooks under `.claude-plugin/`.
 
 ## Shared References
 
-Each skill carries its own `references/` directory because plugin skill body text cannot reliably read one shared root-level reference directory.
-
-Edit `_source/references/`, then sync:
-
-```bash
-bash scripts/sync-references.sh
-git add _source/references skills/plx/references
-```
-
-Do not edit `skills/plx/references/` directly unless you are intentionally debugging sync output.
+The runtime reference briefs live in `skills/plx/references/`. Edit those files directly.
 
 ## Common Changes
 
@@ -43,7 +32,7 @@ Add deterministic helpers under `skills/plx/scripts/`. External model execution 
 
 ### Add or Change an Engine
 
-Update `_source/references/engines.md`, adjust wrapper scripts if needed, then sync references.
+Update `skills/plx/references/engines.md` and adjust wrapper scripts if needed.
 
 ### Add a Subagent
 
@@ -57,7 +46,7 @@ Run the acceptance checks from `docs/SPEC.md` before release. At minimum verify:
 - `skills/plx/scripts/*.sh` are executable
 - `parallax-intake.sh` prints repo metadata without creating files
 - `preflight.sh --repo <repo>` uses temporary files only
-- references sync cleanly
+- runtime references exist under `skills/plx/references/`
 - raw external model commands appear only in their wrappers outside docs
 - no hooks or `.parallax/` runtime state exists
 

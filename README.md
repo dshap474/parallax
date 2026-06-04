@@ -60,12 +60,10 @@ parallax/
 ├── .claude-plugin/{plugin.json, marketplace.json}
 ├── skills/plx/{SKILL.md, router.md, modes.md, references/, scripts/}
 ├── agents/{reviewer.md, worker.md}
-├── docs/{ARCHITECTURE, REQUIREMENTS, BENCHMARK, CONTRIBUTING, SPEC}.md
-├── _source/references/
-└── scripts/sync-references.sh
+└── docs/{ARCHITECTURE, REQUIREMENTS, BENCHMARK, CONTRIBUTING, SPEC}.md
 ```
 
-`_source/references/` is canonical. Run `bash scripts/sync-references.sh` after editing references so `skills/plx/references/` stays in sync.
+`skills/plx/references/` contains the runtime reference briefs. Edit those files directly.
 
 ## Status
 

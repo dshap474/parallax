@@ -24,7 +24,7 @@ Claude is the only writer. Codex and Grok are read-only reviewers.
 - 2 subagents: `reviewer`, `worker`
 - 5 modes: `quick`, `team`, `panel`, `ultra`, `review-only`
 - Deterministic scripts for intake, preflight, prompt assembly, and read-only external reviewers
-- Shared reference briefs synced from `_source/references/` into `skills/plx/references/`
+- Runtime reference briefs in `skills/plx/references/`
 
 ## Target Tree
 
@@ -43,8 +43,6 @@ Claude is the only writer. Codex and Grok are read-only reviewers.
 │       ├── modes.md
 │       ├── references/
 │       └── scripts/
-├── _source/references/
-├── scripts/sync-references.sh
 ├── docs/
 ├── .gitignore
 ├── LICENSE
@@ -135,12 +133,12 @@ no files or directories created
 test ! -d .parallax
 ```
 
-### Sync References
+### Runtime References
 
 ```bash
-bash scripts/sync-references.sh
-diff -q _source/references/pipeline.md skills/plx/references/pipeline.md
-diff -q _source/references/engines.md skills/plx/references/engines.md
+test -f skills/plx/references/pipeline.md
+test -f skills/plx/references/engines.md
+test -f skills/plx/references/review-briefs.md
 ```
 
 ### Runtime Wrapper Safety

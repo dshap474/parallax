@@ -3,9 +3,10 @@ set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT"
+ROOT="$(pwd)"
 
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
-RUN_DIR=".parallax/runs/$RUN_ID"
+RUN_DIR="$ROOT/.parallax/runs/$RUN_ID"
 
 mkdir -p "$RUN_DIR"/{prompts,outputs,logs,findings,artifacts}
 

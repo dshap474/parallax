@@ -21,8 +21,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$LANE" in
-  debug|correctness|refine|plan-review) ;;
-  *) echo "--lane must be debug, correctness, refine, or plan-review" >&2; exit 2 ;;
+  debug|correctness|refine|plan-review|plan) ;;
+  *) echo "--lane must be debug, correctness, refine, plan-review, or plan" >&2; exit 2 ;;
 esac
 
 [[ -s "$BRIEF" ]] || { echo "brief missing/empty: $BRIEF" >&2; exit 2; }
@@ -59,8 +59,13 @@ mkdir -p "$(dirname "$OUT")"
   fi
   echo
   echo "### Output shape"
-  echo "Return Task, Findings, Rationale, Suggested validation."
-  echo "Each finding must include Location, Object, Stage, Action, Severity, Confidence, Evidence, Why it matters, Main-agent instruction."
+  if [[ "$LANE" == "plan" ]]; then
+    echo "Return Task, Proposed plan, Risks, Acceptance checks."
+    echo "The proposed plan must be implementation-ready, scoped to the task, and must preserve Claude as the only writer."
+  else
+    echo "Return Task, Findings, Rationale, Suggested validation."
+    echo "Each finding must include Location, Object, Stage, Action, Severity, Confidence, Evidence, Why it matters, Main-agent instruction."
+  fi
 } > "$OUT"
 
 echo "OK prompt=$OUT"

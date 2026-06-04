@@ -1,12 +1,9 @@
 ---
 name: reviewer
 description: >-
-  Read-only code reviewer for the Polyphony pipeline. Use when a task needs an
-  independent review lane — debug, correctness, or plan critique — that returns
-  findings only and never edits. Spawn it fresh with neutral context (the artifact
-  under review + the lane brief), and it reports a structured, severity-ranked finding
-  list back to the caller. Ideal as a second, cross-checking reviewer alongside an
-  external model.
+  Read-only code reviewer for the Parallax pipeline. Use when a task needs an
+  independent review lane — debug, correctness, refine, or plan critique — that
+  returns findings only and never edits. Spawn it fresh with neutral context.
 model: inherit
 color: cyan
 tools: Read, Grep, Glob

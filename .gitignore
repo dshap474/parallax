@@ -1,6 +1,9 @@
-# Polyphony run artifacts (prompts, engine outputs, findings, logs)
-.polyphony/
+# Parallax run artifacts
+.parallax/
 
 # OS / editor cruft
 .DS_Store
 *.swp
+
+# Developer
+.project/

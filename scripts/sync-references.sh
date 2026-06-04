@@ -14,6 +14,7 @@ SRC="$ROOT/_source/references"
 [ -d "$SRC" ] || { echo "error: $SRC not found" >&2; exit 1; }
 
 for skill in "$ROOT"/skills/*/; do
+  [ -d "$skill" ] || continue
   dst="$skill/references"
   mkdir -p "$dst"
   rm -f "$dst"/*.md

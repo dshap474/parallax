@@ -1,10 +1,10 @@
-# Polyphony pipeline (role-based)
+# Parallax pipeline (role-based)
 
-The shared 6-stage pipeline every combo runs. It is written against **roles**, not models — each combo's ENGINE ROSTER assigns an engine to each role, and `references/engines.md` holds how to invoke each engine. Swapping a model never changes this file.
+The shared 6-stage pipeline every LLX mode uses. It is written against **roles**, not models — `router.md` chooses a mode, `modes.md` maps that mode to roles, and `references/engines.md` holds how to invoke each engine. Swapping a model never changes this file.
 
 **Roles:** Plan · Plan-review · Code · Refine · Debug review · Correctness review · Fix. Plan, plan/spec synthesis, and review/fix synthesis are always the orchestrator (`claude-orch`).
 
-Work artifacts (prompts, engine outputs, findings) go in a repo-local `.polyphony/` directory. Add `.polyphony/` to `.gitignore`.
+Work artifacts (prompts, engine outputs, findings) go in a repo-local `.parallax/runs/<run-id>/` directory. Add `.parallax/` to `.gitignore`.
 
 | # | Stage | Role | Edits repo? |
 |---|---|---|---|
@@ -27,7 +27,7 @@ Hand the plan to a **fresh** Plan-review engine to stress-test it *before any co
 
 ## Stage 3 — Code (Code engine, write)
 
-Delegate each coding task to the Code engine, feeding it the per-task spec. The Code engine may be a CLI writer, a fresh write-capable Claude worker (`worker`), or — for a small task — the orchestrator editing directly; the roster declares which. A fresh worker keeps the orchestrator's context lean and the first pass uncontaminated. Independent tasks run in parallel (one per task); dependent tasks run in order, passing prior outputs forward. Invoke per `references/engines.md`. For risky changes, run in a disposable `git worktree` and review the diff before merging.
+Delegate each coding task to the Code engine, feeding it the per-task spec. The Code engine is a fresh write-capable Claude worker (`worker`) or — for quick mode — the orchestrator editing directly. A fresh worker keeps the orchestrator's context lean and the first pass uncontaminated. Independent tasks run in parallel (one per task); dependent tasks run in order, passing prior outputs forward. Invoke per `references/engines.md`. For risky changes, run in a disposable `git worktree` and review the diff before merging.
 
 ## Stage 4 — Refine
 
@@ -68,7 +68,7 @@ Return a final summary: **Built** · **Plan changes** (Stage 2) · **Refine chan
 
 ## Stop rules
 
-Stop and ask if: the task is too small to justify the pipeline; the plan cannot be made precise enough for the Code engine; a required engine CLI is unavailable (`command -v codex`, or the grok binary for Grok-tier combos); or the user wants a plan only (use Stage 1 alone).
+Stop and ask if: the task is too small to justify the selected mode; the plan cannot be made precise enough for the Code engine; a required engine CLI is unavailable after `scripts/preflight.sh`; or the user wants a plan only (use Stage 1 alone).
 
 ## Non-goals
 

@@ -1,7 +1,7 @@
 ---
 name: worker
 description: >-
-  Write-capable implementation worker for the Polyphony pipeline. Use to write a
+  Write-capable implementation worker for the Parallax pipeline. Use to write a
   first-pass implementation from a precise per-task spec, keeping the orchestrator's
   context lean and the first pass uncontaminated. Hand it ONLY the spec (no orchestrator
   analysis, no review history); it implements, self-verifies with the repo's own checks,

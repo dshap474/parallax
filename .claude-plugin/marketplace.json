@@ -1,15 +1,15 @@
 {
-  "name": "polyphony-marketplace",
+  "name": "parallax-marketplace",
   "owner": { "name": "Daniel Shapiro", "url": "https://github.com/dshap474" },
-  "description": "Polyphony — a multi-model build pipeline plugin for Claude Code.",
+  "description": "Parallax — multi-model orchestration for Claude Code.",
   "plugins": [
     {
-      "name": "polyphony",
+      "name": "parallax",
       "source": "./",
-      "description": "Multi-model build pipeline: Claude writes, Codex and Grok review read-only.",
+      "description": "One llx skill routes coding tasks through Claude, Codex, and Grok workflows.",
       "version": "0.1.0",
       "category": "development",
-      "keywords": ["multi-model", "code-review", "orchestration"],
+      "keywords": ["multi-model", "code-review", "orchestration", "llx"],
       "license": "MIT"
     }
   ]

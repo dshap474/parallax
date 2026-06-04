@@ -2,7 +2,7 @@
 
 The user invoked `/parallax:llx`.
 
-Your job is to choose the smallest workflow that gives enough assurance.
+Your job is to choose the smallest workflow that gives enough assurance. This file owns mode selection and preflight policy only; `modes.md` owns executable workflow steps.
 
 ## Inputs
 
@@ -29,12 +29,6 @@ Use when all are true:
 - no external model review needed
 - user did not ask for multi-model review
 
-Pipeline:
-
-```text
-Plan briefly → Claude edits directly → run narrow verification → final
-```
-
 Do not call Codex or Grok.
 
 ### `team`
@@ -48,12 +42,6 @@ Use when task is substantial but ordinary:
 - bug fix with nontrivial surface
 - rewrite with clear scope
 - user asks to build something
-
-Pipeline mirrors `llx` team mode:
-
-```text
-Plan → Codex plan-review → worker code → Claude refine → Codex + Claude debug review → Codex correctness review → Claude fix → verify
-```
 
 Use Codex required. Grok not required.
 
@@ -69,12 +57,6 @@ Use when task is substantial and would benefit from extra review, but does not n
 - user asks for more scrutiny
 - Grok is available
 
-Pipeline:
-
-```text
-Plan → Codex plan-review → worker code → Claude refine → Codex + Grok + Claude review lanes → Claude fix → verify
-```
-
 Use Grok only if available. If Grok absent, degrade to `team` and say so.
 
 ### `ultra`
@@ -89,23 +71,11 @@ Use only when task is high-stakes or structurally large:
 - correctness-critical algorithm
 - user explicitly asks for max effort / ultra / full panel
 
-Pipeline mirrors `llx` ultra mode:
-
-```text
-Plan panel → spec synthesis → worker code → review panel → refactor synthesis → Claude refactor/fix → verify
-```
-
 Requires Codex. Requires Grok unless user accepts degradation. If Grok absent, degrade to `panel` or `team`.
 
 ### `review-only`
 
 Use when user asks to review, audit, critique, debug, inspect, or assess existing code without requesting edits.
-
-Pipeline:
-
-```text
-Assemble review pack → run debug/correctness/refine lanes as needed → synthesize findings → final
-```
 
 Do not edit files unless user explicitly approves fixes.
 
@@ -114,13 +84,15 @@ Do not edit files unless user explicitly approves fixes.
 After choosing a candidate mode:
 
 - `quick`: no external preflight needed.
-- `team`: run `preflight.sh --require-codex`.
-- `panel`: run `preflight.sh --require-codex --optional-grok`.
-- `ultra`: run `preflight.sh --require-codex --require-grok`.
-- `review-only`: run only the engines needed for the selected review lanes.
+- `team`: run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --run-dir <run-dir> --require-codex`.
+- `panel`: run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --run-dir <run-dir> --require-codex --optional-grok`.
+- `ultra`: run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --run-dir <run-dir> --require-codex --require-grok`.
+- `review-only`: run preflight with `--run-dir <run-dir>` only for the engines needed by the selected review lanes.
 
 If a required engine is unavailable, stop with a clear message.
 If an optional engine is unavailable, drop that lane and continue.
+
+`<run-dir>` is the absolute run directory printed by deterministic intake.
 
 ## Output discipline
 

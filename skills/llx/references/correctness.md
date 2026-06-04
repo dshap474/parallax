@@ -4,7 +4,7 @@ You are reviewing the target for **whether the implementation solves the right p
 
 Apply the first-principles requirement check: decide whether each behavior is required, extra, wrong-scope, missing, or ambiguous before recommending fixes.
 
-This brief is used in two stages, by whichever engine the combo's roster assigns (see the ENGINE ROSTER):
+This brief is used in two stages, by whichever engine the current mode selects:
 
 - **Plan-review (Stage 2)** — check the *plan/approach* against the task, before any code exists.
 - **Correctness review (Stage 5)** — check the *implementation* against the spec.

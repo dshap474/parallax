@@ -41,7 +41,7 @@ Plan -> Plan-review -> Code -> Refine -> Review -> Fix
 | Review | read-only reviewers | no |
 | Fix | orchestrator | yes |
 
-`skills/llx/router.md` chooses the mode. `skills/llx/modes.md` defines the workflow topology. `skills/llx/references/engines.md` defines engine invocation rules.
+`skills/llx/router.md` chooses the mode. `skills/llx/modes.md` is the canonical executable workflow authority. `skills/llx/references/pipeline.md` holds shared role invariants, and `skills/llx/references/engines.md` defines engine invocation rules.
 
 ## Modes
 
@@ -59,7 +59,7 @@ Plan -> Plan-review -> Code -> Refine -> Review -> Fix
 - Codex calls go through `skills/llx/scripts/codex-ro.sh`.
 - Grok calls go through `skills/llx/scripts/grok-ro.sh`.
 - Review prompts are assembled with neutral context only.
-- All artifacts stay in `.parallax/runs/<run-id>/`.
+- All artifacts stay in the absolute run directory created under `.parallax/runs/<run-id>/`.
 - There is no `.parallax/cache`.
 
 ## Hooks Policy

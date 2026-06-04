@@ -2,7 +2,7 @@
 
 You are reviewing the target for **coding errors, bugs, and robustness failures** — what is wrong with the code *as written*, not whether the right thing was built. Bugs that fail at runtime, in edge cases, under regression, or under load.
 
-This lane runs on the Debug engine(s) named in the combo roster — typically two, cross-model. Review independently; the orchestrator merges the reports and dedupes. A bug found by only one engine is still real — do not assume the other caught it.
+This lane runs on the Debug engine(s) selected by the current mode. Review independently; the orchestrator merges the reports and dedupes. A bug found by only one engine is still real — do not assume another lane caught it.
 
 Debug findings do not prove code should survive. When the buggy object may be deleted or rescoped by the **correctness** lane, phrase the finding as: *if this object survives synthesis, fix this bug.*
 

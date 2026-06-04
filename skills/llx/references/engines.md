@@ -9,13 +9,13 @@ Parallax ships five engines: `claude-orch`, `reviewer`, `worker` (Claude), `code
 - **Codex:** every call must go through `scripts/codex-ro.sh`. The wrapper carries `--ignore-user-config` and an explicit read-only sandbox. Never inherit the user's global Codex config — it may default to full access.
 - **Grok / Composer:** every call must go through `scripts/grok-ro.sh`. The wrapper uses plan permission mode and `--cwd`. Never pass `--yolo`.
 - **Read-only roles** (plan-review, debug, correctness, refine *advisors*) use a read-only / plan sandbox. Only **writer roles** (Code, and the orchestrator's direct edits) get write access — and in Parallax the only writers are Claude.
-- Work artifacts go in the repo-local `.parallax/runs/<run-id>/` dir. Prompts in, engine output captured to a file you then read.
+- Work artifacts go in the absolute run directory created by Parallax intake under `.parallax/runs/<run-id>/`. Prompts in, engine output captured to a file you then read.
 
 ## Preflight (run once, before Stage 1)
 
 Fail fast instead of discovering a broken engine mid-pipeline:
 
-- **CLI present:** run `scripts/preflight.sh` after `router.md` selects the candidate mode.
+- **CLI present:** run `${CLAUDE_SKILL_DIR}/scripts/preflight.sh --run-dir <run-dir> ...` after `router.md` selects the candidate mode.
 - **Model available:** `preflight.sh` runs per-run cheap probes and writes `preflight.md` plus `preflight.env`. A 400 means that model isn't available on this auth — switch models before proceeding.
 - **Degrade gracefully:** if an optional engine is absent, drop its review lane and say so — never crash the run.
 
@@ -32,8 +32,8 @@ Record per-stage seconds + tokens in the run's `results.md`. This isolates engin
 
 Feed only each engine's **final text** back to the orchestrator — never the raw event/JSON envelope. The envelope (`thought`, `sessionId`, `requestId`, `stopReason`, event frames) wastes input tokens and adds noise.
 
-- **codex** → read only the output file from `scripts/codex-ro.sh`; logs stay in `.parallax/runs/<run-id>/logs/`. Don't use `--json` (JSONL events).
-- **grok / composer** → read only the output file from `scripts/grok-ro.sh`; logs stay in `.parallax/runs/<run-id>/logs/`. Don't use JSON unless a future wrapper explicitly supports it.
+- **codex** → read only the output file from `scripts/codex-ro.sh`; logs stay in `<run-dir>/logs/`. Don't use `--json` (JSONL events).
+- **grok / composer** → read only the output file from `scripts/grok-ro.sh`; logs stay in `<run-dir>/logs/`. Don't use JSON unless a future wrapper explicitly supports it.
 
 ---
 

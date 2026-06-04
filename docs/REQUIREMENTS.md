@@ -13,7 +13,7 @@ Quick mode can run without Codex. Team mode requires Codex. Panel degrades if Gr
 
 ## Codex
 
-Install and authenticate the Codex CLI (`codex` on `PATH`). Parallax validates Codex per run with `skills/llx/scripts/preflight.sh --require-codex`.
+Install and authenticate the Codex CLI (`codex` on `PATH`). Parallax validates Codex per run with `skills/llx/scripts/preflight.sh --run-dir <run-dir> --require-codex`, where `<run-dir>` is the absolute path printed by intake.
 
 Parallax runs Codex only through `skills/llx/scripts/codex-ro.sh`, which uses:
 
@@ -21,7 +21,7 @@ Parallax runs Codex only through `skills/llx/scripts/codex-ro.sh`, which uses:
 - explicit read-only sandboxing
 - `--ephemeral`
 - output captured to a file under `.parallax/runs/<run-id>/outputs/`
-- logs captured under `.parallax/runs/<run-id>/logs/`
+- logs captured under `<run-dir>/logs/`
 
 `gpt-5.3-codex` is not available on some ChatGPT-account Codex auth. Parallax uses Codex as a read-only reviewer with `gpt-5.5`; there is no Codex writer dependency.
 
@@ -41,10 +41,10 @@ Never use `uv run` inside a sandbox; Homebrew `uv` can panic there.
 
 ## Run State
 
-Parallax does not use a cache in v0.1. Every run writes to:
+Parallax does not use a cache in v0.1. Every run writes to an absolute run directory under:
 
 ```text
-.parallax/runs/<run-id>/
+<repo>/.parallax/runs/<run-id>/
 ```
 
 Expected per-run files include `state.env`, `intake.md`, `preflight.env`, `preflight.md`, prompts, outputs, logs, findings, artifacts, and `results.md`.

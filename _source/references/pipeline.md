@@ -1,10 +1,10 @@
 # Parallax pipeline (role-based)
 
-The shared 6-stage pipeline every LLX mode uses. It is written against **roles**, not models — `router.md` chooses a mode, `modes.md` maps that mode to roles, and `references/engines.md` holds how to invoke each engine. Swapping a model never changes this file.
+Shared role definitions and neutral-context rules for LLX modes. This file is not the executable workflow authority — `skills/llx/modes.md` owns exact mode steps, and `references/engines.md` holds how to invoke each engine.
 
 **Roles:** Plan · Plan-review · Code · Refine · Debug review · Correctness review · Fix. Plan, plan/spec synthesis, and review/fix synthesis are always the orchestrator (`claude-orch`).
 
-Work artifacts (prompts, engine outputs, findings) go in a repo-local `.parallax/runs/<run-id>/` directory. Add `.parallax/` to `.gitignore`.
+Work artifacts (prompts, engine outputs, findings) go in the absolute run directory created by Parallax intake. Add `.parallax/` to `.gitignore`.
 
 | # | Stage | Role | Edits repo? |
 |---|---|---|---|
@@ -31,28 +31,29 @@ Delegate each coding task to the Code engine, feeding it the per-task spec. The 
 
 ## Stage 4 — Refine
 
-Improve the freshly-written code per `references/refine-guide.md` (delete-before-simplify, de-slop, optimize, align to repo conventions), scoped to the new code. **Two shapes — your roster declares which:**
+Improve the freshly-written code per `references/refine-guide.md` (delete-before-simplify, de-slop, optimize, align to repo conventions), scoped to the new code. **Two shapes — the selected mode declares which:**
 
 - **Direct** — an editor engine (e.g. `claude-orch`) reads the code and applies the improvements itself.
-- **Delegated** (single-writer combos) — read-only **advisor** engines produce refine findings using the refine criteria; the **orchestrator** synthesizes one refine plan; the **applier** engine (the writer) executes it. Advisors never edit; only the applier writes.
+- **Delegated** — read-only **advisor** engines produce refine findings using the refine criteria; the **orchestrator** synthesizes one refine plan; the **applier** engine (the writer) executes it. Advisors never edit; only the applier writes.
 
-Either shape ends with the **Structural Verdict** self-check (`references/refine-guide.md`) — stated by whoever finishes refine (the editor, or the orchestrator before delegating apply). Record it (`none` if clean). Because refine is handled here, there is **no refine lane** in Stage 5.
+Either shape ends with the **Structural Verdict** self-check (`references/refine-guide.md`) — stated by whoever finishes refine (the editor, or the orchestrator before delegating apply). Record it (`none` if clean). Some modes also use refine as a read-only review/advisory lane; `modes.md` is authoritative for that topology.
 
 ## Stage 5 — Review (read-only, parallel, neutral context)
 
 Spawn fresh reviewers that never saw the code being written, each with only neutral context + its lane brief. They return findings only; they do not edit.
 
-- **Debug** — the Debug engine(s) in the roster (typically two, cross-model), brief `references/debug.md`. Robustness is folded in; security is surface-only.
-- **Correctness** — the Correctness engine in the roster (one), brief `references/correctness.md`: does the implementation solve the right problem per the spec?
+- **Debug** — the Debug engine(s) selected by the mode, brief `references/debug.md`. Robustness is folded in; security is surface-only.
+- **Correctness** — the Correctness engine(s) selected by the mode, brief `references/correctness.md`: does the implementation solve the right problem per the spec?
+- **Refine advisory** — only when selected by the mode, brief `references/refine-guide.md`.
 
-**Launch every reviewer in a single orchestrator turn so they run concurrently** — background the CLI calls (one Bash call each, run in the background) and spawn the Claude reviewer-sub via the Agent tool in that same turn; then collect all results. This is the pipeline's one true parallel point — don't fire them serially. The **second debug lane is the dial**: keep it (cross-model) by default; drop it for a small, low-risk diff. Invoke CLI engines per `references/engines.md`. Wait for all. All reviewers use the Lane Brief Template + Finding Schema in `references/review-briefs.md`.
+**Launch reviewers in a single orchestrator turn when the selected mode has multiple independent lanes** — background the CLI calls and spawn Claude reviewer subagents in that same turn; then collect all results. Invoke CLI engines per `references/engines.md`. Wait for all. All reviewers use the Lane Brief Template + Finding Schema in `references/review-briefs.md`.
 
 ## Stage 6 — Fix
 
 Synthesize the reports into one coherent pass following the **Ordered Synthesis** in `references/review-briefs.md` (merge + dedupe debug reports, verify claims, correctness-first, then debug fixes on surviving code). **Two shapes — your roster declares which:**
 
 - **Direct** — the editor engine (`claude-orch`) applies the fixes itself, in one coherent pass.
-- **Delegated** (single-writer combos) — the orchestrator writes a fix plan; the applier engine (the writer) executes all edits.
+- **Delegated** — the orchestrator writes a fix plan; the applier engine (the writer) executes all edits.
 
 Re-run the narrowest existing tests / typecheck / lint the repo already provides — via the repo's venv binaries (`.venv/bin/ruff`, `.venv/bin/pytest`, …), never `uv run` in a sandbox (see `references/engines.md` → Verification). Report accepted vs rejected findings, severity-ranked.
 

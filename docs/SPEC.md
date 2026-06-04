@@ -77,11 +77,12 @@ The skill path `skills/llx/SKILL.md` maps to `/parallax:llx`.
 - No public mode-specific skills.
 - No hooks in v0.1.
 - No `.parallax/cache`.
-- All run artifacts go under `.parallax/runs/<run-id>/`.
+- Intake creates an absolute run directory under `<repo>/.parallax/runs/<run-id>/`.
 - Do not use `uv run` inside a sandbox.
 - Codex execution goes through `skills/llx/scripts/codex-ro.sh`.
 - Grok execution goes through `skills/llx/scripts/grok-ro.sh`.
-- Review prompts are built with `skills/llx/scripts/make-review-prompt.sh`.
+- Review and plan prompts are built with `skills/llx/scripts/make-review-prompt.sh`.
+- Every mode writes `results.md` in the run directory.
 
 ## Acceptance Criteria
 
@@ -111,14 +112,15 @@ test -x skills/llx/scripts/collect-outputs.sh
 ### Intake
 
 ```bash
-skills/llx/scripts/parallax-intake.sh
+RUN_DIR="$(skills/llx/scripts/parallax-intake.sh | awk -F': ' '/run_dir:/ {print $2}')"
+test "${RUN_DIR:0:1}" = "/"
 ```
 
 Expected:
 
 ```text
-.parallax/runs/<run-id>/state.env exists
-.parallax/runs/<run-id>/intake.md exists
+<run-dir>/state.env exists
+<run-dir>/intake.md exists
 printed run_dir
 printed codex_present yes/no
 printed grok_present yes/no
@@ -141,8 +143,8 @@ diff -q _source/references/engines.md skills/llx/references/engines.md
 ### Runtime Wrapper Safety
 
 ```bash
-grep -R "codex exec" . --exclude-dir=.git --exclude='codex-ro.sh' --exclude='*.md'
-grep -R "grok --" . --exclude-dir=.git --exclude='grok-ro.sh' --exclude='*.md'
+! grep -R "codex exec" . --exclude-dir=.git --exclude='codex-ro.sh' --exclude='*.md'
+! grep -R "grok --" . --exclude-dir=.git --exclude='grok-ro.sh' --exclude='*.md'
 ```
 
 Expected: no runtime script violations.
@@ -183,7 +185,7 @@ Quick mode smoke:
 /parallax:llx fix this typo in README
 ```
 
-Expected: `quick` mode, no Codex call, no Grok call, Claude edits directly.
+Expected: `quick` mode, no Codex call, no Grok call, Claude edits directly, and `results.md` is written.
 
 Ultra degradation smoke without Grok:
 
@@ -192,3 +194,10 @@ Ultra degradation smoke without Grok:
 ```
 
 Expected: clear Grok requirement or explicit degradation to panel/team; no empty Grok output treated as success.
+
+Prompt assembly smoke:
+
+```bash
+skills/llx/scripts/make-review-prompt.sh --lane plan --brief skills/llx/references/coding-spec-template.md --artifact README.md --task README.md --out /tmp/parallax-plan-prompt.md
+test -s /tmp/parallax-plan-prompt.md
+```

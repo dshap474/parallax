@@ -30,7 +30,7 @@ Then, in any repo:
 | `ultra` | major/high-risk changes | Claude + Codex + Grok panel |
 | `review-only` | reviews, audits, debugging without edits | read-only reviewers |
 
-Every reviewer is fresh, neutral-context, and read-only. All run artifacts stay in `.parallax/runs/<run-id>/`.
+Every reviewer is fresh, neutral-context, and read-only. All run artifacts stay under `.parallax/runs/<run-id>/` in the target repo.
 
 ## Requirements
 

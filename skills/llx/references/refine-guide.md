@@ -1,8 +1,8 @@
 # Refine criteria (Stage 4)
 
-The Code engine just wrote this. Coding agents over-engineer — they add wrappers, abstractions, configs, ceremony, and dead branches that nothing requires. Refine makes the code what the best engineer in the world would ship: the **shortest length that keeps full clarity and robustness.** This file defines the criteria; the combo's Refine role decides *who applies them*.
+The Code engine just wrote this. Coding agents over-engineer — they add wrappers, abstractions, configs, ceremony, and dead branches that nothing requires. Refine makes the code what the best engineer in the world would ship: the **shortest length that keeps full clarity and robustness.** This file defines the criteria; the current mode decides *who applies them*.
 
-**How refine is applied (see the combo's ENGINE ROSTER):**
+**How refine is applied:**
 
 - **Direct** — an editor engine reads the code and applies these improvements itself.
 - **Delegated** — read-only advisor engines produce refine findings using these criteria; the orchestrator synthesizes one refine plan; the writer engine applies it. Advisors never edit.
@@ -56,7 +56,7 @@ Keep an abstraction when it protects a real boundary, supports multiple concrete
 
 ## Structural Verdict (self-check before review)
 
-Before handing off to Stage 5, state a one-line **Structural Verdict** on the change as it now stands. This replaces the refine review lane — structural quality is owned here, not by the reviewers. Flag any presumptive blocker introduced or left behind (these are not nits):
+Before handing off to Stage 5, state a one-line **Structural Verdict** on the change as it now stands. Direct refine owns the first structural cleanup pass; panel and ultra modes may still run refine as a read-only advisory lane. Flag any presumptive blocker introduced or left behind (these are not nits):
 
 - a file pushed past ~1000 lines (decompose unless there's a strong stated reason)
 - feature-specific logic leaking into shared / general-purpose / canonical-layer modules

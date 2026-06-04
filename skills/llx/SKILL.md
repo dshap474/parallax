@@ -28,7 +28,6 @@ Use the intake above, then read:
 
 - `${CLAUDE_SKILL_DIR}/router.md`
 - `${CLAUDE_SKILL_DIR}/modes.md`
-- `${CLAUDE_SKILL_DIR}/references/pipeline.md`
 - `${CLAUDE_SKILL_DIR}/references/engines.md`
 
 Choose exactly one mode:
@@ -39,7 +38,7 @@ Choose exactly one mode:
 - `ultra`
 - `review-only`
 
-Then execute that mode.
+Then execute that mode from `${CLAUDE_SKILL_DIR}/modes.md`. Use `${CLAUDE_SKILL_DIR}/references/pipeline.md` only for shared role definitions and neutral-context rules.
 
 ## Hard constraints
 

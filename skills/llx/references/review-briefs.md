@@ -4,10 +4,11 @@ Stage 5 runs fresh reviewers that never saw the code being written, in parallel,
 
 | Lane | Reviewers | Brief |
 |---|---|---|
-| **Debug** | the Debug engine(s) in the combo roster (typically two, cross-model) | `references/debug.md` |
-| **Correctness** | the Correctness engine in the combo roster (one) | `references/correctness.md` |
+| **Debug** | the Debug engine(s) selected by the mode | `references/debug.md` |
+| **Correctness** | the Correctness engine(s) selected by the mode | `references/correctness.md` |
+| **Refine advisory** | only when selected by the mode | `references/refine-guide.md` |
 
-See the combo's **ENGINE ROSTER** for which engines fill these lanes, and `references/engines.md` for how to invoke them. There is **no refine lane** — Stage 4 already handled structural quality and ended with the Structural Verdict self-check.
+See `skills/llx/modes.md` for which engines fill these lanes, and `references/engines.md` for how to invoke them. Stage 4 owns direct structural cleanup; panel and ultra modes may also run refine as a read-only advisory lane.
 
 For **Stage 2** (plan review, before any code), use the **Correctness** brief against the plan instead of the code.
 
@@ -19,10 +20,10 @@ Build each reviewer's prompt from these labeled sections only. Anything outside 
 
 ```
 ### Lane
-<debug | correctness>
+<debug | correctness | refine>
 
 ### Lane reference
-<absolute path to references/debug.md or references/correctness.md — read this before reviewing>
+<absolute path to the lane brief — read this before reviewing>
 
 ### Artifacts
 <the code/diff under review — full files or git diff — or, in Stage 2, the plan>
@@ -45,8 +46,8 @@ Each reviewer returns `Task`, `Findings`, `Rationale`, `Suggested validation`. E
 
 - `Location` — file and symbol / code path
 - `Object` — the stable code object, behavior, branch, helper, abstraction, or call path
-- `Stage` — `requirements` (correctness) or `fix` (debug)
-- `Action` — `delete` | `fix` | `preserve` | `investigate` (debug findings use `fix`/`investigate`; correctness findings may also use `delete`/`preserve`)
+- `Stage` — `requirements` (correctness), `delete` / `simplify` (refine), or `fix` (debug)
+- `Action` — `delete` | `fix` | `simplify` | `preserve` | `investigate`
 - `Severity` — Critical | High | Medium | Low
 - `Confidence` — High | Medium | Low
 - `Evidence` — concrete code/spec references
@@ -59,17 +60,19 @@ If a reviewer finds nothing material, it says so explicitly.
 
 ## Ordered Synthesis (Stage 6)
 
-Turn the reports into one coherent fix pass. In **delegated** Fix combos the orchestrator produces a fix *plan* here and the writer engine applies it; in **direct** Fix combos the orchestrator edits. Either way the synthesis order is the same:
+Turn the reports into one coherent fix pass. In delegated Fix shapes the orchestrator produces a fix *plan* here and the writer engine applies it; in direct Fix shapes the orchestrator edits. Either way the synthesis order is the same:
 
 1. **Merge the debug reports.** Group by `Object`/`Location`; dedupe overlap. Where two debug engines **disagree** whether a bug is real, read the cited code yourself and decide — agreement raises confidence, but a bug found by only one engine can still be real.
 2. **Verify** important claims by reading the referenced code before acting on them.
 3. **Correctness first.** For each object, decide required / extra / wrong-scope / missing. Delete or rescope code that shouldn't exist *before* fixing bugs in it.
-4. **Then debug fixes** on surviving code only.
-5. Apply these precedence rules:
+4. **Then refine/simplify** surviving code only.
+5. **Then debug fixes** on surviving code only.
+6. Apply these precedence rules:
    - If correctness says a behavior is **extra or wrong-scope**, remove or rescope it even if a debug lane found a bug in it — mention the bug only as supporting context, not a fix step.
    - If correctness says a behavior is **required**, preserve it and fix its debug issues.
+   - If refine says to delete an object and no correctness lane proves it required, accept deletion when confidence is high; otherwise investigate.
    - If both debug reviewers agree on a bug in surviving code, fix it. If only one flagged it, verify by reading, then fix or reject with a stated reason.
-6. **Apply in a single coherent pass** — not per-finding patches. Resolve everything in one rewrite of the affected surface (one fix plan for the writer engine, in delegated combos).
-7. Re-run the narrowest existing tests / typecheck / lint the repo already provides. Do not invent new harnesses. If a useful gate exists but can't run, record the exact blocker; if no relevant tooling exists, say so.
+7. **Apply in a single coherent pass** — not per-finding patches. Resolve everything in one rewrite of the affected surface.
+8. Re-run the narrowest existing tests / typecheck / lint the repo already provides. Do not invent new harnesses. If a useful gate exists but can't run, record the exact blocker; if no relevant tooling exists, say so.
 
 Report which findings you accepted and which you rejected, with reasons, ordered by severity (Critical → Low).

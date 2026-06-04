@@ -55,7 +55,7 @@ Run the acceptance checks from `docs/SPEC.md` before release. At minimum verify:
 
 - only `/parallax:llx` is public
 - `skills/llx/scripts/*.sh` are executable
-- `parallax-intake.sh` creates `.parallax/runs/<run-id>/`
+- `parallax-intake.sh` prints an absolute run directory under `.parallax/runs/<run-id>/`
 - references sync cleanly
 - raw external model commands appear only in their wrappers outside docs
 - no hooks or `.parallax/cache` exist

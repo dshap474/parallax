@@ -1,0 +1,46 @@
+# Parallax test environment
+
+A small, deterministic harness for inspecting and smoke-testing the plugin. It does
+**not** run a self-improvement loop and does **not** spend model tokens by default —
+it checks that the plugin is wired correctly, shows what each skill *would* do, and
+exercises the shell scripts in throwaway repos.
+
+## What's here
+
+| File | What it does |
+|---|---|
+| `run.sh` | Runs the whole deterministic suite (static checks + script smoke) and prints `ALL GREEN` / failures. |
+| `check-plugin.sh` | **Static integrity** — every `${CLAUDE_PLUGIN_ROOT}` path resolves, config keys a skill names exist in `parallax.yaml`, referenced `plx:<engine>-<role>` subagents have agent files, manifests are valid JSON, scripts are executable. No model calls. |
+| `explain-skill.sh` | **Dry run** — prints what a skill would do: its config key, resolved engine bindings, preflight requirement, prompt blocks it composes, and the verbatim `## Pipeline` steps. Nothing executes. |
+| `smoke-scripts.sh` | Runs the real shell scripts (`parallax-intake`, `preflight`, `make-review-prompt`) against an **isolated tmp repo** built from `fixture/`. Model-free unless `--with-engines`. |
+| `fixture/` | A tiny throwaway target repo (a `calc.average()` with an empty-list bug). Copied to `mktemp` per run — never edited in place. |
+| `lib.sh` | Shared assert/counter helpers + the isolated-repo builder. |
+
+## Usage
+
+```bash
+# Everything deterministic, no engine calls:
+bash tests/run.sh
+
+# See what a skill would execute, without running it:
+bash tests/explain-skill.sh              # list skills
+bash tests/explain-skill.sh team-dev     # dry-run one
+bash tests/explain-skill.sh ultra-dev
+
+# Just the wiring check, or just the script smoke:
+bash tests/check-plugin.sh
+bash tests/smoke-scripts.sh
+
+# Also probe codex/grok auth (spends a tiny model call each, env-dependent):
+bash tests/smoke-scripts.sh --with-engines
+bash tests/run.sh --with-engines
+```
+
+## Scope / what this does NOT do
+
+These checks cover the **deterministic** layer: wiring, contracts, and the projected
+pipeline. They do **not** run a full skill end-to-end (a real `team-dev` run spawns
+codex/claude reviewers and edits a repo — that's a behavioral test, model-driven and
+non-deterministic). To watch a real pipeline, invoke the skill against the `fixture/`
+repo *copied to a tmp dir* by hand. The fixture's empty-list bug is there so a review
+lane has something real to catch.

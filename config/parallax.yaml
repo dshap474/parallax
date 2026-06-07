@@ -1,19 +1,21 @@
 # Parallax engine configuration
 #
-# Binds pipeline ROLES to ENGINES, per mode. The orchestrator reads this file
-# after intake and resolves each role to its configured engine before executing
-# the mode (see SKILL.md). The values below are the shipped defaults — they
-# reproduce Parallax's original behavior exactly. Edit a value to swap the engine
-# for that role in that mode; delete a key to fall back to the mode's documented
-# default in modes.md.
+# Binds pipeline ROLES to ENGINES, keyed by pipeline. Each skill names the key it
+# reads (team-dev -> `team`, ultra-dev -> `ultra`, review -> `review-only`,
+# dev -> `quick`). The orchestrator resolves each role to its engine before running
+# the pipeline (see the skill's "## Pipeline" section and `lib/pipeline.md`). The
+# values below are the shipped defaults. Edit a value to swap the engine for that
+# role; delete a key to fall back to the default named in the skill's pipeline.
 #
-# Engines:
-#   claude  — the writer (`code`) runs as the orchestrator/`worker` subagent;
-#             a review role runs as a fresh read-only `reviewer` subagent.
-#   codex   — Codex CLI. Review roles -> scripts/codex-ro.sh (read-only).
-#             Writer role -> scripts/codex-rw.sh (workspace-write sandbox).
-#   grok    — Grok CLI. Review roles -> scripts/grok-ro.sh (plan/read-only).
-#             Writer role -> scripts/grok-rw.sh (acceptEdits sandbox).
+# Engines: each is injected as a named subagent so the TUI shows which engine ran
+# a lane (review roles -> plx:<engine>-reviewer, code -> plx:<engine>-worker).
+#   claude  — review roles run as plx:claude-reviewer (read-only). The writer
+#             (`code`) is the orchestrator writing directly in solo/team, or
+#             plx:claude-worker in pipelines that delegate (ultra).
+#   codex   — Codex CLI. plx:codex-reviewer -> scripts/codex-ro.sh (read-only);
+#             plx:codex-worker -> scripts/codex-rw.sh (workspace-write sandbox).
+#   grok    — Grok CLI. plx:grok-reviewer -> scripts/grok-ro.sh (plan/read-only);
+#             plx:grok-worker -> scripts/grok-rw.sh (acceptEdits sandbox).
 #
 # Roles:
 #   code                — the WRITER. Takes exactly ONE engine: `claude` or `codex`.
@@ -31,8 +33,10 @@
 # Always the orchestrator (not configurable): Stage 1 plan synthesis, refine
 # synthesis, and fix synthesis. Review/plan roles are ALWAYS read-only regardless
 # of engine — only the `code` role ever writes.
+#
+# To get the old "panel" behavior (team + Grok), add grok to team's review lists.
 
-modes:
+pipelines:
   quick:
     code: claude
 
@@ -41,11 +45,6 @@ modes:
     code: claude
     review-debug: [codex, claude]
     review-correctness: [codex]
-
-  panel:
-    code: claude
-    review-debug: [codex, claude, grok]
-    review-correctness: [codex, grok]
 
   ultra:
     plan: [claude, codex, grok]

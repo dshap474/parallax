@@ -1,0 +1,61 @@
+flowchart TD
+    U(["👤 User types:  /plx:auto «task»  —  or an explicit /plx:* command"]) --> SKL["📋 SKILL.md loads the request"]
+    SKL --> IN["⚙️ Deterministic intake — parallax-intake.sh<br/>repo · branch · HEAD · dirty files · codex/grok present"]
+    IN --> RT{"🧭 Router (skills/auto) — pick the smallest<br/>pipeline that gives enough assurance"}
+
+    RT -->|"tiny · safe · one file"| P1["⚡ dev (solo)"]
+    RT -->|"normal build / refactor"| P2["👥 team-dev — default"]
+    RT -->|"major · high-stakes"| P3["🚀 ultra-dev"]
+    RT -->|"audit / debug — no edits"| P4["🔎 review"]
+
+    P1 --> SK["📋 the chosen skill IS the pipeline<br/>its '## Pipeline' composes prompt blocks in order"]
+    P2 --> SK
+    P3 --> SK
+    P4 --> SK
+
+    CFG[("🗂️ config/parallax.yaml<br/>engine-per-role, per pipeline<br/>→ injects plx:«engine»-reviewer / -worker")] -. "resolves each lane" .-> SK
+    GR[("📐 lib/pipeline.md<br/>shared grammar: roles · engine binding ·<br/>subagent injection · neutral context")] -. "governs" .-> SK
+
+    SK --> PF{"🩺 preflight.sh probes required engines<br/>dev skips · optional engine missing → degrade"}
+    PF -->|"required engine missing"| STOP(["❌ Stop with a clear message"])
+    PF -->|"engines ok / degraded"| PIPE
+
+    subgraph PIPE ["🔁 Block pipeline — each step plugs in a block from prompts/, lane engine from config"]
+      direction TB
+      S1["① prompts/plan.md — orchestrator: plan + per-task specs"] --> S2["② prompts/correctness.md — plan-review<br/>plx:«engine»-reviewer (read-only)"]
+      S2 --> S3["③ prompts/code.md — WRITE ✍️<br/>orchestrator direct (dev · team-dev)<br/>or plx:«engine»-worker (ultra-dev)"]
+      S3 --> S4["④ prompts/refine.md — orchestrator"]
+      S4 --> S5["⑤ prompts/debug.md + correctness.md — review<br/>read-only, parallel, plx:«engine»-reviewer"]
+      S5 --> S6["⑥ prompts/synthesis.md — orchestrator synthesizes + applies fixes"]
+    end
+
+    PIPE --> V["✅ Verify — run the repo's own checks<br/>ruff · pytest · npm · cargo …"]
+    V --> REP(["📝 Final chat report<br/>Built · Plan changes · Refine · Review findings · Fixes · Verification · Residual risk"])
+
+    subgraph LEG ["Pipeline → which blocks run (the composition)"]
+      direction TB
+      L1["⚡ dev:  ① Plan → ③ Code (Claude edits directly) → Verify"]
+      L2["👥 team-dev:  ① → ② (codex) → ③ Claude direct → ④ → ⑤ (codex + claude) → ⑥"]
+      L3["🚀 ultra-dev:  plan panel ① (claude + codex + grok) → ③ delegated worker → ⑤ full 3-engine review → ⑥"]
+      L4["🔎 review:  ⑤ Review blocks only — no Code, no Fix"]
+    end
+
+    classDef start fill:#0d3b66,stroke:#9ecbff,stroke-width:2px,color:#ffffff
+    classDef step fill:#13334d,stroke:#5fb0ff,stroke-width:1.5px,color:#eaf2ff
+    classDef decision fill:#7a5a00,stroke:#ffd166,stroke-width:2px,color:#fff8e1
+    classDef write fill:#0b4d2c,stroke:#5ce39b,stroke-width:2px,color:#eafff3
+    classDef review fill:#3a2d5c,stroke:#c2a8ff,stroke-width:2px,color:#f3edff
+    classDef stop fill:#5c1a1a,stroke:#ff8a8a,stroke-width:2px,color:#ffecec
+    classDef cfg fill:#14463f,stroke:#5fe0c8,stroke-width:1.5px,color:#e8fff9
+    classDef legend fill:#11161d,stroke:#6b7785,stroke-width:1px,color:#cdd6e0
+
+    class U,REP start
+    class SKL,IN,V,SK step
+    class RT,PF decision
+    class S3 write
+    class S2,S5 review
+    class STOP stop
+    class CFG,GR cfg
+    class P1,P2,P3,P4 step
+    class S1,S4,S6 step
+    class L1,L2,L3,L4 legend

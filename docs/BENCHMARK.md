@@ -26,7 +26,7 @@ The headline case: Codex reviewing Claude-authored code found a truthiness bug i
 
 ## Takeaway
 
-With a strong writer, the default `plx` team mode is enough for ordinary work. The heavier panel and ultra modes are for broader risk, ambiguity, or high-stakes changes.
+With a strong writer, the default `team-dev` pipeline is enough for ordinary work. The heavier `ultra-dev` pipeline (3-engine plan panel + full review) is for broader risk, ambiguity, or high-stakes changes.
 
 ## Caveats
 

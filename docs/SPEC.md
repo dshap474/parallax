@@ -4,28 +4,30 @@ Status: draft v0.1
 
 ## Purpose
 
-Parallax packages a multi-model coding workflow as an installable Claude Code plugin. It exposes one public skill:
+Parallax packages a multi-model coding workflow as an installable Claude Code plugin. Its primary entry point is the router skill:
 
 ```text
-/parallax:plx <task>
+/plx:auto <task>
 ```
 
-`plx` performs deterministic intake, then routes the task to one internal mode:
+The router (`plx:auto`) performs deterministic intake, then routes the task to one pipeline:
 
 ```text
-quick | team | panel | ultra | review-only
+dev | team-dev | ultra-dev | review
 ```
 
-Review and plan lanes are read-only for every engine; only the writer (`code`) role edits the repo. By default the writer is Claude, but `skills/plx/parallax.yaml` can bind it to Codex or Grok per mode (scoped-write wrappers).
+Explicit `/plx:*` commands can force a specific pipeline or a single engine without routing (see `docs/COMMANDS.md`).
+
+Review and plan lanes are read-only for every engine; only the writer (`code`) role edits the repo. By default the writer is Claude, but `config/parallax.yaml` can bind it to Codex or Grok per pipeline (scoped-write wrappers).
 
 ## What Ships
 
-- 1 public skill: `plx`
-- 2 subagents: `reviewer`, `worker`
-- 5 modes: `quick`, `team`, `panel`, `ultra`, `review-only`
-- 1 engine-per-role config: `skills/plx/parallax.yaml`
+- 1 router skill: `plx:auto` (auto-selects a pipeline)
+- Pipeline skills — each composes prompt blocks in order: implemented — `plx:dev`, `plx:team-dev`, `plx:ultra-dev`, `plx:review`; single-engine passthroughs — `plx:claude`, `plx:codex` (`plx:grok` scaffold); scaffolded — `plx:plan`, `plx:team-plan`, `plx:team-review`, `plx:ultra-plan`, `plx:ultra-review`
+- 6 subagents: `{claude,codex,grok}-{reviewer,worker}` — `-reviewer` lanes read-only, `-worker` lanes write-capable
+- 7 reusable step blocks in `prompts/`: `plan`, `coding-spec-template`, `code`, `refine`, `debug`, `correctness`, `synthesis`
+- 1 shared grammar (`lib/pipeline.md`) + 1 engine-per-role config (`config/parallax.yaml`), keyed by pipeline (`quick`, `team`, `ultra`, `review-only`)
 - Deterministic scripts for intake, preflight, prompt assembly, read-only external reviewers, and opt-in scoped-write external writers
-- Runtime reference briefs in `skills/plx/references/`
 
 ## Target Tree
 
@@ -35,16 +37,16 @@ Review and plan lanes are read-only for every engine; only the writer (`code`) r
 │   ├── plugin.json
 │   └── marketplace.json
 ├── agents/
-│   ├── reviewer.md
-│   └── worker.md
 ├── skills/
-│   └── plx/
-│       ├── SKILL.md
-│       ├── router.md
-│       ├── modes.md
-│       ├── parallax.yaml
-│       ├── references/
-│       └── scripts/
+│   ├── auto/
+│   │   ├── SKILL.md
+│   │   └── router.md
+│   └── …               # pipeline skills (team-dev, ultra-dev, review, dev, …)
+├── config/             # parallax.yaml — engine-per-role bindings
+├── scripts/            # *.sh helpers + engine wrappers
+├── prompts/            # reusable step blocks (plan, code, refine, debug, …)
+├── lib/                # pipeline.md (grammar), engines.md
+├── templates/
 ├── docs/
 ├── .gitignore
 ├── LICENSE
@@ -57,7 +59,7 @@ Review and plan lanes are read-only for every engine; only the writer (`code`) r
 
 ```json
 {
-  "name": "parallax",
+  "name": "plx",
   "version": "0.1.0"
 }
 ```
@@ -70,20 +72,20 @@ Review and plan lanes are read-only for every engine; only the writer (`code`) r
 }
 ```
 
-The skill path `skills/plx/SKILL.md` maps to `/parallax:plx`.
+The skill path `skills/auto/SKILL.md` maps to `/plx:auto`.
 
 ## Runtime Rules
 
-- No public mode-specific skills.
+- Each pipeline is a skill: its "## Pipeline" section composes `prompts/` blocks in order, with shared grammar in `lib/pipeline.md` and engine bindings in `config/parallax.yaml`. `/plx:auto` routes; `/plx:*` commands force a pipeline.
 - No hooks in v0.1.
 - No repo-local runtime state.
 - Do not create `.parallax/`, `.parallax/cache`, or `.parallax/runs`.
 - Intake prints repo metadata to stdout only.
 - Preflight and wrappers use shell temp directories only and clean them up before returning.
 - Do not use `uv run` inside a sandbox.
-- Codex execution goes through `skills/plx/scripts/codex-ro.sh`.
-- Grok execution goes through `skills/plx/scripts/grok-ro.sh`.
-- Review and plan prompts are built with `skills/plx/scripts/make-review-prompt.sh`.
+- Codex execution goes through `scripts/codex-ro.sh`.
+- Grok execution goes through `scripts/grok-ro.sh`.
+- Review and plan prompts are built with `scripts/make-review-prompt.sh`.
 - Final results are returned in chat, not written to `results.md`.
 
 ## Acceptance Criteria
@@ -91,30 +93,38 @@ The skill path `skills/plx/SKILL.md` maps to `/parallax:plx`.
 ### File Structure
 
 ```bash
-test -f skills/plx/SKILL.md
-test -f skills/plx/router.md
-test -f skills/plx/modes.md
-test -d skills/plx/references
-test -d skills/plx/scripts
-test ! -d skills/team-dev
-test ! -d skills/ultra-dev
+test -f skills/auto/SKILL.md
+test -f skills/auto/router.md
+test ! -e skills/auto/modes.md
+test -f config/parallax.yaml
+test -d scripts
+test -d prompts
+test -d lib
+test -f prompts/plan.md
+test -f prompts/code.md
+test -f prompts/synthesis.md
+test -f lib/pipeline.md
+test -d skills/team-dev
+test -d skills/ultra-dev
+test ! -d skills/auto/references
+test ! -d skills/auto/scripts
 ```
 
 ### Executable Scripts
 
 ```bash
-test -x skills/plx/scripts/parallax-intake.sh
-test -x skills/plx/scripts/preflight.sh
-test -x skills/plx/scripts/codex-ro.sh
-test -x skills/plx/scripts/grok-ro.sh
-test -x skills/plx/scripts/make-review-prompt.sh
-test ! -e skills/plx/scripts/collect-outputs.sh
+test -x scripts/parallax-intake.sh
+test -x scripts/preflight.sh
+test -x scripts/codex-ro.sh
+test -x scripts/grok-ro.sh
+test -x scripts/make-review-prompt.sh
+test ! -e scripts/collect-outputs.sh
 ```
 
 ### Intake
 
 ```bash
-INTAKE="$(skills/plx/scripts/parallax-intake.sh)"
+INTAKE="$(scripts/parallax-intake.sh)"
 printf '%s\n' "$INTAKE" | grep -q "repo: /"
 printf '%s\n' "$INTAKE" | grep -q "codex_present:"
 printf '%s\n' "$INTAKE" | grep -q "grok_present:"
@@ -138,9 +148,9 @@ test ! -d .parallax
 ### Runtime References
 
 ```bash
-test -f skills/plx/references/pipeline.md
-test -f skills/plx/references/engines.md
-test -f skills/plx/references/review-briefs.md
+test -f lib/pipeline.md
+test -f lib/engines.md
+test -f prompts/synthesis.md
 ```
 
 ### Runtime Wrapper Safety
@@ -158,18 +168,17 @@ After local install:
 
 ```text
 /plugin marketplace add ./
-/plugin install parallax@parallax-marketplace
+/plugin install plx@parallax-marketplace
 /reload-plugins
 ```
 
 Expected:
 
 ```text
-/parallax:plx appears
-/parallax:team-dev does not appear
-/parallax:ultra-dev does not appear
-parallax:reviewer appears in /agents
-parallax:worker appears in /agents
+/plx:auto appears
+/plx:team-dev, /plx:ultra-dev, /plx:review, /plx:claude, /plx:codex appear
+plx:claude-reviewer / plx:codex-reviewer / plx:grok-reviewer appear in /agents
+plx:claude-worker / plx:codex-worker / plx:grok-worker appear in /agents
 ```
 
 ### Smoke Tests
@@ -177,14 +186,14 @@ parallax:worker appears in /agents
 Preflight smoke:
 
 ```bash
-skills/plx/scripts/preflight.sh --repo "$(pwd)" --require-codex
+scripts/preflight.sh --repo "$(pwd)" --require-codex
 test ! -d .parallax
 ```
 
 Codex-only team smoke:
 
 ```text
-/parallax:plx make a small nontrivial change in this repo
+/plx:auto make a small nontrivial change in this repo
 ```
 
 Expected: `team` mode, Codex preflight passes, Grok absence does not crash, Codex review lanes run read-only, Claude writes/fixes, no `.parallax/` directory is created, and final results are returned in chat.
@@ -192,7 +201,7 @@ Expected: `team` mode, Codex preflight passes, Grok absence does not crash, Code
 Quick mode smoke:
 
 ```text
-/parallax:plx fix this typo in README
+/plx:auto fix this typo in README
 ```
 
 Expected: `quick` mode, no Codex call, no Grok call, Claude edits directly, no `.parallax/` directory is created, and final results are returned in chat.
@@ -200,7 +209,7 @@ Expected: `quick` mode, no Codex call, no Grok call, Claude edits directly, no `
 Ultra degradation smoke without Grok:
 
 ```text
-/parallax:plx use ultra mode to redesign this module
+/plx:auto use ultra mode to redesign this module
 ```
 
 Expected: clear Grok requirement or explicit degradation to panel/team; no empty Grok output treated as success.
@@ -208,8 +217,8 @@ Expected: clear Grok requirement or explicit degradation to panel/team; no empty
 Prompt assembly smoke:
 
 ```bash
-skills/plx/scripts/make-review-prompt.sh --lane plan --brief skills/plx/references/coding-spec-template.md --artifact README.md --task README.md --out /tmp/parallax-plan-prompt.md
+scripts/make-review-prompt.sh --lane plan --brief prompts/coding-spec-template.md --artifact README.md --task README.md --out /tmp/parallax-plan-prompt.md
 test -s /tmp/parallax-plan-prompt.md
-skills/plx/scripts/make-review-prompt.sh --lane plan --brief skills/plx/references/coding-spec-template.md --artifact README.md --task README.md --stdout >/tmp/parallax-plan-prompt-stdout.md
+scripts/make-review-prompt.sh --lane plan --brief prompts/coding-spec-template.md --artifact README.md --task README.md --stdout >/tmp/parallax-plan-prompt-stdout.md
 test -s /tmp/parallax-plan-prompt-stdout.md
 ```

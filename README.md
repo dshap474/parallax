@@ -2,39 +2,38 @@
 
 Multi-model coding-agent orchestration for Claude Code.
 
-By default Claude writes and Codex and Grok review read-only. One public skill, `plx`, routes each task to the smallest workflow that gives enough assurance. Which engine fills each pipeline role per mode is configurable in [`skills/plx/parallax.yaml`](skills/plx/parallax.yaml).
+By default Claude writes and Codex and Grok review read-only. The router skill `/plx:auto` reads each task and picks the smallest workflow that gives enough assurance; explicit `/plx:*` commands force a specific workflow or single engine (see [`docs/COMMANDS.md`](docs/COMMANDS.md)). Which engine fills each pipeline role per mode is configurable in [`config/parallax.yaml`](config/parallax.yaml).
 
 ## Install
 
 ```text
 /plugin marketplace add dshap474/parallax
-/plugin install parallax@parallax-marketplace
+/plugin install plx@parallax-marketplace
 /reload-plugins
 ```
 
 Then, in any repo:
 
 ```text
-/parallax:plx add a lollipop chart type to the plotting library
+/plx:auto add a lollipop chart type to the plotting library
 ```
 
 ## What happens
 
-`plx` performs deterministic intake, then selects one mode:
+`/plx:auto` performs deterministic intake, then selects one pipeline (each is a skill that composes prompt blocks in order):
 
-| Mode | Use case | Engines |
+| Pipeline | Use case | Engines |
 |---|---|---|
-| `quick` | small safe edits | Claude only |
-| `team` | default build workflow | Claude + Codex + Claude reviewer |
-| `panel` | extra review | Claude + Codex + optional Grok |
-| `ultra` | major/high-risk changes | Claude + Codex + Grok panel |
-| `review-only` | reviews, audits, debugging without edits | read-only reviewers |
+| `dev` | small safe edits, no review | Claude only |
+| `team-dev` | default build workflow | Claude + Codex + Claude reviewer |
+| `ultra-dev` | major/high-risk changes | Claude + Codex + Grok (plan panel + full review) |
+| `review` | reviews, audits, debugging without edits | read-only reviewers |
 
 Every reviewer is fresh, neutral-context, and read-only — regardless of which engine fills the lane. Parallax does not write repo-local runtime state; temporary prompt/output files live only in shell temp directories and are cleaned up before commands return.
 
 ### Configuring engines
 
-`skills/plx/parallax.yaml` binds each pipeline role to an engine, per mode. The shipped defaults reproduce the table above. Edit a `code` value to change which engine *writes* in that mode (`claude`, `codex`, or `grok`); edit the review-lane lists to change which engines review. Review and plan lanes are always read-only no matter the engine — only the `code` role writes, and only it can be a non-Claude engine.
+`config/parallax.yaml` binds each pipeline role to an engine, per pipeline. The shipped defaults reproduce the table above. Edit a `code` value to change which engine *writes* in that pipeline (`claude`, `codex`, or `grok`); edit the review-lane lists to change which engines review (e.g. add `grok` to `team`'s lists for the old "panel" behavior). Review and plan lanes are always read-only no matter the engine — only the `code` role writes, and only it can be a non-Claude engine.
 
 ## Requirements
 
@@ -42,10 +41,10 @@ Parallax orchestrates external model CLIs you install and authenticate yourself.
 
 | Tier | Install | Enables |
 |---|---|---|
-| Codex | `codex` CLI + auth | `plx` team mode |
-| Grok | `grok` CLI + auth | `plx` panel and ultra modes |
+| Codex | `codex` CLI + auth | `team-dev` (and Codex review lanes) |
+| Grok | `grok` CLI + auth | `ultra-dev` Grok lanes |
 
-Quick mode can run without Codex. Team mode requires Codex. Panel degrades if Grok is missing. Ultra requires Codex and Grok unless you explicitly degrade. See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
+`dev` runs without Codex. `team-dev` requires Codex. `ultra-dev` requires Codex and degrades (drops Grok lanes) if Grok is missing. See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
 
 ## Architecture
 
@@ -62,16 +61,21 @@ The public UX is one router skill. Internally, modes choose the workflow topolog
 ```text
 parallax/
 ├── .claude-plugin/{plugin.json, marketplace.json}
-├── skills/plx/{SKILL.md, router.md, modes.md, parallax.yaml, references/, scripts/}
-├── agents/{reviewer.md, worker.md}
+├── skills/auto/{SKILL.md, router.md}   # router; siblings are pipeline skills (team-dev, …)
+├── config/       # parallax.yaml — engine-per-role bindings
+├── scripts/      # *.sh helpers + engine wrappers
+├── prompts/      # reusable step blocks (plan, code, refine, debug, …)
+├── lib/          # pipeline.md (grammar), engines.md
+├── templates/
+├── agents/
 └── docs/{ARCHITECTURE, REQUIREMENTS, BENCHMARK, CONTRIBUTING, SPEC}.md
 ```
 
-`skills/plx/references/` contains the runtime reference briefs. Edit those files directly.
+`prompts/` contains the runtime review/spec briefs and `lib/` the shared reference docs. Edit those files directly.
 
 ## Status
 
-v0.1.0 draft. The package is structured around `/parallax:plx`; clean install and live smoke checks are the remaining release gates.
+v0.1.0 draft. The package is structured around `/plx:auto`; clean install and live smoke checks are the remaining release gates.
 
 ## License
 

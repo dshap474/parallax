@@ -6,16 +6,16 @@ Parallax orchestrates external model CLIs that you install and authenticate. It 
 
 | Tier | Install | Enables | Required? |
 |---|---|---|---|
-| Codex | `codex` CLI + auth | `plx` team mode | required for default multi-model mode |
-| Grok | `grok` CLI + auth | `plx` panel/ultra modes | optional |
+| Codex | `codex` CLI + auth | `team-dev` + Codex review lanes | required for default multi-model pipeline |
+| Grok | `grok` CLI + auth | `ultra-dev` Grok lanes | optional |
 
-Quick mode can run without Codex. Team mode requires Codex. Panel degrades if Grok is missing. Ultra requires Codex and Grok unless the run is explicitly degraded.
+The `dev` pipeline runs without Codex. `team-dev` requires Codex. `ultra-dev` requires Codex and degrades (drops Grok lanes) if Grok is missing. To add Grok to `team-dev`, list it in `team`'s review lanes in `config/parallax.yaml`.
 
 ## Codex
 
-Install and authenticate the Codex CLI (`codex` on `PATH`). Parallax validates Codex with `skills/plx/scripts/preflight.sh --repo <repo> --require-codex`, where `<repo>` is the absolute repo path printed by intake.
+Install and authenticate the Codex CLI (`codex` on `PATH`). Parallax validates Codex with `scripts/preflight.sh --repo <repo> --require-codex`, where `<repo>` is the absolute repo path printed by intake.
 
-Parallax runs Codex only through `skills/plx/scripts/codex-ro.sh`, which uses:
+Parallax runs Codex only through `scripts/codex-ro.sh`, which uses:
 
 - `--ignore-user-config`
 - explicit read-only sandboxing
@@ -27,9 +27,9 @@ Parallax runs Codex only through `skills/plx/scripts/codex-ro.sh`, which uses:
 
 ## Grok
 
-Install and authenticate the Grok CLI (`grok` on `PATH`) to enable panel and ultra modes.
+Install and authenticate the Grok CLI (`grok` on `PATH`) to enable the `ultra-dev` Grok lanes (and Grok review lanes in any pipeline configured to use them).
 
-Parallax runs Grok only through `skills/plx/scripts/grok-ro.sh`, which uses plan permission mode and requires non-empty output to count as success. The wrapper supports stdout mode for normal reviewer calls and temporary output/log files for debug cases.
+Parallax runs Grok only through `scripts/grok-ro.sh`, which uses plan permission mode and requires non-empty output to count as success. The wrapper supports stdout mode for normal reviewer calls and temporary output/log files for debug cases.
 
 When invoking the Grok wrapper from Claude Code, disable the Claude Bash sandbox for that wrapper call only. Existing verification showed Grok can silently no-op inside that sandbox while still exiting 0. Treat non-empty output as success; stderr may contain non-fatal worker noise.
 

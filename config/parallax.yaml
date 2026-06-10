@@ -1,76 +1,47 @@
 # Parallax engine configuration
 #
 # Binds pipeline ROLES to ENGINES, keyed by pipeline. Each skill names the key it
-# reads (dev -> `quick`, team-dev -> `team`, ultra-dev -> `ultra`, review ->
-# `review-only`, plus the plan/review tiers below). Each skill's SKILL.md is fully
-# self-contained — it documents its own pipeline, lane briefs, and engine
-# invocations — and resolves each role to its engine from this file before running.
-# The values below are the shipped defaults. Edit a value to swap the engine for
-# that role; delete a key to fall back to the default named in the skill.
+# reads (dev -> `dev`, plan -> `plan`, review -> `review`). Each skill's SKILL.md is
+# fully self-contained — it documents its own pipeline steps and handoffs — and
+# resolves each role to its engine from this file before running. The values below
+# are the shipped defaults. Edit a value to swap the engine for that role.
 #
-# Engines: each is injected as a named subagent so the TUI shows which engine ran
-# a lane (review roles -> plx:<engine>-reviewer, code -> plx:<engine>-worker).
-#   claude  — review roles run as plx:claude-reviewer (read-only). The writer
-#             (`code`) is the orchestrator writing directly in solo/team, or
-#             plx:claude-worker in pipelines that delegate (ultra).
-#   codex   — Codex CLI. plx:codex-reviewer -> bin/plx-codex-ro (read-only);
-#             plx:codex-worker -> bin/plx-codex-rw (workspace-write sandbox).
-#   grok    — Grok CLI. plx:grok-reviewer -> bin/plx-grok-ro (read-only via the
-#             kernel `read-only` sandbox); plx:grok-worker -> bin/plx-grok-rw
-#             (writes confined to the repo via the kernel `workspace` sandbox).
+# Engines resolve to named subagent personas, so the TUI shows which engine ran a
+# lane. Each persona carries its own rubric + operator manual — the orchestrator
+# hands it only the repo path and a task-specific brief:
 #
-# Roles:
-#   code                — the WRITER. Takes exactly ONE engine: `claude`, `codex`,
-#                         or `grok`. Whichever is set here EDITS the repo for the Code
-#                         stage; a non-Claude writer routes the per-task spec through
-#                         the matching plx-*-rw tool, then the orchestrator reviews
-#                         the diff. (`code: grok` writes via grok's kernel `workspace`
-#                         sandbox — edits confined to the repo; verified grok 0.2.32.)
-#   plan / plan-review  — read-only plan stress-test lanes. Take a LIST.
-#   review-debug        — read-only debug review lanes. Take a LIST.
-#   review-correctness  — read-only correctness review lanes. Take a LIST.
-#   review-refine       — optional read-only refine-advisory lanes. Take a LIST.
+#   role                engine -> persona
+#   plan                claude -> plx:claude-planner (Opus, read-only)
+#                       codex  -> plx:codex-planner  (drives bin/plx-codex-ro)
+#   code                claude -> plx:claude-worker  (Opus, edits the repo)
+#                       codex  -> plx:codex-worker   (drives bin/plx-codex-rw)
+#                       grok   -> plx:grok-worker    (drives bin/plx-grok-rw)
+#   review-debug        codex  -> plx:codex-debug-reviewer        (plx-codex-ro)
+#   review-correctness  codex  -> plx:codex-correctness-reviewer  (plx-codex-ro)
+#   review-refine       codex  -> plx:codex-refine-reviewer       (plx-codex-ro)
 #
-# Always the orchestrator (not configurable): Stage 1 plan synthesis, refine
-# synthesis, and fix synthesis. Review/plan roles are ALWAYS read-only regardless
-# of engine — only the `code` role ever writes.
+# Rules:
+#   - `code` takes exactly ONE engine — one writer at a time, always.
+#   - plan / review-* roles take LISTS and are always read-only, whatever engine
+#     fills them.
+#   - Synthesis (plan merge, finding triage, repair planning) is always the
+#     orchestrator and never configurable.
 #
-# To get the old "panel" behavior (team + Grok), add grok to team's review lists.
+# Disabled pipelines (team-*, ultra-*) have no keys here; they are regenerated
+# from the dev spec in .project/PLX.md when revived.
 
 pipelines:
-  quick:
+  dev:
+    plan: [claude, codex]
     code: claude
-
-  team:
-    plan-review: [codex]
-    code: claude
-    review-debug: [codex, claude]
+    review-debug: [codex]
     review-correctness: [codex]
+    review-refine: [codex]
 
-  ultra:
-    plan: [claude, codex, grok]
-    code: claude
-    review-debug: [claude, codex, grok]
-    review-correctness: [claude, codex, grok]
-    review-refine: [codex, grok]
-
-  review-only:
-    review-debug: [codex, claude]
-    review-correctness: [codex, claude]
-    review-refine: [codex, claude]
-
-  team-plan:
+  plan:
     plan: [claude, codex]
 
-  ultra-plan:
-    plan: [claude, codex, grok]
-
-  team-review:
-    review-debug: [codex, claude]
-    review-correctness: [codex, claude]
-    review-refine: [codex, claude]
-
-  ultra-review:
-    review-debug: [claude, codex, grok]
-    review-correctness: [claude, codex, grok]
-    review-refine: [claude, codex, grok]
+  review:
+    review-debug: [codex]
+    review-correctness: [codex]
+    review-refine: [codex]

@@ -25,6 +25,7 @@ list_skills() {
   echo "Skills (pass one as an argument to dry-run it):"
   for d in "$PLX_ROOT"/skills/*/; do
     name="$(basename "$d")"
+    [ -f "$d/SKILL.md" ] || continue
     desc="$(desc_of "$d/SKILL.md" | cut -c1-90)"
     printf '  %-12s %s\n' "$name" "$desc"
   done
@@ -62,7 +63,7 @@ echo
 if [ "$IS_ROUTER" -eq 1 ]; then
   echo "  type: ROUTER — selects one pipeline per its '## Pipeline selection' section, then runs that skill's pipeline"
   echo "  routes to:"
-  grep -oE '`(dev|team-dev|ultra-dev|review)`(\*\*)? \(config key `[a-z-]+`\)' "$SKILL" | sed 's/\*\*//; s/^/    /' || true
+  grep -oE '`(dev|plan|review)`(\*\*)? \(config key `[a-z-]+`\)' "$SKILL" | sed 's/\*\*//; s/^/    /' || true
 elif [ -n "$KEY" ]; then
   echo "  config key: $KEY  (config/parallax.yaml)"
   echo "  resolved engine bindings:"

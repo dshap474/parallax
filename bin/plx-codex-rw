@@ -28,7 +28,7 @@ Flags:
   --stdout              print Codex's final message to stdout; temp files auto-cleaned
   --out <f> --log <f>   instead of --stdout: write final message / full log to files
   --model <m>           default gpt-5.5 (gpt-5.3-codex is NOT available on ChatGPT-account auth)
-  --effort <e>          model_reasoning_effort: low | medium | high (default high)
+  --effort <e>          model_reasoning_effort: low | medium | high | xhigh (default high)
   --help                this text
 
 After it returns:

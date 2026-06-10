@@ -1,14 +1,14 @@
 # Review & Synthesis (Stages 5 & 6)
 
-Stage 5 runs fresh reviewers that never saw the code being written, in parallel, read-only. Each gets **only neutral context** (Neutral Context Rule in `lib/pipeline.md`) plus its lane brief. They return findings only; they do not edit.
+Stage 5 runs fresh reviewers that never saw the code being written, in parallel, read-only. Each gets **only neutral context** (the Neutral Context Rule each skill states inline) plus its lane brief. They return findings only; they do not edit.
 
 | Lane | Reviewers | Brief |
 |---|---|---|
-| **Debug** | the Debug engine(s) selected by the mode | `prompts/debug.md` |
-| **Correctness** | the Correctness engine(s) selected by the mode | `prompts/correctness.md` |
-| **Refine advisory** | only when selected by the mode | `prompts/refine.md` |
+| **Debug** | the Debug engine(s) selected by the mode | `base-prompts/debug.md` |
+| **Correctness** | the Correctness engine(s) selected by the mode | `base-prompts/correctness.md` |
+| **Refine advisory** | only when selected by the mode | `base-prompts/refine.md` |
 
-See the active skill's "## Pipeline" section and `config/parallax.yaml` for which engines fill these lanes, and `lib/engines.md` for how to invoke them. Stage 4 owns direct structural cleanup; the ultra pipeline also runs refine as a read-only advisory lane.
+See the active skill's "## Pipeline" section and `config/parallax.yaml` for which engines fill these lanes, and the skill's "Running a lane" section for how to invoke them. Stage 4 owns direct structural cleanup; the ultra pipeline also runs refine as a read-only advisory lane.
 
 For **Stage 2** (plan review, before any code), use the **Correctness** brief against the plan instead of the code.
 

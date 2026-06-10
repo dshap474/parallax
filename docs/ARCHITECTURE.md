@@ -43,11 +43,11 @@ Plan -> Plan-review -> Code -> Refine -> Review -> Fix
 | Review | read-only reviewers | no |
 | Fix | orchestrator | yes |
 
-`skills/auto/router.md` selects the pipeline. **Each skill owns its pipeline** — the ordered block composition lives in that skill's "## Pipeline" section. `lib/pipeline.md` holds the shared grammar (role invariants, engine binding, subagent injection, neutral-context rule); `lib/engines.md` defines engine invocation rules; `prompts/` holds the reusable step blocks; `config/parallax.yaml` binds each role to an engine per pipeline. The orchestrator resolves the binding before executing.
+`skills/auto/SKILL.md` selects the pipeline (its selection logic is written out inline). **Each skill IS its pipeline, written out in full** — the ordered steps, lane briefs, prompt templates, engine invocation rules, and neutral-context rule all live inline in that skill's `SKILL.md`. There are no shared prompt files and no script injection; the only external inputs are `config/parallax.yaml` (role→engine bindings, resolved before executing) and the engine API tools in `bin/` (on the Bash PATH while the plugin is enabled, so skills and agents invoke them by bare name).
 
 ## Pipelines
 
-Each pipeline is a skill that composes prompt blocks in order. The router auto-selects one; explicit `/plx:*` commands force one (see [`COMMANDS.md`](COMMANDS.md)).
+Each pipeline is a fully self-contained skill. The router auto-selects among the four below; explicit `/plx:*` commands force any pipeline, including the plan/review tiers (see [`COMMANDS.md`](COMMANDS.md)).
 
 | Pipeline (skill) | Config key | Purpose | External engines |
 |---|---|---|---|
@@ -55,14 +55,19 @@ Each pipeline is a skill that composes prompt blocks in order. The router auto-s
 | `team-dev` | `team` | default substantial work | Codex |
 | `ultra-dev` | `ultra` | major/high-risk changes; plan panel + full review | Codex + optional Grok |
 | `review` | `review-only` | audit/debug/critique without edits | selected read-only lanes |
+| `plan` | — | solo plan + per-task specs, no build | none |
+| `team-plan` | `team-plan` | plan panel (Claude+Codex) → synthesized plan | Codex |
+| `ultra-plan` | `ultra-plan` | Socratic interview → 3-engine plan panel → staged plan | Codex + optional Grok |
+| `team-review` | `team-review` | debug+correctness audit across Codex+Claude | Codex |
+| `ultra-review` | `ultra-review` | full 3-engine panel across all review lanes | Codex + optional Grok |
 
 (For "team + extra scrutiny", add Grok to the team review lists in `config/parallax.yaml` — the old `panel`.)
 
 ## Safety Model
 
 - Role determines repo access, not engine. Review and plan lanes are read-only for every engine; only the writer (`code`) role edits the repo, and exactly one engine fills it per pipeline.
-- Codex/Grok review calls go through `scripts/codex-ro.sh` / `grok-ro.sh` (read-only).
-- A non-Claude writer (when `config/parallax.yaml` sets `code: codex`/`grok`) goes through `scripts/codex-rw.sh` (scoped `workspace-write`) / `grok-rw.sh` (`acceptEdits`) — edits confined to the target repo, never full-access/bypass. Default config keeps Claude the sole writer.
+- Codex/Grok review calls go through `bin/plx-codex-ro` / `bin/plx-grok-ro` (read-only).
+- A non-Claude writer (when `config/parallax.yaml` sets `code: codex`/`grok`) goes through `bin/plx-codex-rw` (scoped `workspace-write`) / `bin/plx-grok-rw` (kernel `workspace` sandbox) — edits confined to the target repo, never full-access. Default config keeps Claude the sole writer.
 - Review prompts are assembled with neutral context only.
 - Parallax does not create `.parallax/`, `.parallax/cache`, or `.parallax/runs`.
 - Runtime prompts, logs, and external model outputs are chat context or temp files that are cleaned up before commands return.
@@ -74,8 +79,8 @@ Parallax v0.1 does not install hooks.
 Safety comes from:
 
 - one public `plx` skill
-- deterministic wrapper scripts
-- read-only Codex/Grok review invocations; scoped-write wrappers for an opt-in non-Claude writer
+- a deterministic engine API (`bin/plx-*`): uniform flags, uniform exit codes (0 ok · 1 engine failure · 2 usage error · 3 auth needed), `--help` manuals, safety flags pinned in code
+- read-only Codex/Grok review invocations; scoped-write tools for an opt-in non-Claude writer
 - no repo-local runtime state
 - only the `code` role writes (Claude by default)
 
@@ -83,4 +88,4 @@ A future version may add a `PreToolUse` safety hook to block raw unsafe `codex` 
 
 ## References
 
-The review/spec briefs live in `prompts/` and the shared reference docs (`engines.md`, `pipeline.md`) in `lib/` — the root-level paths the installed skill reads at runtime.
+`base-prompts/` holds the base prompt texts (plan, code, refine, debug, correctness, synthesis, coding-spec-template) as an **editable reference library only** — nothing reads it at runtime. Each skill carries its own inline copy; editing a base prompt does not change the skills.

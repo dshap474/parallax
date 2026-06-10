@@ -2,7 +2,7 @@
 
 Multi-model coding-agent orchestration for Claude Code.
 
-By default Claude writes and Codex and Grok review read-only. The router skill `/plx:auto` reads each task and picks the smallest workflow that gives enough assurance; explicit `/plx:*` commands force a specific workflow or single engine (see [`docs/COMMANDS.md`](docs/COMMANDS.md)). Which engine fills each pipeline role per mode is configurable in [`config/parallax.yaml`](config/parallax.yaml).
+By default Claude writes and Codex reviews read-only (Grok joins as a read-only reviewer in `ultra-dev`). The router skill `/plx:auto` reads each task and picks the smallest workflow that gives enough assurance; explicit `/plx:*` commands force a specific workflow or single engine (see [`docs/COMMANDS.md`](docs/COMMANDS.md)). Which engine fills each pipeline role per mode is configurable in [`config/parallax.yaml`](config/parallax.yaml) — any of Claude, Codex, or Grok can be the writer (non-Claude writers edit inside a kernel-enforced per-repo sandbox).
 
 ## Install
 
@@ -20,7 +20,7 @@ Then, in any repo:
 
 ## What happens
 
-`/plx:auto` performs deterministic intake, then selects one pipeline (each is a skill that composes prompt blocks in order):
+`/plx:auto` establishes repo ground truth (Bootstrap), then selects one pipeline (each is a fully self-contained skill — its steps, lane briefs, and engine invocations are all written out in its own `SKILL.md`):
 
 | Pipeline | Use case | Engines |
 |---|---|---|
@@ -54,24 +54,23 @@ Parallax keeps a role-based pipeline:
 Plan -> Plan-review -> Code -> Refine -> Review -> Fix
 ```
 
-The public UX is one router skill. Internally, modes choose the workflow topology. The core safety model: review and plan lanes are read-only for every engine, invoked only through the bundled `*-ro.sh` wrappers; only the writer (`code`) role edits the repo, and a non-Claude writer goes through a scoped-write wrapper (`*-rw.sh`) that confines edits to the target repo. Default config keeps Claude the sole writer. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+The public UX is one router skill. Internally, modes choose the workflow topology. The core safety model: review and plan lanes are read-only for every engine, invoked only through the plugin's read-only engine tools (`plx-codex-ro` / `plx-grok-ro`, on PATH from `bin/`); only the writer (`code`) role edits the repo, and a non-Claude writer goes through a scoped-write tool (`plx-codex-rw` / `plx-grok-rw`) that confines edits to the target repo. Default config keeps Claude the sole writer. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Repo layout
 
 ```text
 parallax/
 ├── .claude-plugin/{plugin.json, marketplace.json}
-├── skills/auto/{SKILL.md, router.md}   # router; siblings are pipeline skills (team-dev, …)
+├── skills/       # one dir per command; each SKILL.md is fully self-contained
 ├── config/       # parallax.yaml — engine-per-role bindings
-├── scripts/      # *.sh helpers + engine wrappers
-├── prompts/      # reusable step blocks (plan, code, refine, debug, …)
-├── lib/          # pipeline.md (grammar), engines.md
+├── bin/          # engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill)
+├── base-prompts/ # reference prompt library (plan, code, refine, debug, …) — storage only, not loaded at runtime
 ├── templates/
 ├── agents/
 └── docs/{ARCHITECTURE, REQUIREMENTS, BENCHMARK, CONTRIBUTING, SPEC}.md
 ```
 
-`prompts/` contains the runtime review/spec briefs and `lib/` the shared reference docs. Edit those files directly.
+Each `skills/<name>/SKILL.md` carries its entire pipeline — lane briefs, prompt templates, engine invocations — with no pointers to other prompt files and no script injection. `base-prompts/` holds the base prompt texts as an editable reference library; changing one does not change the skills (update the skill by hand).
 
 ## Status
 

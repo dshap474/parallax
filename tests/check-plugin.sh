@@ -20,13 +20,18 @@ for s in "$PLX_ROOT"/skills/*/SKILL.md; do
   if grep -qE '^name:[[:space:]]*"?plx::' "$s"; then _pass "$rel"; else _fail "no plx:: name in $rel"; fi
 done
 
-_head "Referenced \${CLAUDE_PLUGIN_ROOT} paths resolve"
-while IFS= read -r ref; do
-  [ -n "$ref" ] || continue
-  rel="${ref#\$\{CLAUDE_PLUGIN_ROOT\}/}"
-  if [ -e "$PLX_ROOT/$rel" ]; then _pass "$rel"; else _fail "dangling ref: $rel"; fi
-done < <(grep -rhoE '\$\{CLAUDE_PLUGIN_ROOT\}/[A-Za-z0-9._/-]+' \
-           "$PLX_ROOT/skills" "$PLX_ROOT/lib" "$PLX_ROOT/agents" 2>/dev/null | sort -u)
+_head "No \${CLAUDE_PLUGIN_ROOT} in skills/agents (unreliable in prose — bin/ tools are on PATH)"
+if grep -rq 'CLAUDE_PLUGIN_ROOT' "$PLX_ROOT/skills" "$PLX_ROOT/agents" 2>/dev/null; then
+  _fail "a skill or agent still uses \${CLAUDE_PLUGIN_ROOT}"
+else
+  _pass "skills and agents reference bin/ tools by bare name only"
+fi
+
+_head "plx-* tools referenced by skills/agents exist in bin/"
+while IFS= read -r tool; do
+  [ -n "$tool" ] || continue
+  if [ -x "$PLX_ROOT/bin/$tool" ]; then _pass "bin/$tool"; else _fail "referenced tool missing: bin/$tool"; fi
+done < <(grep -rhoE '`plx-[a-z*-]+' "$PLX_ROOT/skills" "$PLX_ROOT/agents" 2>/dev/null | tr -d '`' | grep -E '^plx-[a-z]+(-[a-z]+)*$' | sort -u)
 
 _head "Config keys referenced by skills exist in parallax.yaml"
 YAML="$PLX_ROOT/config/parallax.yaml"
@@ -41,16 +46,28 @@ while IFS= read -r sub; do
   name="${sub#plx:}"
   if [ -f "$PLX_ROOT/agents/$name.md" ]; then _pass "agent: $name.md"; else _fail "missing agent file: agents/$name.md"; fi
 done < <(grep -rhoE 'plx:(claude|codex|grok)-(reviewer|worker)' \
-           "$PLX_ROOT/skills" "$PLX_ROOT/lib" 2>/dev/null | sort -u)
+           "$PLX_ROOT/skills" 2>/dev/null | sort -u)
 
-_head "Scripts present and executable"
-for sc in codex-ro codex-rw grok-ro grok-rw make-review-prompt parallax-intake preflight; do
-  assert_exec "scripts/$sc.sh"
+_head "Engine API tools present and executable"
+for sc in plx-codex-ro plx-codex-rw plx-grok-ro plx-grok-rw plx-preflight plx-config plx-skill; do
+  assert_exec "bin/$sc"
 done
 
-_head "Prompt blocks present"
-for b in plan code refine debug correctness synthesis coding-spec-template; do
-  assert_file "prompts/$b.md"
-done
+_head "Base prompts (reference storage, not loaded at runtime)"
+if [ -d "$PLX_ROOT/base-prompts" ]; then
+  for b in "$PLX_ROOT"/base-prompts/*.md; do
+    [ -e "$b" ] || break
+    _pass "base prompt: ${b##*/}"
+  done
+else
+  _pass "base-prompts/ absent (rebuilt in scaffold phase — see .project/PLX.md)"
+fi
+
+_head "Skills are self-contained (no pointers into lib/, prompts/, scripts/, or router.md)"
+if grep -rqE 'lib/(pipeline|engines)\.md|prompts/|scripts/|router\.md' "$PLX_ROOT"/skills/*/SKILL.md; then
+  _fail "a skill still points at lib/, prompts/, scripts/, or router.md"
+else
+  _pass "no skill references lib/, prompts/, scripts/, or router.md"
+fi
 
 summary

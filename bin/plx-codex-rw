@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Parallax engine API — Codex, WRITE-CAPABLE. Used only when the writer (`code`)
+# role is assigned to codex, or by the /plx:codex passthrough. Safety flags are
+# pinned here: workspace-write sandbox scoped to --repo, --ignore-user-config.
+# Never danger-full-access, never --dangerously-bypass-approvals-and-sandbox.
+
+usage() {
+  cat <<'EOF'
+plx-codex-rw — run Codex headless, WRITE-CAPABLE (repo-scoped), against a repo (Parallax engine API)
+
+Usage:
+  plx-codex-rw --repo <abs-path> --prompt-file <file> --stdout
+  plx-codex-rw --repo <abs-path> --prompt-file <file> --out <file> --log <file>
+
+What it does:
+  One-shot non-interactive `codex exec` that MAY EDIT files, with safety flags
+  pinned: workspace-write sandbox (edits confined to --repo, nothing else),
+  --ignore-user-config (the user's global Codex config can never widen access),
+  --ephemeral (no session files). The prompt is read from --prompt-file. Only
+  Codex's FINAL message is emitted; progress goes to the log. For a pure
+  question/plan prompt Codex simply writes nothing.
+
+Flags:
+  --repo <dir>          absolute path to the target repo (required; the write boundary)
+  --prompt-file <file>  file containing the full prompt/spec (required)
+  --stdout              print Codex's final message to stdout; temp files auto-cleaned
+  --out <f> --log <f>   instead of --stdout: write final message / full log to files
+  --model <m>           default gpt-5.5 (gpt-5.3-codex is NOT available on ChatGPT-account auth)
+  --effort <e>          model_reasoning_effort: low | medium | high (default high)
+  --help                this text
+
+After it returns:
+  Inspect what changed with `git -C <repo> status --short` / `git -C <repo> diff`.
+
+Exit codes:
+  0  success — Codex finished (check the diff for edits)
+  1  Codex failure — error details on stderr / in the log
+  2  usage error — bad flags or missing/empty inputs
+  3  not signed in — tell the user to run `codex login`
+EOF
+}
+
+MODEL="gpt-5.5"
+EFFORT="high"
+REPO=""
+PROMPT=""
+OUT=""
+LOG=""
+STDOUT=0
+TMP_DIR=""
+
+cleanup() { if [[ -n "$TMP_DIR" ]]; then rm -rf "$TMP_DIR"; fi; }
+trap cleanup EXIT
+
+need_value() { [[ -n "${2:-}" ]] || { echo "missing value for $1" >&2; exit 2; }; }
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --repo) need_value "$1" "${2:-}"; REPO="$2"; shift 2 ;;
+    --prompt-file) need_value "$1" "${2:-}"; PROMPT="$2"; shift 2 ;;
+    --out) need_value "$1" "${2:-}"; OUT="$2"; shift 2 ;;
+    --log) need_value "$1" "${2:-}"; LOG="$2"; shift 2 ;;
+    --stdout) STDOUT=1; shift ;;
+    --model) need_value "$1" "${2:-}"; MODEL="$2"; shift 2 ;;
+    --effort) need_value "$1" "${2:-}"; EFFORT="$2"; shift 2 ;;
+    --help|-h) usage; exit 0 ;;
+    *) echo "unknown arg: $1 (see --help)" >&2; exit 2 ;;
+  esac
+done
+
+[[ -d "$REPO" ]] || { echo "repo not found: $REPO" >&2; exit 2; }
+[[ -s "$PROMPT" ]] || { echo "prompt file missing/empty: $PROMPT" >&2; exit 2; }
+if [[ "$STDOUT" -eq 1 ]]; then
+  TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/parallax-codex-rw.XXXXXX")"
+  OUT="$TMP_DIR/output.md"
+  LOG="$TMP_DIR/codex.log"
+else
+  [[ -n "$OUT" ]] || { echo "--out required (or use --stdout)" >&2; exit 2; }
+  [[ -n "$LOG" ]] || { echo "--log required (or use --stdout)" >&2; exit 2; }
+fi
+
+mkdir -p "$(dirname "$OUT")" "$(dirname "$LOG")"
+
+if ! codex exec --ignore-user-config --sandbox workspace-write --skip-git-repo-check \
+  -C "$REPO" -m "$MODEL" -c model_reasoning_effort="$EFFORT" --ephemeral \
+  -o "$OUT" - < "$PROMPT" > "$LOG" 2>&1; then
+  if grep -qiE "not logged in|401 unauthorized|codex login|invalid api key" "$LOG"; then
+    echo "plx-codex-rw: not authenticated — run \`codex login\` (or set CODEX_API_KEY), then retry." >&2
+    exit 3
+  fi
+  echo "codex invocation failed" >&2
+  [[ -s "$LOG" ]] && sed -n '1,40p' "$LOG" >&2
+  exit 1
+fi
+
+[[ -s "$OUT" ]] || { echo "codex produced empty output: $OUT" >&2; exit 1; }
+
+if [[ "$STDOUT" -eq 1 ]]; then
+  cat "$OUT"
+else
+  echo "OK plx-codex-rw out=$OUT log=$LOG"
+fi

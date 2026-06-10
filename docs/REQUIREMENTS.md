@@ -13,9 +13,9 @@ The `dev` pipeline runs without Codex. `team-dev` requires Codex. `ultra-dev` re
 
 ## Codex
 
-Install and authenticate the Codex CLI (`codex` on `PATH`). Parallax validates Codex with `scripts/preflight.sh --repo <repo> --require-codex`, where `<repo>` is the absolute repo path printed by intake.
+Install and authenticate the Codex CLI (`codex` on `PATH`). Parallax validates Codex with `plx-preflight --repo <repo> --require-codex`, where `<repo>` is the absolute repo root the orchestrator resolves during Bootstrap.
 
-Parallax runs Codex only through `scripts/codex-ro.sh`, which uses:
+Parallax runs Codex only through `bin/plx-codex-ro`, which uses:
 
 - `--ignore-user-config`
 - explicit read-only sandboxing
@@ -23,15 +23,20 @@ Parallax runs Codex only through `scripts/codex-ro.sh`, which uses:
 - stdout output mode for normal reviewer calls
 - temporary output/log files only when a caller needs separate debug files
 
-`gpt-5.3-codex` is not available on some ChatGPT-account Codex auth. Parallax uses Codex as a read-only reviewer with `gpt-5.5`; there is no Codex writer dependency.
+`gpt-5.3-codex` is not available on some ChatGPT-account Codex auth. Parallax uses Codex with `gpt-5.5`. By default Codex is a **read-only reviewer** (`bin/plx-codex-ro`); it only *writes* when you opt in via `code: codex` (or `/plx:codex`), which routes through `bin/plx-codex-rw` (scoped `workspace-write` sandbox).
 
 ## Grok
 
-Install and authenticate the Grok CLI (`grok` on `PATH`) to enable the `ultra-dev` Grok lanes (and Grok review lanes in any pipeline configured to use them).
+Install and authenticate the Grok CLI (`grok login`, or set `XAI_API_KEY`) to enable the `ultra-dev` Grok lanes (and Grok review lanes in any pipeline configured to use them). Verified with grok 0.2.32 (`grok-composer-2.5-fast`).
 
-Parallax runs Grok only through `scripts/grok-ro.sh`, which uses plan permission mode and requires non-empty output to count as success. The wrapper supports stdout mode for normal reviewer calls and temporary output/log files for debug cases.
+Grok runs through two wrappers, both pinning a kernel-enforced sandbox (Seatbelt on macOS, Landlock on Linux):
 
-When invoking the Grok wrapper from Claude Code, disable the Claude Bash sandbox for that wrapper call only. Existing verification showed Grok can silently no-op inside that sandbox while still exiting 0. Treat non-empty output as success; stderr may contain non-fatal worker noise.
+- **`bin/plx-grok-ro`** — every review/plan lane. `--sandbox read-only`: grok may read but cannot write the repo (OS-denied). This is the read-only guarantee.
+- **`bin/plx-grok-rw`** — opt-in writer (`code: grok` or `/plx:grok`). `--sandbox workspace`: edits are confined to the repo; writes outside are kernel-denied and logged to `~/.grok/sandbox-events.jsonl`.
+
+Both pass `--permission-mode bypassPermissions`, because grok's CLI only *enforces* that mode (and `default`) — `acceptEdits`/`plan` are accepted but unenforced and would cancel the turn in headless. Confinement comes from the sandbox, not the permission mode.
+
+When invoking either wrapper from Claude Code, disable the Claude Bash sandbox for that call only (grok needs network/keychain access the sandbox blocks). The wrappers decide success from grok's `stopReason` + output and exit accordingly: **0** = ok, **3** = not signed in (run `grok login`), **1** = real failure. grok prints non-fatal `AuthorizationRequired` worker lines to stderr even on success — these are noise; judge by the exit code.
 
 ## Verification Toolchain
 

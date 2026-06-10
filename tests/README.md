@@ -10,9 +10,9 @@ exercises the shell scripts in throwaway repos.
 | File | What it does |
 |---|---|
 | `run.sh` | Runs the whole deterministic suite (static checks + script smoke) and prints `ALL GREEN` / failures. |
-| `check-plugin.sh` | **Static integrity** — every `${CLAUDE_PLUGIN_ROOT}` path resolves, config keys a skill names exist in `parallax.yaml`, referenced `plx:<engine>-<role>` subagents have agent files, manifests are valid JSON, scripts are executable. No model calls. |
-| `explain-skill.sh` | **Dry run** — prints what a skill would do: its config key, resolved engine bindings, preflight requirement, prompt blocks it composes, and the verbatim `## Pipeline` steps. Nothing executes. |
-| `smoke-scripts.sh` | Runs the real shell scripts (`parallax-intake`, `preflight`, `make-review-prompt`) against an **isolated tmp repo** built from `fixture/`. Model-free unless `--with-engines`. |
+| `check-plugin.sh` | **Static integrity** — no `${CLAUDE_PLUGIN_ROOT}` in skills/agents (bin/ tools are on PATH), every `plx-*` tool a skill/agent names exists in `bin/` and is executable, config keys a skill names exist in `parallax.yaml`, referenced `plx:<engine>-<role>` subagents have agent files, manifests are valid JSON, skills are self-contained. No model calls. |
+| `explain-skill.sh` | **Dry run** — prints what a skill would do: its config key, resolved engine bindings, preflight requirement, its inline sections, and the verbatim `## Pipeline` steps. Nothing executes. |
+| `smoke-scripts.sh` | Runs the real shell scripts (`preflight`) against an **isolated tmp repo** built from `fixture/`. Model-free unless `--with-engines`. |
 | `fixture/` | A tiny throwaway target repo (a `calc.average()` with an empty-list bug). Copied to `mktemp` per run — never edited in place. |
 | `lib.sh` | Shared assert/counter helpers + the isolated-repo builder. |
 

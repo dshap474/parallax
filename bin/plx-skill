@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Parallax engine API — skill reader. Lets the auto-router print a sibling
+# pipeline skill without needing a plugin-root path.
+
+usage() {
+  cat <<'EOF'
+plx-skill — print a Parallax pipeline skill file
+
+Usage:
+  plx-skill <name>     print skills/<name>/SKILL.md (e.g. plx-skill team-dev)
+  plx-skill --list     list available skill names
+
+Exit codes:
+  0  printed
+  1  no such skill
+  2  usage error
+EOF
+}
+
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILLS_DIR="$BIN_DIR/../skills"
+
+case "${1:-}" in
+  "") usage >&2; exit 2 ;;
+  --help|-h) usage; exit 0 ;;
+  --list)
+    for d in "$SKILLS_DIR"/*/; do
+      name="$(basename "$d")"
+      [[ "$name" == _* ]] && continue
+      [[ -f "$d/SKILL.md" ]] && echo "$name"
+    done
+    exit 0 ;;
+  --*) echo "unknown arg: $1 (see --help)" >&2; exit 2 ;;
+esac
+
+SKILL="$SKILLS_DIR/$1/SKILL.md"
+[[ -f "$SKILL" ]] || { echo "no such skill: $1 (try plx-skill --list)" >&2; exit 1; }
+cat "$SKILL"

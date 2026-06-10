@@ -1,6 +1,6 @@
 flowchart TD
     U(["👤 User types:  /plx:auto «task»  —  or an explicit /plx:* command"]) --> SKL["📋 SKILL.md loads the request"]
-    SKL --> IN["⚙️ Deterministic intake — parallax-intake.sh<br/>repo · branch · HEAD · dirty files · codex/grok present"]
+    SKL --> IN["⚙️ Bootstrap — orchestrator resolves with its own tools<br/>absolute repo root · dirty-worktree check"]
     IN --> RT{"🧭 Router (skills/auto) — pick the smallest<br/>pipeline that gives enough assurance"}
 
     RT -->|"tiny · safe · one file"| P1["⚡ dev (solo)"]
@@ -8,25 +8,24 @@ flowchart TD
     RT -->|"major · high-stakes"| P3["🚀 ultra-dev"]
     RT -->|"audit / debug — no edits"| P4["🔎 review"]
 
-    P1 --> SK["📋 the chosen skill IS the pipeline<br/>its '## Pipeline' composes prompt blocks in order"]
+    P1 --> SK["📋 the chosen skill IS the pipeline, written out in full<br/>steps · lane briefs · engine invocations all inline in its SKILL.md"]
     P2 --> SK
     P3 --> SK
     P4 --> SK
 
     CFG[("🗂️ config/parallax.yaml<br/>engine-per-role, per pipeline<br/>→ injects plx:«engine»-reviewer / -worker")] -. "resolves each lane" .-> SK
-    GR[("📐 lib/pipeline.md<br/>shared grammar: roles · engine binding ·<br/>subagent injection · neutral context")] -. "governs" .-> SK
 
-    SK --> PF{"🩺 preflight.sh probes required engines<br/>dev skips · optional engine missing → degrade"}
+    SK --> PF{"🩺 plx-preflight probes required engines<br/>dev skips · optional engine missing → degrade"}
     PF -->|"required engine missing"| STOP(["❌ Stop with a clear message"])
     PF -->|"engines ok / degraded"| PIPE
 
-    subgraph PIPE ["🔁 Block pipeline — each step plugs in a block from prompts/, lane engine from config"]
+    subgraph PIPE ["🔁 Pipeline — each step's brief is inline in the skill, lane engine from config"]
       direction TB
-      S1["① prompts/plan.md — orchestrator: plan + per-task specs"] --> S2["② prompts/correctness.md — plan-review<br/>plx:«engine»-reviewer (read-only)"]
-      S2 --> S3["③ prompts/code.md — WRITE ✍️<br/>orchestrator direct (dev · team-dev)<br/>or plx:«engine»-worker (ultra-dev)"]
-      S3 --> S4["④ prompts/refine.md — orchestrator"]
-      S4 --> S5["⑤ prompts/debug.md + correctness.md — review<br/>read-only, parallel, plx:«engine»-reviewer"]
-      S5 --> S6["⑥ prompts/synthesis.md — orchestrator synthesizes + applies fixes"]
+      S1["① Plan — orchestrator: plan + per-task specs"] --> S2["② Plan-review (correctness brief)<br/>plx:«engine»-reviewer (read-only)"]
+      S2 --> S3["③ Code — WRITE ✍️<br/>orchestrator direct (dev · team-dev)<br/>or plx:«engine»-worker (ultra-dev)"]
+      S3 --> S4["④ Refine — orchestrator"]
+      S4 --> S5["⑤ Review (debug + correctness briefs)<br/>read-only, parallel, plx:«engine»-reviewer"]
+      S5 --> S6["⑥ Ordered synthesis — orchestrator synthesizes + applies fixes"]
     end
 
     PIPE --> V["✅ Verify — run the repo's own checks<br/>ruff · pytest · npm · cargo …"]
@@ -55,7 +54,7 @@ flowchart TD
     class S3 write
     class S2,S5 review
     class STOP stop
-    class CFG,GR cfg
+    class CFG cfg
     class P1,P2,P3,P4 step
     class S1,S4,S6 step
     class L1,L2,L3,L4 legend

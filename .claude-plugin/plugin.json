@@ -1,7 +1,7 @@
 {
-  "name": "parallax",
+  "name": "plx",
   "version": "0.1.0",
-  "description": "Parallax — a multi-model coding-agent orchestration plugin. Claude writes; Codex and Grok review read-only. One plx skill routes each task to the right workflow.",
+  "description": "Parallax (plx) — multi-model coding-agent orchestration. The /plx:auto router auto-picks a workflow; explicit /plx:* commands force a stage×tier (plan/dev/review × solo/team/ultra) or a single engine (codex/grok). Review lanes are read-only; the writer engine is configurable.",
   "author": { "name": "Daniel Shapiro", "url": "https://github.com/dshap474" },
   "homepage": "https://github.com/dshap474/parallax",
   "repository": "https://github.com/dshap474/parallax",

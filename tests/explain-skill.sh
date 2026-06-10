@@ -54,15 +54,15 @@ printf '  desc: %s\n' "$(desc_of "$SKILL" | cut -c1-200)"
 
 # A router selects a pipeline at runtime instead of binding one config key.
 IS_ROUTER=0
-grep -q 'router\.md' "$SKILL" && IS_ROUTER=1
+grep -q '^## Pipeline selection' "$SKILL" && IS_ROUTER=1
 
 # Config key + resolved engines.
 KEY="$(grep -oE 'key `[a-z-]+`' "$SKILL" | head -1 | sed -E 's/key `([a-z-]+)`/\1/')"
 echo
 if [ "$IS_ROUTER" -eq 1 ]; then
-  echo "  type: ROUTER — selects one pipeline per skills/$1/router.md, then runs that skill's pipeline"
+  echo "  type: ROUTER — selects one pipeline per its '## Pipeline selection' section, then runs that skill's pipeline"
   echo "  routes to:"
-  grep -oE '`(dev|team-dev|ultra-dev|review)` \(config key `[a-z-]+`\)' "$SKILL" | sed 's/^/    /' || true
+  grep -oE '`(dev|team-dev|ultra-dev|review)`(\*\*)? \(config key `[a-z-]+`\)' "$SKILL" | sed 's/\*\*//; s/^/    /' || true
 elif [ -n "$KEY" ]; then
   echo "  config key: $KEY  (config/parallax.yaml)"
   echo "  resolved engine bindings:"
@@ -78,20 +78,14 @@ fi
 
 # Preflight requirement.
 echo
-PF="$(grep -oE 'preflight\.sh[^`]*' "$SKILL" | head -1)"
+PF="$(grep -oE 'plx-preflight[^`]*' "$SKILL" | head -1)"
 if [ -n "$PF" ]; then echo "  preflight: $PF"; else echo "  preflight: (none — skipped by this skill)"; fi
 
-# Prompt blocks composed.
+# Lane briefs inlined in the skill (skills are self-contained — no external prompt files).
 echo
-echo "  prompt blocks composed:"
-blocks="$(grep -oE 'prompts/[A-Za-z0-9._-]+\.md' "$SKILL" | sort -u)"
-if [ -n "$blocks" ]; then
-  printf '%s\n' "$blocks" | while IFS= read -r b; do
-    if [ -e "$PLX_ROOT/$b" ]; then printf '    ✓ %s\n' "$b"; else printf '    ✗ %s (MISSING)\n' "$b"; fi
-  done
-else
-  echo "    (none)"
-fi
+echo "  inline sections:"
+secs="$(grep -E '^## ' "$SKILL" | sed 's/^## //')"
+if [ -n "$secs" ]; then printf '%s\n' "$secs" | sed 's/^/    /'; else echo "    (none)"; fi
 
 # The pipeline section, verbatim — this is the ordered plan the orchestrator runs.
 echo

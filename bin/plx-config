@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Parallax engine API — config reader. Prints the engine-per-role config so
+# skills never need a plugin-root path to find it.
+
+usage() {
+  cat <<'EOF'
+plx-config — print Parallax's engine-per-role configuration (config/parallax.yaml)
+
+Usage:
+  plx-config
+
+What it does:
+  Prints the full parallax.yaml to stdout. Pipelines read their key from it
+  (quick, team, ultra, review-only, team-plan, ultra-plan, team-review,
+  ultra-review) to resolve which engine fills each role.
+
+Exit codes:
+  0  printed
+  1  config file missing (broken install)
+  2  usage error
+EOF
+}
+
+case "${1:-}" in
+  "") ;;
+  --help|-h) usage; exit 0 ;;
+  *) echo "unknown arg: $1 (see --help)" >&2; exit 2 ;;
+esac
+
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG="$BIN_DIR/../config/parallax.yaml"
+[[ -f "$CONFIG" ]] || { echo "config not found: $CONFIG (broken install)" >&2; exit 1; }
+cat "$CONFIG"

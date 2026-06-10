@@ -10,17 +10,18 @@ user-invocable: true
 
 Run the user's request through **Codex only** — no Parallax review pipeline, no other engines. Your job as orchestrator is to dispatch to Codex and return its output, not to re-do or review the work.
 
-## Deterministic intake
+## Bootstrap
 
-!`${CLAUDE_PLUGIN_ROOT}/scripts/parallax-intake.sh`
+Establish ground truth with your own tools — nothing is injected for you:
+
+- Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>` and use it for every `--repo` flag and worker handoff below.
+- If the worktree is dirty, read `git status --short` before editing — so you don't clobber unrelated user changes or mistake pre-existing edits for your own.
 
 ## Execute
 
 1. Treat the request as-is (question / coding / plan) — that only shapes the prompt you hand Codex.
-2. Spawn `plx:codex-worker` so the TUI shows the Codex lane. Hand it: the repo path, the user's request as the prompt, and the exact command
-   `${CLAUDE_PLUGIN_ROOT}/scripts/codex-rw.sh --repo <repo> --prompt <prompt> --out <out> --log <log>`
-   (workspace-write: Codex edits when asked, and simply writes nothing for a pure question or plan).
-3. Return Codex's output verbatim. Do not add your own review pass.
+2. Write the user's request to a prompt file in a `mktemp -d` dir, then spawn `plx:codex-worker` (so the TUI shows the Codex lane) with the repo path and the prompt-file path. The worker drives Codex headless via the plugin's `plx-codex-rw` tool (workspace-write sandbox: Codex edits when asked, and simply writes nothing for a pure question or plan).
+3. Return Codex's output verbatim, plus the worker's diff summary if files changed. Do not add your own review pass. Clean up the temp dir.
 
 Request:
 

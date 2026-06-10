@@ -4,9 +4,9 @@
   "description": "Parallax — multi-model orchestration for Claude Code.",
   "plugins": [
     {
-      "name": "parallax",
+      "name": "plx",
       "source": "./",
-      "description": "One plx skill routes coding tasks through Claude, Codex, and Grok workflows.",
+      "description": "Parallax (plx) — multi-model orchestration. /plx:auto router + /plx:* commands for stage×tier workflows and single-engine asks (Codex, Grok).",
       "version": "0.1.0",
       "category": "development",
       "keywords": ["multi-model", "code-review", "orchestration", "plx"],

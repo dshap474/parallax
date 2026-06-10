@@ -13,8 +13,7 @@ Usage:
 
 What it does:
   Prints the full parallax.yaml to stdout. Pipelines read their key from it
-  (quick, team, ultra, review-only, team-plan, ultra-plan, team-review,
-  ultra-review) to resolve which engine fills each role.
+  (dev, plan, review) to resolve which engine fills each role.
 
 Exit codes:
   0  printed

@@ -2,7 +2,9 @@
 
 Multi-model coding-agent orchestration for Claude Code.
 
-By default Claude writes and Codex reviews read-only (Grok joins as a read-only reviewer in `ultra-dev`). The router skill `/plx:auto` reads each task and picks the smallest workflow that gives enough assurance; explicit `/plx:*` commands force a specific workflow or single engine (see [`docs/COMMANDS.md`](docs/COMMANDS.md)). Which engine fills each pipeline role per mode is configurable in [`config/parallax.yaml`](config/parallax.yaml) — any of Claude, Codex, or Grok can be the writer (non-Claude writers edit inside a kernel-enforced per-repo sandbox).
+The orchestrator is Claude (Fable). Its scarcest resource is its own context window, so it **delegates all bulk work** — planning, building, reviewing — to subagent lanes (Opus personas, or Codex/Grok driven through the `bin/` engine tools) and keeps only the compact artifacts they hand back. Fable spends its own intelligence at exactly two points: synthesizing the plan, and synthesizing the review (then applying the fix). The deliberate split is **code with Opus, review with Codex** — cross-model review is genuinely independent.
+
+The router skill `/plx:auto` reads each task and dispatches to one of three pipelines (`dev`, `plan`, `review`); explicit `/plx:*` commands force a specific pipeline or a single engine (see [`docs/COMMANDS.md`](docs/COMMANDS.md)). Which engine fills each pipeline role is configurable in [`config/parallax.yaml`](config/parallax.yaml).
 
 ## Install
 
@@ -20,41 +22,51 @@ Then, in any repo:
 
 ## What happens
 
-`/plx:auto` establishes repo ground truth (Bootstrap), then selects one pipeline (each is a fully self-contained skill — its steps, lane briefs, and engine invocations are all written out in its own `SKILL.md`):
+`/plx:auto` establishes repo ground truth (Bootstrap), then dispatches to one pipeline. Each pipeline is a fully self-contained skill — its steps, lane briefs, and engine invocations are all written out inline in its own `SKILL.md`.
 
-| Pipeline | Use case | Engines |
+| Pipeline | Use case | Lanes |
 |---|---|---|
-| `dev` | small safe edits, no review | Claude only |
-| `team-dev` | default build workflow | Claude + Codex + Claude reviewer |
-| `ultra-dev` | major/high-risk changes | Claude + Codex + Grok (plan panel + full review) |
-| `review` | reviews, audits, debugging without edits | read-only reviewers |
+| `dev` | build a change end to end (plan → build → review → fix → docs + local commit) | 2 planners + 1 worker + 3 reviewers + docs |
+| `plan` | think only, no edits | 2 parallel planners |
+| `review` | audit / debug / critique without edits | 3 parallel Codex review lanes |
 
-Every reviewer is fresh, neutral-context, and read-only — regardless of which engine fills the lane. Parallax does not write repo-local runtime state; temporary prompt/output files live only in shell temp directories and are cleaned up before commands return.
+`plan` is steps 1–3 of `dev` run standalone; `review` is steps 6–8 run standalone (read-only). Single-engine passthroughs `/plx:codex` and `/plx:grok` hand a task straight to one engine with no review pipeline.
+
+Plan and review lanes are always read-only. There is exactly **one writer at a time, always** (the build worker, plus Fable applying the repair plan inline). Parallax does not write repo-local runtime state; temporary prompt/output files live only in shell temp directories and are cleaned up before commands return.
+
+### The dev pipeline (10 steps)
+
+1. Delegate planning to two parallel planners — `claude-planner` (Opus, xhigh) and `codex-planner` (Codex, xhigh) — from the same neutral brief.
+2. Both Plan artifacts return.
+3. Fable synthesizes the final plan — a judgment pass, not a merge.
+4. Delegate the build to one Opus worker (`claude-worker`), spec only.
+5. The Buildout report returns — per-file summaries of what changed and why, never code bodies.
+6. Fable prepares a review brief from the report **without reading the built code** — its context stays clean.
+7. Three parallel Codex review lanes fire — debug, correctness, refine.
+8. Fable synthesizes as the pseudo-fourth reviewer: verifies findings surgically, kills false positives, produces the repair plan.
+9. Fable applies the repair plan inline (escape hatch: structural rework goes back through a fresh build), then runs the repo's checks.
+10. A docs subagent updates docs, then a **local commit** — never a push or PR.
+
+Exactly **seven subagent spawns** (2 planners + 1 builder + 3 reviewers + 1 docs).
 
 ### Configuring engines
 
-`config/parallax.yaml` binds each pipeline role to an engine, per pipeline. The shipped defaults reproduce the table above. Edit a `code` value to change which engine *writes* in that pipeline (`claude`, `codex`, or `grok`); edit the review-lane lists to change which engines review (e.g. add `grok` to `team`'s lists for the old "panel" behavior). Review and plan lanes are always read-only no matter the engine — only the `code` role writes, and only it can be a non-Claude engine.
+`config/parallax.yaml` binds each pipeline role to an engine. `code` takes exactly one engine (one writer at a time); `plan` and `review-*` roles take lists and are always read-only. Synthesis is always the orchestrator and never configurable.
 
 ## Requirements
 
 Parallax orchestrates external model CLIs you install and authenticate yourself. It does not bundle, host, or proxy any model.
 
-| Tier | Install | Enables |
+| Engine | Install | Used by |
 |---|---|---|
-| Codex | `codex` CLI + auth | `team-dev` (and Codex review lanes) |
-| Grok | `grok` CLI + auth | `ultra-dev` Grok lanes |
+| Codex | `codex` CLI + auth | `dev`/`plan`/`review` review and plan lanes; `/plx:codex` |
+| Grok | `grok` CLI + auth | `/plx:grok` passthrough; parked for future ultra tiers |
 
-`dev` runs without Codex. `team-dev` requires Codex. `ultra-dev` requires Codex and degrades (drops Grok lanes) if Grok is missing. See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
+The default `dev`, `plan`, and `review` pipelines need Codex (planners and reviewers run on it). See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
 
 ## Architecture
 
-Parallax keeps a role-based pipeline:
-
-```text
-Plan -> Plan-review -> Code -> Refine -> Review -> Fix
-```
-
-The public UX is one router skill. Internally, modes choose the workflow topology. The core safety model: review and plan lanes are read-only for every engine, invoked only through the plugin's read-only engine tools (`plx-codex-ro` / `plx-grok-ro`, on PATH from `bin/`); only the writer (`code`) role edits the repo, and a non-Claude writer goes through a scoped-write tool (`plx-codex-rw` / `plx-grok-rw`) that confines edits to the target repo. Default config keeps Claude the sole writer. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+Three stage atoms — `plan`, `build`, `review` — compose into the pipelines. The safety model: plan and review lanes are read-only for every engine, invoked only through the read-only engine tools (`plx-codex-ro` / `plx-grok-ro`, on PATH from `bin/`); only the build worker writes, and a non-Claude writer goes through a scoped-write tool (`plx-codex-rw` / `plx-grok-rw`) that confines edits to the target repo. Engine wrappers never use `danger-full-access` / `--yolo`. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Repo layout
 
@@ -62,19 +74,23 @@ The public UX is one router skill. Internally, modes choose the workflow topolog
 parallax/
 ├── .claude-plugin/{plugin.json, marketplace.json}
 ├── skills/       # one dir per command; each SKILL.md is fully self-contained
-├── config/       # parallax.yaml — engine-per-role bindings
+├── config/       # parallax.yaml — engine-per-role bindings (dev, plan, review)
 ├── bin/          # engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill)
-├── base-prompts/ # reference prompt library (plan, code, refine, debug, …) — storage only, not loaded at runtime
-├── templates/
+├── base-prompts/ # canonical prompt blocks — storage only, never loaded at runtime
+├── templates/    # plan / coding spec templates
 ├── agents/
 └── docs/{ARCHITECTURE, REQUIREMENTS, BENCHMARK, CONTRIBUTING, SPEC}.md
 ```
 
-Each `skills/<name>/SKILL.md` carries its entire pipeline — lane briefs, prompt templates, engine invocations — with no pointers to other prompt files and no script injection. `base-prompts/` holds the base prompt texts as an editable reference library; changing one does not change the skills (update the skill by hand).
+Each `skills/<name>/SKILL.md` carries its entire pipeline inline — lane briefs, prompt templates, engine invocations — with no `${CLAUDE_PLUGIN_ROOT}`, no `lib/` or `prompts/` pointers, and no script injection. Reusable rubrics and schemas live inside the agent persona files (rubrics-in-agents); the orchestrator hands each subagent the work, not the command. `base-prompts/` holds the canonical block text as a reference; changing one does not change the skills (propagate by hand).
+
+## Disabled pipelines
+
+The `team-*` and `ultra-*` skills are parked (their `SKILL.md` files are renamed `DISABLED.md`). When revived, they are regenerated from the dev spec in `.project/PLX.md` — the same skeleton with more engines in the read stages.
 
 ## Status
 
-v0.1.0 draft. The package is structured around `/plx:auto`; clean install and live smoke checks are the remaining release gates.
+v0.1.0 draft.
 
 ## License
 

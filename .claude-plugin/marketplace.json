@@ -6,7 +6,7 @@
     {
       "name": "plx",
       "source": "./",
-      "description": "Parallax (plx) — multi-model orchestration. /plx:auto router + /plx:* commands for stage×tier workflows and single-engine asks (Codex, Grok).",
+      "description": "Parallax (plx) — multi-model orchestration. /plx:auto router + /plx:* commands for the dev/plan/review pipelines and single-engine asks (Codex, Grok).",
       "version": "0.1.0",
       "category": "development",
       "keywords": ["multi-model", "code-review", "orchestration", "plx"],

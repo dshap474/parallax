@@ -10,7 +10,7 @@ exercises the shell scripts in throwaway repos.
 | File | What it does |
 |---|---|
 | `run.sh` | Runs the whole deterministic suite (static checks + script smoke) and prints `ALL GREEN` / failures. |
-| `check-plugin.sh` | **Static integrity** — no `${CLAUDE_PLUGIN_ROOT}` in skills/agents (bin/ tools are on PATH), every `plx-*` tool a skill/agent names exists in `bin/` and is executable, config keys a skill names exist in `parallax.yaml`, referenced `plx:<engine>-<role>` subagents have agent files, manifests are valid JSON, skills are self-contained. No model calls. |
+| `check-plugin.sh` | **Static integrity** — no `${CLAUDE_PLUGIN_ROOT}` in skills/agents (bin/ tools are on PATH), every `plx-*` tool a skill/agent names exists in `bin/` and is executable, config keys a skill names exist in `parallax.yaml` (`dev`, `plan`, `review`), referenced `plx:<persona>` subagents have agent files, manifests are valid JSON, skills are self-contained. No model calls. |
 | `explain-skill.sh` | **Dry run** — prints what a skill would do: its config key, resolved engine bindings, preflight requirement, its inline sections, and the verbatim `## Pipeline` steps. Nothing executes. |
 | `smoke-scripts.sh` | Runs the real shell scripts (`preflight`) against an **isolated tmp repo** built from `fixture/`. Model-free unless `--with-engines`. |
 | `fixture/` | A tiny throwaway target repo (a `calc.average()` with an empty-list bug). Copied to `mktemp` per run — never edited in place. |
@@ -24,8 +24,8 @@ bash tests/run.sh
 
 # See what a skill would execute, without running it:
 bash tests/explain-skill.sh              # list skills
-bash tests/explain-skill.sh team-dev     # dry-run one
-bash tests/explain-skill.sh ultra-dev
+bash tests/explain-skill.sh dev          # dry-run one
+bash tests/explain-skill.sh review
 
 # Just the wiring check, or just the script smoke:
 bash tests/check-plugin.sh
@@ -39,8 +39,8 @@ bash tests/run.sh --with-engines
 ## Scope / what this does NOT do
 
 These checks cover the **deterministic** layer: wiring, contracts, and the projected
-pipeline. They do **not** run a full skill end-to-end (a real `team-dev` run spawns
-codex/claude reviewers and edits a repo — that's a behavioral test, model-driven and
-non-deterministic). To watch a real pipeline, invoke the skill against the `fixture/`
+pipeline. They do **not** run a full skill end-to-end (a real `dev` run spawns
+planner/worker/reviewer subagents and edits a repo — that's a behavioral test,
+model-driven and non-deterministic). To watch a real pipeline, invoke the skill against the `fixture/`
 repo *copied to a tmp dir* by hand. The fixture's empty-list bug is there so a review
 lane has something real to catch.

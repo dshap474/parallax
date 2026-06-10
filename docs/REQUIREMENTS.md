@@ -2,14 +2,14 @@
 
 Parallax orchestrates external model CLIs that you install and authenticate. It does not bundle, host, or proxy any model.
 
-## Tiers
+## Engines
 
-| Tier | Install | Enables | Required? |
+| Engine | Install | Used by | Required? |
 |---|---|---|---|
-| Codex | `codex` CLI + auth | `team-dev` + Codex review lanes | required for default multi-model pipeline |
-| Grok | `grok` CLI + auth | `ultra-dev` Grok lanes | optional |
+| Codex | `codex` CLI + auth | `dev`/`plan`/`review` plan and review lanes; `/plx:codex` | required for the default pipelines |
+| Grok | `grok` CLI + auth | `/plx:grok` passthrough; parked for future ultra tiers | optional |
 
-The `dev` pipeline runs without Codex. `team-dev` requires Codex. `ultra-dev` requires Codex and degrades (drops Grok lanes) if Grok is missing. To add Grok to `team-dev`, list it in `team`'s review lanes in `config/parallax.yaml`.
+The default `dev`, `plan`, and `review` pipelines bind their planner and reviewer lanes to Codex, so Codex is required to run them as shipped. Grok is only needed for the `/plx:grok` passthrough today. The orchestrator (Claude) is always present — it is the session you are in.
 
 ## Codex
 
@@ -20,14 +20,15 @@ Parallax runs Codex only through `bin/plx-codex-ro`, which uses:
 - `--ignore-user-config`
 - explicit read-only sandboxing
 - `--ephemeral`
-- stdout output mode for normal reviewer calls
+- stdout output mode for normal lane calls
 - temporary output/log files only when a caller needs separate debug files
+- `--effort low|medium|high|xhigh` (default `high`; the dev pipeline runs planners and reviewers at `xhigh`)
 
-`gpt-5.3-codex` is not available on some ChatGPT-account Codex auth. Parallax uses Codex with `gpt-5.5`. By default Codex is a **read-only reviewer** (`bin/plx-codex-ro`); it only *writes* when you opt in via `code: codex` (or `/plx:codex`), which routes through `bin/plx-codex-rw` (scoped `workspace-write` sandbox).
+`gpt-5.3-codex` is not available on some ChatGPT-account Codex auth. Parallax uses Codex with `gpt-5.5`. By default Codex is **read-only** (`bin/plx-codex-ro`) for plan and review lanes; it only *writes* when you opt in via `code: codex` (or `/plx:codex`), which routes through `bin/plx-codex-rw` (scoped `workspace-write` sandbox). Neither wrapper uses `danger-full-access` or `--yolo`.
 
 ## Grok
 
-Install and authenticate the Grok CLI (`grok login`, or set `XAI_API_KEY`) to enable the `ultra-dev` Grok lanes (and Grok review lanes in any pipeline configured to use them). Verified with grok 0.2.32 (`grok-composer-2.5-fast`).
+Install and authenticate the Grok CLI (`grok login`, or set `XAI_API_KEY`) to enable the `/plx:grok` passthrough (and Grok lanes in any pipeline configured to use them — parked for the future ultra tiers). Verified with grok 0.2.32 (`grok-composer-2.5-fast`).
 
 Grok runs through two wrappers, both pinning a kernel-enforced sandbox (Seatbelt on macOS, Landlock on Linux):
 

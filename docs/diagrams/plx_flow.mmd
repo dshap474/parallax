@@ -1,11 +1,11 @@
 flowchart TD
-    U(["👤 User: /plx:auto «task»  —  or an explicit /plx:* command"]) --> SKL["📋 SKILL.md loads the request"]
+    U(["👤 User: an explicit /plx:* command «task»"]) --> SKL["📋 SKILL.md loads the request"]
     SKL --> IN["⚙️ Bootstrap — orchestrator (Fable) resolves with its own tools<br/>absolute repo root · dirty-worktree check"]
-    IN --> RT{"🧭 Router (skills/auto) — pick the pipeline that matches the ask"}
+    IN --> RT{"🧭 Which pipeline the command runs"}
 
-    RT -->|"build a change"| DEV["🛠️ dev — full 10-step pipeline"]
-    RT -->|"think only, no edits"| PL["📐 plan — steps 1–3"]
-    RT -->|"audit / debug, no edits"| RV["🔎 review — steps 6–8"]
+    RT -->|"/plx:dev — build a change"| DEV["🛠️ dev — full 10-step pipeline"]
+    RT -->|"/plx:plan — think only, no edits"| PL["📐 plan — steps 1–3"]
+    RT -->|"/plx:review — audit / debug, no edits"| RV["🔎 review — steps 6–8"]
 
     CFG[("🗂️ config/parallax.yaml<br/>engine-per-role: dev · plan · review<br/>→ resolves each lane's persona")] -. "binds lanes" .-> DEV
     CFG -. .-> PL

@@ -1,12 +1,12 @@
 # Contributing
 
-Parallax is a Claude Code plugin: a router skill (`plx:auto`), three fully self-contained pipeline skills (`dev`, `plan`, `review`), two single-engine passthroughs (`codex`, `grok`), subagent personas in `agents/`, a canonical prompt block library, and a deterministic engine API in `bin/`.
+Parallax is a Claude Code plugin: three fully self-contained pipeline skills (`dev`, `plan`, `review`), two single-engine passthroughs (`codex`, `grok`), subagent personas in `agents/`, a canonical prompt block library, and a deterministic engine API in `bin/`.
 
 ## Project layout
 
 ```text
 .claude-plugin/   plugin.json + marketplace.json
-skills/           one dir per command — each SKILL.md is fully self-contained (auto, dev, plan, review, codex, grok)
+skills/           one dir per command — each SKILL.md is fully self-contained (dev, plan, review, codex, grok)
 skills/_disabled/ parked team-*/ultra-* skills (DISABLED.md)
 config/           engine-per-role bindings (parallax.yaml — keys: dev, plan, review)
 bin/              engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill)
@@ -34,10 +34,6 @@ Any prompt text that is the same every run — the plan rubric, the review dimen
 ### Change a lane brief or pipeline step
 
 Edit it directly in the skill's `SKILL.md`. If the change is a reusable block (a rubric, the Finding Schema, a template), update the agent file that carries it and the matching `base-prompts/` block too.
-
-### Change routing
-
-`/plx:auto` selection criteria and preflight policy live inline in `skills/auto/SKILL.md`.
 
 ### Revive a disabled pipeline
 
@@ -68,7 +64,7 @@ bash tests/run.sh
 
 It runs `check-plugin.sh` (wiring + self-containment), `explain-skill.sh` (dry-run projection), and `smoke-scripts.sh` (real shell scripts against a tmp copy of `fixture/`). Pass `--with-engines` to also probe Codex/Grok auth (spends a tiny model call). At minimum verify:
 
-- `/plx:auto` resolves and the `/plx:*` command wrappers appear
+- the `/plx:*` command wrappers appear
 - `bin/plx-*` tools are executable and answer `--help`
 - `plx-preflight --repo <repo>` uses temporary files only
 - skills are self-contained (no `lib/`, `prompts/`, `scripts/`, `router.md`, or `${CLAUDE_PLUGIN_ROOT}` — `tests/check-plugin.sh` enforces this)

@@ -1,12 +1,6 @@
 # Parallax command surface (`/plx:*`)
 
-Every entry point lives under the `plx` plugin namespace. The router is `/plx:auto`; the commands below force a specific pipeline or a single engine.
-
-## Router
-
-| Command | What it does |
-|---|---|
-| `/plx:auto` (or `/plx` + Tab) | Auto-router — reads the task and dispatches to `dev`, `plan`, or `review`. |
+Every entry point lives under the `plx` plugin namespace. The commands below run a specific pipeline or hand a task to a single engine.
 
 ## Pipelines
 
@@ -33,5 +27,5 @@ The `team-*` and `ultra-*` commands (`/plx:team-dev`, `/plx:ultra-dev`, `/plx:te
 
 ## Notes
 
-- Each command **is** its pipeline, written out in full: its `SKILL.md` carries the ordered steps, lane briefs, prompt templates, and engine invocations inline, resolving only engine bindings from `config/parallax.yaml`. The router (`/plx:auto`) picks one and runs it.
+- Each command **is** its pipeline, written out in full: its `SKILL.md` carries the ordered steps, lane briefs, prompt templates, and engine invocations inline, resolving only engine bindings from `config/parallax.yaml`.
 - Each lane runs as an engine-named subagent (`plx:claude-planner`, `plx:codex-debug-reviewer`, etc.) so the TUI shows which engine ran it.

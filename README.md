@@ -4,7 +4,7 @@ Multi-model coding-agent orchestration for Claude Code.
 
 The orchestrator is Claude (Fable). Its scarcest resource is its own context window, so it **delegates all bulk work** — planning, building, reviewing — to subagent lanes (Opus personas, or Codex/Grok driven through the `bin/` engine tools) and keeps only the compact artifacts they hand back. Fable spends its own intelligence at exactly two points: synthesizing the plan, and synthesizing the review (then applying the fix). The deliberate split is **code with Opus, review with Codex** — cross-model review is genuinely independent.
 
-The router skill `/plx:auto` reads each task and dispatches to one of three pipelines (`dev`, `plan`, `review`); explicit `/plx:*` commands force a specific pipeline or a single engine (see [`docs/COMMANDS.md`](docs/COMMANDS.md)). Which engine fills each pipeline role is configurable in [`config/parallax.yaml`](config/parallax.yaml).
+Explicit `/plx:*` commands run a specific pipeline (`dev`, `plan`, `review`) or hand a task to a single engine (see [`docs/COMMANDS.md`](docs/COMMANDS.md)). Which engine fills each pipeline role is configurable in [`config/parallax.yaml`](config/parallax.yaml).
 
 ## Install
 
@@ -17,12 +17,12 @@ The router skill `/plx:auto` reads each task and dispatches to one of three pipe
 Then, in any repo:
 
 ```text
-/plx:auto add a lollipop chart type to the plotting library
+/plx:dev add a lollipop chart type to the plotting library
 ```
 
 ## What happens
 
-`/plx:auto` establishes repo ground truth (Bootstrap), then dispatches to one pipeline. Each pipeline is a fully self-contained skill — its steps, lane briefs, and engine invocations are all written out inline in its own `SKILL.md`.
+Each pipeline establishes repo ground truth (Bootstrap), then runs its steps. Each pipeline is a fully self-contained skill — its steps, lane briefs, and engine invocations are all written out inline in its own `SKILL.md`.
 
 | Pipeline | Use case | Lanes |
 |---|---|---|

@@ -4,25 +4,18 @@ Status: draft v0.1
 
 ## Purpose
 
-Parallax packages a multi-model coding workflow as an installable Claude Code plugin. Its primary entry point is the router skill:
-
-```text
-/plx:auto <task>
-```
-
-The router establishes repo ground truth (Bootstrap), then dispatches to one of three pipelines:
+Parallax packages a multi-model coding workflow as an installable Claude Code plugin. Its entry points are three pipeline skills:
 
 ```text
 dev | plan | review
 ```
 
-Explicit `/plx:*` commands can force a specific pipeline or a single engine without routing (see `docs/COMMANDS.md`).
+Each pipeline establishes repo ground truth (Bootstrap), then runs its steps. Explicit `/plx:*` commands run a specific pipeline or hand a task to a single engine (see `docs/COMMANDS.md`).
 
 The orchestrator is Claude (Fable). It delegates all bulk work — planning, building, reviewing — to subagent lanes and spends its own intelligence only at plan synthesis and review synthesis + fix. Plan and review lanes are read-only; there is exactly one writer at a time (the build worker, plus Fable applying the repair plan). By default the writer is Claude, but `config/parallax.yaml` can bind it to Codex or Grok (scoped-write tools).
 
 ## What ships
 
-- 1 router skill: `plx:auto` (dispatches to a pipeline)
 - 3 pipeline skills, each **fully self-contained** (steps, lane briefs, prompt templates, and engine handoffs all written out inline — no pointers to other prompt files, no `${CLAUDE_PLUGIN_ROOT}`, no script injection): `plx:dev` (10-step pipeline), `plx:plan` (steps 1–3), `plx:review` (steps 6–8)
 - 2 single-engine passthroughs: `plx:codex`, `plx:grok` (no `plx:claude` — the orchestrator *is* Claude)
 - Subagent personas in `agents/` carrying rubrics + operator manuals: `claude-planner`, `codex-planner`, `claude-worker`, `codex-debug-reviewer`, `codex-correctness-reviewer`, `codex-refine-reviewer`, plus legacy `claude-reviewer`, `codex-reviewer`, `codex-worker`, `grok-reviewer`, `grok-worker` (kept for passthrough + future ultra tiers)
@@ -40,7 +33,6 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 │   └── marketplace.json
 ├── agents/             # subagent personas (planners, worker, reviewers, passthroughs)
 ├── skills/
-│   ├── auto/SKILL.md    # router
 │   ├── dev/SKILL.md      # 10-step pipeline
 │   ├── plan/SKILL.md     # steps 1–3
 │   ├── review/SKILL.md   # steps 6–8
@@ -76,11 +68,11 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 }
 ```
 
-The skill path `skills/auto/SKILL.md` maps to `/plx:auto`.
+Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev/SKILL.md` → `/plx:dev`).
 
 ## Runtime rules
 
-- Each pipeline is a **self-contained skill**: its ordered steps, lane briefs, prompt templates, and engine invocations are all inline in its `SKILL.md`; only engine bindings come from `config/parallax.yaml`. `/plx:auto` routes; `/plx:*` commands force a pipeline.
+- Each pipeline is a **self-contained skill**: its ordered steps, lane briefs, prompt templates, and engine invocations are all inline in its `SKILL.md`; only engine bindings come from `config/parallax.yaml`. `/plx:*` commands run a pipeline.
 - No prompt injection: skills contain no `!`-command injection and no pointers to external prompt files (`lib/`, `prompts/`, `scripts/`, `router.md`) or `${CLAUDE_PLUGIN_ROOT}`. `base-prompts/` is reference storage only.
 - Reusable rubrics, schemas, and templates live in the agent files (rubrics-in-agents); the orchestrator hands each subagent only a task-specific brief.
 - No hooks in v0.1.
@@ -112,7 +104,6 @@ These mirror the deterministic checks run by `tests/run.sh`.
 ### File structure
 
 ```bash
-test -f skills/auto/SKILL.md
 test -f skills/dev/SKILL.md
 test -f skills/plan/SKILL.md
 test -f skills/review/SKILL.md
@@ -172,7 +163,7 @@ After local install:
 Expected:
 
 ```text
-/plx:auto, /plx:dev, /plx:plan, /plx:review, /plx:codex, /plx:grok appear (no /plx:claude)
+/plx:dev, /plx:plan, /plx:review, /plx:codex, /plx:grok appear (no /plx:claude)
 plx:claude-planner / plx:codex-planner appear in /agents
 plx:claude-worker appears in /agents
 plx:codex-debug-reviewer / plx:codex-correctness-reviewer / plx:codex-refine-reviewer appear in /agents

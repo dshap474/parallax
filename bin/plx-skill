@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Parallax engine API — skill reader. Lets the auto-router print a sibling
-# pipeline skill without needing a plugin-root path.
+# Parallax engine API — skill reader. Prints a sibling pipeline skill
+# without needing a plugin-root path.
 
 usage() {
   cat <<'EOF'

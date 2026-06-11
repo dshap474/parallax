@@ -2,13 +2,7 @@
 
 Parallax is a delegation-first coding workflow for Claude Code.
 
-The public surface is one router skill:
-
-```text
-/plx:auto <task>
-```
-
-The router dispatches to one of three pipelines (each is a skill):
+The public surface is three pipelines (each is a skill):
 
 ```text
 dev | plan | review
@@ -65,7 +59,7 @@ The pipeline has exactly **seven subagent spawns** (2 planners + 1 builder + 3 r
 | `plan` | `plan` | think only, no edits | 1–3 |
 | `review` | `review` | audit / debug / critique without edits | 6–8 (read-only) |
 
-`/plx:auto` routes among these three; explicit `/plx:*` commands force one (see [`COMMANDS.md`](COMMANDS.md)). The single-engine passthroughs `/plx:codex` and `/plx:grok` run a task through one engine with no review pipeline.
+Explicit `/plx:*` commands run one of these three (see [`COMMANDS.md`](COMMANDS.md)). The single-engine passthroughs `/plx:codex` and `/plx:grok` run a task through one engine with no review pipeline.
 
 **Disabled / parked:** the `team-*` and `ultra-*` skills have their `SKILL.md` renamed to `DISABLED.md`. When revived they are regenerated from `.project/VISION.md` — the same dev skeleton with more engines in the read stages (e.g. ultra adds Grok lanes and a plan-review stage).
 

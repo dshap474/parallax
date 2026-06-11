@@ -1,5 +1,5 @@
 ---
-name: codex-correctness-reviewer
+name: codex-reviewer-correctness
 description: >-
   Read-only Codex correctness review lane for the Parallax pipeline. The orchestrator
   spawns it with only the repo path and a review brief (files touched + what was

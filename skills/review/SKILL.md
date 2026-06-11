@@ -54,10 +54,10 @@ dimension `[codex]`. Run `plx-preflight --repo <repo> --require-codex`.
    rubric and Finding Schema and drives Codex headless through the plugin's
    `plx-codex-ro` tool (read-only sandbox, xhigh effort):
 
-   - **correctness** lane → spawn `plx:codex-correctness-reviewer` (right problem solved +
+   - **correctness** lane → spawn `plx:codex-reviewer-correctness` (right problem solved +
      spec match, plus the absorbed bug/robustness/failure-path scope — both "the right
      thing built" and "the thing built right")
-   - **refine** lane → spawn `plx:codex-refine-reviewer` (over-engineering,
+   - **refine** lane → spawn `plx:codex-reviewer-refine` (over-engineering,
      simplification, structure)
 
 3. **Synthesize as the pseudo-third reviewer — this is where your intelligence is the

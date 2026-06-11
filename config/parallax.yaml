@@ -17,12 +17,12 @@
 #   code                claude -> plx:claude-worker              (Opus, edits the repo)
 #                       codex  -> plx:codex-worker               (drives bin/plx-codex-rw)
 #                       grok   -> plx:grok-worker                (drives bin/plx-grok-rw)
-#   review-correctness  claude -> plx:claude-correctness-reviewer (Opus, read-only)
-#                       codex  -> plx:codex-correctness-reviewer  (drives bin/plx-codex-ro)
-#                       grok   -> plx:grok-correctness-reviewer   (drives bin/plx-grok-ro)
-#   review-refine       claude -> plx:claude-refine-reviewer      (Opus, read-only)
-#                       codex  -> plx:codex-refine-reviewer       (drives bin/plx-codex-ro)
-#                       grok   -> plx:grok-refine-reviewer        (drives bin/plx-grok-ro)
+#   review-correctness  claude -> plx:claude-reviewer-correctness (Opus, read-only)
+#                       codex  -> plx:codex-reviewer-correctness  (drives bin/plx-codex-ro)
+#                       grok   -> plx:grok-reviewer-correctness   (drives bin/plx-grok-ro)
+#   review-refine       claude -> plx:claude-reviewer-refine      (Opus, read-only)
+#                       codex  -> plx:codex-reviewer-refine       (drives bin/plx-codex-ro)
+#                       grok   -> plx:grok-reviewer-refine        (drives bin/plx-grok-ro)
 #
 # Rules:
 #   - `code` takes exactly ONE engine — one writer at a time, always.

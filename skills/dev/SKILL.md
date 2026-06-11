@@ -138,10 +138,10 @@ worker that returns no status line is a failure.
    Identical for both lanes; no analysis, no steer.
 7. **Spawn both review lanes in parallel** (one message, two subagent calls),
    each handed `<repo>` + the brief — nothing else:
-   - `plx:codex-correctness-reviewer` (right problem solved + spec match, plus the
+   - `plx:codex-reviewer-correctness` (right problem solved + spec match, plus the
      absorbed bug/robustness/failure-path scope — both "the right thing built" and "the
      thing built right")
-   - `plx:codex-refine-reviewer` (over-engineering, simplification, structure)
+   - `plx:codex-reviewer-refine` (over-engineering, simplification, structure)
 
    Each persona carries its own rubric + Finding Schema and drives `plx-codex-ro`
    (read-only sandbox, xhigh effort). Each returns templated findings.

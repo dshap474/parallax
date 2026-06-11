@@ -1,5 +1,5 @@
 ---
-name: claude-refine-reviewer
+name: claude-reviewer-refine
 description: >-
   Read-only Claude (Opus) refine review lane for the Parallax pipeline. The orchestrator
   spawns it with only the repo path and a review brief (files touched + what was

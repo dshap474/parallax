@@ -18,7 +18,7 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 
 - 3 pipeline skills, each **fully self-contained** (steps, lane briefs, prompt templates, and engine handoffs all written out inline — no pointers to other prompt files, no `${CLAUDE_PLUGIN_ROOT}`, no script injection): `plx:dev` (10-step pipeline), `plx:plan` (steps 1–3), `plx:review` (steps 6–8)
 - 2 single-engine passthroughs: `plx:codex`, `plx:grok` (no `plx:claude` — the orchestrator *is* Claude)
-- Subagent personas in `agents/` carrying rubrics + operator manuals: 12 engine personas (`<engine>-planner`, `<engine>-worker`, `<engine>-correctness-reviewer`, `<engine>-refine-reviewer` for `claude` / `codex` / `grok`) plus `docs`
+- Subagent personas in `agents/` carrying rubrics + operator manuals: 12 engine personas (`<engine>-planner`, `<engine>-worker`, `<engine>-reviewer-correctness`, `<engine>-reviewer-refine` for `claude` / `codex` / `grok`) plus `docs`
 - `base-prompts/` — canonical prompt blocks (rubrics, schemas, templates) as a **reference library only**, never loaded at runtime; skills inline the blocks and agents carry the rubrics
 - 1 engine-per-role config (`config/parallax.yaml`), keyed by pipeline: `dev`, `plan`, `review`
 - A deterministic engine API in `bin/` (on the Bash PATH while the plugin is enabled): `plx-codex-ro`/`plx-codex-rw`, `plx-grok-ro`/`plx-grok-rw`, `plx-preflight`, `plx-config`, `plx-skill` — uniform flags (`--repo`, `--prompt-file`, `--stdout`/`--out --log`; `--effort low|medium|high|xhigh` on the Codex tools), uniform exit codes (0 ok · 1 engine failure · 2 usage error · 3 auth needed), and `--help` manuals
@@ -166,7 +166,7 @@ Expected:
 /plx:dev, /plx:plan, /plx:review, /plx:codex, /plx:grok appear (no /plx:claude)
 plx:claude-planner / plx:codex-planner appear in /agents
 plx:claude-worker appears in /agents
-plx:codex-correctness-reviewer / plx:codex-refine-reviewer appear in /agents
+plx:codex-reviewer-correctness / plx:codex-reviewer-refine appear in /agents
 ```
 
 ### Smoke tests

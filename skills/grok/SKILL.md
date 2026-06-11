@@ -19,7 +19,7 @@ Three tool calls — no subagent.
 3. **One Bash call** to run, check, and clean up in a single `;`-chained command (so status/cleanup run even on engine failure):
 
    ```
-   plx-grok-rw --repo <repo> --prompt-file <tmp>/prompt.md --stdout; rc=$?; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
+   plx-grok-rw --repo <repo> --prompt-file <tmp>/prompt.md --stdout; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
    ```
 
    `plx-grok-rw` is on your PATH (shipped in the plugin's `bin/`); it runs one headless grok turn with safety pinned (kernel-enforced `workspace` sandbox + bypassPermissions) and emits only the model's final text — the write boundary is that sandbox scoped to `--repo`, writes outside it are OS-denied. The rw wrapper is used for **every** ask type; for a pure question or plan grok simply writes nothing, so there is no separate read-only path.

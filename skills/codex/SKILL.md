@@ -19,12 +19,12 @@ Three tool calls — no subagent.
 3. **One Bash call** to run, check, and clean up in a single `;`-chained command (so status/cleanup run even on engine failure):
 
    ```
-   plx-codex-rw --repo <repo> --prompt-file <tmp>/prompt.md --stdout; rc=$?; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
+   plx-codex-rw --repo <repo> --prompt-file <tmp>/prompt.md --effort <medium|xhigh> --stdout; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
    ```
 
    `plx-codex-rw` is on your PATH (shipped in the plugin's `bin/`); it runs one headless `codex exec` turn with safety pinned (workspace-write sandbox scoped to `--repo`, `--ignore-user-config`, `--ephemeral`) and prints only Codex's final message — the write boundary is that sandbox, nothing else can be touched. The rw wrapper is used for **every** ask type; for a pure question or plan Codex simply writes nothing, so there is no separate read-only path.
 
-   - Default effort is `high`; add `--effort xhigh` for a genuinely hard ask.
+   - Effort: `--effort medium` for a trivial question; `--effort xhigh` for everything else. Pick one — always pass the flag.
    - If the call may run long, use the Bash tool's `run_in_background` option rather than blocking (the post-run status/diff then happens after the completion notification).
    - Exit codes: **0** ok · **1** Codex failure (surface the stderr/log excerpt to the user) · **2** usage error (your invocation is wrong — fix it) · **3** not signed in → tell the user to run `codex login` and stop.
 

@@ -13,7 +13,7 @@ flowchart TD
 
     DEV --> PIPE
 
-    subgraph PIPE ["🔁 dev pipeline — 7 subagent spawns; Fable holds only compact artifacts"]
+    subgraph PIPE ["🔁 dev pipeline — 6 subagent spawns; Fable holds only compact artifacts"]
       direction TB
       S1["① Delegate planning — 2 parallel planners (read-only)<br/>plx:claude-planner (Opus xhigh) + plx:codex-planner (Codex xhigh)"]
       S2["② Plan artifacts return"]
@@ -21,8 +21,8 @@ flowchart TD
       S4["④ Delegate the build — 1 worker ✍️<br/>plx:claude-worker (Opus xhigh), spec only"]
       S5["⑤ Buildout report returns — per-file summaries, never code bodies"]
       S6["⑥ Fable writes the review brief — WITHOUT reading the built code"]
-      S7["⑦ 3 parallel Codex review lanes (read-only)<br/>debug · correctness · refine"]
-      S8["⑧ 🧠 Fable synthesizes as pseudo-4th reviewer → repair plan<br/>verifies findings surgically, kills false positives"]
+      S7["⑦ 2 parallel Codex review lanes (read-only)<br/>correctness · refine"]
+      S8["⑧ 🧠 Fable synthesizes as pseudo-3rd reviewer → repair plan<br/>verifies findings surgically, kills false positives"]
       S9["⑨ Fable applies the repair plan inline ✍️<br/>escape hatch: structural rework → fresh build"]
       S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8 --> S9
     end
@@ -38,7 +38,7 @@ flowchart TD
       direction TB
       L1["🛠️ dev:  ① → ⑩ (full pipeline)"]
       L2["📐 plan:  ① → ③ — two planners + Fable synthesis, no build"]
-      L3["🔎 review:  ⑥ → ⑧ — three Codex lanes + Fable synthesis, read-only"]
+      L3["🔎 review:  ⑥ → ⑧ — two Codex lanes + Fable synthesis, read-only"]
       L4["🤖 passthrough:  /plx:codex · /plx:grok — one engine, no pipeline"]
     end
 

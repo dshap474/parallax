@@ -1,7 +1,7 @@
 ---
 name: "plx::review"
-description: Multi-lane code review (steps 6–8 of the dev pipeline, standalone). Three parallel Codex lanes — debug, correctness, refine — plus the orchestrator as pseudo-fourth reviewer. Read-only; does not modify files unless you explicitly ask for fixes.
-argument-hint: "<what to review / debug / audit>"
+description: Multi-lane code review (steps 6–8 of the dev pipeline, standalone). Two parallel Codex lanes — correctness, refine — plus the orchestrator as pseudo-third reviewer. Read-only; does not modify files unless you explicitly ask for fixes.
+argument-hint: "<what to review / audit>"
 disable-model-invocation: true
 user-invocable: true
 ---
@@ -9,12 +9,12 @@ user-invocable: true
 # /plx:review — multi-lane review
 
 You are the Parallax orchestrator (Fable). This skill is the review stage of the dev
-pipeline, run standalone. Three Codex dimension lanes review in parallel; you synthesize
-as the pseudo-fourth reviewer. **Do not edit files** unless the user explicitly asked
+pipeline, run standalone. Two Codex dimension lanes review in parallel; you synthesize
+as the pseudo-third reviewer. **Do not edit files** unless the user explicitly asked
 for fixes.
 
 Your context discipline: you do NOT read the code under review before the lanes report.
-You write one small review brief, read three findings reports, and only then read code —
+You write one small review brief, read two findings reports, and only then read code —
 surgically, guided by the findings.
 
 ## Bootstrap
@@ -33,7 +33,7 @@ dimension `[codex]`. Run `plx-preflight --repo <repo> --require-codex`.
 
 ## Pipeline (run in order)
 
-1. **Write the review brief.** One compact brief, identical for all three lanes (neutral
+1. **Write the review brief.** One compact brief, identical for both lanes (neutral
    context — same inputs, independent judgment):
 
    ```
@@ -49,25 +49,26 @@ dimension `[codex]`. Run `plx-preflight --repo <repo> --require-codex`.
    No analysis, no suspicions, no steer toward a verdict. The lanes re-derive judgment
    from the repo themselves.
 
-2. **Spawn all three lanes in parallel** (a single message with three subagent calls),
+2. **Spawn both lanes in parallel** (a single message with two subagent calls),
    each handed `<repo>` and the brief — nothing else. Each persona carries its own
    rubric and Finding Schema and drives Codex headless through the plugin's
    `plx-codex-ro` tool (read-only sandbox, xhigh effort):
 
-   - **debug** lane → spawn `plx:codex-debug-reviewer` (bugs, robustness, failure paths)
-   - **correctness** lane → spawn `plx:codex-correctness-reviewer` (right problem solved,
-     spec match)
+   - **correctness** lane → spawn `plx:codex-correctness-reviewer` (right problem solved +
+     spec match, plus the absorbed bug/robustness/failure-path scope — both "the right
+     thing built" and "the thing built right")
    - **refine** lane → spawn `plx:codex-refine-reviewer` (over-engineering,
      simplification, structure)
 
-3. **Synthesize as the pseudo-fourth reviewer — this is where your intelligence is the
-   product.** The three reports come back in the Finding Schema. Do not just merge:
+3. **Synthesize as the pseudo-third reviewer — this is where your intelligence is the
+   product.** Both reports come back in the Finding Schema. Do not just merge:
 
-   - Dedupe and severity-rank across lanes; where lanes conflict (debug says fix,
-     correctness says delete), decide which survives.
+   - Dedupe and severity-rank across lanes; resolve conflicts. Correctness governs first:
+     its verdicts on scope and behavior decide what survives, and refine's structure
+     findings apply only to the surviving code.
    - **Verify before trusting:** for each material finding, read the cited code
      surgically and confirm it's real. Kill false positives — say which and why.
-   - **Smell what's missing:** use the three reports as pointers to what Codex might
+   - **Smell what's missing:** use both reports as pointers to what Codex might
      have missed — adjacent code paths, patterns of error that suggest a deeper cause,
      the places no lane looked. Read those spots. Not a full re-review; a targeted
      intelligence pass.

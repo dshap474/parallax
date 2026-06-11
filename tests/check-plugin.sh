@@ -41,11 +41,11 @@ while IFS= read -r line; do
   if grep -qE "^  ${key}:" "$YAML"; then _pass "config key: $key"; else _fail "skill references missing config key: $key"; fi
 done < <(grep -rhoE 'key `[a-z-]+`' "$PLX_ROOT"/skills/*/SKILL.md 2>/dev/null | sort -u)
 
-_head "Referenced plx:<engine>-<persona> subagents have agent files"
+_head "Referenced plx:<engine>-<persona> subagents have agent files (live roster only; _disabled/ is parked)"
 while IFS= read -r sub; do
   name="${sub#plx:}"
   if [ -f "$PLX_ROOT/agents/$name.md" ]; then _pass "agent: $name.md"; else _fail "missing agent file: agents/$name.md"; fi
-done < <(grep -rhoE 'plx:(claude|codex|grok)-[a-z-]+' \
+done < <(grep -rhoE --exclude-dir=_disabled 'plx:(claude|codex|grok)-[a-z-]+' \
            "$PLX_ROOT/skills" "$PLX_ROOT/config" 2>/dev/null | sed 's/-$//' | sort -u)
 
 _head "Engine API tools present and executable"

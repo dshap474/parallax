@@ -54,11 +54,14 @@ their callers/callees, existing tests, and project guidance (`AGENTS.md`, `CLAUD
 README, sibling files to mirror).
 
 The plan is the linchpin of the pipeline: a worker with no prior context implements from
-it, so it must carry the thinking. Quality bar: could a competent coder with no prior
-context execute this **without asking a single question**? Are interfaces/types/names
-pinned (not left to the coder's discretion)? Are the "do not touch" boundaries explicit?
-Are acceptance checks concrete and runnable? If a step can't be made that precise, split
-it further — do not ship a vague step.
+it, so it must carry the thinking. Break the work into the **smallest independent tasks**
+so the implementation stage can parallelize; dependent steps run in order, passing prior
+outputs forward.
+
+Quality bar: could a competent coder with no prior context execute this **without asking a
+single question**? Are interfaces/types/names pinned (not left to the coder's discretion)?
+Are the "do not touch" boundaries explicit? Are acceptance checks concrete and runnable?
+If a step can't be made that precise, split it further — do not ship a vague step.
 
 Do not edit any files — return the plan as your final message, in exactly this shape:
 

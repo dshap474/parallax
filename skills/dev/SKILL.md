@@ -1,6 +1,6 @@
 ---
 name: "plx::dev"
-description: The Parallax dev pipeline — plan (2 parallel planners) → build (1 Opus worker) → review (3 parallel Codex lanes) → fix (orchestrator) → docs observers + final reconciliation + local commit. The orchestrator delegates all bulk work and spends itself only on synthesis and the fix.
+description: The Parallax dev pipeline — plan (2 parallel planners) → build (1 Opus worker) → review (2 parallel Codex lanes) → fix (orchestrator) → docs observers + final reconciliation + local commit. The orchestrator delegates all bulk work and spends itself only on synthesis and the fix.
 argument-hint: "<coding task>"
 disable-model-invocation: true
 user-invocable: true
@@ -135,11 +135,12 @@ worker that returns no status line is a failure.
    - Spec source: <the final plan>
    ```
 
-   Identical for all three lanes; no analysis, no steer.
-7. **Spawn all three review lanes in parallel** (one message, three subagent calls),
+   Identical for both lanes; no analysis, no steer.
+7. **Spawn both review lanes in parallel** (one message, two subagent calls),
    each handed `<repo>` + the brief — nothing else:
-   - `plx:codex-debug-reviewer` (bugs, robustness, failure paths)
-   - `plx:codex-correctness-reviewer` (right problem solved, spec match)
+   - `plx:codex-correctness-reviewer` (right problem solved + spec match, plus the
+     absorbed bug/robustness/failure-path scope — both "the right thing built" and "the
+     thing built right")
    - `plx:codex-refine-reviewer` (over-engineering, simplification, structure)
 
    Each persona carries its own rubric + Finding Schema and drives `plx-codex-ro`
@@ -150,9 +151,11 @@ worker that returns no status line is a failure.
      envelope `phase: build`, `changed_paths`, `artifacts.buildout_report`,
      `signals.architecture`. Primary target `architecture/`. Honor the concurrency rule:
      if the plan observer is still running, wait or fold its signals into this dispatch.
-8. **Synthesize as the pseudo-fourth reviewer — spend your intelligence again.** Dedupe
-   and rank across lanes; resolve conflicts (debug says fix, correctness says delete —
-   decide which survives). **Verify before trusting:** read the cited code surgically
+8. **Synthesize as the pseudo-third reviewer — spend your intelligence again.** Dedupe
+   and rank across lanes; resolve conflicts. Correctness governs first: its verdicts on
+   scope and behavior decide what survives (don't polish refine notes on code correctness
+   wants deleted or rewritten), and refine's structure findings apply only to the
+   surviving code. **Verify before trusting:** read the cited code surgically
    and kill false positives. **Smell what's missing:** use the reports as pointers to
    what Codex might have missed — adjacent paths, error patterns suggesting a deeper
    cause — and read those spots. Not a full re-review; a targeted pass. Output: the

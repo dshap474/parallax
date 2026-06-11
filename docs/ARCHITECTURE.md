@@ -18,7 +18,7 @@ Subagent lanes burn the tokens — reading files, writing code, producing review
 
 The model split makes this concrete: the orchestrator is Fable; subagent lanes run **Opus** (or drive Codex/Grok through the engine tools). Opus does bulk work cheaply; Fable's context only ever holds compact artifacts.
 
-Fable does exactly two things itself: **judgment** (plan synthesis, review synthesis as the pseudo-fourth reviewer) and the **fix** (applying the repair plan — by then it has already read the relevant code during synthesis, so a handoff would cost more time and more total tokens). Plan, build, and review are always delegated.
+Fable does exactly two things itself: **judgment** (plan synthesis, review synthesis as the pseudo-third reviewer) and the **fix** (applying the repair plan — by then it has already read the relevant code during synthesis, so a handoff would cost more time and more total tokens). Plan, build, and review are always delegated.
 
 **Code with Opus, review with Codex** — the cross-model split is deliberate. A different model family reviewing the build gives genuinely independent scrutiny.
 
@@ -44,12 +44,12 @@ Synthesis (plan merge, finding triage, repair planning) is always Fable and neve
 4. **Delegate the build.** Fable hands the final plan to one Opus worker (`claude-worker`). Spec only — neutral context.
 5. **Buildout report returns.** Every file touched, per-file summary of what changed and why, coding decisions, verification. Summaries and pointers only, never code bodies or diffs — reviewers read the actual code from disk.
 6. **Prepare the review handoff.** Fable does **not** read the built code; from the Buildout report it writes a small review brief (files touched + what was implemented and why). The review rubrics already live in the reviewer agents.
-7. **Parallel multi-lane review.** Three Codex-xhigh reviewer lanes fire — debug, correctness, refine — each read-only, each with neutral context.
-8. **Fable synthesizes as pseudo-fourth reviewer.** Merges the three reports and uses its own intelligence: verifies claims, surgically reads suspect code, kills false positives, intuits gaps. Output: the repair plan.
+7. **Parallel multi-lane review.** Two Codex-xhigh reviewer lanes fire — correctness, refine — each read-only, each with neutral context. (The correctness lane covers bugs, robustness, and failure paths.)
+8. **Fable synthesizes as pseudo-third reviewer.** Merges the two reports and uses its own intelligence: verifies claims, surgically reads suspect code, kills false positives, intuits gaps. Output: the repair plan.
 9. **Fable fixes inline.** Step 8 already loaded the relevant code into its window, so Fable applies the repair plan itself, then runs the plan's verification commands. (Escape hatch: structural rework → delegate the repair plan as a fresh build.)
 10. **Docs + commit.** A docs subagent updates documentation, then a **local commit only** — never a push, PR, or publish.
 
-The pipeline has exactly **seven subagent spawns** (2 planners + 1 builder + 3 reviewers + 1 docs).
+The pipeline has exactly **six subagent spawns** (2 planners + 1 builder + 2 reviewers + 1 docs).
 
 ## Pipelines
 

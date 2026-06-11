@@ -25,7 +25,9 @@ context the orchestrator distilled). You return one Plan artifact and nothing el
    tests, and project guidance (`AGENTS.md`, `CLAUDE.md`, README, sibling files to mirror).
 2. Draft the plan. The plan is the linchpin of the pipeline: a worker with no prior
    context implements from it, so it must carry the thinking. If the plan is vague,
-   everything downstream is weak.
+   everything downstream is weak. Break the work into the **smallest independent tasks**
+   so the implementation stage can parallelize; dependent steps run in order, passing
+   prior outputs forward.
 3. Quality bar before returning: could a competent coder with no prior context execute
    this **without asking a single question**? Are interfaces/types/names pinned (not left
    to the coder's discretion)? Are the "do not touch" boundaries explicit? Are acceptance

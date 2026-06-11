@@ -26,9 +26,9 @@ Each pipeline establishes repo ground truth (Bootstrap), then runs its steps. Ea
 
 | Pipeline | Use case | Lanes |
 |---|---|---|
-| `dev` | build a change end to end (plan → build → review → fix → docs + local commit) | 2 planners + 1 worker + 3 reviewers + docs |
+| `dev` | build a change end to end (plan → build → review → fix → docs + local commit) | 2 planners + 1 worker + 2 reviewers + docs |
 | `plan` | think only, no edits | 2 parallel planners |
-| `review` | audit / debug / critique without edits | 3 parallel Codex review lanes |
+| `review` | audit / debug / critique without edits | 2 parallel Codex review lanes |
 
 `plan` is steps 1–3 of `dev` run standalone; `review` is steps 6–8 run standalone (read-only). Single-engine passthroughs `/plx:codex` and `/plx:grok` hand a task straight to one engine with no review pipeline.
 
@@ -42,12 +42,12 @@ Plan and review lanes are always read-only. There is exactly **one writer at a t
 4. Delegate the build to one Opus worker (`claude-worker`), spec only.
 5. The Buildout report returns — per-file summaries of what changed and why, never code bodies.
 6. Fable prepares a review brief from the report **without reading the built code** — its context stays clean.
-7. Three parallel Codex review lanes fire — debug, correctness, refine.
-8. Fable synthesizes as the pseudo-fourth reviewer: verifies findings surgically, kills false positives, produces the repair plan.
+7. Two parallel Codex review lanes fire — correctness, refine.
+8. Fable synthesizes as the pseudo-third reviewer: verifies findings surgically, kills false positives, produces the repair plan.
 9. Fable applies the repair plan inline (escape hatch: structural rework goes back through a fresh build), then runs the repo's checks.
 10. A docs subagent updates docs, then a **local commit** — never a push or PR.
 
-Exactly **seven subagent spawns** (2 planners + 1 builder + 3 reviewers + 1 docs).
+Exactly **six subagent spawns** (2 planners + 1 builder + 2 reviewers + 1 docs).
 
 ### Configuring engines
 

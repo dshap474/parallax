@@ -10,31 +10,28 @@ user-invocable: true
 
 Run the user's request through **Grok only** — no Parallax review pipeline, no other engines, no subagent. You (the orchestrator) drive the engine wrapper yourself and return its output. Do not re-do or review the work.
 
-## Bootstrap
-
-Establish ground truth with your own tools — nothing is injected for you:
-
-- Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>` and use it for every `--repo` flag below.
-- If the worktree is dirty, read `git status --short` before the run — so you don't mistake pre-existing edits for Grok's.
-
 ## Execute
 
-1. **Write the prompt.** Write the user's request verbatim to `<tmp>/prompt.md` in a fresh `mktemp -d` dir. The ask type (question / coding / plan) only shapes the prompt — the steps below are identical for all three.
-2. **Run the wrapper yourself** via Bash — do not spawn any subagent. `plx-grok-rw` is on your PATH (shipped in the plugin's `bin/`); it runs one headless grok turn with safety pinned (kernel-enforced `workspace` sandbox + bypassPermissions) and emits only the model's final text. The write boundary is that kernel sandbox pinned inside the wrapper, scoped to `--repo` — writes outside it are OS-denied.
+Three tool calls — no subagent.
+
+1. **One Bash call** to set up: `git rev-parse --show-toplevel && git status --short && mktemp -d`. The first line is `<repo>` (the wrapper needs an absolute `--repo`, and that path is the write boundary); the status snapshot is so pre-existing edits aren't later attributed to Grok; the last line is `<tmp>`.
+2. **One Write call** to put the user's request verbatim into `<tmp>/prompt.md`. The ask type (question / coding / plan) only shapes the prompt — the steps are identical for all three.
+3. **One Bash call** to run, check, and clean up in a single `;`-chained command (so status/cleanup run even on engine failure):
 
    ```
-   plx-grok-rw --repo <repo> --prompt-file <tmp>/prompt.md --stdout
+   plx-grok-rw --repo <repo> --prompt-file <tmp>/prompt.md --stdout; rc=$?; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
    ```
+
+   `plx-grok-rw` is on your PATH (shipped in the plugin's `bin/`); it runs one headless grok turn with safety pinned (kernel-enforced `workspace` sandbox + bypassPermissions) and emits only the model's final text — the write boundary is that sandbox scoped to `--repo`, writes outside it are OS-denied. The rw wrapper is used for **every** ask type; for a pure question or plan grok simply writes nothing, so there is no separate read-only path.
 
    Two caller rules from the wrapper's own help text:
    - **Disable the Claude Bash sandbox for this call** (`dangerouslyDisableSandbox: true` on the Bash invocation) — grok needs the network/keychain access the sandbox blocks. The kernel workspace sandbox still confines grok's writes.
    - **Trust the exit code, not stderr.** grok prints non-fatal `worker quit ... AuthorizationRequired` noise to stderr even on success — judge the run by its exit code.
 
-   Plus:
-   - The rw wrapper is used for **every** ask type: for a pure question or plan grok simply writes nothing (stated in the wrapper's own help text), so there is no separate read-only path here.
-   - If the call may run long, use the Bash tool's `run_in_background` option rather than blocking.
+   - If the call may run long, use the Bash tool's `run_in_background` option rather than blocking (the post-run status/diff then happens after the completion notification).
    - Exit codes: **0** ok · **1** grok failure — a cancelled turn means no edits applied (surface the stderr/log excerpt to the user) · **2** usage error (your invocation is wrong — fix it) · **3** not signed in → tell the user to run `grok login` and stop.
-3. **Return the result.** Emit grok's output verbatim — no review pass of your own. Then run `git -C <repo> status --short`: for a pure question/plan grok writes nothing; if files changed, add a diff summary (`git -C <repo> diff --stat`). Clean up the temp dir.
+
+   Then emit grok's output verbatim — no review pass of your own. Only if the status shows new changes vs the step-1 snapshot, add a summary (`git -C <repo> diff --stat`).
 
 Request:
 

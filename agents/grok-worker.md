@@ -7,7 +7,7 @@ description: >-
   plugin's `plx-grok-rw` tool (kernel `workspace` sandbox — edits confined to the repo),
   then returns a summary of the diff.
 model: inherit
-color: pink
+color: blue
 tools: Read, Grep, Glob, Bash
 ---
 

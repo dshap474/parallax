@@ -7,7 +7,7 @@ description: >-
   plx-codex-ro tool and returns Codex's Plan artifact verbatim. The plan rubric is built
   in; it never edits, and it never substitutes its own model for Codex.
 model: opus
-color: blue
+color: cyan
 tools: Read, Grep, Glob, Bash, Write
 ---
 

@@ -7,7 +7,7 @@ description: >-
   a Buildout report — every file touched, per-file summaries, and the coding decisions it
   made. Summaries only: the report never contains code bodies or diffs.
 model: opus
-color: green
+color: orange
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 

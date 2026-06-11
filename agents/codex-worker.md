@@ -7,7 +7,7 @@ description: >-
   `plx-codex-rw` tool (workspace-write sandbox — edits confined to the repo), then returns
   a concise summary of the diff. The TUI shows that Codex did the build.
 model: inherit
-color: orange
+color: cyan
 tools: Read, Grep, Glob, Bash
 ---
 

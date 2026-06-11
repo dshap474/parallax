@@ -8,7 +8,7 @@ description: >-
   verbatim. The correctness rubric and Finding Schema are built in; it never edits, and it
   never substitutes its own model for Codex.
 model: opus
-color: yellow
+color: cyan
 tools: Read, Grep, Glob, Bash, Write
 ---
 

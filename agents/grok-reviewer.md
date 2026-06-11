@@ -7,7 +7,7 @@ description: >-
   tool (kernel-enforced read-only sandbox) and returns Grok's findings verbatim — it never
   edits, and it never substitutes its own model for Grok.
 model: inherit
-color: purple
+color: blue
 tools: Read, Grep, Glob, Bash
 ---
 

@@ -7,7 +7,7 @@ description: >-
   returns Codex's findings verbatim — it never edits, and it never substitutes its own model
   for Codex.
 model: inherit
-color: blue
+color: cyan
 tools: Read, Grep, Glob, Bash
 ---
 

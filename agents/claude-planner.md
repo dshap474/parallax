@@ -6,7 +6,7 @@ description: >-
   task brief. It studies the repo and returns a Plan artifact. The plan rubric and
   artifact template are built in; it never edits files and never writes code.
 model: opus
-color: cyan
+color: orange
 tools: Read, Grep, Glob
 ---
 

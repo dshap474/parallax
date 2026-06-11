@@ -6,7 +6,7 @@ description: >-
   independent debug, correctness, refine, or plan critique that returns findings only and
   never edits. Spawn it fresh with neutral context.
 model: inherit
-color: cyan
+color: orange
 tools: Read, Grep, Glob
 ---
 

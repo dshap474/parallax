@@ -7,7 +7,7 @@ description: >-
   plx-codex-ro tool and returns Codex's findings verbatim. The debug rubric and Finding
   Schema are built in; it never edits, and it never substitutes its own model for Codex.
 model: opus
-color: red
+color: cyan
 tools: Read, Grep, Glob, Bash, Write
 ---
 

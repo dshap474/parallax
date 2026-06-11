@@ -86,7 +86,7 @@ Each `skills/<name>/SKILL.md` carries its entire pipeline inline — lane briefs
 
 ## Disabled pipelines
 
-The `team-*` and `ultra-*` skills are parked (their `SKILL.md` files are renamed `DISABLED.md`). When revived, they are regenerated from the dev spec in `.project/PLX.md` — the same skeleton with more engines in the read stages.
+The `team-*` and `ultra-*` skills are parked (their `SKILL.md` files are renamed `DISABLED.md`). When revived, they are regenerated from the dev spec in `.project/VISION.md` — the same skeleton with more engines in the read stages.
 
 ## Status
 

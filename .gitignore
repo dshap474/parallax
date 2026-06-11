@@ -5,9 +5,7 @@
 # Developer
 _disabled/
 
-# .project/ is git-tracked durable project memory (see .project/PROJECT.md).
-# Track everything under it EXCEPT these bulky external reference/asset dumps.
-.project/reference-skills/
-.project/reference-docs/
-.project/headless-mode-docs/
-.project/assets/
+# .project/ is git-tracked durable project memory (see .project/notes/PROJECT.md).
+# Everything under it is tracked, including the reference/asset dumps now living
+# under .project/notes/ (reference-skills/, reference-docs/, headless-mode-docs/,
+# assets/).

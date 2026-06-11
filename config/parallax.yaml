@@ -28,7 +28,7 @@
 #     orchestrator and never configurable.
 #
 # Disabled pipelines (team-*, ultra-*) have no keys here; they are regenerated
-# from the dev spec in .project/PLX.md when revived.
+# from the dev spec in .project/VISION.md when revived.
 
 pipelines:
   dev:

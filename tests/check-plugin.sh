@@ -60,7 +60,7 @@ if [ -d "$PLX_ROOT/base-prompts" ]; then
     _pass "base prompt: ${b##*/}"
   done
 else
-  _pass "base-prompts/ absent (rebuilt in scaffold phase — see .project/PLX.md)"
+  _pass "base-prompts/ absent (rebuilt in scaffold phase — see .project/VISION.md)"
 fi
 
 _head "Skills are self-contained (no pointers into lib/, prompts/, scripts/, or router.md)"

@@ -29,7 +29,7 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 - `base-prompts/` — canonical prompt blocks (rubrics, schemas, templates) as a **reference library only**, never loaded at runtime; skills inline the blocks and agents carry the rubrics
 - 1 engine-per-role config (`config/parallax.yaml`), keyed by pipeline: `dev`, `plan`, `review`
 - A deterministic engine API in `bin/` (on the Bash PATH while the plugin is enabled): `plx-codex-ro`/`plx-codex-rw`, `plx-grok-ro`/`plx-grok-rw`, `plx-preflight`, `plx-config`, `plx-skill` — uniform flags (`--repo`, `--prompt-file`, `--stdout`/`--out --log`; `--effort low|medium|high|xhigh` on the Codex tools), uniform exit codes (0 ok · 1 engine failure · 2 usage error · 3 auth needed), and `--help` manuals
-- **Disabled / parked:** `team-*` and `ultra-*` skills, with their `SKILL.md` renamed to `DISABLED.md` (in `skills/_disabled/`), regenerated from `.project/PLX.md` when revived
+- **Disabled / parked:** `team-*` and `ultra-*` skills, with their `SKILL.md` renamed to `DISABLED.md` (in `skills/_disabled/`), regenerated from `.project/VISION.md` when revived
 
 ## Target tree
 

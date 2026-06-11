@@ -29,7 +29,7 @@ There is no `/plx:claude` — the orchestrator *is* Claude; just ask it directly
 
 ## Disabled / parked commands
 
-The `team-*` and `ultra-*` commands (`/plx:team-dev`, `/plx:ultra-dev`, `/plx:team-plan`, `/plx:ultra-plan`, `/plx:team-review`, `/plx:ultra-review`) are parked — their skill files are renamed `DISABLED.md` and the commands do not appear until they are regenerated from `.project/PLX.md`.
+The `team-*` and `ultra-*` commands (`/plx:team-dev`, `/plx:ultra-dev`, `/plx:team-plan`, `/plx:ultra-plan`, `/plx:team-review`, `/plx:ultra-review`) are parked — their skill files are renamed `DISABLED.md` and the commands do not appear until they are regenerated from `.project/VISION.md`.
 
 ## Notes
 

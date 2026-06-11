@@ -41,7 +41,7 @@ Edit it directly in the skill's `SKILL.md`. If the change is a reusable block (a
 
 ### Revive a disabled pipeline
 
-The `team-*` and `ultra-*` skills are regenerated from `.project/PLX.md` — the dev skeleton with more engines in the read stages. A revived team/ultra skill must read as "the dev stages with more read lanes"; if it doesn't, the structure has drifted. Add its config key to `config/parallax.yaml`.
+The `team-*` and `ultra-*` skills are regenerated from `.project/VISION.md` — the dev skeleton with more engines in the read stages. A revived team/ultra skill must read as "the dev stages with more read lanes"; if it doesn't, the structure has drifted. Add its config key to `config/parallax.yaml`.
 
 ### Add runtime plumbing
 

@@ -3,5 +3,11 @@
 *.swp
 
 # Developer
-.project/
 _disabled/
+
+# .project/ is git-tracked durable project memory (see .project/PROJECT.md).
+# Track everything under it EXCEPT these bulky external reference/asset dumps.
+.project/reference-skills/
+.project/reference-docs/
+.project/headless-mode-docs/
+.project/assets/

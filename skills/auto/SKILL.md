@@ -83,7 +83,8 @@ the target skill's Bootstrap, but still run its preflight.
 - Do not manually construct raw `codex exec` or `grok` commands.
 - Do not use hooks.
 - Do not write Parallax state into the target repo — no `.parallax/` dirs. Temp files
-  live in `mktemp -d` dirs only, cleaned up before returning.
+  live in `mktemp -d` dirs only. In the dev pipeline the artifact dir must survive until
+  the final docs reconciliation worker has consumed it; clean up only after that.
 - Never `uv run` inside a sandbox.
 
 ## Output discipline

@@ -28,4 +28,4 @@ The `team-*` and `ultra-*` commands (`/plx:team-dev`, `/plx:ultra-dev`, `/plx:te
 ## Notes
 
 - Each command **is** its pipeline, written out in full: its `SKILL.md` carries the ordered steps, lane briefs, prompt templates, and engine invocations inline, resolving only engine bindings from `config/parallax.yaml`.
-- Each lane runs as an engine-named subagent (`plx:claude-planner`, `plx:codex-reviewer-correctness`, etc.) so the TUI shows which engine ran it.
+- In the **pipelines**, each lane runs as an engine-named subagent (`plx:claude-planner`, `plx:codex-reviewer-correctness`, etc.) so the TUI shows which engine ran it. The **single-engine passthroughs spawn no subagent** — the orchestrator runs the engine's write-capable wrapper (`plx-codex-rw` / `plx-grok-rw`) directly.

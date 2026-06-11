@@ -12,7 +12,7 @@ config/           engine-per-role bindings (parallax.yaml — keys: dev, plan, r
 bin/              engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill)
 base-prompts/     canonical prompt blocks (rubrics, schemas, templates) — storage only
 templates/        plan / coding spec templates
-agents/           subagent personas (planners, worker, dimension reviewers, passthroughs)
+agents/           subagent personas (planners, workers, dimension reviewers)
 docs/             human-facing docs
 tests/            deterministic harness (run.sh, check-plugin.sh, explain-skill.sh, smoke-scripts.sh, fixture/)
 ```

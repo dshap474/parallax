@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Parallax engine API — Grok (Composer), WRITE-CAPABLE. Used only when the
-# writer (`code`) role is assigned to grok, or by the /plx:grok passthrough.
+# Parallax engine API — Grok (Composer), WRITE-CAPABLE. Used when the writer
+# (`code`) role is assigned to grok, and by the /plx:grok passthrough (the
+# orchestrator runs this wrapper directly).
 #
 # Safety model (verified grok 0.2.32, 2026-06-08):
 #   * The OS-level SANDBOX is the real boundary. `--sandbox workspace` confines

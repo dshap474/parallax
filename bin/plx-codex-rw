@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Parallax engine API — Codex, WRITE-CAPABLE. Used only when the writer (`code`)
-# role is assigned to codex, or by the /plx:codex passthrough. Safety flags are
-# pinned here: workspace-write sandbox scoped to --repo, --ignore-user-config.
+# Parallax engine API — Codex, WRITE-CAPABLE. Used when the writer (`code`) role
+# is assigned to codex, and by the /plx:codex passthrough (the orchestrator runs
+# this wrapper directly). Safety flags are pinned here: workspace-write sandbox
+# scoped to --repo, --ignore-user-config.
 # Never danger-full-access, never --dangerously-bypass-approvals-and-sandbox.
 
 usage() {

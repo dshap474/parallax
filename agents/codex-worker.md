@@ -2,10 +2,10 @@
 name: codex-worker
 description: >-
   Write-capable Codex implementation lane for the Parallax pipeline. The orchestrator spawns
-  this agent when the writer (`code`) role is assigned to the `codex` engine, or for the
-  /plx:codex passthrough. It drives the real Codex CLI headless via the plugin's
-  `plx-codex-rw` tool (workspace-write sandbox — edits confined to the repo), then returns
-  a concise summary of the diff. The TUI shows that Codex did the build.
+  this agent when the writer (`code`) role is assigned to the `codex` engine. It drives the
+  real Codex CLI headless via the plugin's `plx-codex-rw` tool (workspace-write sandbox —
+  edits confined to the repo), then returns a concise summary of the diff. The TUI shows that
+  Codex did the build.
 model: inherit
 color: cyan
 tools: Read, Grep, Glob, Bash

@@ -3,9 +3,8 @@ name: grok-worker
 description: >-
   Write-capable Grok (Composer) implementation lane for the Parallax pipeline. The
   orchestrator spawns this agent when the writer (`code`) role is assigned to the `grok`
-  engine, or for the /plx:grok passthrough. It drives the real Grok CLI headless via the
-  plugin's `plx-grok-rw` tool (kernel `workspace` sandbox — edits confined to the repo),
-  then returns a summary of the diff.
+  engine. It drives the real Grok CLI headless via the plugin's `plx-grok-rw` tool (kernel
+  `workspace` sandbox — edits confined to the repo), then returns a summary of the diff.
 model: inherit
 color: blue
 tools: Read, Grep, Glob, Bash

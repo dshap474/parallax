@@ -31,7 +31,7 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 ├── .claude-plugin/
 │   ├── plugin.json
 │   └── marketplace.json
-├── agents/             # subagent personas (planners, worker, reviewers, passthroughs)
+├── agents/             # subagent personas (planners, workers, reviewers)
 ├── skills/
 │   ├── dev/SKILL.md      # 10-step pipeline
 │   ├── plan/SKILL.md     # steps 1–3

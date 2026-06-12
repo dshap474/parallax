@@ -1,7 +1,7 @@
 ---
 name: codex-reviewer-correctness
 description: >-
-  Read-only Codex correctness review lane for the Parallax pipeline. The orchestrator
+  Read-only Codex correctness review lane for the Parallax pipeline. The caller
   spawns it with only the repo path and a review brief (files touched + what was
   implemented and why, including the spec source). The real Codex CLI does the reviewing —
   this agent operates it via the plugin's plx-codex-ro tool and returns Codex's findings
@@ -39,8 +39,8 @@ On your PATH (shipped in the Parallax plugin's `bin/`). It runs one headless, re
    then the caller's review brief appended under a final section `## Review brief`.
 2. Run: `plx-codex-ro --repo <repo> --prompt-file <tmp>/prompt.md --effort xhigh --stdout`
 3. Return Codex's output **verbatim** as your result. Do not summarize, re-rank, or add
-   your own analysis — the orchestrator synthesizes across lanes.
-4. On non-zero exit, return the error text and exit-code meaning so the orchestrator can
+   your own analysis — the caller synthesizes across lanes.
+4. On non-zero exit, return the error text and exit-code meaning so the caller can
    decide. Do not retry silently, and never fabricate findings.
 5. Remove the temp dir.
 
@@ -67,7 +67,7 @@ before judging the code that implements it. Do not polish bugs on an object you 
 recommending for deletion — classify the object first.
 
 Posture: **conservative.** Report only what you have verified. You review independently;
-the refine lane reviews structure in parallel, and the orchestrator merges and dedupes
+the refine lane reviews structure in parallel, and the caller merges and dedupes
 the reports. A problem found by only you is still real — do not assume another lane
 caught it.
 
@@ -190,7 +190,7 @@ Return:
 Use `Object` for the stable code object, behavior, branch, helper, abstraction, or call
 path under judgment. In `Evidence`, cite what you traced: for a spec mismatch, the spec
 basis plus the classification (required, extra, wrong-scope, missing, or ambiguous); for
-a bug, the concrete failure path. In `Main-agent instruction`, tell the orchestrator what
+a bug, the concrete failure path. In `Main-agent instruction`, tell the caller what
 to do; when a bug lives on an object that may itself be extra or wrong-scope, phrase it
 as *if this object survives synthesis, fix this*.
 

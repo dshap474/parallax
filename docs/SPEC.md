@@ -12,11 +12,11 @@ dev | plan | review
 
 Each pipeline establishes repo ground truth (Bootstrap), then runs its steps. Explicit `/plx:*` commands run a specific pipeline or hand a task to a single engine (see `docs/COMMANDS.md`).
 
-The orchestrator is Claude (Fable). It delegates all bulk work — planning, building, reviewing — to subagent lanes and spends its own intelligence only at plan synthesis and review synthesis + fix. Plan and review lanes are read-only; there is exactly one writer at a time (the build worker, plus Fable applying the repair plan). By default the writer is Claude, but `config/parallax.yaml` can bind it to Codex or Grok (scoped-write tools).
+The orchestrator is Claude (Fable). It delegates all bulk work — planning, building, reviewing — to subagent lanes and spends its own intelligence only at plan authoring and the final gate. In `dev`, the build worker spawns the read-only review lanes itself (nested subagents), fixes or rebuts every finding, and returns one report; Fable then reads the diff once as a final sanity gate. Plan and review lanes are read-only; there is exactly one writer at a time (the build worker, plus Fable fixing nits at the gate). By default the writer is Claude, but `config/parallax.yaml` can bind it to Codex or Grok (scoped-write tools).
 
 ## What ships
 
-- 3 pipeline skills, each **fully self-contained** (steps, lane briefs, prompt templates, and engine handoffs all written out inline — no pointers to other prompt files, no `${CLAUDE_PLUGIN_ROOT}`, no script injection): `plx:dev` (10-step pipeline), `plx:plan` (steps 1–3), `plx:review` (steps 6–8)
+- 3 pipeline skills, each **fully self-contained** (steps, lane briefs, prompt templates, and engine handoffs all written out inline — no pointers to other prompt files, no `${CLAUDE_PLUGIN_ROOT}`, no script injection): `plx:dev` (7-step pipeline), `plx:plan` (steps 1–3), `plx:review` (standalone read-only review)
 - 2 single-engine passthroughs: `plx:codex`, `plx:grok` (no `plx:claude` — the orchestrator *is* Claude)
 - Subagent personas in `agents/` carrying rubrics + operator manuals: 12 engine personas (`<engine>-planner`, `<engine>-worker`, `<engine>-reviewer-correctness`, `<engine>-reviewer-refine` for `claude` / `codex` / `grok`) plus `docs`
 - `base-prompts/` — canonical prompt blocks (rubrics, schemas, templates) as a **reference library only**, never loaded at runtime; skills inline the blocks and agents carry the rubrics
@@ -33,9 +33,9 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 │   └── marketplace.json
 ├── agents/             # subagent personas (planners, workers, reviewers)
 ├── skills/
-│   ├── dev/SKILL.md      # 10-step pipeline
+│   ├── dev/SKILL.md      # 7-step pipeline
 │   ├── plan/SKILL.md     # steps 1–3
-│   ├── review/SKILL.md   # steps 6–8
+│   ├── review/SKILL.md   # standalone read-only review
 │   ├── codex/SKILL.md    # single-engine passthrough
 │   ├── grok/SKILL.md     # single-engine passthrough
 │   └── _disabled/        # parked team-*/ultra-* (DISABLED.md)
@@ -82,7 +82,7 @@ Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev
 - Codex execution goes through `bin/plx-codex-ro` (review/plan) or, when `code: codex`, `bin/plx-codex-rw` (scoped write).
 - Grok execution goes through `bin/plx-grok-ro` (review/plan) or, when `code: grok`, `bin/plx-grok-rw` (scoped write).
 - Engine wrappers never use `danger-full-access`, `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`.
-- Synthesis (plan authoring and arbitration between Planning Briefs, finding triage, repair planning) is always the orchestrator and never configurable.
+- Plan authoring (arbitration between Planning Briefs) and the final gate are always the orchestrator; finding triage in the build's review round is always the build worker. Neither is configurable.
 - Plan and review lanes are always read-only; exactly one writer at a time.
 - Every `dev` run ends with a docs subagent and a **local commit only** — never a push, PR, or publish step.
 - Final results are returned in chat, not written to a results file.
@@ -92,10 +92,10 @@ Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev
 The shapes that flow between stages (byte-identical wherever they appear):
 
 1. **Planning Brief** — recommended design + steelman, alternatives rejected, repo facts, constraints/invariants, suggested success criteria, validation, risks. Output of each planner lane (architecture consultants). Fable arbitrates across the briefs and authors the final plan doc itself (outcome-first: intent, success criteria, invariants, suggested path, validation) — that doc is the build spec.
-2. **Buildout report** — every file touched, per-file summary of changes, coding decisions, verification (commands + results), blockers/skips. Summaries only, never code bodies. Output of `build`; source of `review`'s brief.
-3. **Review brief** — files touched + what was implemented and why. The only thing the orchestrator writes for the review stage.
-4. **Finding Schema** — id, severity, file:line, what breaks, minimal fix, confidence. Output of every review lane; input to Fable's synthesis.
-5. **Repair plan** — Fable's synthesis of findings plus its own pseudo-reviewer pass. Applied inline by Fable (or, escape hatch, becomes a fresh build spec).
+2. **Buildout report** — every file touched, per-file summary of changes, coding decisions, verification (commands + results), the review round disposition (per finding: fixed / rebutted / residual), blockers/skips. Summaries only, never code bodies. Output of `build`; input to Fable's final gate.
+3. **Review brief** — files touched + what was implemented and why. Written by the build worker for its review round (in standalone `review`, by the orchestrator).
+4. **Finding Schema** — id, severity, file:line, what breaks, minimal fix, confidence. Output of every review lane; input to the caller's triage.
+5. **Repair plan** — the synthesis of findings into ordered fixes. In `dev` the build worker fixes findings directly in its review round and Fable fixes nits at the gate; in standalone `review`, Fable synthesizes the repair plan and returns it without editing.
 
 ## Acceptance criteria
 

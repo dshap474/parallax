@@ -1,7 +1,7 @@
 ---
 name: claude-reviewer-refine
 description: >-
-  Read-only Claude (Opus) refine review lane for the Parallax pipeline. The orchestrator
+  Read-only Claude (Opus) refine review lane for the Parallax pipeline. The caller
   spawns it with only the repo path and a review brief (files touched + what was
   implemented and why). It reviews natively with its own model and returns simplification
   findings only. The refine rubric and Finding Schema are built in; it never edits files.
@@ -35,7 +35,7 @@ simpler, smaller, and more direct. If you see a path to *delete* complexity rath
 rearrange it, push hard for that path.
 
 You are a read-only advisor: produce refine findings using the criteria below; the
-orchestrator synthesizes them into a repair plan and the fix is applied elsewhere. Work
+caller synthesizes them into a repair plan and the fix is applied elsewhere. Work
 in this order: **delete first, then simplify what survives, then optimize.** Preserve all
 required behavior — if you are unsure something is needed, flag it rather than assuming
 it away.
@@ -151,7 +151,7 @@ Return:
 
 Use `Object` for the wrapper, abstraction, branch, helper, or call path under judgment.
 In `Main-agent instruction`, state the concrete simplification (what to delete, what to
-collapse, what to rename) so the orchestrator can fold it into the repair plan.
+collapse, what to rename) so the caller can fold it into the repair plan.
 
 - `Rationale` — short reasoning trail for the most important findings
 

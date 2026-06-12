@@ -7,8 +7,9 @@
 # are the shipped defaults. Edit a value to swap the engine for that role.
 #
 # Engines resolve to named subagent personas, so the TUI shows which engine ran a
-# lane. Each persona carries its own rubric + operator manual — the orchestrator
-# hands it only the repo path and a task-specific brief:
+# lane. Each persona carries its own rubric + operator manual — the caller (the
+# orchestrator; for review lanes in dev, the build worker) hands it only the repo
+# path and a task-specific brief:
 #
 #   role                engine -> persona
 #   plan                claude -> plx:claude-planner             (Opus, read-only)
@@ -28,8 +29,8 @@
 #   - `code` takes exactly ONE engine — one writer at a time, always.
 #   - plan / review-* roles take LISTS and are always read-only, whatever engine
 #     fills them.
-#   - Synthesis (plan merge, finding triage, repair planning) is always the
-#     orchestrator and never configurable.
+#   - Plan authoring and the final review gate are always the orchestrator; finding
+#     triage in the build's review round is the build worker. Neither is configurable.
 #
 # Disabled pipelines (team-*, ultra-*) have no keys here; they are regenerated
 # from the dev spec in .project/VISION.md when revived.

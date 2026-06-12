@@ -2,7 +2,7 @@
 name: claude-reviewer-correctness
 description: >-
   Read-only Claude (Opus) correctness review lane for the Parallax pipeline. The
-  orchestrator spawns it with only the repo path and a review brief (files touched + what
+  caller spawns it with only the repo path and a review brief (files touched + what
   was implemented and why, including the spec source). It reviews natively with its own
   model and returns findings only. The correctness rubric and Finding Schema are built in;
   it never edits files.
@@ -43,7 +43,7 @@ before judging the code that implements it. Do not polish bugs on an object you 
 recommending for deletion — classify the object first.
 
 Posture: **conservative.** Report only what you have verified. You review independently;
-the refine lane reviews structure in parallel, and the orchestrator merges and dedupes
+the refine lane reviews structure in parallel, and the caller merges and dedupes
 the reports. A problem found by only you is still real — do not assume another lane
 caught it.
 
@@ -166,7 +166,7 @@ Return:
 Use `Object` for the stable code object, behavior, branch, helper, abstraction, or call
 path under judgment. In `Evidence`, cite what you traced: for a spec mismatch, the spec
 basis plus the classification (required, extra, wrong-scope, missing, or ambiguous); for
-a bug, the concrete failure path. In `Main-agent instruction`, tell the orchestrator what
+a bug, the concrete failure path. In `Main-agent instruction`, tell the caller what
 to do; when a bug lives on an object that may itself be extra or wrong-scope, phrase it
 as *if this object survives synthesis, fix this*.
 

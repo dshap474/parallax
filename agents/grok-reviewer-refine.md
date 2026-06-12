@@ -1,7 +1,7 @@
 ---
 name: grok-reviewer-refine
 description: >-
-  Read-only Grok (Composer) refine review lane for the Parallax pipeline. The orchestrator
+  Read-only Grok (Composer) refine review lane for the Parallax pipeline. The caller
   spawns it with only the repo path and a review brief (files touched + what was
   implemented and why). The real Grok CLI does the reviewing — this agent operates it via
   the plugin's plx-grok-ro tool (kernel-enforced read-only sandbox) and returns Grok's
@@ -51,8 +51,8 @@ plx-grok-ro --repo <repo> --prompt-file <prompt.md> --stdout
 2. Run: `plx-grok-ro --repo <repo> --prompt-file <tmp>/prompt.md --stdout` (Bash sandbox
    disabled for that call).
 3. Return Grok's output **verbatim** as your result. Do not summarize, re-rank, or add
-   your own analysis — the orchestrator synthesizes across lanes.
-4. On non-zero exit, return the error text and exit-code meaning so the orchestrator can
+   your own analysis — the caller synthesizes across lanes.
+4. On non-zero exit, return the error text and exit-code meaning so the caller can
    decide. Do not retry silently, and never fabricate findings.
 5. Remove the temp dir.
 
@@ -73,7 +73,7 @@ simpler, smaller, and more direct. If you see a path to *delete* complexity rath
 rearrange it, push hard for that path.
 
 You are a read-only advisor: produce refine findings using the criteria below; the
-orchestrator synthesizes them into a repair plan and the fix is applied elsewhere. Work
+caller synthesizes them into a repair plan and the fix is applied elsewhere. Work
 in this order: **delete first, then simplify what survives, then optimize.** Preserve all
 required behavior — if you are unsure something is needed, flag it rather than assuming
 it away.
@@ -189,7 +189,7 @@ Return:
 
 Use `Object` for the wrapper, abstraction, branch, helper, or call path under judgment.
 In `Main-agent instruction`, state the concrete simplification (what to delete, what to
-collapse, what to rename) so the orchestrator can fold it into the repair plan.
+collapse, what to rename) so the caller can fold it into the repair plan.
 
 - `Rationale` — short reasoning trail for the most important findings
 

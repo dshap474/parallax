@@ -3,9 +3,9 @@ flowchart TD
     SKL --> IN["⚙️ Bootstrap — orchestrator (Fable) resolves with its own tools<br/>absolute repo root · dirty-worktree check"]
     IN --> RT{"🧭 Which pipeline the command runs"}
 
-    RT -->|"/plx:dev — build a change"| DEV["🛠️ dev — full 10-step pipeline"]
+    RT -->|"/plx:dev — build a change"| DEV["🛠️ dev — full 7-step pipeline"]
     RT -->|"/plx:plan — think only, no edits"| PL["📐 plan — steps 1–3"]
-    RT -->|"/plx:review — audit / debug, no edits"| RV["🔎 review — steps 6–8"]
+    RT -->|"/plx:review — audit / debug, no edits"| RV["🔎 review — standalone, read-only"]
 
     CFG[("🗂️ config/parallax.yaml<br/>engine-per-role: dev · plan · review<br/>→ resolves each lane's persona")] -. "binds lanes" .-> DEV
     CFG -. .-> PL
@@ -13,32 +13,31 @@ flowchart TD
 
     DEV --> PIPE
 
-    subgraph PIPE ["🔁 dev pipeline — 6 subagent spawns; Fable holds only compact artifacts"]
+    subgraph PIPE ["🔁 dev pipeline — 4 top-level spawns; Fable holds only compact artifacts"]
       direction TB
       S1["① Delegate planning — 2 parallel planners (read-only)<br/>plx:claude-planner (Opus xhigh) + plx:codex-planner (Codex xhigh)"]
       S2["② Planning Briefs return (recommendation + steelman + repo facts)"]
       S3["③ 🧠 Fable arbitrates + authors the final plan doc (judgment, not a merge)"]
-      S4["④ Delegate the build — 1 worker ✍️<br/>plx:claude-worker (Opus xhigh), spec only"]
-      S5["⑤ Buildout report returns — per-file summaries, never code bodies"]
-      S6["⑥ Fable writes the review brief — WITHOUT reading the built code"]
-      S7["⑦ 2 parallel Codex review lanes (read-only)<br/>correctness · refine"]
-      S8["⑧ 🧠 Fable synthesizes as pseudo-3rd reviewer → repair plan<br/>verifies findings surgically, kills false positives"]
-      S9["⑨ Fable applies the repair plan inline ✍️<br/>escape hatch: structural rework → fresh build"]
-      S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8 --> S9
+      S4["④ Delegate the build — 1 worker ✍️<br/>plx:claude-worker (Opus xhigh), spec + reviewer lane names"]
+      S4R["worker spawns 2 nested Codex review lanes (read-only)<br/>correctness · refine — then fixes or rebuts every finding<br/>one round, hard cap"]
+      S5["⑤ Buildout report returns — per-file summaries + findings disposition<br/>(fixed / rebutted / residual), never code bodies"]
+      S6["⑥ 🧠 Fable's final gate — reads the diff ONCE, fresh eyes<br/>fixes nits inline ✍️ · escape hatch: structural rework → fresh build"]
+      S1 --> S2 --> S3 --> S4
+      S4 --> S4R --> S5 --> S6
     end
 
     PIPE --> V["✅ Verify — run the repo's own checks<br/>ruff · pytest · npm · cargo …"]
-    V --> DOC["⑩ Docs subagent updates docs → LOCAL commit only<br/>never push / PR / publish"]
+    V --> DOC["⑦ Docs subagent updates docs → LOCAL commit only<br/>never push / PR / publish"]
     DOC --> REP(["📝 Final chat report"])
 
     PL -.->|"plan = dev steps ①–③"| S1
-    RV -.->|"review = dev steps ⑥–⑧, read-only"| S6
+    RV -.->|"review = the 2 Codex lanes + Fable synthesis, orchestrator-driven"| S4R
 
     subgraph LEG ["Pipelines = subsets of the dev steps"]
       direction TB
-      L1["🛠️ dev:  ① → ⑩ (full pipeline)"]
-      L2["📐 plan:  ① → ③ — two planners + Fable synthesis, no build"]
-      L3["🔎 review:  ⑥ → ⑧ — two Codex lanes + Fable synthesis, read-only"]
+      L1["🛠️ dev:  ① → ⑦ (full pipeline)"]
+      L2["📐 plan:  ① → ③ — two planners + Fable authoring, no build"]
+      L3["🔎 review:  standalone — two Codex lanes + Fable synthesis, read-only"]
       L4["🤖 passthrough:  /plx:codex · /plx:grok — one engine, no pipeline"]
     end
 
@@ -54,9 +53,9 @@ flowchart TD
     class U,REP start
     class SKL,IN,V,DOC step
     class RT decision
-    class S4,S9 write
-    class S7 review
-    class S3,S8 synth
+    class S4 write
+    class S4R review
+    class S3,S6 synth
     class CFG cfg
-    class DEV,PL,RV,S1,S2,S5,S6 step
+    class DEV,PL,RV,S1,S2,S5 step
     class L1,L2,L3,L4 legend

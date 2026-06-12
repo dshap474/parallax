@@ -2,7 +2,7 @@
 
 Multi-model coding-agent orchestration for Claude Code.
 
-The orchestrator is Claude (Fable). Its scarcest resource is its own context window, so it **delegates all bulk work** — planning, building, reviewing — to subagent lanes (Opus personas, or Codex/Grok driven through the `bin/` engine tools) and keeps only the compact artifacts they hand back. Fable spends its own intelligence at exactly two points: synthesizing the plan, and synthesizing the review (then applying the fix). The deliberate split is **code with Opus, review with Codex** — cross-model review is genuinely independent.
+The orchestrator is Claude (Fable). Its scarcest resource is its own context window, so it **delegates all bulk work** — planning, building, reviewing — to subagent lanes (Opus personas, or Codex/Grok driven through the `bin/` engine tools) and keeps only the compact artifacts they hand back. The build worker spawns the review lanes itself (nested subagents) and fixes or rebuts every finding with its build context still hot. Fable spends its own intelligence at exactly two points: authoring the plan, and a final gate review of the diff. The deliberate split is **code with Opus, review with Codex** — cross-model review is genuinely independent.
 
 Explicit `/plx:*` commands run a specific pipeline (`dev`, `plan`, `review`), hand a task to a single engine, or bootstrap a repo's agent-docs setup (`init`) — see [`docs/COMMANDS.md`](docs/COMMANDS.md). Which engine fills each pipeline role is configurable in [`config/parallax.yaml`](config/parallax.yaml).
 
@@ -26,32 +26,29 @@ Each pipeline establishes repo ground truth (Bootstrap), then runs its steps. Ea
 
 | Pipeline | Use case | Lanes |
 |---|---|---|
-| `dev` | build a change end to end (plan → build → review → fix → docs + local commit) | 2 planners + 1 worker + 2 reviewers + docs |
+| `dev` | build a change end to end (plan → build+review → final gate → docs + local commit) | 2 planners + 1 worker (which spawns 2 reviewers) + docs |
 | `plan` | think only, no edits | 2 parallel planners |
 | `review` | audit / debug / critique without edits | 2 parallel Codex review lanes |
 
-`plan` is steps 1–3 of `dev` run standalone; `review` is steps 6–8 run standalone (read-only). Single-engine passthroughs `/plx:codex` and `/plx:grok` hand a task straight to one engine with no review pipeline.
+`plan` is steps 1–3 of `dev` run standalone; `review` is the review stage run standalone by the orchestrator (read-only). Single-engine passthroughs `/plx:codex` and `/plx:grok` hand a task straight to one engine with no review pipeline.
 
-Plan and review lanes are always read-only. There is exactly **one writer at a time, always** (the build worker, plus Fable applying the repair plan inline). Parallax does not write repo-local runtime state; temporary prompt/output files live only in shell temp directories and are cleaned up before commands return.
+Plan and review lanes are always read-only. There is exactly **one writer at a time, always** (the build worker, plus Fable fixing nits at the final gate). Parallax does not write repo-local runtime state; temporary prompt/output files live only in shell temp directories and are cleaned up before commands return.
 
-### The dev pipeline (10 steps)
+### The dev pipeline (7 steps)
 
 1. Delegate planning to two parallel planner lanes — `claude-planner` (Opus, xhigh) and `codex-planner` (Codex, xhigh) — architecture consultants on the same neutral brief.
 2. Both Planning Briefs return — recommendation + steelman + repo facts, not finished plans.
 3. Fable arbitrates across the briefs and authors the final plan doc — a judgment-and-authoring pass, not a merge.
-4. Delegate the build to one Opus worker (`claude-worker`), spec only.
-5. The Buildout report returns — per-file summaries of what changed and why, never code bodies.
-6. Fable prepares a review brief from the report **without reading the built code** — its context stays clean.
-7. Two parallel Codex review lanes fire — correctness, refine.
-8. Fable synthesizes as the pseudo-third reviewer: verifies findings surgically, kills false positives, produces the repair plan.
-9. Fable applies the repair plan inline (escape hatch: structural rework goes back through a fresh build), then runs the repo's checks.
-10. A docs subagent updates docs, then a **local commit** — never a push or PR.
+4. Delegate the build to one Opus worker (`claude-worker`) — the spec plus the reviewer persona names. The worker implements, self-verifies, **spawns the two Codex review lanes itself** (nested subagents, in parallel), then fixes or rebuts every finding with its build context still hot. One round, hard cap.
+5. The Buildout report returns — per-file summaries, coding decisions, verification, and the disposition of every review finding (fixed / rebutted / residual). Never code bodies.
+6. Fable gates the work: reads the diff once, with fresh eyes — do the rebuttals hold, do the residuals matter, was anything missed? It fixes nits inline (escape hatch: structural rework goes back through a fresh build), then re-runs the repo's checks.
+7. A docs subagent updates docs, then a **local commit** — never a push or PR.
 
-Exactly **six subagent spawns** (2 planners + 1 builder + 2 reviewers + 1 docs).
+Exactly **four top-level subagent spawns** (2 planners + 1 builder + 1 docs); the builder spawns the 2 review lanes nested inside its own context.
 
 ### Configuring engines
 
-`config/parallax.yaml` binds each pipeline role to an engine. `code` takes exactly one engine (one writer at a time); `plan` and `review-*` roles take lists and are always read-only. Synthesis is always the orchestrator and never configurable.
+`config/parallax.yaml` binds each pipeline role to an engine. `code` takes exactly one engine (one writer at a time); `plan` and `review-*` roles take lists and are always read-only. Plan authoring and the final gate are always the orchestrator; finding triage in the build's review round is always the build worker. Neither is configurable.
 
 ## Requirements
 

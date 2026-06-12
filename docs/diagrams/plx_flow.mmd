@@ -21,17 +21,15 @@ flowchart TD
       S4["④ Delegate the build — 1 worker ✍️<br/>plx:claude-worker (Opus xhigh), spec + reviewer lane names"]
       S4R["worker spawns 2 nested Codex review lanes (read-only)<br/>correctness · refine — then fixes or rebuts every finding<br/>one round, hard cap"]
       S5["⑤ Buildout report returns — per-file summaries + findings disposition<br/>(fixed / rebutted / residual), never code bodies"]
-      S6["⑥ 🧠 Fable's final gate — reads the diff ONCE, fresh eyes<br/>fixes nits inline ✍️ · escape hatch: structural rework → fresh build"]
+      S6["⑥ 🧠 Fable's final gate — reads the diff ONCE, fresh eyes<br/>fixes nits inline ✍️ · re-runs the repo's checks<br/>escape hatch: structural rework → fresh build"]
       S1 --> S2 --> S3 --> S4
       S4 --> S4R --> S5 --> S6
     end
 
-    PIPE --> V["✅ Verify — run the repo's own checks<br/>ruff · pytest · npm · cargo …"]
-    V --> DOC["⑦ Docs subagent updates docs → LOCAL commit only<br/>never push / PR / publish"]
+    PIPE --> DOC["⑦ Docs subagent updates docs → LOCAL commit only<br/>never push / PR / publish"]
     DOC --> REP(["📝 Final chat report"])
 
     PL -.->|"plan = dev steps ①–③"| S1
-    RV -.->|"review = the 2 Codex lanes + Fable synthesis, orchestrator-driven"| S4R
 
     subgraph LEG ["Pipelines = subsets of the dev steps"]
       direction TB
@@ -51,7 +49,7 @@ flowchart TD
     classDef legend fill:#11161d,stroke:#6b7785,stroke-width:1px,color:#cdd6e0
 
     class U,REP start
-    class SKL,IN,V,DOC step
+    class SKL,IN,DOC step
     class RT decision
     class S4 write
     class S4R review

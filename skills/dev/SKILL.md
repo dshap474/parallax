@@ -97,7 +97,7 @@ worker that returns no status line is a failure.
    user's request verbatim, constraints and decisions from the conversation, repo facts
    from Bootstrap. No analysis of your own, no preferred approach. Write it to a file in
    a `mktemp -d` dir for the Codex lane.
-2. **Spawn the planner lanes in parallel** (one message, the subagent calls the config
+2. **Spawn the planner lanes in parallel** (one message; spawn the personas the config
    resolves):
    - `plx:claude-planner` ← `<repo>` + the brief text (Opus, reads the repo itself)
    - `plx:codex-planner` ← `<repo>` + the brief file path (drives `plx-codex-ro`, xhigh)
@@ -147,7 +147,7 @@ worker that returns no status line is a failure.
    `plx:codex-reviewer-correctness` + `plx:codex-reviewer-refine`). Write the final plan
    to a spec file in the temp dir and spawn the `code` engine's worker (default
    `plx:claude-worker`) with `<repo>` + the spec file path + the reviewer persona names.
-   The spec and the lane names, nothing else — no planner briefs, no your-own analysis.
+   The spec and the lane names, nothing else — no planner briefs, none of your own analysis.
    One writer, always. The worker implements, self-verifies, spawns the named review
    lanes in parallel inside its own context, fixes or rebuts every finding (one round,
    hard cap), re-verifies, and reports.

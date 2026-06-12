@@ -1,6 +1,6 @@
 # Contributing
 
-Parallax is a Claude Code plugin: three fully self-contained pipeline skills (`dev`, `plan`, `review`), two single-engine passthroughs (`codex`, `grok`), subagent personas in `agents/`, a canonical prompt block library, and a deterministic engine API in `bin/`.
+Parallax is a Claude Code plugin: three fully self-contained pipeline skills (`dev`, `plan`, `review`), two single-engine passthroughs (`codex`, `grok`), subagent personas in `agents/`, and a deterministic engine API in `bin/`.
 
 ## Project layout
 
@@ -10,7 +10,6 @@ skills/           one dir per command — each SKILL.md is fully self-contained 
 skills/_disabled/ parked team-*/ultra-* skills (DISABLED.md)
 config/           engine-per-role bindings (parallax.yaml — keys: dev, plan, review)
 bin/              engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill)
-base-prompts/     canonical prompt blocks (rubrics, schemas, templates) — storage only
 templates/        plan / coding spec templates
 agents/           subagent personas (planners, workers, dimension reviewers)
 docs/             human-facing docs
@@ -27,13 +26,11 @@ Each `skills/<name>/SKILL.md` carries its **entire** pipeline inline — ordered
 
 Any prompt text that is the same every run — the plan rubric, the review dimension rubrics, the Finding Schema, output templates — lives in the **agent files**, alongside each engine agent's operator manual for the `plx-*` tools. The orchestrator hands a subagent only a task-specific brief (repo path + the work). Hand the subagent **the work, not the command**.
 
-`base-prompts/` holds the canonical block text as a reference library. It is never loaded at runtime. **Editing a base prompt does not change the skills or agents** — propagate the change by hand into every file that inlines it.
-
 ## Common changes
 
 ### Change a lane brief or pipeline step
 
-Edit it directly in the skill's `SKILL.md`. If the change is a reusable block (a rubric, the Finding Schema, a template), update the agent file that carries it and the matching `base-prompts/` block too.
+Edit it directly in the skill's `SKILL.md`. If the change is a reusable block (a rubric, the Finding Schema, a template), update every agent file that carries it — the rubrics are deliberately inlined, so propagate by hand.
 
 ### Revive a disabled pipeline
 

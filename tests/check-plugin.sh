@@ -46,7 +46,7 @@ while IFS= read -r sub; do
   name="${sub#plx:}"
   if [ -f "$PLX_ROOT/agents/$name.md" ]; then _pass "agent: $name.md"; else _fail "missing agent file: agents/$name.md"; fi
 done < <(grep -rhoE --exclude-dir=_disabled 'plx:(claude|codex|grok)-[a-z-]+' \
-           "$PLX_ROOT/skills" "$PLX_ROOT/config" 2>/dev/null | sed 's/-$//' | sort -u)
+           "$PLX_ROOT/skills" "$PLX_ROOT/config" "$PLX_ROOT/agents" 2>/dev/null | sed 's/-$//' | sort -u)
 
 _head "Engine API tools present and executable"
 for sc in plx-codex-ro plx-codex-rw plx-grok-ro plx-grok-rw plx-preflight plx-config plx-skill; do

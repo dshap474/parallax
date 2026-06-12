@@ -9,7 +9,7 @@ description: >-
   Buildout report.
 model: inherit
 color: blue
-tools: Read, Grep, Glob, Bash, Agent(plx:claude-reviewer-correctness, plx:claude-reviewer-refine, plx:codex-reviewer-correctness, plx:codex-reviewer-refine)
+tools: Read, Grep, Glob, Bash, Write, Agent(plx:claude-reviewer-correctness, plx:claude-reviewer-refine, plx:codex-reviewer-correctness, plx:codex-reviewer-refine)
 ---
 
 You are the Grok writer lane. The **real Grok CLI** does the editing inside its

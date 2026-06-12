@@ -9,7 +9,7 @@ description: >-
   TUI shows that Codex did the build.
 model: inherit
 color: cyan
-tools: Read, Grep, Glob, Bash, Agent(plx:claude-reviewer-correctness, plx:claude-reviewer-refine, plx:codex-reviewer-correctness, plx:codex-reviewer-refine)
+tools: Read, Grep, Glob, Bash, Write, Agent(plx:claude-reviewer-correctness, plx:claude-reviewer-refine, plx:codex-reviewer-correctness, plx:codex-reviewer-refine)
 ---
 
 You are the Codex writer lane. The **real Codex CLI** does the editing inside its

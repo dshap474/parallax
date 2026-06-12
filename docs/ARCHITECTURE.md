@@ -79,7 +79,3 @@ Any prompt text that is the same every run — review dimension rubrics, the pla
 ## Hooks policy
 
 Parallax v0.1 installs no hooks. Safety comes from: one public `plx` router, a deterministic engine API (`bin/plx-*`) with uniform flags, uniform exit codes (0 ok · 1 engine failure · 2 usage error · 3 auth needed), `--help` manuals, and safety flags pinned in code; read-only review/plan invocations; scoped-write tools for an opt-in non-Claude writer; and no repo-local runtime state.
-
-## References
-
-`base-prompts/` holds the canonical prompt blocks (plan rubric, build discipline, the review dimension rubrics, the Finding Schema, templates) as **storage only** — nothing reads it at runtime. Skills inline the blocks and agents carry the rubrics; editing a base prompt does not change them (propagate by hand).

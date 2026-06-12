@@ -19,7 +19,6 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 - 3 pipeline skills, each **fully self-contained** (steps, lane briefs, prompt templates, and engine handoffs all written out inline — no pointers to other prompt files, no `${CLAUDE_PLUGIN_ROOT}`, no script injection): `plx:dev` (7-step pipeline), `plx:plan` (steps 1–3), `plx:review` (standalone read-only review)
 - 2 single-engine passthroughs: `plx:codex`, `plx:grok` (no `plx:claude` — the orchestrator *is* Claude)
 - Subagent personas in `agents/` carrying rubrics + operator manuals: 12 engine personas (`<engine>-planner`, `<engine>-worker`, `<engine>-reviewer-correctness`, `<engine>-reviewer-refine` for `claude` / `codex` / `grok`) plus `docs`
-- `base-prompts/` — canonical prompt blocks (rubrics, schemas, templates) as a **reference library only**, never loaded at runtime; skills inline the blocks and agents carry the rubrics
 - 1 engine-per-role config (`config/parallax.yaml`), keyed by pipeline: `dev`, `plan`, `review`
 - A deterministic engine API in `bin/` (on the Bash PATH while the plugin is enabled): `plx-codex-ro`/`plx-codex-rw`, `plx-grok-ro`/`plx-grok-rw`, `plx-preflight`, `plx-config`, `plx-skill` — uniform flags (`--repo`, `--prompt-file`, `--stdout`/`--out --log`; `--effort low|medium|high|xhigh` on the Codex tools), uniform exit codes (0 ok · 1 engine failure · 2 usage error · 3 auth needed), and `--help` manuals
 - **Disabled / parked:** `team-*` and `ultra-*` skills, with their `SKILL.md` renamed to `DISABLED.md` (in `skills/_disabled/`), regenerated from `.project/VISION.md` when revived
@@ -41,7 +40,6 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 │   └── _disabled/        # parked team-*/ultra-* (DISABLED.md)
 ├── config/             # parallax.yaml — engine-per-role bindings
 ├── bin/                # engine API on PATH (plx-* tools)
-├── base-prompts/       # canonical prompt blocks — storage only, not loaded at runtime
 ├── templates/          # plan / coding spec templates
 ├── docs/
 ├── tests/
@@ -73,7 +71,7 @@ Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev
 ## Runtime rules
 
 - Each pipeline is a **self-contained skill**: its ordered steps, lane briefs, prompt templates, and engine invocations are all inline in its `SKILL.md`; only engine bindings come from `config/parallax.yaml`. `/plx:*` commands run a pipeline.
-- No prompt injection: skills contain no `!`-command injection and no pointers to external prompt files (`lib/`, `prompts/`, `scripts/`, `router.md`) or `${CLAUDE_PLUGIN_ROOT}`. `base-prompts/` is reference storage only.
+- No prompt injection: skills contain no `!`-command injection and no pointers to external prompt files (`lib/`, `prompts/`, `scripts/`, `router.md`) or `${CLAUDE_PLUGIN_ROOT}`.
 - Reusable rubrics, schemas, and templates live in the agent files (rubrics-in-agents); the orchestrator hands each subagent only a task-specific brief.
 - No hooks in v0.1.
 - No repo-local runtime state. Do not create `.parallax/`, `.parallax/cache`, or `.parallax/runs`.

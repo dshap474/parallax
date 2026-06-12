@@ -73,13 +73,12 @@ parallax/
 ├── skills/       # one dir per command; each SKILL.md is fully self-contained
 ├── config/       # parallax.yaml — engine-per-role bindings (dev, plan, review)
 ├── bin/          # engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill, plx-link-claude)
-├── base-prompts/ # canonical prompt blocks — storage only, never loaded at runtime
 ├── templates/    # plan / coding spec templates
 ├── agents/
 └── docs/{ARCHITECTURE, REQUIREMENTS, BENCHMARK, CONTRIBUTING, SPEC}.md
 ```
 
-Each `skills/<name>/SKILL.md` carries its entire pipeline inline — lane briefs, prompt templates, engine invocations — with no `${CLAUDE_PLUGIN_ROOT}`, no `lib/` or `prompts/` pointers, and no script injection. Reusable rubrics and schemas live inside the agent persona files (rubrics-in-agents); the orchestrator hands each subagent the work, not the command. `base-prompts/` holds the canonical block text as a reference; changing one does not change the skills (propagate by hand).
+Each `skills/<name>/SKILL.md` carries its entire pipeline inline — lane briefs, prompt templates, engine invocations — with no `${CLAUDE_PLUGIN_ROOT}`, no `lib/` or `prompts/` pointers, and no script injection. Reusable rubrics and schemas live inside the agent persona files (rubrics-in-agents); the orchestrator hands each subagent the work, not the command.
 
 ## Disabled pipelines
 

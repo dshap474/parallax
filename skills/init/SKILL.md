@@ -67,7 +67,9 @@ Classify into exactly one bucket:
 - **empty** — exists but holds nothing durable (whitespace, a title, placeholder text).
   Populate as if missing.
 - **incorrect** — section model, fixed-section wording, or memory section is missing or
-  wrong. Rewrite: salvage real content into the canonical sections, drop boilerplate.
+  wrong — or the body is written as description rather than instruction (prose that
+  explains the repo instead of directing the agent). Rewrite: salvage real content into
+  the canonical sections as directives, drop boilerplate.
 - **stale** — shape is right but content is contradicted by the checkout (dead paths,
   removed commands, moved boundaries). Refresh only the contradicted parts; preserve the
   rest.
@@ -123,15 +125,15 @@ Docs:
 
 ```markdown
 ## Docs
-- `.project/` is durable, git-tracked project memory. Read it freely; never write it yourself — every `.project/` write goes through the Parallax docs worker (the `docs` agent shipped with the plx plugin).
-  - `.project/VISION.md` — project intent. User-owned and read-only to every agent: never edit, draft, or rewrite it. You may flag a vision-vs-reality contradiction to the user (a flag only — never a proposed fix).
-  - `.project/architecture/` — how the systems work; read before changing system shape.
-  - `.project/builds/` — long-running buildout threads; read when continuing one.
-  - `.project/adr/` — durable architectural decisions.
-  - `.project/runbooks/` — repeated operational procedures.
-  - `.project/notes/` — non-canonical context that fits no other surface.
-- Dispatch the docs worker with a compact Docs Impact Envelope — phase, repo path, changed paths, artifact paths, signal bits — never a prose recap. It emits exactly one status line (`DOCS_OK: ...` or `DOCS_BLOCKED: ...`) and no prose report; inspect the worktree for detail.
-- At most one docs worker runs per repo at a time.
+- Read `.project/` freely — it is durable, git-tracked project memory. Never write it yourself: every `.project/` write goes through the Parallax docs worker (the `docs` agent shipped with the plx plugin).
+  - Treat `.project/VISION.md` as user-owned and read-only: never edit, draft, or rewrite it. Flag a vision-vs-reality contradiction to the user as a flag only — never a proposed fix.
+  - Read `.project/architecture/` before changing system shape.
+  - Read `.project/builds/` when continuing a long-running buildout.
+  - Read `.project/adr/` before revisiting a settled decision.
+  - Follow `.project/runbooks/` for repeated operational procedures.
+  - Check `.project/notes/` for non-canonical context that fits no other surface.
+- Dispatch the docs worker with a compact Docs Impact Envelope — phase, repo path, changed paths, artifact paths, signal bits — never a prose recap. Expect exactly one status line back (`DOCS_OK: ...` or `DOCS_BLOCKED: ...`) and no prose report; inspect the worktree for detail.
+- Run at most one docs worker per repo at a time.
 ```
 
 Project Memory seed line (used only when the captured body is empty):
@@ -156,6 +158,13 @@ Project Memory seed line (used only when the captured body is empty):
 
 Content discipline for the variable sections:
 
+- **Instructive voice, always** — every line in `AGENTS.md` is an instruction for how an
+  agent must act, written as a directive the agent can follow or violate. No passive
+  voice, no text that merely describes how things are. "Never validate inside domain
+  code" beats "validation happens at the boundary"; "When the task involves billing,
+  work in `services/billing`" beats "this directory handles billing". When salvaging
+  existing content, rewrite description into the directive it implies; a line that
+  cannot be rewritten as an instruction belongs in `.project/` docs, not here.
 - **Operate test** — every line must change agent behavior. Purely descriptive lines get
   dropped or left to `.project/` docs.
 - **Single home** — don't restate what the README or `.project/` docs own. `AGENTS.md`
@@ -216,7 +225,7 @@ End with a compact report:
 ```text
 Init: <repo> (mode: apply | dry-run)
 AGENTS.md: <classification> → <created | rewritten | refreshed | no write | blocked: memory drift>
-  <when written: sections added/absorbed/dropped, decision-table rows changed — each with its evidence>
+  <when written: sections added/absorbed/dropped, description rewritten as directives, decision-table rows changed — each with its evidence>
 Project Memory: preserved (<n> entries) | initialized | blocked: memory drift
 .gitignore: ok | fixed: <change> | would fix: <change>
 Docs seed: <docs worker status line> | skipped (<reason>)

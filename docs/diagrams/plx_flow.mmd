@@ -16,8 +16,8 @@ flowchart TD
     subgraph PIPE ["🔁 dev pipeline — 6 subagent spawns; Fable holds only compact artifacts"]
       direction TB
       S1["① Delegate planning — 2 parallel planners (read-only)<br/>plx:claude-planner (Opus xhigh) + plx:codex-planner (Codex xhigh)"]
-      S2["② Plan artifacts return"]
-      S3["③ 🧠 Fable synthesizes the final plan (judgment, not a merge)"]
+      S2["② Planning Briefs return (recommendation + steelman + repo facts)"]
+      S3["③ 🧠 Fable arbitrates + authors the final plan doc (judgment, not a merge)"]
       S4["④ Delegate the build — 1 worker ✍️<br/>plx:claude-worker (Opus xhigh), spec only"]
       S5["⑤ Buildout report returns — per-file summaries, never code bodies"]
       S6["⑥ Fable writes the review brief — WITHOUT reading the built code"]

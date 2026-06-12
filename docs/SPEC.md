@@ -91,7 +91,7 @@ Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev
 
 The shapes that flow between stages (byte-identical wherever they appear):
 
-1. **Plan artifact** — goal, ordered steps, files touched, risks, verification strategy. Output of each planner; Fable's synthesis of two is the final plan / build spec.
+1. **Planning Brief** — recommended design + steelman, alternatives rejected, repo facts, constraints/invariants, suggested success criteria, validation, risks. Output of each planner lane (architecture consultants). Fable arbitrates across the briefs and authors the final plan doc itself (outcome-first: intent, success criteria, invariants, suggested path, validation) — that doc is the build spec.
 2. **Buildout report** — every file touched, per-file summary of changes, coding decisions, verification (commands + results), blockers/skips. Summaries only, never code bodies. Output of `build`; source of `review`'s brief.
 3. **Review brief** — files touched + what was implemented and why. The only thing the orchestrator writes for the review stage.
 4. **Finding Schema** — id, severity, file:line, what breaks, minimal fix, confidence. Output of every review lane; input to Fable's synthesis.

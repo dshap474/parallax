@@ -28,7 +28,7 @@ Every behavior is a composition of three stage atoms, each a delegation pattern 
 
 | Atom | What it does | Who acts | Returns |
 |---|---|---|---|
-| `plan` | produce an implementation plan | parallel planner lanes (read-only); Fable synthesizes | Plan artifact |
+| `plan` | produce an implementation plan | parallel planner lanes (read-only consultants); Fable arbitrates + authors the plan | Planning Briefs → final plan doc |
 | `build` | execute a plan against the repo | exactly one writer worker | Buildout report (summaries, never code bodies) |
 | `review` | independently review the work | parallel read-only review lanes; Fable synthesizes | Findings → repair plan |
 
@@ -38,9 +38,9 @@ Synthesis (plan merge, finding triage, repair planning) is always Fable and neve
 
 `dev` is the flagship composition: **plan → build → review → fix → docs**.
 
-1. **Delegate planning.** Two parallel planners — `claude-planner` (Opus, xhigh) and `codex-planner` (Codex, xhigh) — draft from the same neutral brief. The plan rubric lives inside the planner agents.
-2. **Parallel plans return.** Both planners hand back their Plan artifacts.
-3. **Fable synthesizes the plan.** Reviews both, thinks independently, produces the final plan. A judgment pass, not a merge.
+1. **Delegate planning.** Two parallel planner lanes — `claude-planner` (Opus, xhigh) and `codex-planner` (Codex, xhigh) — act as architecture consultants on the same neutral brief. The brief rubric lives inside the planner agents.
+2. **Parallel briefs return.** Both lanes hand back Planning Briefs — recommended design + steelman, repo facts, constraints, validation — not finished plans.
+3. **Fable arbitrates and authors the plan.** Reads the briefs, settles where lanes disagree, thinks independently, then authors the final plan doc itself (outcome-first: intent, success criteria, invariants, suggested path, validation). A judgment-and-authoring pass, not a merge.
 4. **Delegate the build.** Fable hands the final plan to one Opus worker (`claude-worker`). Spec only — neutral context.
 5. **Buildout report returns.** Every file touched, per-file summary of what changed and why, coding decisions, verification. Summaries and pointers only, never code bodies or diffs — reviewers read the actual code from disk.
 6. **Prepare the review handoff.** Fable does **not** read the built code; from the Buildout report it writes a small review brief (files touched + what was implemented and why). The review rubrics already live in the reviewer agents.

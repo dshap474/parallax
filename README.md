@@ -36,9 +36,9 @@ Plan and review lanes are always read-only. There is exactly **one writer at a t
 
 ### The dev pipeline (10 steps)
 
-1. Delegate planning to two parallel planners — `claude-planner` (Opus, xhigh) and `codex-planner` (Codex, xhigh) — from the same neutral brief.
-2. Both Plan artifacts return.
-3. Fable synthesizes the final plan — a judgment pass, not a merge.
+1. Delegate planning to two parallel planner lanes — `claude-planner` (Opus, xhigh) and `codex-planner` (Codex, xhigh) — architecture consultants on the same neutral brief.
+2. Both Planning Briefs return — recommendation + steelman + repo facts, not finished plans.
+3. Fable arbitrates across the briefs and authors the final plan doc — a judgment-and-authoring pass, not a merge.
 4. Delegate the build to one Opus worker (`claude-worker`), spec only.
 5. The Buildout report returns — per-file summaries of what changed and why, never code bodies.
 6. Fable prepares a review brief from the report **without reading the built code** — its context stays clean.

@@ -95,24 +95,54 @@ worker that returns no status line is a failure.
    user's request verbatim, constraints and decisions from the conversation, repo facts
    from Bootstrap. No analysis of your own, no preferred approach. Write it to a file in
    a `mktemp -d` dir for the Codex lane.
-2. **Spawn both planners in parallel** (one message, two subagent calls):
+2. **Spawn the planner lanes in parallel** (one message, the subagent calls the config
+   resolves):
    - `plx:claude-planner` ← `<repo>` + the brief text (Opus, reads the repo itself)
    - `plx:codex-planner` ← `<repo>` + the brief file path (drives `plx-codex-ro`, xhigh)
 
-   Each persona carries its own plan rubric — hand it the work, not the command. Both
-   return Plan artifacts.
-3. **Synthesize the final plan — your intelligence is the product here.** Think for
-   yourself before merging: what did each planner see that the other missed? Where do
-   they disagree, and who is right? Is there a simpler approach than either proposes?
-   Produce the final plan in the same Plan artifact shape (Goal / Ordered steps / Files
-   Touch + Do NOT touch / Risks / Verification strategy) — a judgment pass that improves
-   on both, not a merge.
+   The lanes are architecture consultants — each carries its own brief rubric; hand it
+   the work, not the command. Both return Planning Briefs (recommendation + steelman +
+   repo facts), not finished plans.
+3. **Synthesize the design, then author the final plan — your intelligence is the product
+   here.** Think for yourself: where do the lanes disagree, and who is right? What did
+   both miss? Is there a simpler design than either recommends? Settle the design, then
+   **author the final plan doc yourself**, for a high-effort autonomous worker with no
+   prior context. It is outcome-first — pin intent, success criteria, and invariants hard;
+   leave the *how* to the worker (do not pin every interface or dictate ordered steps).
+   Use this shape:
+
+   ```
+   # Plan: <title>
+
+   ## Worker Instruction
+   <implement the task below; simplest change satisfying the success criteria; prefer existing project patterns; validate at boundaries; don't expand scope>
+
+   ## Intent
+   <why this change matters and what it enables — 2–5 sentences>
+
+   ## Success Criteria
+   <binary checks defining done, including edge cases and regressions that must hold>
+
+   ## Context
+   <relevant files + why; current vs. desired behavior; existing patterns to reuse>
+
+   ## Invariants
+   <the only hard rules — do-not-touch files/areas, contracts that must hold>
+
+   ## Suggested Path
+   <non-binding: likely files, likely implementation shape — the worker may choose a better path>
+
+   ## Validation
+   <smallest set of repo commands that meaningfully proves the task, and what passing looks like>
+   ```
+
+   Note where the final plan diverges from each lane's brief and why.
 
 ### Build (steps 4–5)
 
 4. **Delegate the build.** Write the final plan to a spec file in the temp dir and spawn
    `plx:claude-worker` with `<repo>` + the spec file path. The spec and ONLY the spec —
-   no planner drafts, no your-own analysis. One writer, always.
+   no planner briefs, no your-own analysis. One writer, always.
    - **Docs observer (plan).** If the final plan is durable enough to record (a
      multi-stage or multi-session effort), spawn the `docs` agent in the same message,
      in parallel with the build worker: envelope `phase: plan`, `build_thread`,
@@ -166,7 +196,7 @@ worker that returns no status line is a failure.
 
 9. **Apply the repair plan yourself, inline.** You already read the relevant code at
    step 8 — the context is paid for; a worker would cold-read it all again. Make the
-   changes with Edit/Write, then run the plan's verification strategy (the repo's own
+   changes with Edit/Write, then run the plan's validation commands (the repo's own
    toolchain; never `uv run` in a sandbox). **Escape hatch:** if synthesis revealed
    structural rework rather than point fixes, write the repair plan as a fresh spec and
    send it back through step 4 instead.
@@ -206,7 +236,7 @@ End with a compact report:
 
 ```text
 Built: <what shipped>
-Plan: <one line — approach + where synthesis diverged from the planner drafts>
+Plan: <one line — approach + where synthesis diverged from the lane briefs>
 Review: <findings by lane, what synthesis killed/added>
 Fixes applied: <from the repair plan>
 Verification: <commands + results>

@@ -4,7 +4,7 @@ Multi-model coding-agent orchestration for Claude Code.
 
 The orchestrator is Claude (Fable). Its scarcest resource is its own context window, so it **delegates all bulk work** — planning, building, reviewing — to subagent lanes (Opus personas, or Codex/Grok driven through the `bin/` engine tools) and keeps only the compact artifacts they hand back. Fable spends its own intelligence at exactly two points: synthesizing the plan, and synthesizing the review (then applying the fix). The deliberate split is **code with Opus, review with Codex** — cross-model review is genuinely independent.
 
-Explicit `/plx:*` commands run a specific pipeline (`dev`, `plan`, `review`) or hand a task to a single engine (see [`docs/COMMANDS.md`](docs/COMMANDS.md)). Which engine fills each pipeline role is configurable in [`config/parallax.yaml`](config/parallax.yaml).
+Explicit `/plx:*` commands run a specific pipeline (`dev`, `plan`, `review`), hand a task to a single engine, or bootstrap a repo's agent-docs setup (`init`) — see [`docs/COMMANDS.md`](docs/COMMANDS.md). Which engine fills each pipeline role is configurable in [`config/parallax.yaml`](config/parallax.yaml).
 
 ## Install
 
@@ -75,7 +75,7 @@ parallax/
 ├── .claude-plugin/{plugin.json, marketplace.json}
 ├── skills/       # one dir per command; each SKILL.md is fully self-contained
 ├── config/       # parallax.yaml — engine-per-role bindings (dev, plan, review)
-├── bin/          # engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill)
+├── bin/          # engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill, plx-link-claude)
 ├── base-prompts/ # canonical prompt blocks — storage only, never loaded at runtime
 ├── templates/    # plan / coding spec templates
 ├── agents/

@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# Parallax mirror tool — next to every AGENTS.md in the tree, ensure a sibling
+# CLAUDE.md symlink pointing at it. AGENTS.md is the single source of truth;
+# CLAUDE.md is a pointer. Content-agnostic: never reads or rewrites AGENTS.md.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+plx-link-claude — mirror every AGENTS.md with a sibling CLAUDE.md symlink
+
+Usage:
+  plx-link-claude [<repo-root>] [--dry-run] [--force]
+
+What it does:
+  Walks the tree (default: current directory) and next to each AGENTS.md
+  ensures CLAUDE.md -> AGENTS.md:
+    create   no CLAUDE.md present
+    skip     already a correct symlink
+    relink   symlink pointing elsewhere
+    blocked  CLAUDE.md is a regular file (replaced only with --force)
+  Prunes: .git node_modules vendor .venv __pycache__ .next dist build
+  .agents zz_old
+
+Flags:
+  --dry-run   report actions without writing anything
+  --force     replace regular-file CLAUDE.md files (destructive; use only
+              after explicit user approval)
+  --help      this text
+
+Exit codes:
+  0  done, nothing blocked
+  1  bad root path
+  2  usage error
+  3  completed, but one or more files blocked
+EOF
+}
+
+ROOT="$PWD"
+DRY_RUN=0
+FORCE=0
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --dry-run)
+      DRY_RUN=1
+      shift
+      ;;
+    --force)
+      FORCE=1
+      shift
+      ;;
+    -*)
+      echo "error: unknown option '$1'" >&2
+      usage >&2
+      exit 2
+      ;;
+    *)
+      ROOT="$1"
+      shift
+      ;;
+  esac
+done
+
+if [ ! -d "$ROOT" ]; then
+  echo "error: root '$ROOT' is not a directory" >&2
+  exit 1
+fi
+
+created=0
+relinked=0
+skipped=0
+blocked=0
+
+while IFS= read -r -d '' agents_path; do
+  dir="$(dirname "$agents_path")"
+  claude_path="$dir/CLAUDE.md"
+
+  # Pretty label relative to ROOT
+  case "$dir" in
+    "$ROOT") rel=. ;;
+    "$ROOT"/*) rel="${dir#"$ROOT"/}" ;;
+    *) rel="$dir" ;;
+  esac
+
+  if [ -L "$claude_path" ]; then
+    target="$(readlink "$claude_path")"
+    if [ "$target" = "AGENTS.md" ]; then
+      printf 'skip     %s/CLAUDE.md\n' "$rel"
+      skipped=$((skipped + 1))
+      continue
+    fi
+    if [ "$DRY_RUN" -eq 0 ]; then
+      rm -- "$claude_path"
+      ln -s AGENTS.md "$claude_path"
+    fi
+    printf 'relink   %s/CLAUDE.md (was symlink -> %s)\n' "$rel" "$target"
+    relinked=$((relinked + 1))
+  elif [ -e "$claude_path" ]; then
+    if [ "$FORCE" -eq 0 ]; then
+      printf 'blocked  %s/CLAUDE.md (regular file; rerun with --force to replace)\n' "$rel"
+      blocked=$((blocked + 1))
+      continue
+    fi
+    if [ "$DRY_RUN" -eq 0 ]; then
+      rm -- "$claude_path"
+      ln -s AGENTS.md "$claude_path"
+    fi
+    printf 'relink   %s/CLAUDE.md (was regular file)\n' "$rel"
+    relinked=$((relinked + 1))
+  else
+    if [ "$DRY_RUN" -eq 0 ]; then
+      ln -s AGENTS.md "$claude_path"
+    fi
+    printf 'create   %s/CLAUDE.md\n' "$rel"
+    created=$((created + 1))
+  fi
+done < <(find "$ROOT" \
+  \( -type d \( \
+       -name .git -o \
+       -name node_modules -o \
+       -name vendor -o \
+       -name .venv -o \
+       -name __pycache__ -o \
+       -name .next -o \
+       -name dist -o \
+       -name build -o \
+       -name .agents -o \
+       -name zz_old \
+     \) -prune \) \
+  -o \( -type f -name AGENTS.md -print0 \))
+
+echo ""
+echo "Summary: ${created} created, ${relinked} relinked, ${skipped} skipped, ${blocked} blocked"
+
+if [ "$blocked" -gt 0 ]; then
+  exit 3
+fi

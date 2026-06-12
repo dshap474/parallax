@@ -14,7 +14,7 @@ trap 'rm -rf "$REPO" "$WORK"' EXIT
 echo "tmp target repo: $REPO"
 
 _head "bin tools answer --help"
-for t in plx-codex-ro plx-codex-rw plx-grok-ro plx-grok-rw plx-preflight plx-config plx-skill; do
+for t in plx-codex-ro plx-codex-rw plx-grok-ro plx-grok-rw plx-preflight plx-config plx-skill plx-link-claude; do
   out="$WORK/help-$t.txt"
   if "$PLX_ROOT/bin/$t" --help > "$out" 2>&1 && grep -q "Usage:" "$out"; then
     _pass "$t --help"
@@ -64,6 +64,37 @@ if "$PLX_ROOT/bin/plx-preflight" --repo /no/such/repo >/dev/null 2>&1; then
   _fail "should reject missing repo"
 else
   _pass "non-zero exit on missing repo"
+fi
+
+_head "plx-link-claude mirrors CLAUDE.md symlinks"
+echo "# fixture root" > "$REPO/AGENTS.md"
+mkdir -p "$REPO/sub"
+echo "# nested" > "$REPO/sub/AGENTS.md"
+printf 'regular file\n' > "$REPO/sub/CLAUDE.md"
+out="$WORK/link.txt"
+"$PLX_ROOT/bin/plx-link-claude" "$REPO" > "$out" 2>&1
+rc=$?
+if [ "$rc" -eq 3 ]; then _pass "exit 3 when a regular CLAUDE.md blocks"; else _fail "expected exit 3, got $rc"; fi
+if [ -L "$REPO/CLAUDE.md" ] && [ "$(readlink "$REPO/CLAUDE.md")" = "AGENTS.md" ]; then
+  _pass "root CLAUDE.md symlink created"
+else
+  _fail "root CLAUDE.md symlink missing or wrong"
+fi
+assert_contains "blocked" "$out" "reports the blocked nested CLAUDE.md"
+"$PLX_ROOT/bin/plx-link-claude" "$REPO" --force > "$out" 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] && [ -L "$REPO/sub/CLAUDE.md" ]; then _pass "--force replaces the regular file"; else _fail "--force failed (exit $rc)"; fi
+"$PLX_ROOT/bin/plx-link-claude" "$REPO" > "$out" 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] && grep -q "0 created, 0 relinked, 2 skipped, 0 blocked" "$out"; then
+  _pass "idempotent re-run (all skips)"
+else
+  _fail "re-run not idempotent (exit $rc)"
+fi
+if "$PLX_ROOT/bin/plx-link-claude" --bogus >/dev/null 2>&1; then
+  _fail "should reject unknown flag"
+else
+  _pass "non-zero exit on unknown flag"
 fi
 
 if [ "$WITH_ENGINES" -eq 1 ]; then

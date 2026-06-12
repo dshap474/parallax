@@ -21,6 +21,12 @@ Adapts to intent: ask a question → it answers; ask for code → it edits; ask 
 
 There is no `/plx:claude` — the orchestrator *is* Claude; just ask it directly.
 
+## Setup
+
+| Command | What it does |
+|---|---|
+| `/plx:init` | Bootstrap or repair a repo's agent-docs setup: classify the root `AGENTS.md` and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror `CLAUDE.md` symlinks via `plx-link-claude`, make `.project/` git-trackable, and seed `.project/architecture/` through the docs worker. Root-only — nested `AGENTS.md` files are user-authored and untouched. Idempotent; say "dry run" to preview. |
+
 ## Disabled / parked commands
 
 The `team-*` and `ultra-*` commands (`/plx:team-dev`, `/plx:ultra-dev`, `/plx:team-plan`, `/plx:ultra-plan`, `/plx:team-review`, `/plx:ultra-review`) are parked — their skill files are renamed `DISABLED.md` and the commands do not appear until they are regenerated from `.project/VISION.md`.

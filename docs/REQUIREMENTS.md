@@ -7,9 +7,9 @@ Parallax orchestrates external model CLIs that you install and authenticate. It 
 | Engine | Install | Used by | Required? |
 |---|---|---|---|
 | Codex | `codex` CLI + auth | `dev`/`plan`/`review` plan and review lanes; `/plx:codex` | required for the default pipelines |
-| Grok | `grok` CLI + auth | `/plx:grok` passthrough; parked for future ultra tiers | optional |
+| Grok | `grok` CLI + auth | `/plx:grok` passthrough; opt-in `code: grok` writer; parked for future ultra tiers | optional |
 
-The default `dev`, `plan`, and `review` pipelines bind their planner and reviewer lanes to Codex, so Codex is required to run them as shipped. Grok is only needed for the `/plx:grok` passthrough today. The orchestrator (Claude) is always present — it is the session you are in.
+The default `dev`, `plan`, and `review` pipelines bind their planner and reviewer lanes to Codex, so Codex is required to run them as shipped. Grok is only needed for the `/plx:grok` passthrough and the opt-in `code: grok` writer today. The orchestrator (Claude) is always present — it is the session you are in.
 
 ## Codex
 
@@ -28,7 +28,7 @@ Parallax runs Codex only through `bin/plx-codex-ro`, which uses:
 
 ## Grok
 
-Install and authenticate the Grok CLI (`grok login`, or set `XAI_API_KEY`) to enable the `/plx:grok` passthrough (and Grok lanes in any pipeline configured to use them — parked for the future ultra tiers). Verified with grok 0.2.32 (`grok-composer-2.5-fast`).
+Install and authenticate the Grok CLI (`grok login`, or set `XAI_API_KEY`) to enable the `/plx:grok` passthrough (and Grok lanes in any pipeline configured to use them — parked for the future ultra tiers). Verified with grok 0.2.32 (`grok-composer-2.5-fast`); final-message extraction and headless permission behavior re-verified with 0.2.39.
 
 Grok runs through two wrappers, both pinning a kernel-enforced sandbox (Seatbelt on macOS, Landlock on Linux):
 
@@ -36,6 +36,8 @@ Grok runs through two wrappers, both pinning a kernel-enforced sandbox (Seatbelt
 - **`bin/plx-grok-rw`** — opt-in writer (`code: grok` or `/plx:grok`). `--sandbox workspace`: edits are confined to the repo; writes outside are kernel-denied and logged to `~/.grok/sandbox-events.jsonl`.
 
 Both pass `--permission-mode bypassPermissions`, because grok's CLI only *enforces* that mode (and `default`) — `acceptEdits`/`plan` are accepted but unenforced and would cancel the turn in headless. Confinement comes from the sandbox, not the permission mode.
+
+Both wrappers emit only the model's final message (recovered from grok's session store, since the JSON envelope aggregates narration and subagent streams) and delete the run's `~/.grok/sessions` entry on success (kept on failure for debugging — grok has no `--ephemeral`). The CLI's `--effort` flag is not exposed: `grok-composer-2.5-fast` rejects the `reasoningEffort` parameter (API 400) and the run fails.
 
 When invoking either wrapper from Claude Code, disable the Claude Bash sandbox for that call only (grok needs network/keychain access the sandbox blocks). The wrappers decide success from grok's `stopReason` + output and exit accordingly: **0** = ok, **3** = not signed in (run `grok login`), **1** = real failure. grok prints non-fatal `AuthorizationRequired` worker lines to stderr even on success — these are noise; judge by the exit code.
 

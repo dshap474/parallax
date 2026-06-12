@@ -176,6 +176,25 @@ except Exception:
 
 printf '%s\n' "$TEXT" > "$OUT"
 
+# Headless one-shot runs never resume; drop this run's session dir so
+# ~/.grok/sessions doesn't grow without bound (grok has no --ephemeral).
+# Failure paths exit above and keep the session for debugging.
+python3 -c 'import json,os,shutil,sys,urllib.parse
+try:
+    sid = json.load(open(sys.argv[1])).get("sessionId") or ""
+    if not sid:
+        sys.exit(0)
+    repo = os.path.realpath(sys.argv[2])
+    d = os.path.join(os.path.expanduser("~/.grok/sessions"),
+                     urllib.parse.quote(repo, safe=""), sid)
+    if os.path.isdir(d):
+        shutil.rmtree(d)
+        parent = os.path.dirname(d)
+        if os.listdir(parent) in ([], ["prompt_history.jsonl"]):
+            shutil.rmtree(parent)
+except Exception:
+    pass' "$RAW" "$REPO" || true
+
 if [[ "$STDOUT" -eq 1 ]]; then
   cat "$OUT"
 else

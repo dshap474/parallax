@@ -23,9 +23,6 @@ Establish ground truth with your own tools — nothing is injected for you:
 - Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
 - If the worktree is dirty, read `git status --short` — so you don't clobber unrelated
   user changes or mistake pre-existing edits for the build's.
-- Snapshot `.project/` state at run start (`git status --short .project/`). On any abort
-  you must commit or revert every `.project/` change made during this run — never leave
-  `.project/` edits dangling in the worktree.
 
 ## Engines & preflight
 
@@ -196,8 +193,9 @@ worker that returns no status line is a failure.
       `adr/`, `notes/`) are never mutated to match final state — supersede with a link or
       a new dated record instead.
     - **Commit gate.** Commit only after the final worker returns `DOCS_OK: ...`. The
-      commit includes the run's code changes and all `.project/` changes; commit locally
-      with a scoped, descriptive message — **never push, never open a PR, never publish.**
+      commit covers the run's code changes only — `.project/` is git-ignored and never
+      committed. Commit locally with a scoped, descriptive message — **never push,
+      never open a PR, never publish.**
       On `DOCS_BLOCKED: <reason>`, do not silently drop it: surface the reason in your
       final report, and if the blocked note carries durable context, dispatch one
       follow-up `docs` worker to persist it under `notes/` before you commit. A worker

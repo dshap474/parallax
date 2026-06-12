@@ -1,6 +1,6 @@
 ---
 name: "plx::init"
-description: Bootstrap or repair a repo's agent-docs setup — classify the root AGENTS.md and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror CLAUDE.md as a symlink, make .project/ git-trackable, and seed .project/architecture/ via the docs worker. Idempotent; say "dry run" to preview.
+description: Bootstrap or repair a repo's agent-docs setup — classify the root AGENTS.md and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror CLAUDE.md as a symlink, keep .project/ git-ignored, and seed .project/architecture/ via the docs worker. Idempotent; say "dry run" to preview.
 argument-hint: "[repo path] [dry run]"
 disable-model-invocation: true
 user-invocable: true
@@ -125,7 +125,7 @@ Docs:
 
 ```markdown
 ## Docs
-- Read `.project/` freely — it is durable, git-tracked project memory. Never write it yourself: every `.project/` write goes through the Parallax docs worker (the `docs` agent shipped with the plx plugin).
+- Read `.project/` freely — it is durable project memory, git-ignored and local-only. Never write it yourself: every `.project/` write goes through the Parallax docs worker (the `docs` agent shipped with the plx plugin).
   - Treat `.project/VISION.md` as user-owned and read-only: never edit, draft, or rewrite it. Flag a vision-vs-reality contradiction to the user as a flag only — never a proposed fix.
   - Read `.project/architecture/` before changing system shape.
   - Read `.project/builds/` when continuing a long-running buildout.
@@ -176,13 +176,14 @@ Content discipline for the variable sections:
 After writing, re-classify the file: it must come out **current**. If it doesn't, that
 is a defect — fix the file before reporting.
 
-### 4 — Make .project/ trackable
+### 4 — Keep .project/ git-ignored
 
-`.project/` must be git-tracked — it is durable project memory and needs history. If
-`.gitignore` ignores it (directly or via a parent pattern), fix that in apply mode
-(delete the line or add a `!.project/` negation) and report the exact change. Do not
-pre-create empty `.project/` directories — git doesn't track empty dirs; the docs worker
-creates each surface on first write.
+`.project/` is durable project memory but stays out of version control — local-only by
+design. If `.gitignore` does not ignore it, add a `.project/` line in apply mode and
+report the exact change. If the repo already has `.project/` files under git tracking,
+do not untrack them yourself — surface it in the report and let the user decide
+(`git rm -r --cached .project/` rewrites their index). Do not pre-create empty
+`.project/` directories; the docs worker creates each surface on first write.
 
 ### 5 — Seed the architecture surface (docs worker)
 

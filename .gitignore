@@ -7,7 +7,5 @@ _disabled/
 .dev/
 zz_plugin-commands
 
-# .project/ is git-tracked durable project memory (see .project/notes/PROJECT.md).
-# Everything under it is tracked, including the reference/asset dumps now living
-# under .project/notes/ (reference-skills/, reference-docs/, headless-mode-docs/,
-# assets/).
+# .project/ is durable project memory — local-only, never committed.
+.project/

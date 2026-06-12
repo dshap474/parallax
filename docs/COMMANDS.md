@@ -25,7 +25,7 @@ There is no `/plx:claude` — the orchestrator *is* Claude; just ask it directly
 
 | Command | What it does |
 |---|---|
-| `/plx:init` | Bootstrap or repair a repo's agent-docs setup: classify the root `AGENTS.md` and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror `CLAUDE.md` symlinks via `plx-link-claude`, make `.project/` git-trackable, and seed `.project/architecture/` through the docs worker. Root-only — nested `AGENTS.md` files are user-authored and untouched. Idempotent; say "dry run" to preview. |
+| `/plx:init` | Bootstrap or repair a repo's agent-docs setup: classify the root `AGENTS.md` and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror `CLAUDE.md` symlinks via `plx-link-claude`, keep `.project/` git-ignored, and seed `.project/architecture/` through the docs worker. Root-only — nested `AGENTS.md` files are user-authored and untouched. Idempotent; say "dry run" to preview. |
 
 ## Disabled / parked commands
 

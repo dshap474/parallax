@@ -8,6 +8,7 @@ Every entry point lives under the `plx` plugin namespace. The commands below run
 |---|---|
 | `/plx:dev` | The full 7-step pipeline — 2 parallel planners → Fable authors the plan → 1 Opus worker builds, spawns 2 parallel Codex review lanes itself, and fixes or rebuts every finding → Fable's final gate on the diff → docs + local commit. |
 | `/plx:plan` | Planning only (dev steps 1–3): parallel planner lanes return Planning Briefs, Fable arbitrates and authors the final plan. No code is written. |
+| `/plx:build` | Build only (dev steps 4–5): one worker implements the spec, spawns the review lanes itself, fixes or rebuts every finding, and returns a Buildout report. Uses a plan already in hand, or writes one from the request. No final gate, no commit. |
 | `/plx:review` | Multi-lane review, standalone: two parallel Codex lanes — correctness, refine — plus Fable as pseudo-third reviewer. Read-only; does not edit unless you explicitly ask for fixes. |
 
 ## Single-engine asks (raw passthrough — no review pipeline)

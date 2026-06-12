@@ -1,7 +1,7 @@
 # Parallax engine configuration
 #
 # Binds pipeline ROLES to ENGINES, keyed by pipeline. Each skill names the key it
-# reads (dev -> `dev`, plan -> `plan`, review -> `review`). Each skill's SKILL.md is
+# reads (dev -> `dev`, plan -> `plan`, build -> `build`, review -> `review`). Each skill's SKILL.md is
 # fully self-contained — it documents its own pipeline steps and handoffs — and
 # resolves each role to its engine from this file before running. The values below
 # are the shipped defaults. Edit a value to swap the engine for that role.
@@ -44,6 +44,11 @@ pipelines:
 
   plan:
     plan: [claude, codex]
+
+  build:
+    code: claude
+    review-correctness: [codex]
+    review-refine: [codex]
 
   review:
     review-correctness: [codex]

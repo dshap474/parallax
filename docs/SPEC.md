@@ -82,7 +82,7 @@ Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev
 - Codex execution goes through `bin/plx-codex-ro` (review/plan) or, when `code: codex`, `bin/plx-codex-rw` (scoped write).
 - Grok execution goes through `bin/plx-grok-ro` (review/plan) or, when `code: grok`, `bin/plx-grok-rw` (scoped write).
 - Engine wrappers never use `danger-full-access`, `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`.
-- Synthesis (plan merge, finding triage, repair planning) is always the orchestrator and never configurable.
+- Synthesis (plan authoring and arbitration between Planning Briefs, finding triage, repair planning) is always the orchestrator and never configurable.
 - Plan and review lanes are always read-only; exactly one writer at a time.
 - Every `dev` run ends with a docs subagent and a **local commit only** — never a push, PR, or publish step.
 - Final results are returned in chat, not written to a results file.

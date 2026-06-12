@@ -10,7 +10,6 @@ skills/           one dir per command — each SKILL.md is fully self-contained 
 skills/_disabled/ parked team-*/ultra-* skills (DISABLED.md)
 config/           engine-per-role bindings (parallax.yaml — keys: dev, plan, review)
 bin/              engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill)
-templates/        plan / coding spec templates
 agents/           subagent personas (planners, workers, dimension reviewers)
 docs/             human-facing docs
 tests/            deterministic harness (run.sh, check-plugin.sh, explain-skill.sh, smoke-scripts.sh, fixture/)

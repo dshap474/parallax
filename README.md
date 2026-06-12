@@ -73,7 +73,6 @@ parallax/
 ├── skills/       # one dir per command; each SKILL.md is fully self-contained
 ├── config/       # parallax.yaml — engine-per-role bindings (dev, plan, review)
 ├── bin/          # engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill, plx-link-claude)
-├── templates/    # plan / coding spec templates
 ├── agents/
 └── docs/{ARCHITECTURE, REQUIREMENTS, BENCHMARK, CONTRIBUTING, SPEC}.md
 ```

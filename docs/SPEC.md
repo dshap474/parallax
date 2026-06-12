@@ -41,7 +41,6 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 │   └── _disabled/        # parked team-*/ultra-* (DISABLED.md)
 ├── config/             # parallax.yaml — engine-per-role bindings
 ├── bin/                # engine API on PATH (plx-* tools)
-├── templates/          # plan / coding spec templates
 ├── docs/
 ├── tests/
 ├── LICENSE

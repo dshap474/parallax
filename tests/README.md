@@ -41,6 +41,11 @@ bash tests/run.sh --with-engines
 These checks cover the **deterministic** layer: wiring, contracts, and the projected
 pipeline. They do **not** run a full skill end-to-end (a real `dev` run spawns
 planner/worker/reviewer subagents and edits a repo — that's a behavioral test,
-model-driven and non-deterministic). To watch a real pipeline, invoke the skill against the `fixture/`
-repo *copied to a tmp dir* by hand. The fixture's empty-list bug is there so a review
-lane has something real to catch.
+model-driven and non-deterministic).
+
+That behavioral layer now has its own opt-in suite: **`tests/smoke/`** runs the skills
+and engine tools for real against throwaway 1-file fixtures and captures the full
+transcript of every lane (`bash tests/smoke/run-smoke.sh` for the cheap engine pass,
+`--skills` for the full per-skill audit). It spends tokens, so it's separate from the
+free suite above. See [`smoke/README.md`](smoke/README.md). The `fixture/` empty-list
+bug is shared by both — it's there so a review lane has something real to catch.

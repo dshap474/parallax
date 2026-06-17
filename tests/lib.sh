@@ -44,15 +44,17 @@ assert_contains() {
   if grep -qF -- "$needle" "$file" 2>/dev/null; then _pass "$label"; else _fail "$label"; fi
 }
 
-# Build an isolated git repo from tests/fixture and echo its path.
+# Build an isolated git repo from a fixture dir and echo its path.
+# Arg 1 (optional): source fixture dir; defaults to tests/fixture (the calc bug repo).
 # Caller is responsible for rm -rf; or trap it.
 make_tmp_repo() {
-  local dst
+  local dst src
+  src="${1:-$PLX_ROOT/tests/fixture}"
   dst="$(mktemp -d "${TMPDIR:-/tmp}/plx-fixture.XXXXXX")"
   # Resolve symlinks (macOS /var -> /private/var) so the path matches what
   # `git rev-parse --show-toplevel` reports from inside the repo.
   dst="$(cd "$dst" && pwd -P)"
-  cp -R "$PLX_ROOT/tests/fixture/." "$dst/"
+  cp -R "$src/." "$dst/"
   (
     cd "$dst" || exit 1
     git init -q

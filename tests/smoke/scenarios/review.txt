@@ -1,0 +1,6 @@
+# /plx:review — standalone, read-only: must catch the seeded empty-list bug, must change nothing
+NEEDS: codex
+FIXTURE: calc
+TASK: review calc.py for correctness bugs
+EXPECT_EMPTY_DIFF: true
+EXPECT_OUTPUT: zerodivision|empty|divide by zero|len\(numbers\)

@@ -1,0 +1,6 @@
+# /plx:init — bootstrap agent-docs in a bare repo (Claude orchestrator + docs worker; no engine CLI)
+NEEDS:
+FIXTURE: bare
+TASK:
+EXPECT_FILE: AGENTS.md
+EXPECT_CHECK: test -s AGENTS.md && test -L CLAUDE.md

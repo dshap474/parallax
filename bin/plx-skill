@@ -9,17 +9,25 @@ usage() {
 plx-skill — print a Parallax pipeline skill file
 
 Usage:
-  plx-skill <name>     print skills/<name>/SKILL.md (e.g. plx-skill team-dev)
-  plx-skill --list     list available skill names
+  plx-skill <name>             print skills/<name>/SKILL.md (e.g. plx-skill team-dev)
+  plx-skill --ref <skill>/<n>  print skills/<skill>/references/<n>.md (e.g. dev/spec-template)
+  plx-skill --list             list available skill names
 
 Exit codes:
   0  printed
-  1  no such skill
+  1  no such skill or reference
   2  usage error
 EOF
 }
 
-BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve symlinks so --ref works when the tool is reached via a PATH symlink.
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+  d="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$d/$src" ;; esac
+done
+BIN_DIR="$(cd -P "$(dirname "$src")" && pwd)"
 SKILLS_DIR="$BIN_DIR/../skills"
 
 case "${1:-}" in
@@ -31,6 +39,13 @@ case "${1:-}" in
       [[ "$name" == _* ]] && continue
       [[ -f "$d/SKILL.md" ]] && echo "$name"
     done
+    exit 0 ;;
+  --ref)
+    ref="${2:-}"
+    [[ -n "$ref" && "$ref" == */* ]] || { echo "usage: plx-skill --ref <skill>/<name> (e.g. dev/spec-template)" >&2; exit 2; }
+    REF="$SKILLS_DIR/${ref%/*}/references/${ref##*/}.md"
+    [[ -f "$REF" ]] || { echo "no such reference: $ref (looked at $REF)" >&2; exit 1; }
+    cat "$REF"
     exit 0 ;;
   --*) echo "unknown arg: $1 (see --help)" >&2; exit 2 ;;
 esac

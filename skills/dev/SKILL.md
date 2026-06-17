@@ -90,10 +90,17 @@ worker that returns no status line is a failure.
 
 ### Plan (steps 1–3)
 
+**Clarify first — only if it changes the plan.** Before writing the brief, judge whether
+the request is specified well enough to design against. If a material ambiguity would
+change the plan — unclear scope, an unstated decision between real alternatives, a missing
+constraint or acceptance bar — ask the user up to ~3 sharp questions and fold the answers
+into the brief. If the request is already clear, skip this; don't manufacture questions for
+a simple one-shot.
+
 1. **Write the task brief.** One compact brief used by BOTH planners identically: the
-   user's request verbatim, constraints and decisions from the conversation, repo facts
-   from Bootstrap. No analysis of your own, no preferred approach. Write it to a file in
-   a `mktemp -d` dir for the Codex lane.
+   user's request verbatim, constraints and decisions from the conversation and any
+   clarify-step answers, repo facts from Bootstrap. No analysis of your own, no preferred
+   approach. Write it to a file in a `mktemp -d` dir for the Codex lane.
 2. **Spawn the planner lanes in parallel** (one message; spawn the personas the config
    resolves):
    - `plx:claude-planner` ← `<repo>` + the brief text (Opus, reads the repo itself)
@@ -108,46 +115,38 @@ worker that returns no status line is a failure.
    **author the final plan doc yourself**, for a high-effort autonomous worker with no
    prior context. It is outcome-first — pin intent, success criteria, and invariants hard;
    leave the *how* to the worker (do not pin every interface or dictate ordered steps).
-   Use this shape:
 
-   ```
-   # Plan: <title>
-
-   ## Worker Instruction
-   <implement the task below; simplest change satisfying the success criteria; prefer existing project patterns; validate at boundaries; don't expand scope>
-
-   ## Intent
-   <why this change matters and what it enables — 2–5 sentences>
-
-   ## Success Criteria
-   <binary checks defining done, including edge cases and regressions that must hold>
-
-   ## Context
-   <relevant files + why; current vs. desired behavior; existing patterns to reuse>
-
-   ## Invariants
-   <the only hard rules — do-not-touch files/areas, contracts that must hold>
-
-   ## Suggested Path
-   <non-binding: likely files, likely implementation shape — the worker may choose a better path>
-
-   ## Validation
-   <smallest set of repo commands that meaningfully proves the task, and what passing looks like>
-   ```
+   Author it to the canonical spec template — the single source of truth shared by every
+   engine, not a copy inlined here. Load the template with `plx-skill --ref dev/spec-template`,
+   then write the final plan to that shape: fill its sections to the depth the task warrants
+   (the optional sections stay optional), staying outcome-first.
 
    Note where the final plan diverges from each lane's brief and why.
 
 ### Build + review (steps 4–5)
 
 4. **Delegate the build with its review round.** Resolve the review lanes from the
-   config (`review-correctness` and `review-refine` keys → personas, e.g. `[codex]` →
-   `plx:codex-reviewer-correctness` + `plx:codex-reviewer-refine`). Write the final plan
-   to a spec file in the temp dir and spawn the `code` engine's worker (default
-   `plx:claude-worker`) with `<repo>` + the spec file path + the reviewer persona names.
-   The spec and the lane names, nothing else — no planner briefs, none of your own analysis.
-   One writer, always. The worker implements, self-verifies, spawns the named review
-   lanes in parallel inside its own context, fixes or rebuts every finding (one round,
-   hard cap), re-verifies, and reports.
+   config (`review-debug` and `review-simplify` keys → personas, e.g. `[codex]` →
+   `plx:codex-reviewer-debug` + `plx:codex-reviewer-simplify`). Write the final plan
+   to a spec file in the temp dir, **topped with this fixed Worker pipeline preamble** —
+   it restates the flow the worker persona already owns, on purpose (belt-and-suspenders,
+   so the worker can't skip the review round):
+
+   ```
+   ## Worker pipeline (do every step, in order)
+   1. Build this spec and self-verify with the repo's own checks.
+   2. Run your review round — spawn the reviewer lanes named in your dispatch, in
+      parallel; fix or rebut every finding; re-verify. Spawn the lanes directly — this is
+      your own review round, not the /plx:review skill.
+   3. Return your Buildout report to the orchestrator — summaries only, never code bodies.
+   ```
+
+   Then spawn the `code` engine's worker (default `plx:claude-worker`) with `<repo>` +
+   the spec file path + the reviewer persona names. The spec (preamble + plan) and the
+   lane names, nothing else — no planner briefs, none of your own analysis. One writer,
+   always. The worker implements, self-verifies, spawns the named review lanes in
+   parallel inside its own context, fixes or rebuts every finding (one round, hard cap),
+   re-verifies, and reports.
    - **Docs observer (plan).** If the final plan is durable enough to record (a
      multi-stage or multi-session effort), spawn the `docs` agent in the same message,
      in parallel with the build worker: envelope `phase: plan`, `build_thread`,

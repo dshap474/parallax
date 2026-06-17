@@ -5,7 +5,7 @@ Parallax is a delegation-first coding workflow for Claude Code.
 The public surface is three pipelines (each is a skill):
 
 ```text
-dev | plan | review
+dev | plan-goal | review
 ```
 
 ## Core idea
@@ -41,7 +41,7 @@ Plan authoring and the final gate are always Fable and never delegated — that 
 1. **Delegate planning.** Two parallel planner lanes — `claude-planner` (Opus, xhigh) and `codex-planner` (Codex, xhigh) — act as architecture consultants on the same neutral brief. The brief rubric lives inside the planner agents.
 2. **Parallel briefs return.** Both lanes hand back Planning Briefs — recommended design + steelman, repo facts, constraints, validation — not finished plans.
 3. **Fable arbitrates and authors the plan.** Reads the briefs, settles where lanes disagree, thinks independently, then authors the final plan doc itself (outcome-first: intent, success criteria, invariants, suggested path, validation). A judgment-and-authoring pass, not a merge.
-4. **Delegate the build with its review round.** Fable hands one Opus worker (`claude-worker`) the final plan spec plus the reviewer persona names resolved from the config. The worker implements, self-verifies, **spawns the two Codex-xhigh review lanes itself** — nested read-only subagents, in parallel, each handed a neutral review brief (the correctness lane covers spec match, bugs, robustness, and failure paths; the refine lane covers over-engineering and structure) — then triages every finding with its build context still hot: fix it or rebut it with evidence, never silently drop it. One round, hard cap; then it re-verifies.
+4. **Delegate the build with its review round.** Fable hands one Opus worker (`claude-worker`) the final plan spec plus the reviewer persona names resolved from the config. The worker implements, self-verifies, **spawns the two Codex-xhigh review lanes itself** — nested read-only subagents, in parallel, each handed a neutral review brief (the debug lane covers spec match, bugs, robustness, and failure paths; the simplify lane covers over-engineering and structure) — then triages every finding with its build context still hot: fix it or rebut it with evidence, never silently drop it. One round, hard cap; then it re-verifies.
 5. **Buildout report returns.** Every file touched, per-file summary of what changed and why, coding decisions, verification, and the disposition of every review finding (fixed / rebutted / residual). Summaries and pointers only, never code bodies or diffs.
 6. **Fable gates the work.** Now — and only now — it reads the diff once, with fresh eyes: do the rebuttals hold, do the residuals matter, did the worker and both lanes miss something? By this point the cheap mistakes are caught; Fable's judgment goes on what's left. It fixes nits inline, then re-runs the plan's verification commands. (Escape hatch: structural rework → a fresh spec back through the build.)
 7. **Docs + commit.** A docs subagent updates documentation, then a **local commit only** — never a push, PR, or publish.
@@ -53,7 +53,7 @@ The pipeline has exactly **four top-level subagent spawns** (2 planners + 1 buil
 | Pipeline (skill) | Config key | Purpose | Steps |
 |---|---|---|---|
 | `dev` | `dev` | build a change end to end | 1–7 |
-| `plan` | `plan` | think only, no edits | 1–3 |
+| `plan-goal` | `plan-goal` | interview-locked goal planning, no edits | standalone (read-only) |
 | `review` | `review` | audit / debug / critique without edits | standalone (read-only) |
 
 Explicit `/plx:*` commands run one of these three (see [`COMMANDS.md`](COMMANDS.md)). The single-engine passthroughs `/plx:codex` and `/plx:grok` run a task through one engine with no review pipeline.

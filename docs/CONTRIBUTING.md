@@ -1,14 +1,14 @@
 # Contributing
 
-Parallax is a Claude Code plugin: three fully self-contained pipeline skills (`dev`, `plan`, `review`), two single-engine passthroughs (`codex`, `grok`), subagent personas in `agents/`, and a deterministic engine API in `bin/`.
+Parallax is a Claude Code plugin: three fully self-contained pipeline skills (`dev`, `plan-goal`, `review`), two single-engine passthroughs (`codex`, `grok`), subagent personas in `agents/`, and a deterministic engine API in `bin/`.
 
 ## Project layout
 
 ```text
 .claude-plugin/   plugin.json + marketplace.json
-skills/           one dir per command — each SKILL.md is fully self-contained (dev, plan, review, codex, grok)
+skills/           one dir per command — each SKILL.md is fully self-contained (dev, plan-goal, review, codex, grok)
 skills/_disabled/ parked team-*/ultra-* skills (DISABLED.md)
-config/           engine-per-role bindings (parallax.yaml — keys: dev, plan, review)
+config/           engine-per-role bindings (parallax.yaml — keys: dev, plan-goal, review)
 bin/              engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill)
 agents/           subagent personas (planners, workers, dimension reviewers)
 docs/             human-facing docs
@@ -19,7 +19,7 @@ Only the two manifests belong under `.claude-plugin/`. Do not put `skills/`, `ag
 
 ## Design rule: self-contained skills
 
-Each `skills/<name>/SKILL.md` carries its **entire** pipeline inline — ordered steps, lane briefs, prompt templates, engine invocations, neutral-context rule. No pointers to other prompt files (`lib/`, `prompts/`, `scripts/`, `router.md`), no `${CLAUDE_PLUGIN_ROOT}`, no `!`-command injection. The only external inputs a skill has are `config/parallax.yaml` (role→engine bindings) and the `bin/` tools, invoked by bare name.
+Each `skills/<name>/SKILL.md` carries its **entire** pipeline inline — ordered steps, lane briefs, engine invocations, neutral-context rule. No path pointers (`lib/`, `prompts/`, `scripts/`, `router.md`), no `${CLAUDE_PLUGIN_ROOT}`, no `!`-command injection. The only external inputs a skill has are `config/parallax.yaml` (role→engine bindings) and the `bin/` tools, invoked by bare name — including shared reference templates via `plx-skill --ref` (e.g. `dev/spec-template`, `init/AGENTS.template`).
 
 ## Design rule: rubrics live in the agents
 
@@ -44,7 +44,7 @@ Add executables under `bin/` (chmod +x; named `plx-*`). Claude Code puts `bin/` 
 
 ### Add or change an engine
 
-Add `bin/plx-<engine>-ro` / `bin/plx-<engine>-rw` following the API contract, add `agents/<engine>-{planner,worker,reviewer-correctness,reviewer-refine}.md` personas carrying the engine's operator manual plus the relevant rubric, update the lane invocations in each pipeline skill that should use it, and reference the engine name from `config/parallax.yaml`.
+Add `bin/plx-<engine>-ro` / `bin/plx-<engine>-rw` following the API contract, add `agents/<engine>-{planner,worker,reviewer-debug,reviewer-simplify}.md` personas carrying the engine's operator manual plus the relevant rubric, update the lane invocations in each pipeline skill that should use it, and reference the engine name from `config/parallax.yaml`.
 
 ### Add a subagent
 

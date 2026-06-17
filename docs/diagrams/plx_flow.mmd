@@ -4,10 +4,10 @@ flowchart TD
     IN --> RT{"🧭 Which pipeline the command runs"}
 
     RT -->|"/plx:dev — build a change"| DEV["🛠️ dev — full 7-step pipeline"]
-    RT -->|"/plx:plan — think only, no edits"| PL["📐 plan — steps 1–3"]
+    RT -->|"/plx:plan-goal — lock a goal, no edits"| PL["📐 plan-goal — interview → goal spec"]
     RT -->|"/plx:review — audit / debug, no edits"| RV["🔎 review — standalone, read-only"]
 
-    CFG[("🗂️ config/parallax.yaml<br/>engine-per-role: dev · plan · review<br/>→ resolves each lane's persona")] -. "binds lanes" .-> DEV
+    CFG[("🗂️ config/parallax.yaml<br/>engine-per-role: dev · plan-goal · review<br/>→ resolves each lane's persona")] -. "binds lanes" .-> DEV
     CFG -. .-> PL
     CFG -. .-> RV
 
@@ -19,7 +19,7 @@ flowchart TD
       S2["② Planning Briefs return (recommendation + steelman + repo facts)"]
       S3["③ 🧠 Fable arbitrates + authors the final plan doc (judgment, not a merge)"]
       S4["④ Delegate the build — 1 worker ✍️<br/>plx:claude-worker (Opus xhigh), spec + reviewer lane names"]
-      S4R["worker spawns 2 nested Codex review lanes (read-only)<br/>correctness · refine — then fixes or rebuts every finding<br/>one round, hard cap"]
+      S4R["worker spawns 2 nested Codex review lanes (read-only)<br/>debug · simplify — then fixes or rebuts every finding<br/>one round, hard cap"]
       S5["⑤ Buildout report returns — per-file summaries + findings disposition<br/>(fixed / rebutted / residual), never code bodies"]
       S6["⑥ 🧠 Fable's final gate — reads the diff ONCE, fresh eyes<br/>fixes nits inline ✍️ · re-runs the repo's checks<br/>escape hatch: structural rework → fresh build"]
       S1 --> S2 --> S3 --> S4
@@ -29,12 +29,12 @@ flowchart TD
     PIPE --> DOC["⑦ Docs subagent updates docs → LOCAL commit only<br/>never push / PR / publish"]
     DOC --> REP(["📝 Final chat report"])
 
-    PL -.->|"plan = dev steps ①–③"| S1
+    PL -.->|"plan-goal reuses the planner lanes ①–②"| S1
 
-    subgraph LEG ["Pipelines = subsets of the dev steps"]
+    subgraph LEG ["Pipelines at a glance"]
       direction TB
       L1["🛠️ dev:  ① → ⑦ (full pipeline)"]
-      L2["📐 plan:  ① → ③ — two planners + Fable authoring, no build"]
+      L2["📐 plan-goal:  interview → lock → 2 planners + Fable authors a /goal-ready spec → build thread"]
       L3["🔎 review:  standalone — two Codex lanes + Fable synthesis, read-only"]
       L4["🤖 passthrough:  /plx:codex · /plx:grok — one engine, no pipeline"]
     end

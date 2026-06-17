@@ -1,6 +1,6 @@
 ---
 name: "plx::review"
-description: Multi-lane code review, standalone (in the dev pipeline the build worker runs this round itself). Two parallel Codex lanes — correctness, refine — plus the orchestrator as pseudo-third reviewer. Read-only; does not modify files unless you explicitly ask for fixes.
+description: Multi-lane code review, standalone (in the dev pipeline the build worker runs this round itself). Two parallel Codex lanes — debug, simplify — plus the orchestrator as pseudo-third reviewer. Read-only; does not modify files unless you explicitly ask for fixes.
 argument-hint: "<what to review / audit>"
 disable-model-invocation: true
 user-invocable: true
@@ -55,17 +55,17 @@ dimension `[codex]`. Run `plx-preflight --repo <repo> --require-codex`.
    rubric and Finding Schema and drives Codex headless through the plugin's
    `plx-codex-ro` tool (read-only sandbox, xhigh effort):
 
-   - **correctness** lane → spawn `plx:codex-reviewer-correctness` (right problem solved +
+   - **debug** lane → spawn `plx:codex-reviewer-debug` (right problem solved +
      spec match, plus the absorbed bug/robustness/failure-path scope — both "the right
      thing built" and "the thing built right")
-   - **refine** lane → spawn `plx:codex-reviewer-refine` (over-engineering,
+   - **simplify** lane → spawn `plx:codex-reviewer-simplify` (over-engineering,
      simplification, structure)
 
 3. **Synthesize as the pseudo-third reviewer — this is where your intelligence is the
    product.** Both reports come back in the Finding Schema. Do not just merge:
 
-   - Dedupe and severity-rank across lanes; resolve conflicts. Correctness governs first:
-     its verdicts on scope and behavior decide what survives, and refine's structure
+   - Dedupe and severity-rank across lanes; resolve conflicts. Debug governs first:
+     its verdicts on scope and behavior decide what survives, and simplify's structure
      findings apply only to the surviving code.
    - **Verify before trusting:** for each material finding, read the cited code
      surgically and confirm it's real. Kill false positives — say which and why.

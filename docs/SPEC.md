@@ -4,10 +4,10 @@ Status: draft v0.1
 
 ## Purpose
 
-Parallax packages a multi-model coding workflow as an installable Claude Code plugin. Its entry points are four pipeline skills:
+Parallax packages a multi-model coding workflow as an installable Claude Code plugin. Its entry points are three pipeline skills:
 
 ```text
-dev | plan | build | review
+dev | plan-goal | review
 ```
 
 Each pipeline establishes repo ground truth (Bootstrap), then runs its steps. Explicit `/plx:*` commands run a specific pipeline or hand a task to a single engine (see `docs/COMMANDS.md`).
@@ -16,10 +16,10 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 
 ## What ships
 
-- 4 pipeline skills, each **fully self-contained** (steps, lane briefs, prompt templates, and engine handoffs all written out inline — no pointers to other prompt files, no `${CLAUDE_PLUGIN_ROOT}`, no script injection): `plx:dev` (7-step pipeline), `plx:plan` (steps 1–3), `plx:build` (steps 4–5, standalone), `plx:review` (standalone read-only review)
+- 3 pipeline skills, each **self-contained** (steps, lane briefs, and engine handoffs written out inline — no path pointers, no `${CLAUDE_PLUGIN_ROOT}`, no script injection; the one exception is shared reference templates, fetched via `plx-skill --ref` — e.g. `dev/spec-template`, `init/AGENTS.template`): `plx:dev` (7-step pipeline), `plx:plan-goal` (interview-locked goal planning), `plx:review` (standalone read-only review)
 - 2 single-engine passthroughs: `plx:codex`, `plx:grok` (no `plx:claude` — the orchestrator *is* Claude)
-- Subagent personas in `agents/` carrying rubrics + operator manuals: 12 engine personas (`<engine>-planner`, `<engine>-worker`, `<engine>-reviewer-correctness`, `<engine>-reviewer-refine` for `claude` / `codex` / `grok`) plus `docs`
-- 1 engine-per-role config (`config/parallax.yaml`), keyed by pipeline: `dev`, `plan`, `build`, `review`
+- Subagent personas in `agents/` carrying rubrics + operator manuals: 12 engine personas (`<engine>-planner`, `<engine>-worker`, `<engine>-reviewer-debug`, `<engine>-reviewer-simplify` for `claude` / `codex` / `grok`) plus `docs`
+- 1 engine-per-role config (`config/parallax.yaml`), keyed by pipeline: `dev`, `plan-goal`, `review`
 - A deterministic engine API in `bin/` (on the Bash PATH while the plugin is enabled): `plx-codex-ro`/`plx-codex-rw`, `plx-grok-ro`/`plx-grok-rw`, `plx-preflight`, `plx-config`, `plx-skill` — uniform flags (`--repo`, `--prompt-file`, `--stdout`/`--out --log`; `--effort low|medium|high|xhigh` on the Codex tools), uniform exit codes (0 ok · 1 engine failure · 2 usage error · 3 auth needed), and `--help` manuals
 - **Disabled / parked:** `team-*` and `ultra-*` skills, with their `SKILL.md` renamed to `DISABLED.md` (in `skills/_disabled/`), regenerated from `.project/VISION.md` when revived
 
@@ -34,7 +34,6 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 ├── skills/
 │   ├── dev/SKILL.md      # 7-step pipeline
 │   ├── plan/SKILL.md     # steps 1–3
-│   ├── build/SKILL.md    # steps 4–5 — worker builds + runs its own review round
 │   ├── review/SKILL.md   # standalone read-only review
 │   ├── codex/SKILL.md    # single-engine passthrough
 │   ├── grok/SKILL.md     # single-engine passthrough
@@ -70,7 +69,7 @@ Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev
 
 ## Runtime rules
 
-- Each pipeline is a **self-contained skill**: its ordered steps, lane briefs, prompt templates, and engine invocations are all inline in its `SKILL.md`; only engine bindings come from `config/parallax.yaml`. `/plx:*` commands run a pipeline.
+- Each pipeline is a **self-contained skill**: its ordered steps, lane briefs, and engine invocations are all inline in its `SKILL.md`; engine bindings come from `config/parallax.yaml`, and shared reference templates via `plx-skill --ref` (e.g. `dev/spec-template`, `init/AGENTS.template`). `/plx:*` commands run a pipeline.
 - No prompt injection: skills contain no `!`-command injection and no pointers to external prompt files (`lib/`, `prompts/`, `scripts/`, `router.md`) or `${CLAUDE_PLUGIN_ROOT}`.
 - Reusable rubrics, schemas, and templates live in the agent files (rubrics-in-agents); the orchestrator hands each subagent only a task-specific brief.
 - No hooks in v0.1.
@@ -103,8 +102,7 @@ These mirror the deterministic checks run by `tests/run.sh`.
 
 ```bash
 test -f skills/dev/SKILL.md
-test -f skills/plan/SKILL.md
-test -f skills/build/SKILL.md
+test -f skills/plan-goal/SKILL.md
 test -f skills/review/SKILL.md
 test -f config/parallax.yaml
 test -d bin
@@ -162,10 +160,10 @@ After local install:
 Expected:
 
 ```text
-/plx:dev, /plx:plan, /plx:build, /plx:review, /plx:codex, /plx:grok appear (no /plx:claude)
+/plx:dev, /plx:plan-goal, /plx:review, /plx:codex, /plx:grok appear (no /plx:claude)
 plx:claude-planner / plx:codex-planner appear in /agents
 plx:claude-worker appears in /agents
-plx:codex-reviewer-correctness / plx:codex-reviewer-refine appear in /agents
+plx:codex-reviewer-debug / plx:codex-reviewer-simplify appear in /agents
 ```
 
 ### Smoke tests

@@ -9,3 +9,4 @@ zz_plugin-commands
 
 # .project/ is durable project memory — local-only, never committed.
 .project/
+.reference/

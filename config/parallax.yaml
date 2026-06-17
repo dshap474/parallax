@@ -1,7 +1,7 @@
 # Parallax engine configuration
 #
 # Binds pipeline ROLES to ENGINES, keyed by pipeline. Each skill names the key it
-# reads (dev -> `dev`, plan -> `plan`, build -> `build`, review -> `review`). Each skill's SKILL.md is
+# reads (dev -> `dev`, plan-goal -> `plan-goal`, review -> `review`). Each skill's SKILL.md is
 # fully self-contained — it documents its own pipeline steps and handoffs — and
 # resolves each role to its engine from this file before running. The values below
 # are the shipped defaults. Edit a value to swap the engine for that role.
@@ -18,12 +18,12 @@
 #   code                claude -> plx:claude-worker              (Opus, edits the repo)
 #                       codex  -> plx:codex-worker               (drives bin/plx-codex-rw)
 #                       grok   -> plx:grok-worker                (drives bin/plx-grok-rw)
-#   review-correctness  claude -> plx:claude-reviewer-correctness (Opus, read-only)
-#                       codex  -> plx:codex-reviewer-correctness  (drives bin/plx-codex-ro)
-#                       grok   -> plx:grok-reviewer-correctness   (drives bin/plx-grok-ro)
-#   review-refine       claude -> plx:claude-reviewer-refine      (Opus, read-only)
-#                       codex  -> plx:codex-reviewer-refine       (drives bin/plx-codex-ro)
-#                       grok   -> plx:grok-reviewer-refine        (drives bin/plx-grok-ro)
+#   review-debug  claude -> plx:claude-reviewer-debug (Opus, read-only)
+#                       codex  -> plx:codex-reviewer-debug  (drives bin/plx-codex-ro)
+#                       grok   -> plx:grok-reviewer-debug   (drives bin/plx-grok-ro)
+#   review-simplify       claude -> plx:claude-reviewer-simplify      (Opus, read-only)
+#                       codex  -> plx:codex-reviewer-simplify       (drives bin/plx-codex-ro)
+#                       grok   -> plx:grok-reviewer-simplify        (drives bin/plx-grok-ro)
 #
 # Rules:
 #   - `code` takes exactly ONE engine — one writer at a time, always.
@@ -39,17 +39,12 @@ pipelines:
   dev:
     plan: [claude, codex]
     code: claude
-    review-correctness: [codex]
-    review-refine: [codex]
+    review-debug: [codex]
+    review-simplify: [codex]
 
-  plan:
+  plan-goal:
     plan: [claude, codex]
 
-  build:
-    code: claude
-    review-correctness: [codex]
-    review-refine: [codex]
-
   review:
-    review-correctness: [codex]
-    review-refine: [codex]
+    review-debug: [codex]
+    review-simplify: [codex]

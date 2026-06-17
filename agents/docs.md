@@ -27,7 +27,7 @@ context or reference any external prompt file.
 You may create and update files only under the envelope's `repo` path, only in these
 surfaces:
 
-- `architecture/` — how the codebase and its systems work (the old codemap lives here).
+- `architecture/` — how the codebase and its systems work.
 - `builds/` — long-running buildout threads, organized by build slug.
 - `adr/` — architectural decision records.
 - `runbooks/` — repeated operational procedures.

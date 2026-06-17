@@ -7,9 +7,8 @@ Every entry point lives under the `plx` plugin namespace. The commands below run
 | Command | What it does |
 |---|---|
 | `/plx:dev` | The full 7-step pipeline — 2 parallel planners → Fable authors the plan → 1 Opus worker builds, spawns 2 parallel Codex review lanes itself, and fixes or rebuts every finding → Fable's final gate on the diff → docs + local commit. |
-| `/plx:plan` | Planning only (dev steps 1–3): parallel planner lanes return Planning Briefs, Fable arbitrates and authors the final plan. No code is written. |
-| `/plx:build` | Build only (dev steps 4–5): one worker implements the spec, spawns the review lanes itself, fixes or rebuts every finding, and returns a Buildout report. Uses a plan already in hand, or writes one from the request. No final gate, no commit. |
-| `/plx:review` | Multi-lane review, standalone: two parallel Codex lanes — correctness, refine — plus Fable as pseudo-third reviewer. Read-only; does not edit unless you explicitly ask for fixes. |
+| `/plx:plan-goal` | Interview-locked goal planning for long-running efforts: a Socratic interview locks the goal (intent, binary success criteria, invariants, non-goals), then parallel planner lanes design the how and Fable authors one self-contained spec into the build thread under `.project/builds/` — plus a paste-ready `/goal` condition. No code is written. |
+| `/plx:review` | Multi-lane review, standalone: two parallel Codex lanes — debug, simplify — plus Fable as pseudo-third reviewer. Read-only; does not edit unless you explicitly ask for fixes. |
 
 ## Single-engine asks (raw passthrough — no review pipeline)
 
@@ -34,5 +33,5 @@ The `team-*` and `ultra-*` commands (`/plx:team-dev`, `/plx:ultra-dev`, `/plx:te
 
 ## Notes
 
-- Each command **is** its pipeline, written out in full: its `SKILL.md` carries the ordered steps, lane briefs, prompt templates, and engine invocations inline, resolving only engine bindings from `config/parallax.yaml`.
-- In the **pipelines**, each lane runs as an engine-named subagent (`plx:claude-planner`, `plx:codex-reviewer-correctness`, etc.) so the TUI shows which engine ran it. The **single-engine passthroughs spawn no subagent** — the orchestrator runs the engine's write-capable wrapper (`plx-codex-rw` / `plx-grok-rw`) directly.
+- Each command **is** its pipeline, written out in full: its `SKILL.md` carries the ordered steps, lane briefs, and engine invocations inline, resolving engine bindings from `config/parallax.yaml` and any shared reference template via `plx-skill --ref` (e.g. `dev/spec-template`, `init/AGENTS.template`).
+- In the **pipelines**, each lane runs as an engine-named subagent (`plx:claude-planner`, `plx:codex-reviewer-debug`, etc.) so the TUI shows which engine ran it. The **single-engine passthroughs spawn no subagent** — the orchestrator runs the engine's write-capable wrapper (`plx-codex-rw` / `plx-grok-rw`) directly.

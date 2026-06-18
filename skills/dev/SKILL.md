@@ -48,39 +48,11 @@ may touch all surfaces; it is authoritative.
 if time-critical repair is in flight. Only the final reconciliation pass (step 7) is
 mandatory before the commit.
 
-**Dispatch format — never prose.** Hand the `docs` agent `<repo>` plus a compact Docs
-Impact Envelope: routing metadata, artifact paths, changed paths, and signal bits. Never
-paste plans, diffs, review findings, or chat history — the worker reads the artifacts and
-the repo itself. The envelope shape:
-
-```text
-phase: plan | build | review | repair | final
-repo: <absolute repo path>
-build_thread: <slug or none>
-user_goal: <one-line goal>
-changed_paths:
-  - <path>
-artifacts:
-  final_plan: <path or none>
-  buildout_report: <path or none>
-  review_brief: <path or none>
-  review_findings: <path(s) or none>
-  review_synthesis: <path or none>
-  repair_plan: <path or none>
-  verification: <path or none>
-signals:
-  architecture:
-    - <candidate system or doc slug>
-  build_plan: true | false
-  adr:
-    - <decision slug or short statement>
-  runbook:
-    - <procedure slug or short statement>
-  notes:
-    - <note slug or short statement>
-allowed_surfaces: [architecture, builds, adr, runbooks, notes]
-forbidden: [.project/VISION.md]
-```
+**Dispatch is an envelope, never prose.** Hand the `docs` agent `<repo>` plus a compact
+Docs Impact Envelope: routing metadata, artifact paths, changed paths, and signal bits.
+Never paste plans, diffs, review findings, or chat history — the worker reads the
+artifacts and the repo itself. The `docs` persona owns the full envelope schema; each
+step below names only the fields that phase fills.
 
 The docs worker emits exactly one status line and no prose report: `DOCS_OK: <surfaces>`
 (or `DOCS_OK: none (<reason>)` for a deliberate no-op), or `DOCS_BLOCKED: <reason>`. A
@@ -128,9 +100,8 @@ a simple one-shot.
 4. **Delegate the build with its review round.** Resolve the review lanes from the
    config (`review-debug` and `review-simplify` keys → personas, e.g. `[codex]` →
    `plx:codex-reviewer-debug` + `plx:codex-reviewer-simplify`). Write the final plan
-   to a spec file in the temp dir, **topped with this fixed Worker pipeline preamble** —
-   it restates the flow the worker persona already owns, on purpose (belt-and-suspenders,
-   so the worker can't skip the review round):
+   to a spec file in the temp dir, topped with this fixed Worker pipeline preamble — it
+   reinforces the review round the worker already owns, so it can't be skipped:
 
    ```
    ## Worker pipeline (do every step, in order)

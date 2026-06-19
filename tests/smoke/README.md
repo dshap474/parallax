@@ -63,7 +63,7 @@ logs/<timestamp>/
     stderr.log        # claude stderr
 ```
 
-`transcript.jsonl` is the point of the whole thing — it records every planner, the
+`transcript.jsonl` is the point of the whole thing — it records the plan-critic, the
 worker, the worker's reviewers, and the docs lane, so you can see what each one did.
 
 ## plan-goal is a manual check

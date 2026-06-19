@@ -28,7 +28,7 @@ Every behavior is a composition of three stage atoms, each a delegation pattern 
 
 | Atom | What it does | Who acts | Returns |
 |---|---|---|---|
-| `plan` | produce an implementation plan | parallel planner lanes (read-only consultants); Fable arbitrates + authors the plan | Planning Briefs → final plan doc |
+| `plan` | produce an implementation plan | Fable authors it; read-only lanes advise — a red-team critic in `dev`, parallel consultants in `plan-goal` | draft + critique (dev) / briefs (plan-goal) → final plan doc |
 | `build` | execute a plan against the repo, then survive its own review round | exactly one writer worker, which spawns the review lanes and triages their findings | Buildout report (summaries + findings disposition, never code bodies) |
 | `review` | independently review the work | parallel read-only review lanes; the caller triages | Findings → fixes (in `dev`) or a repair plan (standalone) |
 
@@ -38,15 +38,15 @@ Plan authoring and the final gate are always Fable and never delegated — that 
 
 `dev` is the flagship composition: **plan → build+review → final gate → docs**.
 
-1. **Delegate planning.** Two parallel planner lanes — `claude-planner` (Opus, xhigh) and `codex-planner` (Codex, xhigh) — act as architecture consultants on the same neutral brief. The brief rubric lives inside the planner agents.
-2. **Parallel briefs return.** Both lanes hand back Planning Briefs — recommended design + steelman, repo facts, constraints, validation — not finished plans.
-3. **Fable arbitrates and authors the plan.** Reads the briefs, settles where lanes disagree, thinks independently, then authors the final plan doc itself (outcome-first: intent, success criteria, invariants, suggested path, validation). A judgment-and-authoring pass, not a merge.
+1. **Fable authors the plan.** Reads the repo (scoped to what the design needs), settles the approach, and writes the plan doc itself to the shared spec template — outcome-first: intent, success criteria, invariants, suggested path, validation.
+2. **One cross-model red-team critic.** Fable hands a Codex critic (`codex-plan-critic`, high) the repo path and the draft plan. It stress-tests the plan against the repo — wrong facts, spec drift, missed work, a materially simpler design, unhandled edges, risk — and returns a critique (findings), never a rewrite. The rubric lives inside the agent.
+3. **Fable folds the critique.** Triages every finding — adopts it or rebuts it with a reason, verifying load-bearing claims itself — then finalizes the plan. Escape hatch: a fundamental objection → re-draft.
 4. **Delegate the build with its review round.** Fable hands one Opus worker (`claude-worker`) the final plan spec plus the reviewer persona names resolved from the config. The worker implements, self-verifies, **spawns the two Codex-xhigh review lanes itself** — nested read-only subagents, in parallel, each handed a neutral review brief (the debug lane covers spec match, bugs, robustness, and failure paths; the simplify lane covers over-engineering and structure) — then triages every finding with its build context still hot: fix it or rebut it with evidence, never silently drop it. One round, hard cap; then it re-verifies.
 5. **Buildout report returns.** Every file touched, per-file summary of what changed and why, coding decisions, verification, and the disposition of every review finding (fixed / rebutted / residual). Summaries and pointers only, never code bodies or diffs.
 6. **Fable gates the work.** Now — and only now — it reads the diff once, with fresh eyes: do the rebuttals hold, do the residuals matter, did the worker and both lanes miss something? By this point the cheap mistakes are caught; Fable's judgment goes on what's left. It fixes nits inline, then re-runs the plan's verification commands. (Escape hatch: structural rework → a fresh spec back through the build.)
 7. **Docs + commit.** A docs subagent updates documentation, then a **local commit only** — never a push, PR, or publish.
 
-The pipeline has exactly **four top-level subagent spawns** (2 planners + 1 builder + 1 docs); the builder spawns the 2 review lanes nested inside its own context, so findings traffic never touches Fable's window.
+The pipeline has exactly **three top-level subagent spawns** (1 plan-critic + 1 builder + 1 docs); the builder spawns the 2 review lanes nested inside its own context, so findings traffic never touches Fable's window.
 
 ## Pipelines
 
@@ -66,9 +66,9 @@ Any prompt text that is the same every run — review dimension rubrics, the pla
 
 ## Safety model
 
-- Plan and review lanes are read-only for every engine. There is exactly **one writer at a time, always**: the build worker (its nested reviewer subagents are read-only lanes), plus Fable fixing nits at the final gate.
-- The build worker spawns only the reviewer personas the orchestrator names in its dispatch — never planners, other workers, or docs agents. (The frontmatter `Agent(...)` allowlist documents this; the binding rule lives in the persona prose.)
-- Codex/Grok review and plan calls go through `bin/plx-codex-ro` / `bin/plx-grok-ro` (read-only).
+- Plan-critic, planner, and review lanes are read-only for every engine. There is exactly **one writer at a time, always**: the build worker (its nested reviewer subagents are read-only lanes), plus Fable fixing nits at the final gate.
+- The build worker spawns only the reviewer personas the orchestrator names in its dispatch — never the plan-critic, planners, other workers, or docs agents. (The frontmatter `Agent(...)` allowlist documents this; the binding rule lives in the persona prose.)
+- Codex/Grok review, plan, and plan-critic calls go through `bin/plx-codex-ro` / `bin/plx-grok-ro` (read-only).
 - A non-Claude writer (when `config/parallax.yaml` binds `code: codex`/`grok`) goes through `bin/plx-codex-rw` (scoped `workspace-write`) / `bin/plx-grok-rw` (kernel `workspace` sandbox) — edits confined to the target repo. The default config keeps Claude the sole writer.
 - Engine wrappers never use `danger-full-access`, `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`.
 - Neutral context: lanes get the spec or brief, never the caller's analysis or another lane's output.

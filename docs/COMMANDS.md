@@ -6,7 +6,7 @@ Every entry point lives under the `plx` plugin namespace. The commands below run
 
 | Command | What it does |
 |---|---|
-| `/plx:dev` | The full 7-step pipeline — 2 parallel planners → Fable authors the plan → 1 Opus worker builds, spawns 2 parallel Codex review lanes itself, and fixes or rebuts every finding → Fable's final gate on the diff → docs + local commit. |
+| `/plx:dev` | The full 7-step pipeline — Fable authors the plan → 1 Codex red-team critic stress-tests it → 1 Opus worker builds, spawns 2 parallel Codex review lanes itself, and fixes or rebuts every finding → Fable's final gate on the diff → docs + local commit. |
 | `/plx:plan-goal` | Interview-locked goal planning for long-running efforts: a Socratic interview locks the goal (intent, binary success criteria, invariants, non-goals), then parallel planner lanes design the how and Fable authors one self-contained spec into the build thread under `.project/builds/` — plus a paste-ready `/goal` condition. No code is written. |
 | `/plx:review` | Multi-lane review, standalone: two parallel Codex lanes — debug, simplify — plus Fable as pseudo-third reviewer. Read-only; does not edit unless you explicitly ask for fixes. |
 

@@ -13,11 +13,11 @@ flowchart TD
 
     DEV --> PIPE
 
-    subgraph PIPE ["🔁 dev pipeline — 4 top-level spawns; Fable holds only compact artifacts"]
+    subgraph PIPE ["🔁 dev pipeline — 3 top-level spawns; Fable holds only compact artifacts"]
       direction TB
-      S1["① Delegate planning — 2 parallel planners (read-only)<br/>plx:claude-planner (Opus xhigh) + plx:codex-planner (Codex xhigh)"]
-      S2["② Planning Briefs return (recommendation + steelman + repo facts)"]
-      S3["③ 🧠 Fable arbitrates + authors the final plan doc (judgment, not a merge)"]
+      S1["① 🧠 Fable authors the draft plan (reads the repo, scoped)<br/>writes the spec to the shared template"]
+      S2["② Delegate red-team — 1 critic (read-only)<br/>plx:codex-plan-critic (Codex high) → plan critique, not a rewrite"]
+      S3["③ 🧠 Fable folds the critique → finalizes the plan<br/>(verifies load-bearing claims; escape hatch: re-draft)"]
       S4["④ Delegate the build — 1 worker ✍️<br/>plx:claude-worker (Opus xhigh), spec + reviewer lane names"]
       S4R["worker spawns 2 nested Codex review lanes (read-only)<br/>debug · simplify — then fixes or rebuts every finding<br/>one round, hard cap"]
       S5["⑤ Buildout report returns — per-file summaries + findings disposition<br/>(fixed / rebutted / residual), never code bodies"]
@@ -28,8 +28,6 @@ flowchart TD
 
     PIPE --> DOC["⑦ Docs subagent updates docs → LOCAL commit only<br/>never push / PR / publish"]
     DOC --> REP(["📝 Final chat report"])
-
-    PL -.->|"plan-goal reuses the planner lanes ①–②"| S1
 
     subgraph LEG ["Pipelines at a glance"]
       direction TB
@@ -52,8 +50,8 @@ flowchart TD
     class SKL,IN,DOC step
     class RT decision
     class S4 write
-    class S4R review
-    class S3,S6 synth
+    class S4R,S2 review
+    class S1,S3,S6 synth
     class CFG cfg
-    class DEV,PL,RV,S1,S2,S5 step
+    class DEV,PL,RV,S5 step
     class L1,L2,L3,L4 legend

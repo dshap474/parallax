@@ -26,25 +26,25 @@ Each pipeline establishes repo ground truth (Bootstrap), then runs its steps. Ea
 
 | Pipeline | Use case | Lanes |
 |---|---|---|
-| `dev` | build a change end to end (plan → build+review → final gate → docs + local commit) | 2 planners + 1 worker (which spawns 2 reviewers) + docs |
+| `dev` | build a change end to end (plan → build+review → final gate → docs + local commit) | Fable authors the plan + 1 plan-critic + 1 worker (which spawns 2 reviewers) + docs |
 | `plan-goal` | lock a goal, then plan it (no edits) | interview + 2 parallel planners |
 | `review` | audit / debug / critique without edits | 2 parallel Codex review lanes |
 
 `plan-goal` runs a Socratic interview to lock a goal, then multi-model planning, and writes one self-contained, `/goal`-ready spec into a build thread under `.project/builds/` (for long-running efforts); `review` is the review stage run standalone by the orchestrator (read-only). Single-engine passthroughs `/plx:codex` and `/plx:grok` hand a task straight to one engine with no review pipeline.
 
-Plan and review lanes are always read-only. There is exactly **one writer at a time, always** (the build worker, plus Fable fixing nits at the final gate). Parallax does not write repo-local runtime state; temporary prompt/output files live only in shell temp directories and are cleaned up before commands return.
+Plan-critic and review lanes are always read-only. There is exactly **one writer at a time, always** (the build worker, plus Fable fixing nits at the final gate). Parallax does not write repo-local runtime state; temporary prompt/output files live only in shell temp directories and are cleaned up before commands return.
 
 ### The dev pipeline (7 steps)
 
-1. Delegate planning to two parallel planner lanes — `claude-planner` (Opus, xhigh) and `codex-planner` (Codex, xhigh) — architecture consultants on the same neutral brief.
-2. Both Planning Briefs return — recommendation + steelman + repo facts, not finished plans.
-3. Fable arbitrates across the briefs and authors the final plan doc — a judgment-and-authoring pass, not a merge.
+1. Fable authors the plan itself — reads the repo (scoped to what the design needs), settles the approach, and writes the spec to the shared template.
+2. One Codex red-team critic (`codex-plan-critic`, high) stress-tests the draft against the repo — wrong facts, missed work, a simpler design, unhandled edges — and returns findings, not a rewrite.
+3. Fable folds the critique — adopts or rebuts each finding (verifying load-bearing claims itself), then finalizes the plan. Escape hatch: a fundamental objection → re-draft.
 4. Delegate the build to one Opus worker (`claude-worker`) — the spec plus the reviewer persona names. The worker implements, self-verifies, **spawns the two Codex review lanes itself** (nested subagents, in parallel), then fixes or rebuts every finding with its build context still hot. One round, hard cap.
 5. The Buildout report returns — per-file summaries, coding decisions, verification, and the disposition of every review finding (fixed / rebutted / residual). Never code bodies.
 6. Fable gates the work: reads the diff once, with fresh eyes — do the rebuttals hold, do the residuals matter, was anything missed? It fixes nits inline (escape hatch: structural rework goes back through a fresh build), then re-runs the repo's checks.
 7. A docs subagent updates docs, then a **local commit** — never a push or PR.
 
-Exactly **four top-level subagent spawns** (2 planners + 1 builder + 1 docs); the builder spawns the 2 review lanes nested inside its own context.
+Exactly **three top-level subagent spawns** (1 plan-critic + 1 builder + 1 docs); the builder spawns the 2 review lanes nested inside its own context.
 
 ### Configuring engines
 
@@ -56,10 +56,10 @@ Parallax orchestrates external model CLIs you install and authenticate yourself.
 
 | Engine | Install | Used by |
 |---|---|---|
-| Codex | `codex` CLI + auth | `dev`/`plan-goal`/`review` review and plan lanes; `/plx:codex` |
+| Codex | `codex` CLI + auth | review, plan, and plan-critic lanes across `dev`/`plan-goal`/`review`; `/plx:codex` |
 | Grok | `grok` CLI + auth | `/plx:grok` passthrough; parked for future ultra tiers |
 
-The default `dev`, `plan-goal`, and `review` pipelines need Codex (planners and reviewers run on it). See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
+The default `dev`, `plan-goal`, and `review` pipelines need Codex (the plan-critic, planners, and reviewers run on it). See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
 
 ## Architecture
 

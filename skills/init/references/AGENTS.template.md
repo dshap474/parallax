@@ -24,7 +24,7 @@ Runtime Rules:
 
 - When you begin working, start a single build thread for the session at `.project/builds/YYYY-MM-DD_<thread-name>/` and keep that session's plans and goals there.
 - Record repeated procedures in `.project/runbooks/` and critical architectural decisions in `.project/adr/`.
-- Route every `.project/` write through a docs subagent — dispatch it with clear instructions; never edit `.project/` files yourself.
+- Route every `.project/` write through a docs subagent; never edit `.project/` files yourself. When you spawn it, hand it enough to act on its own — the repo path, what changed (the relevant paths or artifacts), and which surface to update and why. It reads the repo itself and reports back one status line.
 - When the user had to walk you through a fix you couldn't solve, append the key pattern or gotcha to the Project Memory section below (you edit it directly — it lives in this file, which the docs subagent never touches). Only durable patterns; keep small issues out.
 ```
 

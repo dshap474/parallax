@@ -108,11 +108,10 @@ tool on your PATH). It carries the section model, the verbatim fixed-section byt
 variable-section generation guidance, and the content discipline. Author the root
 `AGENTS.md` to it:
 
-- Emit the **fixed sections** (Runtime Loop, Docs, and the Project Memory seed)
+- Emit the **fixed sections** (Runtime Rules and the Project Memory seed)
   **verbatim** — byte-for-byte, never paraphrased.
-- Generate the **variable sections** (`# <repo name>`, Codebase Architecture, Commands,
-  Execution) from repo evidence, following the template's per-section guidance and
-  content discipline.
+- Generate the **variable sections** (`# <repo name>` and Codebase Rules) from repo
+  evidence, following the template's per-section guidance and content discipline.
 - Splice the preserved Project Memory body (§2) under the final section, unchanged; if it
   was empty, use only the template's seed line.
 

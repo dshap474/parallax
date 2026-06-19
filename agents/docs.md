@@ -5,7 +5,7 @@ description: >-
   it whenever a phase (plan, build, review, repair, final, ad-hoc) produces durable context
   worth recording, handing it a compact Docs Impact Envelope — paths and signal bits, not
   prose. It verifies the envelope against repo state, updates only warranted `.project/`
-  surfaces (`architecture/`, `builds/`, `adr/`, `runbooks/`, `notes/`), and terminates with
+  surfaces (`architecture/`, `builds/`, `adr/`, `runbooks/`, `notes/`, `security/`), and terminates with
   exactly one status line. It never edits `VISION.md`, code, tests, or `AGENTS.md`, never
   commits, and never writes a prose completion report.
 model: inherit
@@ -28,10 +28,12 @@ You may create and update files only under the envelope's `repo` path, only in t
 surfaces:
 
 - `architecture/` — how the codebase and its systems work.
-- `builds/` — long-running buildout threads, organized by build slug.
+- `builds/` — long-running buildout threads, each in a date-prefixed `YYYY-MM-DD_<thread-name>/` directory.
 - `adr/` — architectural decision records.
 - `runbooks/` — repeated operational procedures.
 - `notes/` — useful non-canonical context that fits no other surface.
+- `security/` — security-related docs: the current security posture / threat model
+  (current-state) and dated audit or review reports (append-only).
 
 Treat the envelope's `repo` path as the sole worktree for every read and write. Never
 re-resolve the repo root yourself.
@@ -79,6 +81,7 @@ allowed_surfaces:
   - adr
   - runbooks
   - notes
+  - security
 forbidden:
   - .project/VISION.md
 ```
@@ -116,26 +119,29 @@ The `phase` field selects your dispatch context:
   `skill-system.md`). One document per durable system or area. Flat by default; add
   subdirectories only when the directory grows large. Link related docs instead of
   repeating whole systems.
-- `builds/<build-thread-slug>/YYYY-MM-DD_<plan-name>.md` — kebab-case slug and plan name,
-  current local date. Plans are scoped to the build thread, not the whole repo. Never use a
-  flat `.project/plans/` directory.
+- `builds/YYYY-MM-DD_<thread-name>/YYYY-MM-DD_<plan-name>.md` — kebab-case thread and plan
+  names, each date-prefixed: the thread directory carries the date the thread started, each
+  plan file the date it was added. Plans are scoped to the build thread, not the whole repo.
+  Never use a flat `.project/plans/` directory.
 - `adr/YYYY-MM-DD_<decision-slug>.md` — capture title, status, date, context, decision,
   alternatives, consequences, and related docs.
 - `runbooks/<procedure-slug>.md` — when to use it, preconditions, steps, verification,
   rollback/abort conditions, failure modes.
 - `notes/YYYY-MM-DD_<note-slug>.md` — investigation summaries, research, temporary context;
   never duplicated architecture, plans, decisions, procedures, or vision content.
+- `security/` — posture docs use stable slugs (e.g. `security/threat-model.md`); dated
+  outputs go in `security/reports/YYYY-MM-DD_<slug>.md`.
 - On any dated-filename collision, append `-2`, `-3`, and so on — never overwrite.
 
 ## History model
 
 Two history models, and you must respect both:
 
-- Current-state surfaces (`architecture/`, `runbooks/`) describe the system as it is now and
-  may be mutated to match final state.
-- Append-only historical surfaces (`builds/`, `adr/`, `notes/`) are never mutated to match
-  final state. To reflect a change, add a `Superseded by: <link>` line or write a new dated
-  record.
+- Current-state surfaces (`architecture/`, `runbooks/`, and `security/` posture docs such as
+  `threat-model.md`) describe the system as it is now and may be mutated to match final state.
+- Append-only historical surfaces (`builds/`, `adr/`, `notes/`, and dated `security/reports/`)
+  are never mutated to match final state. To reflect a change, add a `Superseded by: <link>`
+  line or write a new dated record.
 
 Reconciliation (the `final` phase) applies only to current-state surfaces. The historical
 surfaces are exempt — leave their records intact and supersede instead.
@@ -144,8 +150,8 @@ surfaces are exempt — leave their records intact and supersede instead.
 
 You may not delete docs outside these cases:
 
-- Delete or mark-superseded an `architecture/` or `runbooks/` doc only during `final`
-  reconciliation, and only when the system it described was removed.
+- Delete or mark-superseded an `architecture/`, `runbooks/`, or `security/` posture doc only
+  during `final` reconciliation, and only when the system it described was removed.
 - ADRs are never deleted; an obsolete decision gets a `Superseded` status field.
 - `notes/` is prunable only on explicit user request.
 

@@ -29,12 +29,13 @@ Establish ground truth with your own tools — nothing is injected for you:
 
 - Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
 - If the worktree is dirty, note `git status --short`.
-- Get today's date (`date +%F`) for the thread filename.
+- Get today's date (`date +%F`) for the thread directory prefix and the plan filename.
 - Read `.project/VISION.md` if it exists — it is the project **constitution**. Its hard
   rules become non-negotiable Invariants in the spec. Read it; never edit it.
-- Resolve the **build thread**. Continuing an existing effort → use that thread's slug under
-  `.project/builds/`. New effort → derive a short kebab slug from the goal. You read
-  `.project/` freely but never write it yourself — the `docs` worker does.
+- Resolve the **build thread**. Continuing an existing effort → use that thread's existing
+  directory under `.project/builds/`. New effort → derive a short kebab thread name from the
+  goal and prefix it with today's date → `YYYY-MM-DD_<thread-name>`. You read `.project/`
+  freely but never write it yourself — the `docs` worker does.
 
 ## Engines & preflight
 

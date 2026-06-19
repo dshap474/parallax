@@ -122,7 +122,7 @@ a simple one-shot.
      multi-stage or multi-session effort), spawn the `docs` agent in the same message,
      in parallel with the build worker: envelope `phase: plan`, `build_thread`,
      `artifacts.final_plan`, `signals.build_plan: true`. Primary target
-     `builds/<thread>/YYYY-MM-DD_<plan-name>.md`. Skip for a small one-shot change.
+     `builds/YYYY-MM-DD_<thread-name>/YYYY-MM-DD_<plan-name>.md` (thread directory prefixed with its start date). Skip for a small one-shot change.
 5. **Receive the Buildout report**: every file touched with per-file summaries, coding
    decisions, verification run, and the **review round disposition** — per finding:
    fixed, rebutted (with evidence), or residual. Summaries only — if the report contains

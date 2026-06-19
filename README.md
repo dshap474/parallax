@@ -4,7 +4,7 @@ Multi-model coding-agent orchestration for Claude Code.
 
 The orchestrator is Claude (Fable). Its scarcest resource is its own context window, so it **delegates all bulk work** — planning, building, reviewing — to subagent lanes (Opus personas, or Codex/Grok driven through the `bin/` engine tools) and keeps only the compact artifacts they hand back. The build worker spawns the review lanes itself (nested subagents) and fixes or rebuts every finding with its build context still hot. Fable spends its own intelligence at exactly two points: authoring the plan, and a final gate review of the diff. The deliberate split is **code with Opus, review with Codex** — cross-model review is genuinely independent.
 
-Explicit `/plx:*` commands run a specific pipeline (`dev`, `plan-goal`, `review`), hand a task to a single engine, or bootstrap a repo's agent-docs setup (`init`) — see [`docs/COMMANDS.md`](docs/COMMANDS.md). Which engine fills each pipeline role is configurable in [`config/parallax.yaml`](config/parallax.yaml).
+Explicit `/plx:*` commands run a specific pipeline (`dev`, `goal-spec`, `review`), hand a task to a single engine, or bootstrap a repo's agent-docs setup (`init`) — see [`docs/COMMANDS.md`](docs/COMMANDS.md). Which engine fills each pipeline role is configurable in [`config/parallax.yaml`](config/parallax.yaml).
 
 ## Install
 
@@ -27,10 +27,10 @@ Each pipeline establishes repo ground truth (Bootstrap), then runs its steps. Ea
 | Pipeline | Use case | Lanes |
 |---|---|---|
 | `dev` | build a change end to end (plan → build+review → final gate → docs + local commit) | Fable authors the plan + 1 plan-critic + 1 worker (which spawns 2 reviewers) + docs |
-| `plan-goal` | lock a goal, then plan it (no edits) | interview + 2 parallel planners |
+| `goal-spec` | lock a goal, then plan it (no edits) | interview + 2 parallel planners |
 | `review` | audit / debug / critique without edits | 2 parallel Codex review lanes |
 
-`plan-goal` runs a Socratic interview to lock a goal, then multi-model planning, and writes one self-contained, `/goal`-ready spec into a build thread under `.project/builds/` (for long-running efforts); `review` is the review stage run standalone by the orchestrator (read-only). Single-engine passthroughs `/plx:codex` and `/plx:grok` hand a task straight to one engine with no review pipeline.
+`goal-spec` runs a Socratic interview to lock a goal, then multi-model planning, and writes one self-contained, `/goal`-ready spec into a build thread under `.project/builds/` (for long-running efforts); `review` is the review stage run standalone by the orchestrator (read-only). Single-engine passthroughs `/plx:codex` and `/plx:grok` hand a task straight to one engine with no review pipeline.
 
 Plan-critic and review lanes are always read-only. There is exactly **one writer at a time, always** (the build worker, plus Fable fixing nits at the final gate). Parallax does not write repo-local runtime state; temporary prompt/output files live only in shell temp directories and are cleaned up before commands return.
 
@@ -56,10 +56,10 @@ Parallax orchestrates external model CLIs you install and authenticate yourself.
 
 | Engine | Install | Used by |
 |---|---|---|
-| Codex | `codex` CLI + auth | review, plan, and plan-critic lanes across `dev`/`plan-goal`/`review`; `/plx:codex` |
+| Codex | `codex` CLI + auth | review, plan, and plan-critic lanes across `dev`/`goal-spec`/`review`; `/plx:codex` |
 | Grok | `grok` CLI + auth | `/plx:grok` passthrough; parked for future ultra tiers |
 
-The default `dev`, `plan-goal`, and `review` pipelines need Codex (the plan-critic, planners, and reviewers run on it). See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
+The default `dev`, `goal-spec`, and `review` pipelines need Codex (the plan-critic, planners, and reviewers run on it). See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
 
 ## Architecture
 
@@ -71,7 +71,7 @@ Three stage atoms — `plan`, `build`, `review` — compose into the pipelines. 
 parallax/
 ├── .claude-plugin/{plugin.json, marketplace.json}
 ├── skills/       # one dir per command; each SKILL.md is fully self-contained
-├── config/       # parallax.yaml — engine-per-role bindings (dev, plan-goal, review)
+├── config/       # parallax.yaml — engine-per-role bindings (dev, goal-spec, review)
 ├── bin/          # engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill, plx-link-claude)
 ├── agents/
 └── docs/{ARCHITECTURE, REQUIREMENTS, BENCHMARK, CONTRIBUTING, SPEC}.md

@@ -1,7 +1,7 @@
 # Parallax engine configuration
 #
 # Binds pipeline ROLES to ENGINES, keyed by pipeline. Each skill names the key it
-# reads (dev -> `dev`, plan-goal -> `plan-goal`, review -> `review`). Each skill's SKILL.md is
+# reads (dev -> `dev`, goal-spec -> `goal-spec`, review -> `review`). Each skill's SKILL.md is
 # fully self-contained — it documents its own pipeline steps and handoffs — and
 # resolves each role to its engine from this file before running. The values below
 # are the shipped defaults. Edit a value to swap the engine for that role.
@@ -12,7 +12,7 @@
 # path and a task-specific brief:
 #
 #   role                engine -> persona
-#   plan (plan-goal)    claude -> plx:claude-planner             (Opus, read-only)
+#   plan (goal-spec)    claude -> plx:claude-planner             (Opus, read-only)
 #                       codex  -> plx:codex-planner              (drives bin/plx-codex-ro)
 #                       grok   -> plx:grok-planner               (drives bin/plx-grok-ro)
 #   plan-critic (dev)   codex  -> plx:codex-plan-critic          (drives bin/plx-codex-ro; red-team)
@@ -33,7 +33,7 @@
 #   - Plan authoring and the final review gate are always the orchestrator; finding
 #     triage in the build's review round is the build worker. Neither is configurable.
 #   - In `dev` the orchestrator authors the plan and the `plan-critic` lanes red-team it;
-#     in `plan-goal` the `plan` lanes are parallel consultants. Authoring is never
+#     in `goal-spec` the `plan` lanes are parallel consultants. Authoring is never
 #     delegated either way.
 #
 # Disabled pipelines (team-*, ultra-*) have no keys here; they are regenerated
@@ -46,7 +46,7 @@ pipelines:
     review-debug: [codex]
     review-simplify: [codex]
 
-  plan-goal:
+  goal-spec:
     plan: [claude, codex]
 
   review:

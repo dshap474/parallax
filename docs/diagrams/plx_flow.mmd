@@ -4,10 +4,10 @@ flowchart TD
     IN --> RT{"🧭 Which pipeline the command runs"}
 
     RT -->|"/plx:dev — build a change"| DEV["🛠️ dev — full 7-step pipeline"]
-    RT -->|"/plx:plan-goal — lock a goal, no edits"| PL["📐 plan-goal — interview → goal spec"]
+    RT -->|"/plx:goal-spec — lock a goal, no edits"| PL["📐 goal-spec — interview → goal spec"]
     RT -->|"/plx:review — audit / debug, no edits"| RV["🔎 review — standalone, read-only"]
 
-    CFG[("🗂️ config/parallax.yaml<br/>engine-per-role: dev · plan-goal · review<br/>→ resolves each lane's persona")] -. "binds lanes" .-> DEV
+    CFG[("🗂️ config/parallax.yaml<br/>engine-per-role: dev · goal-spec · review<br/>→ resolves each lane's persona")] -. "binds lanes" .-> DEV
     CFG -. .-> PL
     CFG -. .-> RV
 
@@ -32,7 +32,7 @@ flowchart TD
     subgraph LEG ["Pipelines at a glance"]
       direction TB
       L1["🛠️ dev:  ① → ⑦ (full pipeline)"]
-      L2["📐 plan-goal:  interview → lock → 2 planners + Fable authors a /goal-ready spec → build thread"]
+      L2["📐 goal-spec:  interview → lock → 2 planners + Fable authors a /goal-ready spec → build thread"]
       L3["🔎 review:  standalone — two Codex lanes + Fable synthesis, read-only"]
       L4["🤖 passthrough:  /plx:codex · /plx:grok — one engine, no pipeline"]
     end

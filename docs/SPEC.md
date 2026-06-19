@@ -7,7 +7,7 @@ Status: draft v0.1
 Parallax packages a multi-model coding workflow as an installable Claude Code plugin. Its entry points are three pipeline skills:
 
 ```text
-dev | plan-goal | review
+dev | goal-spec | review
 ```
 
 Each pipeline establishes repo ground truth (Bootstrap), then runs its steps. Explicit `/plx:*` commands run a specific pipeline or hand a task to a single engine (see `docs/COMMANDS.md`).
@@ -16,10 +16,10 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 
 ## What ships
 
-- 3 pipeline skills, each **self-contained** (steps, lane briefs, and engine handoffs written out inline — no path pointers, no `${CLAUDE_PLUGIN_ROOT}`, no script injection; the one exception is shared reference templates, fetched via `plx-skill --ref` — e.g. `dev/spec-template`, `init/AGENTS.template`): `plx:dev` (7-step pipeline), `plx:plan-goal` (interview-locked goal planning), `plx:review` (standalone read-only review)
+- 3 pipeline skills, each **self-contained** (steps, lane briefs, and engine handoffs written out inline — no path pointers, no `${CLAUDE_PLUGIN_ROOT}`, no script injection; the one exception is shared reference templates, fetched via `plx-skill --ref` — e.g. `dev/spec-template`, `init/AGENTS.template`): `plx:dev` (7-step pipeline), `plx:goal-spec` (interview-locked goal planning), `plx:review` (standalone read-only review)
 - 2 single-engine passthroughs: `plx:codex`, `plx:grok` (no `plx:claude` — the orchestrator *is* Claude)
 - Subagent personas in `agents/` carrying rubrics + operator manuals: 12 engine personas (`<engine>-planner`, `<engine>-worker`, `<engine>-reviewer-debug`, `<engine>-reviewer-simplify` for `claude` / `codex` / `grok`) plus `docs`
-- 1 engine-per-role config (`config/parallax.yaml`), keyed by pipeline: `dev`, `plan-goal`, `review`
+- 1 engine-per-role config (`config/parallax.yaml`), keyed by pipeline: `dev`, `goal-spec`, `review`
 - A deterministic engine API in `bin/` (on the Bash PATH while the plugin is enabled): `plx-codex-ro`/`plx-codex-rw`, `plx-grok-ro`/`plx-grok-rw`, `plx-preflight`, `plx-config`, `plx-skill` — uniform flags (`--repo`, `--prompt-file`, `--stdout`/`--out --log`; `--effort low|medium|high|xhigh` on the Codex tools), uniform exit codes (0 ok · 1 engine failure · 2 usage error · 3 auth needed), and `--help` manuals
 - **Disabled / parked:** `team-*` and `ultra-*` skills, with their `SKILL.md` renamed to `DISABLED.md` (in `skills/_disabled/`), regenerated from `.project/VISION.md` when revived
 
@@ -102,7 +102,7 @@ These mirror the deterministic checks run by `tests/run.sh`.
 
 ```bash
 test -f skills/dev/SKILL.md
-test -f skills/plan-goal/SKILL.md
+test -f skills/goal-spec/SKILL.md
 test -f skills/review/SKILL.md
 test -f config/parallax.yaml
 test -d bin
@@ -160,7 +160,7 @@ After local install:
 Expected:
 
 ```text
-/plx:dev, /plx:plan-goal, /plx:review, /plx:codex, /plx:grok appear (no /plx:claude)
+/plx:dev, /plx:goal-spec, /plx:review, /plx:codex, /plx:grok appear (no /plx:claude)
 plx:claude-planner / plx:codex-planner appear in /agents
 plx:claude-worker appears in /agents
 plx:codex-reviewer-debug / plx:codex-reviewer-simplify appear in /agents

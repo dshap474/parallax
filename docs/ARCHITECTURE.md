@@ -5,7 +5,7 @@ Parallax is a delegation-first coding workflow for Claude Code.
 The public surface is three pipelines (each is a skill):
 
 ```text
-dev | plan-goal | review
+dev | goal-spec | review
 ```
 
 ## Core idea
@@ -28,7 +28,7 @@ Every behavior is a composition of three stage atoms, each a delegation pattern 
 
 | Atom | What it does | Who acts | Returns |
 |---|---|---|---|
-| `plan` | produce an implementation plan | Fable authors it; read-only lanes advise — a red-team critic in `dev`, parallel consultants in `plan-goal` | draft + critique (dev) / briefs (plan-goal) → final plan doc |
+| `plan` | produce an implementation plan | Fable authors it; read-only lanes advise — a red-team critic in `dev`, parallel consultants in `goal-spec` | draft + critique (dev) / briefs (goal-spec) → final plan doc |
 | `build` | execute a plan against the repo, then survive its own review round | exactly one writer worker, which spawns the review lanes and triages their findings | Buildout report (summaries + findings disposition, never code bodies) |
 | `review` | independently review the work | parallel read-only review lanes; the caller triages | Findings → fixes (in `dev`) or a repair plan (standalone) |
 
@@ -53,7 +53,7 @@ The pipeline has exactly **three top-level subagent spawns** (1 plan-critic + 1 
 | Pipeline (skill) | Config key | Purpose | Steps |
 |---|---|---|---|
 | `dev` | `dev` | build a change end to end | 1–7 |
-| `plan-goal` | `plan-goal` | interview-locked goal planning, no edits | standalone (read-only) |
+| `goal-spec` | `goal-spec` | interview-locked goal planning, no edits | standalone (read-only) |
 | `review` | `review` | audit / debug / critique without edits | standalone (read-only) |
 
 Explicit `/plx:*` commands run one of these three (see [`COMMANDS.md`](COMMANDS.md)). The single-engine passthroughs `/plx:codex` and `/plx:grok` run a task through one engine with no review pipeline.

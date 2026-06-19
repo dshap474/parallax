@@ -1,14 +1,14 @@
 # Contributing
 
-Parallax is a Claude Code plugin: three fully self-contained pipeline skills (`dev`, `plan-goal`, `review`), two single-engine passthroughs (`codex`, `grok`), subagent personas in `agents/`, and a deterministic engine API in `bin/`.
+Parallax is a Claude Code plugin: three fully self-contained pipeline skills (`dev`, `goal-spec`, `review`), two single-engine passthroughs (`codex`, `grok`), subagent personas in `agents/`, and a deterministic engine API in `bin/`.
 
 ## Project layout
 
 ```text
 .claude-plugin/   plugin.json + marketplace.json
-skills/           one dir per command — each SKILL.md is fully self-contained (dev, plan-goal, review, codex, grok)
+skills/           one dir per command — each SKILL.md is fully self-contained (dev, goal-spec, review, codex, grok)
 skills/_disabled/ parked team-*/ultra-* skills (DISABLED.md)
-config/           engine-per-role bindings (parallax.yaml — keys: dev, plan-goal, review)
+config/           engine-per-role bindings (parallax.yaml — keys: dev, goal-spec, review)
 bin/              engine API on PATH (plx-codex-ro/-rw, plx-grok-ro/-rw, plx-preflight, plx-config, plx-skill)
 agents/           subagent personas (planners, workers, dimension reviewers)
 docs/             human-facing docs

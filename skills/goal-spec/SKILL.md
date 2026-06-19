@@ -1,12 +1,12 @@
 ---
-name: "plx::plan-goal"
+name: "plx::goal-spec"
 description: Interview-locked goal planning for long-running efforts. A Socratic interview (AskUserQuestion) locks the goal — intent, binary success criteria, invariants, non-goals — then parallel multi-model planner lanes design the how; the orchestrator authors ONE self-contained spec to the shared template, persists it to the build thread under .project/builds/, and hands back a paste-ready /goal condition pointing at it. No code is written.
 argument-hint: "<the goal to plan>"
 disable-model-invocation: true
 user-invocable: true
 ---
 
-# /plx:plan-goal — interview-locked goal planning
+# /plx:goal-spec — interview-locked goal planning
 
 You are the Parallax orchestrator (Fable). This skill produces **one self-contained spec
 `.md`**, constructed so an autonomous agent with no prior context can execute it
@@ -39,7 +39,7 @@ Establish ground truth with your own tools — nothing is injected for you:
 
 ## Engines & preflight
 
-Read the engine config (run `plx-config`) → key `plan-goal`. Shipped default:
+Read the engine config (run `plx-config`) → key `goal-spec`. Shipped default:
 `plan: [claude, codex]`. Run `plx-preflight --repo <repo> --require-codex`. If Codex is
 unavailable, degrade to the Claude planner alone and say so in the final output.
 

@@ -6,10 +6,10 @@ Parallax orchestrates external model CLIs that you install and authenticate. It 
 
 | Engine | Install | Used by | Required? |
 |---|---|---|---|
-| Codex | `codex` CLI + auth | `dev`/`plan-goal`/`review` plan and review lanes; `/plx:codex` | required for the default pipelines |
+| Codex | `codex` CLI + auth | `dev`/`goal-spec`/`review` plan and review lanes; `/plx:codex` | required for the default pipelines |
 | Grok | `grok` CLI + auth | `/plx:grok` passthrough; opt-in `code: grok` writer; parked for future ultra tiers | optional |
 
-The default `dev`, `plan-goal`, and `review` pipelines bind their planner and reviewer lanes to Codex, so Codex is required to run them as shipped. Grok is only needed for the `/plx:grok` passthrough and the opt-in `code: grok` writer today. The orchestrator (Claude) is always present — it is the session you are in.
+The default `dev`, `goal-spec`, and `review` pipelines bind their planner and reviewer lanes to Codex, so Codex is required to run them as shipped. Grok is only needed for the `/plx:grok` passthrough and the opt-in `code: grok` writer today. The orchestrator (Claude) is always present — it is the session you are in.
 
 ## Codex
 

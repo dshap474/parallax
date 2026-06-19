@@ -41,7 +41,7 @@ A bare run is safe and quick; the token-spending audit is one flag (`--skills`) 
 | `codex` | guard `average([])` | exit 0 · calc.py edited · `average([]) == 0.0` |
 | `grok` | same (with `--with-grok`) | same |
 | `init` | run in a bare repo | exit 0 · `AGENTS.md` created · `CLAUDE.md` symlink |
-| `plan-goal` | — | **manual** (see below) |
+| `goal-spec` | — | **manual** (see below) |
 
 Scenarios live in `scenarios/<skill>.txt` — edit the `TASK:` / `EXPECT_*:` lines there;
 no code change needed to retune a check.
@@ -66,14 +66,14 @@ logs/<timestamp>/
 `transcript.jsonl` is the point of the whole thing — it records the plan-critic, the
 worker, the worker's reviewers, and the docs lane, so you can see what each one did.
 
-## plan-goal is a manual check
+## goal-spec is a manual check
 
-`/plx:plan-goal` runs a Socratic interview (`AskUserQuestion`) and a mandatory approval
+`/plx:goal-spec` runs a Socratic interview (`AskUserQuestion`) and a mandatory approval
 gate, so it can't run under `claude -p` (no human to answer). It's marked `SKIP` in the
 automated run. To smoke it by hand:
 
 1. Copy a fixture: `cp -R tests/fixture /tmp/plx-pg && (cd /tmp/plx-pg && git init -q && git add -A && git commit -qm init)`
-2. From that dir, run `/plx:plan-goal add a small stats module to calc.py` in an interactive Claude Code session.
+2. From that dir, run `/plx:goal-spec add a small stats module to calc.py` in an interactive Claude Code session.
 3. Confirm: it interviews you, locks the goal at an approval gate, runs the planner lanes, and writes **one** `/goal`-ready spec under `.project/builds/<thread>/`, then prints a paste-ready `/goal` condition pointing at it.
 
 ## Fixtures

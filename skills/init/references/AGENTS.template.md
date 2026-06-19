@@ -38,6 +38,7 @@ Docs:
   - Read `.project/adr/` before revisiting a settled decision.
   - Follow `.project/runbooks/` for repeated operational procedures.
   - Check `.project/notes/` for non-canonical context that fits no other surface.
+  - Read `.project/security/` for the threat model and security posture before changing security-sensitive code.
 - Dispatch the docs worker with a compact Docs Impact Envelope — phase, repo path, changed paths, artifact paths, signal bits — never a prose recap. Expect exactly one status line back (`DOCS_OK: ...` or `DOCS_BLOCKED: ...`) and no prose report; inspect the worktree for detail.
 - Run at most one docs worker per repo at a time.
 ```

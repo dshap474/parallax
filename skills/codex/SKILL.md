@@ -8,7 +8,7 @@ user-invocable: true
 
 # /plx:codex — single-engine passthrough (Codex)
 
-Run the user's request through **Codex only** — no Parallax review pipeline, no other engines, no subagent. You (the orchestrator) drive the engine wrapper yourself and return its output. Do not re-do or review the work.
+Run the user's request through **Codex only** — no Parallax review pipeline, no other engines. You (the orchestrator) drive the engine wrapper yourself and return its output. Do not re-do or review the work.
 
 ## Execute
 

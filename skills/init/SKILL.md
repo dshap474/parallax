@@ -15,8 +15,7 @@ re-running it on an unchanged repo produces zero diffs.
 
 This skill is self-contained except for the canonical `AGENTS.md` template, which it
 loads via `plx-skill --ref init/AGENTS.template` (a `bin/` tool on your PATH, not a path
-pointer — the same mechanism `/plx:dev` uses for its spec template). Everything else is
-below.
+pointer — the same mechanism `/plx:dev` uses for its spec template).
 
 ## Scope & stop rules
 
@@ -59,8 +58,8 @@ below.
 Adoption rule first: if `AGENTS.md` is missing but a regular-file `CLAUDE.md` exists at
 root, you are migrating — treat that `CLAUDE.md` content as the input file below, and
 after writing `AGENTS.md` replace the root `CLAUDE.md` with a symlink yourself
-(`ln -s AGENTS.md`); its content was adopted, nothing is lost. If both exist as regular
-files with materially different content, stop and ask the user which is authoritative.
+(`ln -s AGENTS.md`). If both exist as regular files with materially different content,
+stop and ask the user which is authoritative.
 
 Classify into exactly one bucket:
 
@@ -120,8 +119,8 @@ is a defect — fix the file before reporting.
 
 ### 4 — Keep .project/ git-ignored
 
-`.project/` is durable project memory but stays out of version control — local-only by
-design. If `.gitignore` does not ignore it, add a `.project/` line in apply mode and
+`.project/` is durable project memory but stays out of version control (local-only). If
+`.gitignore` does not ignore it, add a `.project/` line in apply mode and
 report the exact change. If the repo already has `.project/` files under git tracking,
 do not untrack them yourself — surface it in the report and let the user decide
 (`git rm -r --cached .project/` rewrites their index). Do not pre-create empty

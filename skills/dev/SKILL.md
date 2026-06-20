@@ -146,8 +146,7 @@ one-shot.
    the tests covering the changed surface; you need not repeat the full strict typecheck
    and whole suite the worker already ran. Anything in the report looks off → run the
    full validation. Prefer the repo's own toolchain binaries directly (e.g.
-   `.venv/bin/...`) over wrapper runners like `uv run`, which re-resolve the environment
-   each call; never `uv run` in a sandbox.
+   `.venv/bin/...`) over `uv run`; never `uv run` in a sandbox.
    **Escape hatch:** if the gate reveals structural rework rather than point fixes,
    write a fresh spec and send it back through step 4 instead.
    - **Docs observer (build).** If the Buildout report indicates a changed system shape —
@@ -181,8 +180,7 @@ one-shot.
       pathspec.
       On `DOCS_BLOCKED: <reason>`, do not silently drop it: surface the reason in your
       final report, and if the blocked note carries durable context, dispatch one
-      follow-up `docs` worker to persist it under `notes/` before you commit. A worker
-      that returns no status line is a failure and blocks the gate.
+      follow-up `docs` worker to persist it under `notes/` before you commit.
     - **Then clean up the temp dir.** Only after final reconciliation has returned —
       the stage artifacts must survive until the final docs worker has consumed them.
 
@@ -207,16 +205,14 @@ Residual risk: <what to watch>
   plus you, fixing nits at the gate (step 6). One writer at a time, always. The worker
   spawns only the reviewer personas you name in its dispatch — never the plan-critic,
   planners, other workers, or docs agents.
-- You never write `.project/` yourself. Every `.project/` write goes through a `docs`
-  worker. At most one docs worker runs per repo at a time — concurrent with code or
-  review workers, never with another docs worker.
+- You never write `.project/` yourself — every `.project/` write goes through a `docs`
+  worker, and at most one docs worker runs per repo at a time (the concurrency rule).
 - The final reconciliation docs worker (step 7) is mandatory and gates the commit: no
   commit until it returns `DOCS_OK`. The earlier plan and build observers are
   skippable under time pressure; the final pass is not.
 - Hand every subagent the work, not the command — repo path + brief/spec path, and a
-  compact Docs Impact Envelope for docs workers (paths and signal bits, never pasted
-  plans, diffs, or findings). The personas own their rubrics and their `plx-*` tool
-  invocations.
+  compact Docs Impact Envelope for docs workers (paths and signal bits). The personas
+  own their rubrics and their `plx-*` tool invocations.
 - Never hand-construct raw `codex exec` or `grok` commands.
 - Do not write Parallax state into the target repo — no `.parallax/` dirs. Temp files
   live in `mktemp -d` dirs, cleaned up only after the final docs reconciliation worker

@@ -9,9 +9,8 @@ user-invocable: true
 # /plx:review — multi-lane review
 
 You are the Parallax orchestrator (Fable). This skill is the standalone review pipeline —
-you drive the lanes directly (in `/plx:dev` the build worker runs this round itself).
-Two Codex dimension lanes review in parallel; you synthesize as the pseudo-third
-reviewer. **Do not edit files** unless the user explicitly asked
+you drive the lanes directly. Two Codex dimension lanes review in parallel; you synthesize
+as the pseudo-third reviewer. **Do not edit files** unless the user explicitly asked
 for fixes.
 
 Your context discipline: you do NOT read the code under review before the lanes report.
@@ -61,8 +60,8 @@ dimension `[codex]`. Run `plx-preflight --repo <repo> --require-codex`.
    - **simplify** lane → spawn `plx:codex-reviewer-simplify` (over-engineering,
      simplification, structure)
 
-3. **Synthesize as the pseudo-third reviewer — this is where your intelligence is the
-   product.** Both reports come back in the Finding Schema. Do not just merge:
+3. **Synthesize as the pseudo-third reviewer.** Both reports come back in the Finding
+   Schema. Do not just merge:
 
    - Dedupe and severity-rank across lanes; resolve conflicts. Debug governs first:
      its verdicts on scope and behavior decide what survives, and simplify's structure

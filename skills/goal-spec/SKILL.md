@@ -20,8 +20,7 @@ The deliverable lands in the build thread under `.project/builds/<thread>/`, and
 a paste-ready `/goal` condition that points at it. **No code is written.**
 
 Your context discipline: you do not study the codebase yourself for the *how* — the
-consultant lanes do that in their own context windows. You spend your own intelligence on
-the interview (removing ambiguity) and on authoring the final spec.
+lanes do, in their own context windows.
 
 ## Bootstrap
 
@@ -48,8 +47,8 @@ unavailable, degrade to the Claude planner alone and say so in the final output.
 ### 1. Socratic interview — lock the goal
 
 Before any planning, interview the user with the **`AskUserQuestion` tool** until the goal
-is airtight. This is where ambiguity dies: an autonomous `/goal` run cannot ask you
-questions later, so every hole you leave here becomes a way for it to go wrong.
+is airtight — an autonomous `/goal` run cannot ask you questions later, so every hole you
+leave here becomes a way for it to go wrong.
 
 Ask in a funnel — broad to narrow — and **defer every "how" question** (that is the
 planners' job):
@@ -97,9 +96,8 @@ resolves):
 - `plx:claude-planner` ← `<repo>` + the brief text (Opus, reads the repo itself)
 - `plx:codex-planner` ← `<repo>` + the brief file path (drives `plx-codex-ro`, xhigh)
 
-They are architecture consultants — each carries its own brief rubric; hand it the work,
-not the command. Both return Planning Briefs (recommendation + steelman + repo facts), not
-finished plans.
+They are architecture consultants — each carries its own brief rubric. Both return
+Planning Briefs (recommendation + steelman + repo facts), not finished plans.
 
 ### 4. Author the final spec — your intelligence is the product
 
@@ -108,7 +106,7 @@ Is there a simpler design than either recommends? Settle the design yourself —
 
 Then author **one** spec doc to the canonical template — the single source of truth shared
 by every engine, not a copy inlined here. Load it with `plx-skill --ref dev/spec-template`,
-then fill it so a no-prior-context worker executes flawlessly:
+then fill it:
 
 - The **locked goal** populates **Intent**, **Success Criteria**, and **Invariants** (fold
   in the VISION constraints and the ≥3 non-goals).
@@ -126,8 +124,8 @@ Note where the final spec diverges from each lane's brief and why.
 
 ### 5. Persist to the thread + emit the /goal handoff
 
-- **Persist via the `docs` worker** (you never write `.project/` yourself). Write the spec
-  to a temp file, then spawn the `docs` agent with `<repo>` + a Docs Impact Envelope:
+- **Persist via the `docs` worker.** Write the spec to a temp file, then spawn the `docs`
+  agent with `<repo>` + a Docs Impact Envelope:
   `phase: plan`, `build_thread: <thread>`, `artifacts.final_plan: <temp spec path>`,
   `signals.build_plan: true`. Primary target: `builds/<thread>/<YYYY-MM-DD>_<slug>.md`,
   persisted **verbatim** — it is an executable spec, not a record to summarize. Wait for
@@ -158,17 +156,15 @@ Open:     <assumptions / [NEEDS CLARIFICATION] / residual risk, or "none">
 
 ## Hard constraints
 
-- The **lock gate is mandatory** — never author the spec before the user approves the goal.
-  The only exception is a request that was already airtight, and even then you show the
-  reflect-back and get a yes.
+- The **lock gate is mandatory** (step 2): author nothing before the user approves the goal.
 - Planner lanes are read-only, always. The only write in this skill is the `docs` worker
   persisting the spec to the thread.
 - You never write `.project/` yourself; the `docs` worker does. **Never edit `VISION.md`.**
 - Hand every subagent the work, not the command — repo path + brief/spec path, and a
   compact Docs Impact Envelope for the docs worker (paths and signal bits, never pasted
   plans or findings).
-- Do not write Parallax state into the target repo — no `.parallax/` dirs. Temp files live
-  in `mktemp -d` dirs, cleaned up only after the docs worker has consumed the spec.
+- Do not write Parallax state into the target repo — no `.parallax/` dirs; temp files live
+  in `mktemp -d` dirs.
 - Never `uv run` inside a sandbox.
 
 Goal to plan:

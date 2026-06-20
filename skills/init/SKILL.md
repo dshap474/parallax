@@ -1,6 +1,6 @@
 ---
 name: "plx::init"
-description: Bootstrap or repair a repo's agent-docs setup — classify the root AGENTS.md and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror CLAUDE.md as a symlink, keep .project/ git-ignored, and seed .project/architecture/ via the docs worker. Idempotent; say "dry run" to preview.
+description: Bootstrap or repair a repo's agent-docs setup — classify the root AGENTS.md and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror CLAUDE.md as a symlink, and keep .project/ git-ignored. Idempotent; say "dry run" to preview.
 argument-hint: "[repo path] [dry run]"
 disable-model-invocation: true
 user-invocable: true
@@ -10,8 +10,8 @@ user-invocable: true
 
 You are the Parallax orchestrator (Fable). This skill brings a repo's agent-docs control
 plane into canonical shape: a root `AGENTS.md` grounded in repo evidence, a `CLAUDE.md`
-symlink mirror, and a `.project/` substrate ready for the docs worker. It is idempotent —
-re-running it on an unchanged repo produces zero diffs.
+symlink mirror, and a git-ignored `.project/` substrate that agents populate during real
+work. It is idempotent — re-running it on an unchanged repo produces zero diffs.
 
 This skill is self-contained except for the canonical `AGENTS.md` template, which it
 loads via `plx-skill --ref init/AGENTS.template` (a `bin/` tool on your PATH, not a path
@@ -24,10 +24,11 @@ pointer — the same mechanism `/plx:dev` uses for its spec template).
   mirror step still gives them `CLAUDE.md` symlinks; mirroring is content-agnostic.)
 - **Project repos only.** If the target resolves to a global config dir (`~/.claude`,
   `~/.codex`) or `$HOME` itself, stop and say so.
-- **You never write `.project/` yourself.** Seeding goes through the `docs` agent (the
-  docs worker shipped with this plugin). Your own writes are limited to: the root
-  `AGENTS.md`, the root `CLAUDE.md` replacement in the migration case, a `.gitignore`
-  fix, and symlinks via `plx-link-claude`.
+- **Init writes only the contract.** Your writes are limited to: the root `AGENTS.md`,
+  the root `CLAUDE.md` replacement in the migration case, a `.gitignore` fix, and
+  symlinks via `plx-link-claude`. You do not seed `.project/` content — under this schema
+  main agents write `.project/` docs directly during real work (no docs subagent), so
+  leave those surfaces for first use.
 - **`VISION.md` is user-only.** Never create or draft it — not even a stub or template.
   If it is missing, remind the user in the report.
 - **Never invent.** Every command, boundary, and ownership claim in the generated file
@@ -98,7 +99,7 @@ For every populate, rewrite, or refresh:
    the seed line from the template (initialization, not modification).
 
 Memory entries are added by the user, or by a main agent with explicit user approval —
-never by this skill, and never by the docs worker.
+never by this skill.
 
 ### 3 — Write the canonical root AGENTS.md
 
@@ -124,33 +125,9 @@ is a defect — fix the file before reporting.
 report the exact change. If the repo already has `.project/` files under git tracking,
 do not untrack them yourself — surface it in the report and let the user decide
 (`git rm -r --cached .project/` rewrites their index). Do not pre-create empty
-`.project/` directories; the docs worker creates each surface on first write.
+`.project/` directories; agents create each surface on first write during real work.
 
-### 5 — Seed the architecture surface (docs worker)
-
-In apply mode, when `.project/architecture/` has no doc covering the repo's overall
-shape, dispatch the `docs` agent with `<repo>` plus this envelope — never prose:
-
-```text
-phase: ad-hoc
-repo: <repo>
-build_thread: none
-user_goal: bootstrap .project/ — seed an initial architecture overview
-changed_paths: []
-artifacts: none
-signals:
-  architecture:
-    - <repo-slug>   (add 1–2 more system slugs only if the survey showed clearly distinct durable systems)
-allowed_surfaces: [architecture]
-forbidden: [.project/VISION.md]
-```
-
-The worker verifies against the repo and may deliberately no-op — that's fine. It
-returns exactly one status line; carry it into your report. At most one docs worker per
-repo at a time. Skip this step in dry-run, and when architecture docs already cover the
-repo.
-
-### 6 — Mirror CLAUDE.md
+### 5 — Mirror CLAUDE.md
 
 Run `plx-link-claude <repo>` (on your PATH from the plugin's `bin/`); add `--dry-run` in
 dry-run mode. Next to every `AGENTS.md` in the tree it ensures a sibling
@@ -170,7 +147,6 @@ AGENTS.md: <classification> → <created | rewritten | refreshed | no write | bl
   <when written: sections added/absorbed/dropped, description rewritten as directives, decision-table rows changed — each with its evidence>
 Project Memory: preserved (<n> entries) | initialized | blocked: memory drift
 .gitignore: ok | fixed: <change> | would fix: <change>
-Docs seed: <docs worker status line> | skipped (<reason>)
 Mirror: <created>/<relinked>/<skipped>/<blocked> — <blocked paths, if any>
 VISION.md: present | missing — write .project/VISION.md yourself; agents never draft it
 Idempotency: re-classified current ✓

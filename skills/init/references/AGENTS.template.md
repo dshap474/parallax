@@ -22,10 +22,18 @@ Runtime Rules:
 ## **IMPORTANT:** Runtime Rules
 *Rules you must follow at turn end*
 
-- When you begin working, start a single build thread for the session at `.project/builds/YYYY-MM-DD_<thread-name>/` and keep that session's plans and goals there.
-- Record repeated procedures in `.project/runbooks/` and critical architectural decisions in `.project/adr/`.
-- Route every `.project/` write through a docs subagent; never edit `.project/` files yourself. When you spawn it, hand it enough to act on its own — the repo path, what changed (the relevant paths or artifacts), and which surface to update and why. It reads the repo itself and reports back one status line.
-- When the user had to walk you through a fix you couldn't solve, append the key pattern or gotcha to the Project Memory section below (you edit it directly — it lives in this file, which the docs subagent never touches). Only durable patterns; keep small issues out.
+**Memory**
+When the user had to walk you through a fix you couldn't solve, record the durable lesson once solved — reusable patterns, constraints, non-obvious gotchas, not one-offs. Directory-specific → nearest `AGENTS.md`; repo-wide → Project Memory below; you edit memory directly.
+
+**Project Docs** — live under `.project/`; dated records take a `YYYY-MM-DD_` prefix. Write these yourself; there is no docs subagent.
+- `builds/<thread>/` — one thread per session; plans, notes, working docs for the active effort
+- `adr/` — critical architectural decisions
+- `runbooks/` — repeatable procedures
+- `architecture/` — durable subsystem models
+- `notes/` — durable cross-cutting observations
+- `VISION.md` — **read-only, user-owned; never edit**
+
+Inside a build folder: keep a `README.md` index (one line per file + `Status:` active/shipped/archived) and name files `<ROLE>_<slug>.md` (ROLE ∈ PLAN/NOTES/AUDIT/HANDOFF/REVIEW/REF); only the README is maintained, the rest is append-only. At close, distill durable decisions → `adr/`, procedures → `runbooks/`, set `Status: archived`, never delete.
 ```
 
 Project Memory seed line (used only when the captured body is empty — initialization, not modification):
@@ -59,6 +67,7 @@ Project Memory seed line (used only when the captured body is empty — initiali
   or left to `.project/` docs.
 - **Single home** — don't restate what the README or `.project/` docs own. `AGENTS.md` instructs;
   docs describe.
-- **Emphasis discipline** — bold appears exactly once, in the Runtime Rules heading. No
-  MUST/NEVER shouting in body bullets.
+- **Emphasis discipline (variable sections)** — no bold and no MUST/NEVER shouting in the
+  sections you generate. The fixed Runtime Rules block carries its own bold sub-labels
+  (`**Memory**`, `**Project Docs**`, the VISION flag) verbatim; don't add more.
 - **Plain text** — no diagrams or ASCII art; tables only as decision tables.

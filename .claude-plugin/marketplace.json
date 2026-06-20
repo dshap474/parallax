@@ -7,7 +7,7 @@
       "name": "plx",
       "source": "./",
       "description": "Parallax (plx) — multi-model orchestration. /plx:* commands for the dev/plan/review pipelines and single-engine asks (Codex, Grok).",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "category": "development",
       "keywords": ["multi-model", "code-review", "orchestration", "plx"],
       "license": "MIT"

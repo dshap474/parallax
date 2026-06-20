@@ -1,6 +1,6 @@
 # Parallax — Package Specification
 
-Status: draft v0.1
+Status: v0.1.6
 
 ## Purpose
 
@@ -21,7 +21,7 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 - Subagent personas in `agents/` carrying rubrics + operator manuals: 12 engine personas (`<engine>-planner`, `<engine>-worker`, `<engine>-reviewer-debug`, `<engine>-reviewer-simplify` for `claude` / `codex` / `grok`) plus `docs`
 - 1 engine-per-role config (`config/parallax.yaml`), keyed by pipeline: `dev`, `goal-spec`, `review`
 - A deterministic engine API in `bin/` (on the Bash PATH while the plugin is enabled): `plx-codex-ro`/`plx-codex-rw`, `plx-grok-ro`/`plx-grok-rw`, `plx-preflight`, `plx-config`, `plx-skill` — uniform flags (`--repo`, `--prompt-file`, `--stdout`/`--out --log`; `--effort low|medium|high|xhigh` on the Codex tools), uniform exit codes (0 ok · 1 engine failure · 2 usage error · 3 auth needed), and `--help` manuals
-- **Disabled / parked:** `team-*` and `ultra-*` skills, with their `SKILL.md` renamed to `DISABLED.md` (in `skills/_disabled/`), regenerated from `.project/VISION.md` when revived
+- **Planned (not in this release):** `team-*` and `ultra-*` skills — the dev/plan/review skeleton with more engines in the read stages
 
 ## Target tree
 
@@ -32,12 +32,12 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 │   └── marketplace.json
 ├── agents/             # subagent personas (planners, workers, reviewers)
 ├── skills/
-│   ├── dev/SKILL.md      # 7-step pipeline
-│   ├── plan/SKILL.md     # steps 1–3
-│   ├── review/SKILL.md   # standalone read-only review
-│   ├── codex/SKILL.md    # single-engine passthrough
-│   ├── grok/SKILL.md     # single-engine passthrough
-│   └── _disabled/        # parked team-*/ultra-* (DISABLED.md)
+│   ├── dev/SKILL.md        # 7-step pipeline
+│   ├── goal-spec/SKILL.md  # interview-locked goal planning
+│   ├── review/SKILL.md     # standalone read-only review
+│   ├── codex/SKILL.md      # single-engine passthrough
+│   ├── grok/SKILL.md       # single-engine passthrough
+│   └── init/SKILL.md       # project bootstrap
 ├── config/             # parallax.yaml — engine-per-role bindings
 ├── bin/                # engine API on PATH (plx-* tools)
 ├── docs/
@@ -53,7 +53,7 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 ```json
 {
   "name": "plx",
-  "version": "0.1.0"
+  "version": "0.1.6"
 }
 ```
 

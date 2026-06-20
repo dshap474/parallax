@@ -79,13 +79,13 @@ parallax/
 
 Each `skills/<name>/SKILL.md` carries its entire pipeline inline — lane briefs, engine invocations — with no `${CLAUDE_PLUGIN_ROOT}`, no `lib/` or `prompts/` pointers, and no script injection. The one exception is shared reference templates, fetched via `plx-skill --ref` (e.g. `dev/spec-template`, `init/AGENTS.template`) — a `bin/` tool, not a path. Reusable rubrics and schemas live inside the agent persona files (rubrics-in-agents); the orchestrator hands each subagent the work, not the command.
 
-## Disabled pipelines
+## Roadmap
 
-The `team-*` and `ultra-*` skills are parked (their `SKILL.md` files are renamed `DISABLED.md`). When revived, they are regenerated from the dev spec in `.project/VISION.md` — the same skeleton with more engines in the read stages.
+The `team-*` and `ultra-*` skills — the same dev/plan/review skeleton with more engines in the read stages — are planned for a future release and are not part of this version.
 
 ## Status
 
-v0.1.0 draft.
+v0.1.6
 
 ## License
 

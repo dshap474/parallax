@@ -1,6 +1,6 @@
 ---
 name: "plx::goal-spec"
-description: Interview-locked goal planning for long-running efforts. A Socratic interview (AskUserQuestion) locks the goal — intent, binary success criteria, invariants, non-goals — then parallel multi-model planner lanes design the how; the orchestrator authors ONE self-contained spec to the shared template, persists it to the build thread under .project/builds/, and hands back a paste-ready /goal condition pointing at it. No code is written.
+description: Interview-locked goal planning for long-running efforts. A Socratic interview (AskUserQuestion) locks the goal — intent, binary success criteria, invariants, non-goals — then a single planner lane designs the how, a Codex lane red-teams it at xhigh, and the orchestrator synthesizes ONE self-contained spec to the shared template, persists it to the build thread under .project/builds/, and hands back a paste-ready /goal condition pointing at it. No code is written.
 argument-hint: "<the goal to plan>"
 disable-model-invocation: true
 user-invocable: true
@@ -10,17 +10,18 @@ user-invocable: true
 
 You are the Parallax orchestrator (Fable). This skill produces **one self-contained spec
 `.md`**, constructed so an autonomous agent with no prior context can execute it
-flawlessly — you hand it straight to `/goal` (or `/plx:dev`) and walk away. Two things make
-that possible, and they are your whole job here:
+flawlessly — you hand it straight to `/goal` (or `/plx:dev`) and walk away. Three things
+make that possible, and they are your whole job here:
 
 1. A **Socratic interview** that kills ambiguity and *locks the goal* before any design.
-2. The **multi-model planner lanes** that fill in the *how*.
+2. A **single planner lane** that designs the *how*, **red-teamed by Codex**.
+3. **Your synthesis** of that design and the critique into one airtight, self-verifying spec.
 
 The deliverable lands in the build thread under `.project/builds/<thread>/`, and you return
 a paste-ready `/goal` condition that points at it. **No code is written.**
 
 Your context discipline: you do not study the codebase yourself for the *how* — the
-lanes do, in their own context windows.
+planner lane does, in its own context window.
 
 ## Bootstrap
 
@@ -38,9 +39,9 @@ Establish ground truth with your own tools — nothing is injected for you:
 
 ## Engines & preflight
 
-Read the engine config (run `plx-config`) → key `goal-spec`. Shipped default:
-`plan: [claude, codex]`. Run `plx-preflight --repo <repo> --require-codex`. If Codex is
-unavailable, degrade to the Claude planner alone and say so in the final output.
+Read the engine config (run `plx-config`) → key `goal-spec`. Shipped defaults:
+`plan: [claude]` · `plan-critic: [codex]`. Run `plx-preflight --repo <repo> --require-codex`.
+If Codex is unavailable, skip the red-team and say so in the final output.
 
 ## Pipeline (run in order)
 
@@ -84,25 +85,34 @@ approval is the lock: the goal is now fixed, and planning designs against it. Th
 to skip the gate is if you genuinely asked no questions because the request was already
 airtight — and even then, show the reflect-back and get a yes.
 
-### 3. Multi-model planning — fill the how
+### 3. Single-planner design — fill the how
 
 Write one neutral **task brief** from the *locked* goal: its intent, success criteria, and
 invariants verbatim, plus repo facts from Bootstrap. No preferred approach of your own.
-Write it to a file in a `mktemp -d` dir for the Codex lane.
+Write it to a file in a `mktemp -d` dir.
 
-Spawn the consultant lanes in parallel (a single message; spawn the personas the config
-resolves):
+Spawn **one** planner lane (the `plan` engine the config resolves, e.g. `[claude]` →
+`plx:claude-planner`) with `<repo>` + the brief. It studies the repo in its own context and
+returns a **Planning Brief** (recommendation + steelman + repo facts) — the *how*. You do
+not study the codebase yourself; the lane does.
 
-- `plx:claude-planner` ← `<repo>` + the brief text (Opus, reads the repo itself)
-- `plx:codex-planner` ← `<repo>` + the brief file path (drives `plx-codex-ro`, xhigh)
+### 4. Codex red-team (xhigh)
 
-They are architecture consultants — each carries its own brief rubric. Both return
-Planning Briefs (recommendation + steelman + repo facts), not finished plans.
+Cross-model rigor comes from review, not a second planner. Resolve the critic from the
+config (the `plan-critic` role → personas, e.g. `[codex]` → `plx:codex-plan-critic`) and
+spawn it **at `xhigh` effort** with `<repo>` + the planner's brief. The user has locked the
+goal, so the critic red-teams the **design's soundness and goal-readiness**, not whether the
+goal is worth doing: wrong repo facts, spec drift from the locked goal, missed work, a
+materially simpler approach, unhandled edges, and — looking ahead to the spec — whether the
+success criteria can be made self-checkable and the validation concrete. It returns a
+critique (findings), never a rewrite. If `plan-critic` is empty (Codex unavailable), skip
+this step and note it.
 
-### 4. Author the final spec — your intelligence is the product
+### 5. Synthesize the final spec — your intelligence is the product
 
-Synthesize the briefs: where do the lanes disagree, and who is right? What did both miss?
-Is there a simpler design than either recommends? Settle the design yourself — not a merge.
+Weigh the planner's brief against the critique: where is the critic right, where is the
+design sound, what did both miss, is there a simpler approach? Settle it yourself — not a
+merge.
 
 Then author **one** spec doc to the canonical template — the single source of truth shared
 by every engine, not a copy inlined here. Load it with `plx-skill --ref dev/spec-template`,
@@ -115,14 +125,18 @@ then fill it:
 - Because this is a long-running effort, **turn on the optional Milestones + Progress Log
   sections** — they are the multi-session anchor a resumed run reads to know where it is.
 
-Make every Success Criterion **demonstrable** — provable from what an agent surfaces (test
-output, an exit code, observable behavior). That is exactly what `/goal` checks, so a vague
-criterion is one the run cannot prove it met. Record any unresolved gap under Open Questions
-with the assumption you took.
+Make every Success Criterion **demonstrable** — pair each with its oracle (the command and
+the observable in its output that proves it). `/goal`'s evaluator judges only what the run
+surfaces in the transcript, never the filesystem, so a criterion with no nameable proof
+cannot be confirmed done. Resolve every **Validation** command to something concrete before
+you emit — no `<placeholder>`s; if a check genuinely cannot be automated, write an explicit
+"verify by X" fallback instead. The handoff promises "its Validation commands pass," so a
+leftover placeholder leaves the goal unsatisfiable. Record any unresolved gap under Open
+Questions with the assumption you took.
 
-Note where the final spec diverges from each lane's brief and why.
+Note where the final spec diverges from the planner's brief and the critique, and why.
 
-### 5. Persist to the thread + emit the /goal handoff
+### 6. Persist to the thread + emit the /goal handoff
 
 - **Persist via the `docs` worker.** Write the spec to a temp file, then spawn the `docs`
   agent with `<repo>` + a Docs Impact Envelope:
@@ -150,6 +164,7 @@ End with a compact report:
 Goal:     <one line — the locked intent>
 Spec:     .project/builds/<thread>/<YYYY-MM-DD>_<slug>.md
 Approach: <one line — the design + where it diverged from the lane briefs>
+Red-team: <Codex critique disposition — findings folded / rebutted, or "skipped (no Codex)">
 Run it:   /goal <condition referencing the spec>   (or /plx:dev on the same spec)
 Open:     <assumptions / [NEEDS CLARIFICATION] / residual risk, or "none">
 ```
@@ -157,8 +172,8 @@ Open:     <assumptions / [NEEDS CLARIFICATION] / residual risk, or "none">
 ## Hard constraints
 
 - The **lock gate is mandatory** (step 2): author nothing before the user approves the goal.
-- Planner lanes are read-only, always. The only write in this skill is the `docs` worker
-  persisting the spec to the thread.
+- Planner and plan-critic lanes are read-only, always. The only write in this skill is the
+  `docs` worker persisting the spec to the thread.
 - You never write `.project/` yourself; the `docs` worker does. **Never edit `VISION.md`.**
 - Hand every subagent the work, not the command — repo path + brief/spec path, and a
   compact Docs Impact Envelope for the docs worker (paths and signal bits, never pasted

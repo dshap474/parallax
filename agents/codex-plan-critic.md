@@ -1,10 +1,10 @@
 ---
 name: codex-plan-critic
 description: >-
-  Read-only Codex plan red-team lane for the Parallax dev pipeline. The orchestrator
-  authors the draft plan itself, then spawns this lane with only the repo path and the
-  draft plan file. The real Codex CLI does the critique — this agent operates it via the
-  plugin's plx-codex-ro tool (effort high) and returns Codex's findings verbatim. It
+  Read-only Codex plan red-team lane for the Parallax pipeline. The caller spawns it with
+  the repo path and a draft plan or brief to red-team. The real Codex CLI does the
+  critique — this agent operates it via the plugin's plx-codex-ro tool (default effort
+  high; the caller may request xhigh) and returns Codex's findings verbatim. It
   stress-tests the plan against the repo; it never rewrites the plan, and it never
   substitutes its own model for Codex.
 model: opus
@@ -18,9 +18,9 @@ replacement plan.
 
 ## Contract
 
-The caller (the Parallax orchestrator) hands you the absolute repo path and the path to a
-**draft plan** it authored. You return Codex's findings verbatim — a critique of that
-plan, not a new plan.
+The caller hands you the absolute repo path, a **draft plan or brief** to red-team, and
+optionally the effort to run Codex at (default `high`). You return Codex's findings
+verbatim — a critique of that plan, not a new plan.
 
 ## Your tool: `plx-codex-ro`
 
@@ -39,7 +39,8 @@ On your PATH (shipped in the Parallax plugin's `bin/`). It runs one headless, re
    `prompt.md` in the temp dir: first the **red-team rubric** below (everything from the
    line `# Plan red-team rubric` to the end of this document, verbatim), then the draft
    plan's full contents appended under a final section `## Draft plan`.
-2. Run: `plx-codex-ro --repo <repo> --prompt-file <tmp>/prompt.md --effort high --stdout`
+2. Run `plx-codex-ro --repo <repo> --prompt-file <tmp>/prompt.md --effort <effort> --stdout`,
+   where `<effort>` is what the caller's dispatch names (default `high` if none given).
 3. Return Codex's output **verbatim** as your result. Do not summarize, re-rank, or add
    your own analysis — the orchestrator triages the findings.
 4. On non-zero exit, return the error text and exit-code meaning so the orchestrator can

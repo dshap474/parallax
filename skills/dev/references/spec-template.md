@@ -63,13 +63,16 @@ point to; if something is unverified, say so explicitly.
 
 ## Success Criteria
 
-Binary checks that define completion.
+Binary checks that define completion. Pair each with its **oracle** — the command or
+observable that proves it from output the run prints, not from the filesystem. A reviewer
+(or an autonomous `/goal`-style evaluator) confirms "done" only from evidence the run
+surfaces, so a criterion with no nameable proof is not yet a criterion.
 
-- [ ] `<observable behavior>`
-- [ ] `<important edge case>`
-- [ ] `<regression that must remain intact>`
-- [ ] `<relevant automated check passes>`
-- [ ] `<manual or runtime verification, if needed>`
+- [ ] `<observable behavior>` — proven by: `<command + the signal in its output>`
+- [ ] `<important edge case>` — proven by: `<command / observable>`
+- [ ] `<regression that must remain intact>` — proven by: `<command + pass signal>`
+- [ ] `<relevant automated check passes>` — proven by: `<command + pass signal>`
+- [ ] `<manual or runtime verification, if needed>` — proven by: `<what to do + what to see>`
 
 ---
 
@@ -245,7 +248,10 @@ If this change fails:
 
 ### Progress Log
 
-Use only if work will span multiple sessions or agents.
+Use only if work will span multiple sessions or agents. **Re-read this log at session
+start to find where you are, and append a new entry after each milestone or before you
+stop.** It is the only memory that survives a new session — an autonomous run resets its
+turn and token counters on resume, so the log is the durable anchor.
 
 ```md
 ### <YYYY-MM-DD HH:MM> — <agent / session>

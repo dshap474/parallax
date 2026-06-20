@@ -15,7 +15,7 @@
 #   plan (goal-spec)    claude -> plx:claude-planner             (Opus, read-only)
 #                       codex  -> plx:codex-planner              (drives bin/plx-codex-ro)
 #                       grok   -> plx:grok-planner               (drives bin/plx-grok-ro)
-#   plan-critic (dev)   codex  -> plx:codex-plan-critic          (drives bin/plx-codex-ro; red-team)
+#   plan-critic         codex  -> plx:codex-plan-critic          (drives bin/plx-codex-ro; red-team)
 #   code                claude -> plx:claude-worker              (Opus, edits the repo)
 #                       codex  -> plx:codex-worker               (drives bin/plx-codex-rw)
 #                       grok   -> plx:grok-worker                (drives bin/plx-grok-rw)
@@ -32,9 +32,9 @@
 #     engine fills them.
 #   - Plan authoring and the final review gate are always the orchestrator; finding
 #     triage in the build's review round is the build worker. Neither is configurable.
-#   - In `dev` the orchestrator authors the plan and the `plan-critic` lanes red-team it;
-#     in `goal-spec` the `plan` lanes are parallel consultants. Authoring is never
-#     delegated either way.
+#   - In `dev` the orchestrator authors the plan; in `goal-spec` a single `plan` lane
+#     drafts the design and the orchestrator synthesizes. Either way a `plan-critic` lane
+#     red-teams before it ships, and authoring/synthesis is never delegated.
 #
 # Disabled pipelines (team-*, ultra-*) have no keys here; they are regenerated
 # from the dev spec in .project/VISION.md when revived.
@@ -47,7 +47,8 @@ pipelines:
     review-simplify: [codex]
 
   goal-spec:
-    plan: [claude, codex]
+    plan: [claude]
+    plan-critic: [codex]
 
   review:
     review-debug: [codex]

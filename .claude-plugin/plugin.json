@@ -1,7 +1,7 @@
 {
   "name": "plx",
-  "version": "0.1.6",
-  "description": "Parallax (plx) — multi-model coding-agent orchestration. The /plx:* commands run the dev, plan, or review pipeline or hand a task to a single engine (codex/grok). dev = plan → build → review → fix → docs, delegated to subagent lanes. Plan and review lanes are read-only; the writer engine is configurable.",
+  "version": "0.1.7",
+  "description": "Parallax (plx) — multi-model coding-agent orchestration. The /plx:* commands run the dev, plan, or review pipeline or hand a task to a single engine (codex/grok). dev = plan → build → review → fix delegated to subagent lanes, then docs + a local commit. Plan and review lanes are read-only; the writer engine is configurable.",
   "author": { "name": "Daniel Shapiro", "url": "https://github.com/dshap474" },
   "homepage": "https://github.com/dshap474/parallax",
   "repository": "https://github.com/dshap474/parallax",

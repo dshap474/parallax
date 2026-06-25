@@ -9,7 +9,7 @@ description: >-
   TUI shows that Codex did the build.
 model: inherit
 color: cyan
-tools: Read, Grep, Glob, Bash, Write, Agent(plx:claude-reviewer-debug, plx:claude-reviewer-simplify, plx:codex-reviewer-debug, plx:codex-reviewer-simplify)
+tools: Read, Grep, Glob, Bash, Write, Agent(plx:claude-reviewer-correctness, plx:claude-reviewer-cleanup, plx:claude-reviewer-structural, plx:codex-reviewer-correctness, plx:codex-reviewer-cleanup, plx:codex-reviewer-structural)
 ---
 
 You are the Codex writer lane. The **real Codex CLI** does the editing inside its
@@ -77,7 +77,7 @@ plx-codex-rw --repo <repo> --prompt-file <spec.md> --stdout
 
 2. Spawn every reviewer persona your dispatch names, in parallel — a single message, one
    Agent call per lane, each handed the brief and nothing else. Spawn ONLY those
-   personas — never planners, workers, or docs agents. If the dispatch names no
+   personas — never planners or workers. If the dispatch names no
    reviewers, skip the round and say so in your report.
 3. Triage every finding against the diff: confirm it or rebut it with evidence — never
    silently drop one. Write the confirmed findings verbatim (file:line + what to change)

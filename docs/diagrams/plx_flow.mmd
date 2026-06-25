@@ -13,27 +13,27 @@ flowchart TD
 
     DEV --> PIPE
 
-    subgraph PIPE ["🔁 dev pipeline — 3 top-level spawns; Fable holds only compact artifacts"]
+    subgraph PIPE ["🔁 dev pipeline — 2 top-level spawns; Fable holds only compact artifacts"]
       direction TB
       S1["① 🧠 Fable authors the draft plan (reads the repo, scoped)<br/>writes the spec to the shared template"]
       S2["② Delegate red-team — 1 critic (read-only)<br/>plx:codex-plan-critic (Codex high) → plan critique, not a rewrite"]
       S3["③ 🧠 Fable folds the critique → finalizes the plan<br/>(verifies load-bearing claims; escape hatch: re-draft)"]
       S4["④ Delegate the build — 1 worker ✍️<br/>plx:claude-worker (Opus xhigh), spec + reviewer lane names"]
-      S4R["worker spawns 2 nested Codex review lanes (read-only)<br/>debug · simplify — then fixes or rebuts every finding<br/>one round, hard cap"]
+      S4R["worker spawns 3 nested Codex review lanes (read-only)<br/>correctness · cleanup · structural — then fixes or rebuts every finding<br/>one round, hard cap"]
       S5["⑤ Buildout report returns — per-file summaries + findings disposition<br/>(fixed / rebutted / residual), never code bodies"]
       S6["⑥ 🧠 Fable's final gate — reads the diff ONCE, fresh eyes<br/>fixes nits inline ✍️ · re-runs the repo's checks<br/>escape hatch: structural rework → fresh build"]
       S1 --> S2 --> S3 --> S4
       S4 --> S4R --> S5 --> S6
     end
 
-    PIPE --> DOC["⑦ Docs subagent updates docs → LOCAL commit only<br/>never push / PR / publish"]
+    PIPE --> DOC["⑦ Fable updates .project/ docs → LOCAL commit only<br/>never push / PR / publish"]
     DOC --> REP(["📝 Final chat report"])
 
     subgraph LEG ["Pipelines at a glance"]
       direction TB
       L1["🛠️ dev:  ① → ⑦ (full pipeline)"]
       L2["📐 goal-spec:  interview → lock → 2 planners + Fable authors a /goal-ready spec → build thread"]
-      L3["🔎 review:  standalone — two Codex lanes + Fable synthesis, read-only"]
+      L3["🔎 review:  standalone — three Codex lanes + Fable synthesis, read-only"]
       L4["🤖 passthrough:  /plx:codex · /plx:grok — one engine, no pipeline"]
     end
 

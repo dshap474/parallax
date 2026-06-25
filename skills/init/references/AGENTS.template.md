@@ -25,13 +25,16 @@ Runtime Rules:
 **Memory**
 When the user had to walk you through a fix you couldn't solve, record the durable lesson once solved — reusable patterns, constraints, non-obvious gotchas, not one-offs. Directory-specific → nearest `AGENTS.md`; repo-wide → Project Memory below; you edit memory directly.
 
-**Project Docs** — live under `.project/`; dated records take a `YYYY-MM-DD_` prefix. Write these yourself; there is no docs subagent.
+**Project Docs** — live under `.project/`; dated records take a `YYYY-MM-DD_` prefix. Write these yourself; there is no docs subagent. Prefer a no-op over weak docs — keep every update narrow to what the session actually touched; never create docs sprawl from thin signals.
 - `builds/<thread>/` — one thread per session; plans, notes, working docs for the active effort
 - `adr/` — critical architectural decisions
 - `runbooks/` — repeatable procedures
 - `architecture/` — durable subsystem models
 - `notes/` — durable cross-cutting observations
-- `VISION.md` — **read-only, user-owned; never edit**
+- `security/` — current posture (`security/threat-model.md`) plus dated audit reports under `security/reports/`
+- `VISION.md` — **read-only, user-owned; never edit**; flag a vision-vs-reality contradiction to the user, never draft the fix
+
+Two history models: current-state surfaces (`architecture/`, `runbooks/`, `security/` posture) describe the system as it is now — edit them in place to match reality. Append-only surfaces (`builds/`, `adr/`, `notes/`, dated `security/reports/`) are never rewritten — supersede a stale record with a `Superseded by: <link>` line or a new dated one. At a build/session close, reconcile only the current-state surfaces to final state.
 
 Inside a build folder: keep a `README.md` index (one line per file + `Status:` active/shipped/archived) and name files `<ROLE>_<slug>.md` (ROLE ∈ PLAN/NOTES/AUDIT/HANDOFF/REVIEW/REF); only the README is maintained, the rest is append-only. At close, distill durable decisions → `adr/`, procedures → `runbooks/`, set `Status: archived`, never delete.
 ```

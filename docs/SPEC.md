@@ -18,7 +18,7 @@ The orchestrator is Claude (Fable). It delegates all bulk work — planning, bui
 
 - 3 pipeline skills, each **self-contained** (steps, lane briefs, and engine handoffs written out inline — no path pointers, no `${CLAUDE_PLUGIN_ROOT}`, no script injection; the one exception is shared reference templates, fetched via `plx-skill --ref` — e.g. `dev/spec-template`, `init/AGENTS.template`): `plx:dev` (7-step pipeline), `plx:goal-spec` (interview-locked goal planning), `plx:review` (standalone read-only review)
 - 2 single-engine passthroughs: `plx:codex`, `plx:grok` (no `plx:claude` — the orchestrator *is* Claude)
-- Subagent personas in `agents/` carrying rubrics + operator manuals: 12 engine personas (`<engine>-planner`, `<engine>-worker`, `<engine>-reviewer-debug`, `<engine>-reviewer-simplify` for `claude` / `codex` / `grok`) plus `docs`
+- Subagent personas in `agents/` carrying rubrics + operator manuals: 15 engine personas (`<engine>-planner`, `<engine>-worker`, `<engine>-reviewer-correctness`, `<engine>-reviewer-cleanup`, `<engine>-reviewer-structural` for `claude` / `codex` / `grok`)
 - 1 engine-per-role config (`config/parallax.yaml`), keyed by pipeline: `dev`, `goal-spec`, `review`
 - A deterministic engine API in `bin/` (on the Bash PATH while the plugin is enabled): `plx-codex-ro`/`plx-codex-rw`, `plx-grok-ro`/`plx-grok-rw`, `plx-preflight`, `plx-config`, `plx-skill` — uniform flags (`--repo`, `--prompt-file`, `--stdout`/`--out --log`; `--effort low|medium|high|xhigh` on the Codex tools), uniform exit codes (0 ok · 1 engine failure · 2 usage error · 3 auth needed), and `--help` manuals
 - **Planned (not in this release):** `team-*` and `ultra-*` skills — the dev/plan/review skeleton with more engines in the read stages
@@ -81,7 +81,7 @@ Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev
 - Engine wrappers never use `danger-full-access`, `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`.
 - Plan authoring (arbitration between Planning Briefs) and the final gate are always the orchestrator; finding triage in the build's review round is always the build worker. Neither is configurable.
 - Plan and review lanes are always read-only; exactly one writer at a time.
-- Every `dev` run ends with a docs subagent and a **local commit only** — never a push, PR, or publish step.
+- Every `dev` run ends with the orchestrator updating `.project/` docs and a **local commit only** — never a push, PR, or publish step.
 - Final results are returned in chat, not written to a results file.
 
 ## Contracts
@@ -163,7 +163,7 @@ Expected:
 /plx:dev, /plx:goal-spec, /plx:review, /plx:codex, /plx:grok appear (no /plx:claude)
 plx:claude-planner / plx:codex-planner appear in /agents
 plx:claude-worker appears in /agents
-plx:codex-reviewer-debug / plx:codex-reviewer-simplify appear in /agents
+plx:codex-reviewer-correctness / plx:codex-reviewer-cleanup / plx:codex-reviewer-structural appear in /agents
 ```
 
 ### Smoke tests

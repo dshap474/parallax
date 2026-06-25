@@ -44,7 +44,7 @@ Add executables under `bin/` (chmod +x; named `plx-*`). Claude Code puts `bin/` 
 
 ### Add or change an engine
 
-Add `bin/plx-<engine>-ro` / `bin/plx-<engine>-rw` following the API contract, add `agents/<engine>-{planner,worker,reviewer-debug,reviewer-simplify}.md` personas carrying the engine's operator manual plus the relevant rubric, update the lane invocations in each pipeline skill that should use it, and reference the engine name from `config/parallax.yaml`.
+Add `bin/plx-<engine>-ro` / `bin/plx-<engine>-rw` following the API contract, add `agents/<engine>-{planner,worker,reviewer-correctness,reviewer-cleanup,reviewer-structural}.md` personas carrying the engine's operator manual plus the relevant rubric, update the lane invocations in each pipeline skill that should use it, and reference the engine name from `config/parallax.yaml`.
 
 ### Add a subagent
 

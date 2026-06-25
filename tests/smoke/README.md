@@ -64,7 +64,7 @@ logs/<timestamp>/
 ```
 
 `transcript.jsonl` is the point of the whole thing — it records the plan-critic, the
-worker, the worker's reviewers, and the docs lane, so you can see what each one did.
+worker, and the worker's reviewers, so you can see what each one did.
 
 ## goal-spec is a manual check
 

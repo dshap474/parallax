@@ -29,13 +29,13 @@ Establish ground truth with your own tools — nothing is injected for you:
 
 - Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
 - If the worktree is dirty, note `git status --short`.
-- Get today's date (`date +%F`) for the thread directory prefix and the plan filename.
+- Get today's date (`date +%F`) for the thread directory prefix.
 - Read `.project/VISION.md` if it exists — it is the project **constitution**. Its hard
   rules become non-negotiable Invariants in the spec. Read it; never edit it.
 - Resolve the **build thread**. Continuing an existing effort → use that thread's existing
   directory under `.project/builds/`. New effort → derive a short kebab thread name from the
   goal and prefix it with today's date → `YYYY-MM-DD_<thread-name>`. You read `.project/`
-  freely but never write it yourself — the `docs` worker does.
+  freely and write it yourself — there is no docs subagent.
 
 ## Engines & preflight
 
@@ -138,23 +138,22 @@ Note where the final spec diverges from the planner's brief and the critique, an
 
 ### 6. Persist to the thread + emit the /goal handoff
 
-- **Persist via the `docs` worker.** Write the spec to a temp file, then spawn the `docs`
-  agent with `<repo>` + a Docs Impact Envelope:
-  `phase: plan`, `build_thread: <thread>`, `artifacts.final_plan: <temp spec path>`,
-  `signals.build_plan: true`. Primary target: `builds/<thread>/<YYYY-MM-DD>_<slug>.md`,
-  persisted **verbatim** — it is an executable spec, not a record to summarize. Wait for
-  `DOCS_OK`.
+- **Persist the spec to the thread yourself.** Write it **verbatim** to
+  `.project/builds/<thread>/PLAN_<slug>.md` (the thread folder is `YYYY-MM-DD_<thread>`;
+  it is an executable spec, not a record to summarize) and add its line to the thread
+  `README.md` index. Follow the repo's `AGENTS.md` Runtime Rules for the build-folder
+  layout. There is no docs subagent.
 - **Emit the handoff.** Output the persisted spec's path and a **paste-ready `/goal`
   condition** derived from the Success Criteria — a "done when…" line that references the
   file, e.g.:
 
   ```
-  /goal Execute .project/builds/<thread>/<YYYY-MM-DD>_<slug>.md — done when every
+  /goal Execute .project/builds/<thread>/PLAN_<slug>.md — done when every
         Success Criterion in it is satisfied with evidence and its Validation commands pass.
   ```
 
-- Then **stop**. Do not build. Clean up the temp dir only after the docs worker has
-  consumed it.
+- Then **stop**. Do not build. Clean up any temp dir from the planning steps once the
+  spec is written to the thread.
 
 ## Output discipline
 
@@ -162,7 +161,7 @@ End with a compact report:
 
 ```text
 Goal:     <one line — the locked intent>
-Spec:     .project/builds/<thread>/<YYYY-MM-DD>_<slug>.md
+Spec:     .project/builds/<thread>/PLAN_<slug>.md
 Approach: <one line — the design + where it diverged from the lane briefs>
 Red-team: <Codex critique disposition — findings folded / rebutted, or "skipped (no Codex)">
 Run it:   /goal <condition referencing the spec>   (or /plx:dev on the same spec)
@@ -172,12 +171,12 @@ Open:     <assumptions / [NEEDS CLARIFICATION] / residual risk, or "none">
 ## Hard constraints
 
 - The **lock gate is mandatory** (step 2): author nothing before the user approves the goal.
-- Planner and plan-critic lanes are read-only, always. The only write in this skill is the
-  `docs` worker persisting the spec to the thread.
-- You never write `.project/` yourself; the `docs` worker does. **Never edit `VISION.md`.**
-- Hand every subagent the work, not the command — repo path + brief/spec path, and a
-  compact Docs Impact Envelope for the docs worker (paths and signal bits, never pasted
-  plans or findings).
+- Planner and plan-critic lanes are read-only, always. The only write in this skill is you
+  persisting the spec to the thread under `.project/builds/`.
+- You write the spec yourself, following the repo's `AGENTS.md` Runtime Rules; there is no
+  docs subagent. **Never edit `VISION.md`.**
+- Hand every subagent the work, not the command — repo path + brief/spec path, never
+  pasted plans or findings.
 - Do not write Parallax state into the target repo — no `.parallax/` dirs; temp files live
   in `mktemp -d` dirs.
 - Never `uv run` inside a sandbox.

@@ -26,9 +26,9 @@ Each pipeline establishes repo ground truth (Bootstrap), then runs its steps. Ea
 
 | Pipeline | Use case | Lanes |
 |---|---|---|
-| `dev` | build a change end to end (plan → build+review → final gate → docs + local commit) | Fable authors the plan + 1 plan-critic + 1 worker (which spawns 2 reviewers) + docs |
+| `dev` | build a change end to end (plan → build+review → final gate → docs + local commit) | Fable authors the plan + 1 plan-critic + 1 worker (which spawns 3 reviewers); Fable writes the docs |
 | `goal-spec` | lock a goal, then plan it (no edits) | interview + 2 parallel planners |
-| `review` | audit / debug / critique without edits | 2 parallel Codex review lanes |
+| `review` | audit / debug / critique without edits | 3 parallel Codex review lanes |
 
 `goal-spec` runs a Socratic interview to lock a goal, then multi-model planning, and writes one self-contained, `/goal`-ready spec into a build thread under `.project/builds/` (for long-running efforts); `review` is the review stage run standalone by the orchestrator (read-only). Single-engine passthroughs `/plx:codex` and `/plx:grok` hand a task straight to one engine with no review pipeline.
 
@@ -39,12 +39,12 @@ Plan-critic and review lanes are always read-only. There is exactly **one writer
 1. Fable authors the plan itself — reads the repo (scoped to what the design needs), settles the approach, and writes the spec to the shared template.
 2. One Codex red-team critic (`codex-plan-critic`, high) stress-tests the draft against the repo — wrong facts, missed work, a simpler design, unhandled edges — and returns findings, not a rewrite.
 3. Fable folds the critique — adopts or rebuts each finding (verifying load-bearing claims itself), then finalizes the plan. Escape hatch: a fundamental objection → re-draft.
-4. Delegate the build to one Opus worker (`claude-worker`) — the spec plus the reviewer persona names. The worker implements, self-verifies, **spawns the two Codex review lanes itself** (nested subagents, in parallel), then fixes or rebuts every finding with its build context still hot. One round, hard cap.
+4. Delegate the build to one Opus worker (`claude-worker`) — the spec plus the reviewer persona names. The worker implements, self-verifies, **spawns the three Codex review lanes itself** (nested subagents, in parallel), then fixes or rebuts every finding with its build context still hot. One round, hard cap.
 5. The Buildout report returns — per-file summaries, coding decisions, verification, and the disposition of every review finding (fixed / rebutted / residual). Never code bodies.
 6. Fable gates the work: reads the diff once, with fresh eyes — do the rebuttals hold, do the residuals matter, was anything missed? It fixes nits inline (escape hatch: structural rework goes back through a fresh build), then re-runs the repo's checks.
-7. A docs subagent updates docs, then a **local commit** — never a push or PR.
+7. Fable updates `.project/` docs itself, then a **local commit** — never a push or PR.
 
-Exactly **three top-level subagent spawns** (1 plan-critic + 1 builder + 1 docs); the builder spawns the 2 review lanes nested inside its own context.
+Exactly **two top-level subagent spawns** (1 plan-critic + 1 builder); the builder spawns the 3 review lanes nested inside its own context, and Fable writes the docs itself.
 
 ### Configuring engines
 

@@ -6,9 +6,9 @@ Every entry point lives under the `plx` plugin namespace. The commands below run
 
 | Command | What it does |
 |---|---|
-| `/plx:dev` | The full 7-step pipeline — Fable authors the plan → 1 Codex red-team critic stress-tests it → 1 Opus worker builds, spawns 2 parallel Codex review lanes itself, and fixes or rebuts every finding → Fable's final gate on the diff → docs + local commit. |
+| `/plx:dev` | The full 7-step pipeline — Fable authors the plan → 1 Codex red-team critic stress-tests it → 1 Opus worker builds, spawns 3 parallel Codex review lanes itself, and fixes or rebuts every finding → Fable's final gate on the diff → docs + local commit. |
 | `/plx:goal-spec` | Interview-locked goal planning for long-running efforts: a Socratic interview locks the goal (intent, binary success criteria, invariants, non-goals), then parallel planner lanes design the how and Fable authors one self-contained spec into the build thread under `.project/builds/` — plus a paste-ready `/goal` condition. No code is written. |
-| `/plx:review` | Multi-lane review, standalone: two parallel Codex lanes — debug, simplify — plus Fable as pseudo-third reviewer. Read-only; does not edit unless you explicitly ask for fixes. |
+| `/plx:review` | Multi-lane review, standalone: three parallel Codex review lanes — correctness, cleanup, structural — synthesized by Fable as the integrating reviewer. Read-only; does not edit unless you explicitly ask for fixes. |
 
 ## Single-engine asks (raw passthrough — no review pipeline)
 
@@ -25,7 +25,7 @@ There is no `/plx:claude` — the orchestrator *is* Claude; just ask it directly
 
 | Command | What it does |
 |---|---|
-| `/plx:init` | Bootstrap or repair a repo's agent-docs setup: classify the root `AGENTS.md` and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror `CLAUDE.md` symlinks via `plx-link-claude`, keep `.project/` git-ignored, and seed `.project/architecture/` through the docs worker. Root-only — nested `AGENTS.md` files are user-authored and untouched. Idempotent; say "dry run" to preview. |
+| `/plx:init` | Bootstrap or repair a repo's agent-docs setup: classify the root `AGENTS.md` and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror `CLAUDE.md` symlinks via `plx-link-claude`, and keep `.project/` git-ignored (agents populate it during real work). Root-only — nested `AGENTS.md` files are user-authored and untouched. Idempotent; say "dry run" to preview. |
 
 ## Disabled / parked commands
 
@@ -34,4 +34,4 @@ The `team-*` and `ultra-*` commands (`/plx:team-dev`, `/plx:ultra-dev`, `/plx:te
 ## Notes
 
 - Each command **is** its pipeline, written out in full: its `SKILL.md` carries the ordered steps, lane briefs, and engine invocations inline, resolving engine bindings from `config/parallax.yaml` and any shared reference template via `plx-skill --ref` (e.g. `dev/spec-template`, `init/AGENTS.template`).
-- In the **pipelines**, each lane runs as an engine-named subagent (`plx:claude-planner`, `plx:codex-reviewer-debug`, etc.) so the TUI shows which engine ran it. The **single-engine passthroughs spawn no subagent** — the orchestrator runs the engine's write-capable wrapper (`plx-codex-rw` / `plx-grok-rw`) directly.
+- In the **pipelines**, each lane runs as an engine-named subagent (`plx:claude-planner`, `plx:codex-reviewer-correctness`, etc.) so the TUI shows which engine ran it. The **single-engine passthroughs spawn no subagent** — the orchestrator runs the engine's write-capable wrapper (`plx-codex-rw` / `plx-grok-rw`) directly.

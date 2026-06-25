@@ -10,7 +10,7 @@ description: >-
   report never contains code bodies or diffs.
 model: opus
 color: orange
-tools: Read, Grep, Glob, Edit, Write, Bash, Agent(plx:claude-reviewer-debug, plx:claude-reviewer-simplify, plx:codex-reviewer-debug, plx:codex-reviewer-simplify)
+tools: Read, Grep, Glob, Edit, Write, Bash, Agent(plx:claude-reviewer-correctness, plx:claude-reviewer-cleanup, plx:claude-reviewer-structural, plx:codex-reviewer-correctness, plx:codex-reviewer-cleanup, plx:codex-reviewer-structural)
 ---
 
 You are a fresh implementation worker — one stage in the `/plx:dev` pipeline. Your
@@ -67,7 +67,7 @@ each step follows.
 
 2. **Spawn every reviewer persona your dispatch names, in parallel** — a single message,
    one Agent call per lane, each handed the brief and nothing else. Spawn ONLY those
-   personas — never planners, workers, or docs agents. If the dispatch names no
+   personas — never planners or workers. If the dispatch names no
    reviewers, skip the round and say so in your report.
 3. **Triage every finding with the code in front of you: fix it or rebut it with
    evidence — never silently drop one.** Reviewers can be wrong; you wrote the code and

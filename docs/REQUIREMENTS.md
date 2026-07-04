@@ -1,57 +1,68 @@
 # Requirements & Setup
 
-Parallax orchestrates external model CLIs that you install and authenticate. It does not bundle, host, or proxy any model.
+Parallax orchestrates external model CLIs that you install and authenticate. It does not bundle, host, or proxy any model. All engine execution goes through `bin/plx-engine` (`--engine codex|grok|claude --mode ro|rw`); the old per-engine wrappers (`plx-codex-ro`/`-rw`, `plx-grok-ro`/`-rw`) remain as back-compat shims.
 
 ## Engines
 
-| Engine | Install | Used by | Required? |
+| Engine | Install | Used by default | Required? |
 |---|---|---|---|
-| Codex | `codex` CLI + auth | `dev`/`goal-spec`/`review` plan and review lanes; `/plx:codex` | required for the default pipelines |
-| Grok | `grok` CLI + auth | `/plx:grok` passthrough; opt-in `code: grok` writer; parked for future ultra tiers | optional |
+| Codex | `codex` CLI + auth | plan-critic, planner, and review lanes in `dev`/`goal-spec`/`review`; `/plx:codex` | required for the shipped pipeline configs |
+| Grok | `grok` CLI + auth | `/plx:grok`; optional second-perspective lanes | optional |
+| Claude | `claude` CLI (already present — it runs your session) | the writer lane (`code: claude`); any lane you bind it to | present by definition |
 
-The default `dev`, `goal-spec`, and `review` pipelines bind their planner and reviewer lanes to Codex, so Codex is required to run them as shipped. Grok is only needed for the `/plx:grok` passthrough and the opt-in `code: grok` writer today. The orchestrator (Claude) is always present — it is the session you are in.
+The shipped configs bind the critic/planner/reviewer lanes to Codex, so Codex is required to run the pipelines as configured. Bindings are defaults, not limits — see `prompts/engines.md`. Validate whatever a run needs with `plx-preflight --repo <repo> --require-<engine>` (each probe spends a tiny model call).
 
 ## Codex
 
-Install and authenticate the Codex CLI (`codex` on `PATH`). Parallax validates Codex with `plx-preflight --repo <repo> --require-codex`, where `<repo>` is the absolute repo root the orchestrator resolves during Bootstrap.
+Install and authenticate the Codex CLI (`codex` on `PATH`).
 
-Parallax runs Codex only through `bin/plx-codex-ro`, which uses:
+`plx-engine --engine codex` pins:
 
-- `--ignore-user-config`
-- explicit read-only sandboxing
-- `--ephemeral`
-- stdout output mode for normal lane calls
-- temporary output/log files only when a caller needs separate debug files
-- `--effort low|medium|high|xhigh` (default `high`; the dev pipeline runs planners and reviewers at `xhigh`)
+- `--ignore-user-config` and `--ephemeral` (no session state, no user-config bleed)
+- sandbox `read-only` (`--mode ro`) or `workspace-write` (`--mode rw`)
+- `--effort low|medium|high|xhigh` (default `high`) and `--model` (default `gpt-5.5` — `gpt-5.3-codex` is unavailable on some ChatGPT-account auth)
 
-`gpt-5.3-codex` is not available on some ChatGPT-account Codex auth. Parallax uses Codex with `gpt-5.5`. By default Codex is **read-only** (`bin/plx-codex-ro`) for plan and review lanes; it only *writes* when you opt in via `code: codex` (or `/plx:codex`), which routes through `bin/plx-codex-rw` (scoped `workspace-write` sandbox). Neither wrapper uses `danger-full-access` or `--yolo`.
+Codex writes only in `--mode rw` (the `code: codex` binding or `/plx:codex`). No mode uses `danger-full-access` or `--yolo`.
 
 ## Grok
 
-Install and authenticate the Grok CLI (`grok login`, or set `XAI_API_KEY`) to enable the `/plx:grok` passthrough (and Grok lanes in any pipeline configured to use them — parked for the future ultra tiers). Verified with grok 0.2.32 (`grok-composer-2.5-fast`); final-message extraction and headless permission behavior re-verified with 0.2.39.
+Install and authenticate the Grok CLI (`grok login`, or set `XAI_API_KEY`). Verified with grok 0.2.32 (`grok-composer-2.5-fast`); final-message extraction and headless permission behavior re-verified with 0.2.39.
 
-Grok runs through two wrappers, both pinning a kernel-enforced sandbox (Seatbelt on macOS, Landlock on Linux):
+`plx-engine --engine grok` pins a kernel-enforced sandbox (Seatbelt on macOS, Landlock on Linux):
 
-- **`bin/plx-grok-ro`** — every review/plan lane. `--sandbox read-only`: grok may read but cannot write the repo (OS-denied). This is the read-only guarantee.
-- **`bin/plx-grok-rw`** — opt-in writer (`code: grok` or `/plx:grok`). `--sandbox workspace`: edits are confined to the repo; writes outside are kernel-denied and logged to `~/.grok/sandbox-events.jsonl`.
+- `--mode ro` → `--sandbox read-only`: grok may read but cannot write the repo (OS-denied).
+- `--mode rw` → `--sandbox workspace`: edits confined to the repo; writes outside are kernel-denied and logged to `~/.grok/sandbox-events.jsonl`.
 
-Both pass `--permission-mode bypassPermissions`, because grok's CLI only *enforces* that mode (and `default`) — `acceptEdits`/`plan` are accepted but unenforced and would cancel the turn in headless. Confinement comes from the sandbox, not the permission mode.
+Both modes pass `--permission-mode bypassPermissions`, because grok's CLI only *enforces* that mode (and `default`) — `acceptEdits`/`plan` are accepted but unenforced and would cancel the turn in headless. Confinement comes from the sandbox, not the permission mode.
 
-Both wrappers emit only the model's final message (recovered from grok's session store, since the JSON envelope aggregates narration and subagent streams) and delete the run's `~/.grok/sessions` entry on success (kept on failure for debugging — grok has no `--ephemeral`). The CLI's `--effort` flag is not exposed: `grok-composer-2.5-fast` rejects the `reasoningEffort` parameter (API 400) and the run fails.
+The wrapper emits only the model's final message (recovered from grok's session store, since the JSON envelope aggregates narration and subagent streams) and deletes the run's `~/.grok/sessions` entry on success (kept on failure for debugging — grok has no `--ephemeral`). Grok takes no `--effort`/`--model` flags: `grok-composer-2.5-fast` rejects the `reasoningEffort` parameter (API 400).
 
-When invoking either wrapper from Claude Code, disable the Claude Bash sandbox for that call only (grok needs network/keychain access the sandbox blocks). The wrappers decide success from grok's `stopReason` + output and exit accordingly: **0** = ok, **3** = not signed in (run `grok login`), **1** = real failure. grok prints non-fatal `AuthorizationRequired` worker lines to stderr even on success — these are noise; judge by the exit code.
+When invoking grok from Claude Code, disable the Claude Bash sandbox for that call only (grok needs network/keychain access the sandbox blocks). The wrapper decides success from grok's `stopReason` + output: **0** = ok, **3** = not signed in (run `grok login`), **1** = real failure. grok prints non-fatal `AuthorizationRequired` worker lines to stderr even on success — judge by the exit code.
 
-## Verification Toolchain
+## Claude
 
-The orchestrator and `worker` run the target repo's own checks directly, such as `.venv/bin/ruff check .`, `.venv/bin/pytest -q`, `npm test`, `cargo test`, or `go test`.
+The `claude` CLI is already installed and authenticated — it is the session you are in. `plx-engine --engine claude` runs it headless as a lane engine:
+
+- non-bare `claude -p` with `--setting-sources project` (`--bare` fails on subscription auth)
+- `--mode ro` → `--permission-mode dontAsk` + `Read,Grep,Glob` allowlist
+- `--mode rw` → `--permission-mode acceptEdits` + `Read,Grep,Glob,Edit,Write,Bash` allowlist
+- `--effort` (default `high`) and `--model` (default `opus`); rubrics injected via `--append-system-prompt-file`
+
+Blocked tool calls abort the run rather than hang. No bypass flags, ever.
+
+## Lane runtime
+
+Engine turns can run 10–40+ minutes. Pipelines launch every lane as background Bash with `--out <f> --log <f>`; foreground calls cap at 10 minutes. Headless `claude -p` itself caps background-subagent waits at 10 minutes (since v2.1.182) — tunable via `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS` (0 = unlimited), which the smoke suite sets.
+
+## Verification toolchain
+
+The orchestrator and the writer lane run the target repo's own checks directly, such as `.venv/bin/ruff check .`, `.venv/bin/pytest -q`, `npm test`, `cargo test`, or `go test`.
 
 Never use `uv run` inside a sandbox; Homebrew `uv` can panic there.
 
-## Runtime State
+## Runtime state
 
-Parallax does not use repo-local runtime state in v0.1.
-
-It does not create:
+Parallax does not use repo-local runtime state. It does not create:
 
 ```text
 .parallax/
@@ -59,4 +70,4 @@ It does not create:
 .parallax/runs/
 ```
 
-Intake prints repo metadata to stdout. Preflight and external reviewer wrappers may use `mktemp -d` internally for CLI prompt/output/log files, but those directories are removed before the command returns. Final results are returned in chat.
+Preflight and `plx-engine` may use `mktemp -d` internally for CLI prompt/output/log files, but those directories are removed before the command returns. Pipeline stage artifacts live in a shell temp directory the orchestrator creates and cleans up. Final results are returned in chat.

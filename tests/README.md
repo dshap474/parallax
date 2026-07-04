@@ -10,7 +10,7 @@ exercises the shell scripts in throwaway repos.
 | File | What it does |
 |---|---|
 | `run.sh` | Runs the whole deterministic suite (static checks + script smoke) and prints `ALL GREEN` / failures. |
-| `check-plugin.sh` | **Static integrity** — no `${CLAUDE_PLUGIN_ROOT}` in skills/agents (bin/ tools are on PATH), every `plx-*` tool a skill/agent names exists in `bin/` and is executable, config keys a skill names exist in `parallax.yaml` (`dev`, `plan`, `review`), referenced `plx:<persona>` subagents have agent files, manifests are valid JSON, skills are self-contained. No model calls. |
+| `check-plugin.sh` | **Static integrity** — no `${CLAUDE_PLUGIN_ROOT}` in skills (bin/ tools are on PATH), every `plx-*` tool a skill names exists in `bin/` and is executable, config keys a skill names exist in `parallax.yaml`, no leftover `plx:<engine>-<persona>` subagent references, every `--rubric` name resolves to `prompts/<name>.md` and all lane rubrics are present, manifests are valid JSON, skills are self-contained. No model calls. |
 | `explain-skill.sh` | **Dry run** — prints what a skill would do: its config key, resolved engine bindings, preflight requirement, its inline sections, and the verbatim `## Pipeline` steps. Nothing executes. |
 | `smoke-scripts.sh` | Runs the real shell scripts (`preflight`) against an **isolated tmp repo** built from `fixture/`. Model-free unless `--with-engines`. |
 | `fixture/` | A tiny throwaway target repo (a `calc.average()` with an empty-list bug). Copied to `mktemp` per run — never edited in place. |
@@ -39,9 +39,9 @@ bash tests/run.sh --with-engines
 ## Scope / what this does NOT do
 
 These checks cover the **deterministic** layer: wiring, contracts, and the projected
-pipeline. They do **not** run a full skill end-to-end (a real `dev` run spawns
-planner/worker/reviewer subagents and edits a repo — that's a behavioral test,
-model-driven and non-deterministic).
+pipeline. They do **not** run a full skill end-to-end (a real `dev` run drives
+critic/writer/reviewer engine lanes headless and edits a repo — that's a behavioral
+test, model-driven and non-deterministic).
 
 That behavioral layer now has its own opt-in suite: **`tests/smoke/`** runs the skills
 and engine tools for real against throwaway 1-file fixtures and captures the full

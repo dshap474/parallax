@@ -2,7 +2,9 @@
 # L2 SKILL SMOKE — run each /plx:* skill END-TO-END via headless `claude --plugin-dir`
 # against a throwaway fixture, then assert on the resulting diff / files / transcript.
 # This loads THIS working copy of the plugin (not the installed cache) and captures the
-# full stream-json transcript of every subagent — the audit artifact. Spends real tokens.
+# full stream-json transcript of every engine lane — the audit artifact. Spends real
+# tokens. Lanes run as background Bash inside the headless session, so the 10-min
+# background wait ceiling is lifted via CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0.
 #
 #   skills.sh [--skill <name>] [--with-grok] [--dry-run]
 #
@@ -54,7 +56,7 @@ run_skill() {
   if [ -n "$task" ]; then prompt="/plx:$skill $task"; else prompt="/plx:$skill"; fi
   {
     printf 'cd %s\n' "$repo"
-    printf 'PATH=%s/bin:$PATH claude -p %s \\\n' "$PLX_ROOT" "$(printf '%q' "$prompt")"
+    printf 'PATH=%s/bin:$PATH CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p %s \\\n' "$PLX_ROOT" "$(printf '%q' "$prompt")"
     printf '  --plugin-dir %s --permission-mode bypassPermissions \\\n' "$PLX_ROOT"
     printf '  --output-format stream-json --verbose\n'
   } > "$d/cmd.txt"
@@ -65,7 +67,7 @@ run_skill() {
     rm -rf "$repo"; return
   fi
 
-  ( cd "$repo" && PATH="$PLX_ROOT/bin:$PATH" claude -p "$prompt" \
+  ( cd "$repo" && PATH="$PLX_ROOT/bin:$PATH" CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p "$prompt" \
       --plugin-dir "$PLX_ROOT" --permission-mode bypassPermissions \
       --output-format stream-json --verbose ) > "$d/transcript.jsonl" 2> "$d/stderr.log"
   rc=$?; echo "$rc" > "$d/rc"

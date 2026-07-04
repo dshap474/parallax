@@ -1,4 +1,4 @@
-# /plx:dev — full pipeline: plan -> build (worker spawns 3 reviewers) -> gate -> docs -> local commit
+# /plx:dev — full pipeline: plan -> red-team -> build (one rw lane) -> 3 review lanes + fix -> gate -> docs -> local commit
 NEEDS: codex
 FIXTURE: calc
 TASK: Add a median(numbers) function to calc.py that returns the middle value (the mean of the two middle values for even-length input), plus a matching test in test_calc.py. Keep it minimal.

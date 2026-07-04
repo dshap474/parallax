@@ -1,10 +1,10 @@
 # Parallax behavioral smoke suite
 
 This is the **end-to-end audit** the deterministic harness (`tests/run.sh`) deliberately
-skips. It runs the real skills and engine tools against throwaway 1-file fixtures with
-**real (small) model calls**, then asserts on what actually happened and captures the
-full transcript of every lane. Use it to confirm the live system works, not just that
-it's wired correctly.
+skips. It runs the real skills and the real engine wrapper against throwaway 1-file
+fixtures with **real (small) model calls**, then asserts on what actually happened and
+captures the full transcript of every lane. Use it to confirm the live system works, not
+just that it's wired correctly.
 
 > `tests/run.sh` / `tests/smoke-scripts.sh` are static and free. **This suite spends
 > tokens** and edits via real models (inside throwaway repos only).
@@ -13,11 +13,14 @@ it's wired correctly.
 
 | Layer | What it exercises | How | Cost |
 |---|---|---|---|
-| **L1 — engines** | `bin/plx-{codex,grok}-{ro,rw}` actually drive the CLIs; `-ro` stays read-only, `-rw` edits land in-repo and are correct | pure shell drives the tools | tiny (≈1 call/tool) |
-| **L2 — skills** | each `/plx:*` skill runs start→finish (plan → build → review → gate → docs → commit, etc.) | headless `claude --plugin-dir <this repo>` per skill | real (a full pipeline per skill) |
+| **L1 — engines** | `bin/plx-engine` actually drives each CLI (codex, claude; grok opt-in); `--mode ro` stays read-only and `--rubric` injection lands (the reviewer finds the seeded bug); `--mode rw` edits land in-repo and are correct | pure shell drives the wrapper | tiny (2 calls/engine) |
+| **L2 — skills** | each `/plx:*` skill runs start→finish (plan → red-team → build → review lanes → gate → docs → commit, etc.) | headless `claude --plugin-dir <this repo>` per skill | real (a full pipeline per skill) |
 
 L2 loads **this working copy** via `--plugin-dir`, so it tests uncommitted changes — not
-the installed `0.1.0` cache.
+the installed cache. Skills launch their engine lanes as background Bash inside that
+headless session, so the runner sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` — without
+it, headless `claude -p` stops waiting on background work after 10 minutes and long lanes
+get orphaned.
 
 ## Run it
 
@@ -30,7 +33,9 @@ bash tests/smoke/run-smoke.sh --dry-run --skills   # prep fixtures + print comma
 ```
 
 Engines that aren't installed/authed are **skipped** (via `plx-preflight`), never failed.
-A bare run is safe and quick; the token-spending audit is one flag (`--skills`) away.
+A bare run is safe and cheap; the token-spending audit is one flag (`--skills`) away.
+A full `--skills` run can take a long wall-clock time (each pipeline runs multiple
+engine turns) — run it from a terminal, or via background Bash from an agent session.
 
 ## What each skill must do (pass criteria)
 
@@ -52,19 +57,21 @@ Every run writes one timestamped dir under `logs/` (git-ignored):
 
 ```text
 logs/<timestamp>/
-  summary.md                       # the cross-layer PASS/FAIL/SKIP table (printed at the end)
-  engines/<tool>.{out,log,rc,diff} # L1: each tool's answer, full log, exit code, diff
+  summary.md                             # the cross-layer PASS/FAIL/SKIP table (printed at the end)
+  engines/<engine>-{ro,rw}.{out,log,rc,diff}  # L1: each lane's answer, full log, exit code, diff
   skills/<skill>/
     cmd.txt           # the exact claude invocation (reproducible by hand)
-    transcript.jsonl  # stream-json: every tool call + nested subagent + message
+    transcript.jsonl  # stream-json: every tool call, background lane launch, message
     diff.patch        # what the skill changed vs the pristine fixture
     repo-status.txt   # git status --short
     check.txt         # the functional check's output
     stderr.log        # claude stderr
 ```
 
-`transcript.jsonl` is the point of the whole thing — it records the plan-critic, the
-worker, and the worker's reviewers, so you can see what each one did.
+`transcript.jsonl` is the point of the whole thing — it records the plx-engine lane
+launches (critic, writer, reviewers) and the orchestrator's synthesis, so you can see
+what each lane did. The lanes' own outputs land in the run's temp dir, which the skill
+cleans up — the transcript is the durable record.
 
 ## goal-spec is a manual check
 
@@ -78,7 +85,7 @@ automated run. To smoke it by hand:
 
 ## Fixtures
 
-- `tests/fixture/` (shared) — `calc.py` with the seeded empty-list bug; used by dev/review/codex/grok.
+- `tests/fixture/` (shared) — `calc.py` with the seeded empty-list bug; used by dev/review/codex/grok and the L1 engine lanes.
 - `tests/smoke/fixtures/bare/` — a 1-file repo with no `AGENTS.md`; used by init.
 
-Each is copied to a fresh `mktemp` + `git init` per skill run; the templates are never edited.
+Each is copied to a fresh `mktemp` + `git init` per run; the templates are never edited.

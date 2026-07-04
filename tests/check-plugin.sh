@@ -20,18 +20,18 @@ for s in "$PLX_ROOT"/skills/*/SKILL.md; do
   if grep -qE '^name:[[:space:]]*"?plx::' "$s"; then _pass "$rel"; else _fail "no plx:: name in $rel"; fi
 done
 
-_head "No \${CLAUDE_PLUGIN_ROOT} in skills/agents (unreliable in prose — bin/ tools are on PATH)"
-if grep -rq 'CLAUDE_PLUGIN_ROOT' "$PLX_ROOT/skills" "$PLX_ROOT/agents" 2>/dev/null; then
-  _fail "a skill or agent still uses \${CLAUDE_PLUGIN_ROOT}"
+_head "No \${CLAUDE_PLUGIN_ROOT} in skills (unreliable in prose — bin/ tools are on PATH)"
+if grep -rq 'CLAUDE_PLUGIN_ROOT' "$PLX_ROOT/skills" 2>/dev/null; then
+  _fail "a skill still uses \${CLAUDE_PLUGIN_ROOT}"
 else
-  _pass "skills and agents reference bin/ tools by bare name only"
+  _pass "skills reference bin/ tools by bare name only"
 fi
 
-_head "plx-* tools referenced by skills/agents exist in bin/"
+_head "plx-* tools referenced by skills exist in bin/"
 while IFS= read -r tool; do
   [ -n "$tool" ] || continue
   if [ -x "$PLX_ROOT/bin/$tool" ]; then _pass "bin/$tool"; else _fail "referenced tool missing: bin/$tool"; fi
-done < <(grep -rhoE '`plx-[a-z*-]+' "$PLX_ROOT/skills" "$PLX_ROOT/agents" 2>/dev/null | tr -d '`' | grep -E '^plx-[a-z]+(-[a-z]+)*$' | sort -u)
+done < <(grep -rhoE '`plx-[a-z*-]+' "$PLX_ROOT/skills" 2>/dev/null | tr -d '`' | grep -E '^plx-[a-z]+(-[a-z]+)*$' | sort -u)
 
 _head "Config keys referenced by skills exist in parallax.yaml"
 YAML="$PLX_ROOT/config/parallax.yaml"
@@ -41,12 +41,20 @@ while IFS= read -r line; do
   if grep -qE "^  ${key}:" "$YAML"; then _pass "config key: $key"; else _fail "skill references missing config key: $key"; fi
 done < <(grep -rhoE 'key `[a-z-]+`' "$PLX_ROOT"/skills/*/SKILL.md 2>/dev/null | sort -u)
 
-_head "Referenced plx:<engine>-<persona> subagents have agent files (live roster only; _disabled/ is parked)"
-while IFS= read -r sub; do
-  name="${sub#plx:}"
-  if [ -f "$PLX_ROOT/agents/$name.md" ]; then _pass "agent: $name.md"; else _fail "missing agent file: agents/$name.md"; fi
-done < <(grep -rhoE --exclude-dir=_disabled 'plx:(claude|codex|grok)-[a-z-]+' \
-           "$PLX_ROOT/skills" "$PLX_ROOT/config" "$PLX_ROOT/agents" 2>/dev/null | sed 's/-$//' | sort -u)
+_head "No subagent persona references remain (agents/ was retired for headless plx-engine lanes)"
+if grep -rqE 'plx:(claude|codex|grok)-[a-z-]+' "$PLX_ROOT/skills" "$PLX_ROOT/config" 2>/dev/null; then
+  _fail "a skill or config still references a plx:<engine>-<persona> subagent"
+else
+  _pass "no plx:<engine>-<persona> references in skills/ or config/"
+fi
+
+_head "Rubrics referenced via --rubric exist in prompts/"
+while IFS= read -r r; do
+  [ -n "$r" ] || continue
+  if [ -s "$PLX_ROOT/prompts/$r.md" ]; then _pass "rubric ref: $r"; else _fail "skill references missing rubric: prompts/$r.md"; fi
+done < <(grep -rhoE -- '--rubric [a-z-]+' "$PLX_ROOT"/skills/*/SKILL.md 2>/dev/null | awk '{print $2}' | grep -v -- '-$' | sort -u)
+# (refs ending in '-' are templated, e.g. `--rubric reviewer-<dimension>` — the
+#  expansions are covered by the presence check below)
 
 _head "Engine API tools present and executable"
 for sc in plx-engine plx-codex-ro plx-codex-rw plx-grok-ro plx-grok-rw plx-preflight plx-config plx-skill; do

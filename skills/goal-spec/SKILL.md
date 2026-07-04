@@ -87,20 +87,34 @@ airtight — and even then, show the reflect-back and get a yes.
 
 ### 3. Single-planner design — fill the how
 
-Write one neutral **task brief** from the *locked* goal: its intent, success criteria, and
+Write one neutral **task brief** from the *locked* goal into `<tmp>/task-brief.md` (from a
+`mktemp -d` dir): a `## Task brief` header, then its intent, success criteria, and
 invariants verbatim, plus repo facts from Bootstrap. No preferred approach of your own.
-Write it to a file in a `mktemp -d` dir.
 
-Spawn **one** planner lane (the `plan` engine the config resolves, e.g. `[claude]` →
-`plx:claude-planner`) with `<repo>` + the brief. It studies the repo in its own context and
-returns a **Planning Brief** (recommendation + steelman + repo facts) — the *how*. You do
-not study the codebase yourself; the lane does.
+Launch **one** planner lane — the `plan` engine the config resolves — headless:
+
+```
+plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/task-brief.md \
+  --rubric planner --effort xhigh --out <tmp>/plan-brief.md --log <tmp>/plan.log
+```
+
+Run it in background Bash (`run_in_background`) — planning turns can outrun the 10-min
+foreground cap; grok lanes need the Bash sandbox disabled and take no `--effort`. It
+studies the repo in its own context and returns a **Planning Brief** (recommendation +
+steelman + repo facts) — the *how*. You do not study the codebase yourself; the lane does.
 
 ### 4. Codex red-team (xhigh)
 
-Cross-model rigor comes from review, not a second planner. Resolve the critic from the
-config (the `plan-critic` role → personas, e.g. `[codex]` → `plx:codex-plan-critic`) and
-spawn it **at `xhigh` effort** with `<repo>` + the planner's brief. The user has locked the
+Cross-model rigor comes from review, not a second planner. Resolve the critic engine from
+the config (`plan-critic`), write `<tmp>/critic-brief.md` — a `## Draft plan` header, then
+the planner's brief verbatim — and launch it **at `xhigh` effort** (background Bash):
+
+```
+plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/critic-brief.md \
+  --rubric plan-critic --effort xhigh --out <tmp>/critique.md --log <tmp>/critic.log
+```
+
+The user has locked the
 goal, so the critic red-teams the **design's soundness and goal-readiness**, not whether the
 goal is worth doing: wrong repo facts, spec drift from the locked goal, missed work, a
 materially simpler approach, unhandled edges, and — looking ahead to the spec — whether the
@@ -175,8 +189,9 @@ Open:     <assumptions / [NEEDS CLARIFICATION] / residual risk, or "none">
   persisting the spec to the thread under `.project/builds/`.
 - You write the spec yourself, following the repo's `AGENTS.md` Runtime Rules; there is no
   docs subagent. **Never edit `VISION.md`.**
-- Hand every subagent the work, not the command — repo path + brief/spec path, never
-  pasted plans or findings.
+- Never hand-construct raw `codex` / `grok` / `claude -p` commands — `plx-engine` is the
+  only sanctioned path. Rubrics are injected by `--rubric` name; never paste rubric text
+  into briefs.
 - Do not write Parallax state into the target repo — no `.parallax/` dirs; temp files live
   in `mktemp -d` dirs.
 - Never `uv run` inside a sandbox.

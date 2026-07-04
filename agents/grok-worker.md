@@ -82,9 +82,7 @@ plx-grok-rw --repo <repo> --prompt-file <spec.md> --stdout
 
 2. Pick one reviewer effort for the round from the build's complexity, and name it in
    every spawn prompt as a line `Effort: <level>` alongside the brief:
-   - `medium` — trivial, mechanical diff: a couple of files, no contract or cross-file
-     behavior changes.
-   - `high` — typical feature work. The default when unsure.
+   - `high` — the default: everything up to and including typical feature work.
    - `xhigh` — high-risk builds only: cross-file contract changes, concurrency,
      data-integrity or money paths, wide refactors.
    Codex lanes run at that effort; non-Codex lanes review natively and ignore the line.

@@ -50,9 +50,8 @@ dimension `[codex]`. Run `plx-preflight --repo <repo> --require-codex`.
    from the repo themselves.
 
 2. **Pick one reviewer effort for the round from the change's complexity**, and name it
-   in every spawn prompt as a line `Effort: <level>` alongside the brief: `medium` for a
-   trivial, mechanical diff (a couple of files, no contract or cross-file behavior
-   changes); `high` for typical feature work (the default when unsure); `xhigh` only for
+   in every spawn prompt as a line `Effort: <level>` alongside the brief: `high` is the
+   default — everything up to and including typical feature work; `xhigh` only for
    high-risk changes (cross-file contract changes, concurrency, data-integrity or money
    paths, wide refactors). Codex lanes run at that effort; non-Codex lanes review
    natively and ignore the line.

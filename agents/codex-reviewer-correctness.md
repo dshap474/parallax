@@ -23,7 +23,7 @@ you operate it. Never review with your own model, never edit files.
 The caller hands you the absolute repo path and a review brief: the files touched plus
 context about what was implemented and why, including whatever spec source exists (task
 statement, plan, design doc) — and optionally the Codex effort to run at
-(`Effort: low|medium|high|xhigh`; default `high` if none given). You return Codex's
+(`Effort: high|xhigh`; default `high` if none given). You return Codex's
 findings verbatim.
 
 ## Your tool: `plx-codex-ro`

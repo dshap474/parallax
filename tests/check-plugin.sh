@@ -49,8 +49,13 @@ done < <(grep -rhoE --exclude-dir=_disabled 'plx:(claude|codex|grok)-[a-z-]+' \
            "$PLX_ROOT/skills" "$PLX_ROOT/config" "$PLX_ROOT/agents" 2>/dev/null | sed 's/-$//' | sort -u)
 
 _head "Engine API tools present and executable"
-for sc in plx-codex-ro plx-codex-rw plx-grok-ro plx-grok-rw plx-preflight plx-config plx-skill; do
+for sc in plx-engine plx-codex-ro plx-codex-rw plx-grok-ro plx-grok-rw plx-preflight plx-config plx-skill; do
   assert_exec "bin/$sc"
+done
+
+_head "Lane rubrics present (prompts/, injected by plx-engine --rubric)"
+for r in reviewer-correctness reviewer-cleanup reviewer-structural planner plan-critic worker engines; do
+  if [ -s "$PLX_ROOT/prompts/$r.md" ]; then _pass "prompts/$r.md"; else _fail "missing rubric: prompts/$r.md"; fi
 done
 
 _head "Base prompts (reference storage, not loaded at runtime)"

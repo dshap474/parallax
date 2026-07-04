@@ -2,35 +2,34 @@
 set -euo pipefail
 
 # Parallax engine API — preflight. Probes engine availability FOR REAL: sends a
-# tiny prompt through the read-only tool, so it verifies install + auth + model
-# in one shot (a `command -v` check can't catch a broken auth or model).
+# tiny prompt through plx-engine (mode ro), so it verifies install + auth +
+# model in one shot (a `command -v` check can't catch a broken auth or model).
 
 usage() {
   cat <<'EOF'
 plx-preflight — probe external engine availability before a Parallax pipeline runs
 
 Usage:
-  plx-preflight --repo <abs-path> [--require-codex] [--require-grok] [--optional-grok]
+  plx-preflight --repo <abs-path> [--require-codex] [--require-grok] [--require-claude]
+                [--optional-codex] [--optional-grok] [--optional-claude]
 
 What it does:
-  For each requested engine, sends a tiny "reply OK" prompt through the
-  read-only tool (plx-codex-ro / plx-grok-ro). A passing probe proves the CLI
-  is installed, authenticated, and the model responds. The same CLI/auth backs
-  the -ro and -rw tools, so this also validates a non-Claude writer. All probe
-  artifacts live in a temp dir and are deleted on exit.
+  For each requested engine, sends a tiny "reply OK" prompt through
+  `plx-engine --mode ro`. A passing probe proves the CLI is installed,
+  authenticated, and the model responds. The same CLI/auth backs ro and rw, so
+  this also validates a writer. All probe artifacts live in a temp dir and are
+  deleted on exit.
 
 Flags:
-  --repo <dir>      absolute path to the target repo (required)
-  --require-codex   probe Codex; fail preflight if it doesn't pass
-  --require-grok    probe Grok; fail preflight if it doesn't pass
-  --optional-grok   probe Grok; report but don't fail if it doesn't pass
-  --help            this text
+  --repo <dir>         absolute path to the target repo (required)
+  --require-<engine>   probe the engine; fail preflight if it doesn't pass
+  --optional-<engine>  probe the engine; report but don't fail
+  --help               this text
 
 Output (stdout):
   ### Parallax preflight
   - repo: <path>
-  - codex: ok | missing | probe failed
-  - grok: ok | missing | probe failed
+  - <engine>: ok | missing | probe failed   (one line per probed engine)
   - preflight_ok: yes | no
 
 Exit codes:
@@ -41,9 +40,9 @@ EOF
 }
 
 REPO=""
-REQUIRE_CODEX=0
-OPTIONAL_GROK=0
-REQUIRE_GROK=0
+REQUIRE_CODEX=0; OPTIONAL_CODEX=0
+REQUIRE_GROK=0;  OPTIONAL_GROK=0
+REQUIRE_CLAUDE=0; OPTIONAL_CLAUDE=0
 
 need_value() { [[ -n "${2:-}" ]] || { echo "missing value for $1" >&2; exit 2; }; }
 
@@ -51,8 +50,11 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --repo) need_value "$1" "${2:-}"; REPO="$2"; shift 2 ;;
     --require-codex) REQUIRE_CODEX=1; shift ;;
-    --optional-grok) OPTIONAL_GROK=1; shift ;;
+    --optional-codex) OPTIONAL_CODEX=1; shift ;;
     --require-grok) REQUIRE_GROK=1; shift ;;
+    --optional-grok) OPTIONAL_GROK=1; shift ;;
+    --require-claude) REQUIRE_CLAUDE=1; shift ;;
+    --optional-claude) OPTIONAL_CLAUDE=1; shift ;;
     --help|-h) usage; exit 0 ;;
     *) echo "unknown arg: $1 (see --help)" >&2; exit 2 ;;
   esac
@@ -66,9 +68,10 @@ TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/parallax-preflight.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
 mkdir -p "$TMP_DIR"/{prompts,outputs,logs}
 
+STATUS=0
 CODEX_OK=0
 GROK_OK=0
-STATUS=0
+CLAUDE_OK=0
 
 print_log_tail() {
   local log_file="$1"
@@ -77,48 +80,35 @@ print_log_tail() {
   sed -n '1,20p' "$log_file" | sed 's/^/  > /'
 }
 
-probe_codex() {
-  if ! command -v codex >/dev/null 2>&1; then
-    echo "- codex: missing"
+probe() {
+  local engine="$1"
+  if ! command -v "$engine" >/dev/null 2>&1; then
+    echo "- $engine: missing"
     return 1
   fi
 
-  printf '%s\n' "reply OK" > "$TMP_DIR/prompts/codex-probe.md"
-  if "$BIN_DIR/plx-codex-ro" \
+  printf '%s\n' "reply OK" > "$TMP_DIR/prompts/$engine-probe.md"
+  # bash 3.2 + set -u errors on expanding an empty array, so pass the effort
+  # flag (grok doesn't take one) via the ${arr[@]+...} guard idiom.
+  local -a extra
+  [[ "$engine" != "grok" ]] && extra=(--effort low)
+  if "$BIN_DIR/plx-engine" --engine "$engine" --mode ro \
     --repo "$REPO" \
-    --prompt-file "$TMP_DIR/prompts/codex-probe.md" \
-    --out "$TMP_DIR/outputs/codex-probe.md" \
-    --log "$TMP_DIR/logs/codex-probe.log" \
-    --effort low >/dev/null && [[ -s "$TMP_DIR/outputs/codex-probe.md" ]]; then
-    echo "- codex: ok"
-    CODEX_OK=1
+    --prompt-file "$TMP_DIR/prompts/$engine-probe.md" \
+    --out "$TMP_DIR/outputs/$engine-probe.md" \
+    --log "$TMP_DIR/logs/$engine-probe.log" \
+    ${extra[@]+"${extra[@]}"} >/dev/null && [[ -s "$TMP_DIR/outputs/$engine-probe.md" ]]; then
+    echo "- $engine: ok"
+    case "$engine" in
+      codex) CODEX_OK=1 ;;
+      grok) GROK_OK=1 ;;
+      claude) CLAUDE_OK=1 ;;
+    esac
     return 0
   fi
 
-  echo "- codex: probe failed"
-  print_log_tail "$TMP_DIR/logs/codex-probe.log"
-  return 1
-}
-
-probe_grok() {
-  if ! command -v grok >/dev/null 2>&1; then
-    echo "- grok: missing"
-    return 1
-  fi
-
-  printf '%s\n' "reply OK" > "$TMP_DIR/prompts/grok-probe.md"
-  if "$BIN_DIR/plx-grok-ro" \
-    --repo "$REPO" \
-    --prompt-file "$TMP_DIR/prompts/grok-probe.md" \
-    --out "$TMP_DIR/outputs/grok-probe.txt" \
-    --log "$TMP_DIR/logs/grok-probe.log" >/dev/null && [[ -s "$TMP_DIR/outputs/grok-probe.txt" ]]; then
-    echo "- grok: ok"
-    GROK_OK=1
-    return 0
-  fi
-
-  echo "- grok: probe failed or empty output"
-  print_log_tail "$TMP_DIR/logs/grok-probe.log"
+  echo "- $engine: probe failed"
+  print_log_tail "$TMP_DIR/logs/$engine-probe.log"
   return 1
 }
 
@@ -126,17 +116,17 @@ echo "### Parallax preflight"
 echo "- repo: $REPO"
 echo "- temp_artifacts: ephemeral"
 
-if [[ "$REQUIRE_CODEX" -eq 1 ]]; then
-  probe_codex || STATUS=1
-fi
+if [[ "$REQUIRE_CODEX" -eq 1 ]]; then probe codex || STATUS=1
+elif [[ "$OPTIONAL_CODEX" -eq 1 ]]; then probe codex || true; fi
 
-if [[ "$REQUIRE_GROK" -eq 1 ]]; then
-  probe_grok || STATUS=1
-elif [[ "$OPTIONAL_GROK" -eq 1 ]]; then
-  probe_grok || true
-fi
+if [[ "$REQUIRE_GROK" -eq 1 ]]; then probe grok || STATUS=1
+elif [[ "$OPTIONAL_GROK" -eq 1 ]]; then probe grok || true; fi
+
+if [[ "$REQUIRE_CLAUDE" -eq 1 ]]; then probe claude || STATUS=1
+elif [[ "$OPTIONAL_CLAUDE" -eq 1 ]]; then probe claude || true; fi
 
 echo "- preflight_ok: $([[ "$STATUS" -eq 0 ]] && echo yes || echo no)"
 echo "- codex_ok: $([[ "$CODEX_OK" -eq 1 ]] && echo yes || echo no)"
 echo "- grok_ok: $([[ "$GROK_OK" -eq 1 ]] && echo yes || echo no)"
+echo "- claude_ok: $([[ "$CLAUDE_OK" -eq 1 ]] && echo yes || echo no)"
 exit "$STATUS"

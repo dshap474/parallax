@@ -49,10 +49,18 @@ dimension `[codex]`. Run `plx-preflight --repo <repo> --require-codex`.
    No analysis, no suspicions, no steer toward a verdict. The lanes re-derive judgment
    from the repo themselves.
 
-2. **Spawn all three lanes in parallel** (a single message with three subagent calls),
-   each handed `<repo>` and the brief — nothing else. Every lane runs, every time. Each
-   persona carries its own rubric and Finding Schema and drives Codex headless through the
-   plugin's `plx-codex-ro` tool (read-only sandbox, xhigh effort):
+2. **Pick one reviewer effort for the round from the change's complexity**, and name it
+   in every spawn prompt as a line `Effort: <level>` alongside the brief: `medium` for a
+   trivial, mechanical diff (a couple of files, no contract or cross-file behavior
+   changes); `high` for typical feature work (the default when unsure); `xhigh` only for
+   high-risk changes (cross-file contract changes, concurrency, data-integrity or money
+   paths, wide refactors). Codex lanes run at that effort; non-Codex lanes review
+   natively and ignore the line.
+
+   **Spawn all three lanes in parallel** (a single message with three subagent calls),
+   each handed `<repo>`, the brief, and the effort line — nothing else. Every lane runs,
+   every time. Each persona carries its own rubric and Finding Schema and drives Codex
+   headless through the plugin's `plx-codex-ro` tool (read-only sandbox):
 
    - **correctness** lane → spawn `plx:codex-reviewer-correctness` (spec match + bugs +
      robustness + breakage beyond the diff — both "the right thing built" and "the thing

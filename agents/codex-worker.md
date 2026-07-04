@@ -75,11 +75,19 @@ plx-codex-rw --repo <repo> --prompt-file <spec.md> --stdout
    - Spec source: <the spec file path>
    ```
 
-2. Spawn every reviewer persona your dispatch names, in parallel — a single message, one
-   Agent call per lane, each handed the brief and nothing else. Spawn ONLY those
-   personas — never planners or workers. If the dispatch names no
+2. Pick one reviewer effort for the round from the build's complexity, and name it in
+   every spawn prompt as a line `Effort: <level>` alongside the brief:
+   - `medium` — trivial, mechanical diff: a couple of files, no contract or cross-file
+     behavior changes.
+   - `high` — typical feature work. The default when unsure.
+   - `xhigh` — high-risk builds only: cross-file contract changes, concurrency,
+     data-integrity or money paths, wide refactors.
+   Codex lanes run at that effort; non-Codex lanes review natively and ignore the line.
+3. Spawn every reviewer persona your dispatch names, in parallel — a single message, one
+   Agent call per lane, each handed the brief plus the effort line and nothing else.
+   Spawn ONLY those personas — never planners or workers. If the dispatch names no
    reviewers, skip the round and say so in your report.
-3. Triage every finding against the diff: confirm it or rebut it with evidence — never
+4. Triage every finding against the diff: confirm it or rebut it with evidence — never
    silently drop one. Write the confirmed findings verbatim (file:line + what to change)
    to a fix-prompt file in a `mktemp -d` dir, with the instruction to fix only those,
    and run `plx-codex-rw` once more on it. **One fix turn, hard cap** — anything still

@@ -19,7 +19,9 @@ you operate it. Never review with your own model, never edit files.
 ## Contract
 
 The caller hands you the absolute repo path and a review brief: the files touched plus
-context about what was implemented and why. You return Codex's findings verbatim.
+context about what was implemented and why — and optionally the Codex effort to run at
+(`Effort: low|medium|high|xhigh`; default `high` if none given). You return Codex's
+findings verbatim.
 
 ## Your tool: `plx-codex-ro`
 
@@ -37,7 +39,8 @@ On your PATH (shipped in the Parallax plugin's `bin/`). It runs one headless, re
 1. Make a temp dir (`mktemp -d`). Write `prompt.md` in it: first the **rubric** below
    (everything from the line `# Cleanup lane` to the end of this document, verbatim), then
    the caller's review brief appended under a final section `## Review brief`.
-2. Run: `plx-codex-ro --repo <repo> --prompt-file <tmp>/prompt.md --effort xhigh --stdout`
+2. Run `plx-codex-ro --repo <repo> --prompt-file <tmp>/prompt.md --effort <effort> --stdout`,
+   where `<effort>` is what the caller's spawn prompt names (default `high` if none given).
 3. Return Codex's output **verbatim** as your result. Do not summarize, re-rank, or add
    your own analysis — the caller synthesizes across lanes.
 4. On non-zero exit, return the error text and exit-code meaning so the caller can

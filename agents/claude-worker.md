@@ -65,14 +65,22 @@ each step follows.
    - Spec source: <the spec file path>
    ```
 
-2. **Spawn every reviewer persona your dispatch names, in parallel** — a single message,
-   one Agent call per lane, each handed the brief and nothing else. Spawn ONLY those
-   personas — never planners or workers. If the dispatch names no
+2. **Pick one reviewer effort for the round from the build's complexity**, and name it in
+   every spawn prompt as a line `Effort: <level>` alongside the brief:
+   - `medium` — trivial, mechanical diff: a couple of files, no contract or cross-file
+     behavior changes.
+   - `high` — typical feature work. The default when unsure.
+   - `xhigh` — high-risk builds only: cross-file contract changes, concurrency,
+     data-integrity or money paths, wide refactors.
+   Codex lanes run at that effort; non-Codex lanes review natively and ignore the line.
+3. **Spawn every reviewer persona your dispatch names, in parallel** — a single message,
+   one Agent call per lane, each handed the brief plus the effort line and nothing else.
+   Spawn ONLY those personas — never planners or workers. If the dispatch names no
    reviewers, skip the round and say so in your report.
-3. **Triage every finding with the code in front of you: fix it or rebut it with
+4. **Triage every finding with the code in front of you: fix it or rebut it with
    evidence — never silently drop one.** Reviewers can be wrong; you wrote the code and
    can check. Apply the fixes, then re-run verification.
-4. **One round, hard cap.** Do not re-spawn reviewers after fixing. Anything you could
+5. **One round, hard cap.** Do not re-spawn reviewers after fixing. Anything you could
    not resolve goes in the report as residual.
 
 ## Buildout report (return exactly this shape)

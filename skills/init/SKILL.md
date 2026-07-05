@@ -37,7 +37,7 @@ pointer — the same mechanism `/plx:dev` uses for its spec template).
 
 ## Modes
 
-- **apply** (default): classify, write, mirror, seed, report.
+- **apply** (default): classify, write, gitignore, mirror, report.
 - **dry-run** (user says "dry run", "preview", or "what would change"): classify and
   report what would change. Write nothing, dispatch nothing.
 
@@ -46,6 +46,8 @@ pointer — the same mechanism `/plx:dev` uses for its spec template).
 - Resolve the absolute repo root — the path given in the arguments, else
   `git rev-parse --show-toplevel`. Call it `<repo>`.
 - Note `git status --short` so pre-existing edits aren't attributed to this run.
+- Load the canonical template once: run `plx-skill --ref init/AGENTS.template` (a `bin/`
+  tool on your PATH). Classification and writing both depend on it.
 - Survey just enough to write truthfully, then stop: top-level layout, manifests and
   lockfiles (real commands), entrypoints, test layout, lint/CI config, the existing root
   `AGENTS.md` / `CLAUDE.md`, and the existing `.project/`. One broad listing plus
@@ -59,12 +61,13 @@ pointer — the same mechanism `/plx:dev` uses for its spec template).
 Adoption rule first: if `AGENTS.md` is missing but a regular-file `CLAUDE.md` exists at
 root, you are migrating — treat that `CLAUDE.md` content as the input file below, and
 after writing `AGENTS.md` replace the root `CLAUDE.md` with a symlink yourself
-(`ln -s AGENTS.md`). If both exist as regular files with materially different content,
-stop and ask the user which is authoritative.
+(`rm CLAUDE.md && ln -s AGENTS.md CLAUDE.md`). If both exist as regular files with
+materially different content, stop and ask the user which is authoritative; if
+identical, keep `AGENTS.md` and replace `CLAUDE.md` with the symlink yourself.
 
 Classify into exactly one bucket:
 
-- **current** — section model matches the canonical template (loaded in step 3) AND
+- **current** — section model matches the canonical template (loaded at bootstrap) AND
   content still matches the checkout. Skip; no write.
 - **empty** — exists but holds nothing durable (whitespace, a title, placeholder text).
   Populate as if missing.
@@ -103,10 +106,9 @@ never by this skill.
 
 ### 3 — Write the canonical root AGENTS.md
 
-Load the canonical template once: run `plx-skill --ref init/AGENTS.template` (a `bin/`
-tool on your PATH). It carries the section model, the verbatim fixed-section bytes, the
-variable-section generation guidance, and the content discipline. Author the root
-`AGENTS.md` to it:
+Use the template loaded at bootstrap. It carries the section model, the verbatim
+fixed-section bytes, the variable-section generation guidance, and the content
+discipline. Author the root `AGENTS.md` to it:
 
 - Emit the **fixed sections** (Runtime Rules and the Project Memory seed)
   **verbatim** — byte-for-byte, never paraphrased.

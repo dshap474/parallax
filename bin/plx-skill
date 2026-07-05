@@ -10,7 +10,7 @@ plx-skill — print a Parallax pipeline skill file
 
 Usage:
   plx-skill <name>             print skills/<name>/SKILL.md (e.g. plx-skill team-dev)
-  plx-skill --ref <skill>/<n>  print skills/<skill>/references/<n>.md (e.g. dev/spec-template)
+  plx-skill --ref <skill>/<n>  print skills/<skill>/references/<n>.md (e.g. plan/spec-template)
   plx-skill --list             list available skill names
 
 Exit codes:
@@ -42,7 +42,7 @@ case "${1:-}" in
     exit 0 ;;
   --ref)
     ref="${2:-}"
-    [[ -n "$ref" && "$ref" == */* ]] || { echo "usage: plx-skill --ref <skill>/<name> (e.g. dev/spec-template)" >&2; exit 2; }
+    [[ -n "$ref" && "$ref" == */* ]] || { echo "usage: plx-skill --ref <skill>/<name> (e.g. plan/spec-template)" >&2; exit 2; }
     REF="$SKILLS_DIR/${ref%/*}/references/${ref##*/}.md"
     [[ -f "$REF" ]] || { echo "no such reference: $ref (looked at $REF)" >&2; exit 1; }
     cat "$REF"

@@ -65,7 +65,7 @@ plx-engine --engine <e> --mode <ro|rw> --repo <repo> --prompt-file <brief> \
 Clarify first only if a material ambiguity would change the plan (≤3 sharp questions).
 Then **author the plan yourself** — read the repo scoped to what the design needs and
 settle the design, outcome-first. In-context plan by default; a spec doc in the build
-thread (`plx-skill --ref dev/spec-template` → `.project/builds/YYYY-MM-DD_<thread>/`)
+thread (`plx-skill --ref plan/spec-template` → `.project/builds/YYYY-MM-DD_<thread>/`)
 only for multi-session efforts.
 
 Red-team it if sized in: `<tmp>/critic-brief.md` = `## Draft plan` + the plan verbatim;

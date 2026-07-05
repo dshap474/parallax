@@ -18,7 +18,7 @@ Only the two manifests belong under `.claude-plugin/`. Do not put `skills/` or h
 
 ## Design rule: self-contained skills
 
-Each `skills/<name>/SKILL.md` carries its **entire** pipeline inline — ordered steps, lane briefs, engine invocations, neutral-context rule. No path pointers (`prompts/`, `lib/`, `scripts/`), no `${CLAUDE_PLUGIN_ROOT}`, no `!`-command injection. The only external inputs a skill has arrive through `bin/` tools invoked by bare name: `config/parallax.yaml` bindings via `plx-config`, shared reference templates via `plx-skill --ref` (e.g. `dev/spec-template`, `init/AGENTS.template`), and rubrics via `plx-engine --rubric <name>`.
+Each `skills/<name>/SKILL.md` carries its **entire** pipeline inline — ordered steps, lane briefs, engine invocations, neutral-context rule. No path pointers (`prompts/`, `lib/`, `scripts/`), no `${CLAUDE_PLUGIN_ROOT}`, no `!`-command injection. The only external inputs a skill has arrive through `bin/` tools invoked by bare name: `config/parallax.yaml` bindings via `plx-config`, shared reference templates via `plx-skill --ref` (e.g. `plan/spec-template`, `init/AGENTS.template`), and rubrics via `plx-engine --rubric <name>`.
 
 ## Design rule: rubrics live in `prompts/`
 

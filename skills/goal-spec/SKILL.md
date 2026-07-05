@@ -129,7 +129,7 @@ design sound, what did both miss, is there a simpler approach? Settle it yoursel
 merge.
 
 Then author **one** spec doc to the canonical template — the single source of truth shared
-by every engine, not a copy inlined here. Load it with `plx-skill --ref dev/spec-template`,
+by every engine, not a copy inlined here. Load it with `plx-skill --ref plan/spec-template`,
 then fill it:
 
 - The **locked goal** populates **Intent**, **Success Criteria**, and **Invariants** (fold

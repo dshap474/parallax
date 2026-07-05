@@ -51,7 +51,7 @@ for each engine you'll use.
    - **In-context (default):** a compact plan in chat — intent, success criteria,
      invariants, suggested path, validation commands.
    - **Spec doc (large/multi-session only):** author to the canonical template
-     (`plx-skill --ref dev/spec-template`) and write it to
+     (`plx-skill --ref plan/spec-template`) and write it to
      `.project/builds/YYYY-MM-DD_<thread>/PLAN_<slug>.md` per the repo's `AGENTS.md`
      Runtime Rules. A spec doc for a one-shot task is overhead, not rigor.
 

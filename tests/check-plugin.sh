@@ -57,7 +57,7 @@ done < <(grep -rhoE -- '--rubric [a-z-]+' "$PLX_ROOT"/skills/*/SKILL.md 2>/dev/n
 #  expansions are covered by the presence check below)
 
 _head "Engine API tools present and executable"
-for sc in plx-engine plx-codex-ro plx-codex-rw plx-grok-ro plx-grok-rw plx-preflight plx-config plx-skill; do
+for sc in plx-engine plx-preflight plx-config plx-skill plx-link-claude; do
   assert_exec "bin/$sc"
 done
 

@@ -14,7 +14,7 @@ trap 'rm -rf "$REPO" "$WORK"' EXIT
 echo "tmp target repo: $REPO"
 
 _head "bin tools answer --help"
-for t in plx-engine plx-codex-ro plx-codex-rw plx-grok-ro plx-grok-rw plx-preflight plx-config plx-skill plx-link-claude; do
+for t in plx-engine plx-preflight plx-config plx-skill plx-link-claude; do
   out="$WORK/help-$t.txt"
   if "$PLX_ROOT/bin/$t" --help > "$out" 2>&1 && grep -q "Usage:" "$out"; then
     _pass "$t --help"
@@ -27,9 +27,6 @@ _head "bin tools reject unknown flags with exit 2"
 "$PLX_ROOT/bin/plx-engine" --bogus >/dev/null 2>&1
 rc=$?
 if [ "$rc" -eq 2 ]; then _pass "plx-engine --bogus exits 2"; else _fail "expected exit 2, got $rc"; fi
-"$PLX_ROOT/bin/plx-codex-ro" --bogus >/dev/null 2>&1
-rc=$?
-if [ "$rc" -eq 2 ]; then _pass "plx-codex-ro (shim) --bogus exits 2"; else _fail "expected exit 2, got $rc"; fi
 
 _head "plx-engine resolves rubrics (--print-rubric, model-free)"
 if "$PLX_ROOT/bin/plx-engine" --print-rubric reviewer-correctness 2>/dev/null | grep -qi "review"; then

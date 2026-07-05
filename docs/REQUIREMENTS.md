@@ -1,6 +1,6 @@
 # Requirements & Setup
 
-Parallax orchestrates external model CLIs that you install and authenticate. It does not bundle, host, or proxy any model. All engine execution goes through `bin/plx-engine` (`--engine codex|grok|claude --mode ro|rw`); the old per-engine wrappers (`plx-codex-ro`/`-rw`, `plx-grok-ro`/`-rw`) remain as back-compat shims.
+Parallax orchestrates external model CLIs that you install and authenticate. It does not bundle, host, or proxy any model. All engine execution goes through `bin/plx-engine` (`--engine codex|grok|claude --mode ro|rw`).
 
 ## Engines
 

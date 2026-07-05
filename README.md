@@ -74,7 +74,7 @@ parallax/
 ├── skills/       # one dir per command; each SKILL.md is fully self-contained
 ├── prompts/      # lane rubrics (injected via plx-engine --rubric) + engines.md judgment doc
 ├── config/       # parallax.yaml — default engine bindings (dev, goal-spec, review)
-├── bin/          # engine API on PATH (plx-engine, plx-preflight, plx-config, plx-skill, plx-link-claude, legacy shims)
+├── bin/          # engine API on PATH (plx-engine, plx-preflight, plx-config, plx-skill, plx-link-claude)
 └── docs/{ARCHITECTURE, REQUIREMENTS, BENCHMARK, CONTRIBUTING, SPEC}.md
 ```
 

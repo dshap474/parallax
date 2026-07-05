@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-# Back-compat shim — plx-engine is the canonical wrapper (safety pinned there).
-src="${BASH_SOURCE[0]}"
-while [ -L "$src" ]; do
-  d="$(cd -P "$(dirname "$src")" && pwd)"
-  src="$(readlink "$src")"
-  case "$src" in /*) ;; *) src="$d/$src" ;; esac
-done
-exec "$(cd -P "$(dirname "$src")" && pwd)/plx-engine" --engine grok --mode rw "$@"

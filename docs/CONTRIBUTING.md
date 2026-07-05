@@ -9,7 +9,7 @@ Parallax is a Claude Code plugin: three fully self-contained pipeline skills (`d
 skills/           one dir per command — each SKILL.md is fully self-contained (dev, goal-spec, review, codex, grok, init)
 prompts/          lane rubrics (reviewer-correctness/cleanup/structural, planner, plan-critic, worker) + engines.md judgment doc
 config/           default engine bindings (parallax.yaml — keys: dev, goal-spec, review)
-bin/              engine API on PATH (plx-engine, plx-preflight, plx-config, plx-skill, plx-link-claude, legacy shims)
+bin/              engine API on PATH (plx-engine, plx-preflight, plx-config, plx-skill, plx-link-claude)
 docs/             human-facing docs
 tests/            deterministic harness (run.sh, check-plugin.sh, explain-skill.sh, smoke-scripts.sh, fixture/) + behavioral smoke/ suite
 ```

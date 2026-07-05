@@ -20,7 +20,7 @@ The orchestrator is Claude (Fable). There are **no subagents**: the orchestrator
 - 2 single-engine passthroughs: `plx:codex`, `plx:grok` (no `plx:claude` — the orchestrator *is* Claude); 1 setup skill: `plx:init`
 - Lane rubrics in `prompts/`: `reviewer-correctness`, `reviewer-cleanup`, `reviewer-structural`, `planner`, `plan-critic`, `worker` — one deduped engine-agnostic file per lane — plus `engines.md`, the judgment doc (engine characteristics, how to choose, defaults-not-limits rules)
 - 1 default engine-binding config (`config/parallax.yaml`), keyed by pipeline: `dev`, `goal-spec`, `review`
-- A deterministic engine API in `bin/` (on the Bash PATH while the plugin is enabled): `plx-engine` (the unified wrapper: `--engine codex|grok|claude --mode ro|rw --repo --prompt-file [--rubric] [--effort] [--model] (--stdout | --out --log)`, plus `--print-rubric <name>`), back-compat shims `plx-codex-ro`/`-rw` / `plx-grok-ro`/`-rw`, `plx-preflight` (probes any engine), `plx-config`, `plx-skill`, `plx-link-claude` — uniform exit codes (0 ok · 1 engine failure · 2 usage error · 3 auth needed) and `--help` manuals
+- A deterministic engine API in `bin/` (on the Bash PATH while the plugin is enabled): `plx-engine` (the unified wrapper: `--engine codex|grok|claude --mode ro|rw --repo --prompt-file [--rubric] [--effort] [--model] (--stdout | --out --log)`, plus `--print-rubric <name>`), `plx-preflight` (probes any engine), `plx-config`, `plx-skill`, `plx-link-claude` — uniform exit codes (0 ok · 1 engine failure · 2 usage error · 3 auth needed) and `--help` manuals
 
 ## Target tree
 
@@ -110,12 +110,9 @@ test -d prompts
 ```bash
 test -x bin/plx-engine
 test -x bin/plx-preflight
-test -x bin/plx-codex-ro   # shim
-test -x bin/plx-codex-rw   # shim
-test -x bin/plx-grok-ro    # shim
-test -x bin/plx-grok-rw    # shim
 test -x bin/plx-config
 test -x bin/plx-skill
+test -x bin/plx-link-claude
 bin/plx-engine --help | grep -q "Usage:"
 bin/plx-config | grep -q "pipelines:"
 ```

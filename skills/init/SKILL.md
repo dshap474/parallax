@@ -29,8 +29,6 @@ pointer — the same mechanism `/plx:dev` uses for its spec template).
   symlinks via `plx-link-claude`. You do not seed `.project/` content — under this schema
   main agents write `.project/` docs directly during real work (no docs subagent), so
   leave those surfaces for first use.
-- **`VISION.md` is user-only.** Never create or draft it — not even a stub or template.
-  If it is missing, remind the user in the report.
 - **Never invent.** Every command, boundary, and ownership claim in the generated file
   must be backed by repo evidence (manifests, scripts, layout, configs, existing docs).
   Weak evidence → inspect more; still weak → drop the claim.
@@ -150,7 +148,6 @@ AGENTS.md: <classification> → <created | rewritten | refreshed | no write | bl
 Project Memory: preserved (<n> entries) | initialized | blocked: memory drift
 .gitignore: ok | fixed: <change> | would fix: <change>
 Mirror: <created>/<relinked>/<skipped>/<blocked> — <blocked paths, if any>
-VISION.md: present | missing — write .project/VISION.md yourself; agents never draft it
 Idempotency: re-classified current ✓
 ```
 

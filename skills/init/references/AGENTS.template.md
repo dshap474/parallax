@@ -32,7 +32,6 @@ When the user had to walk you through a fix you couldn't solve, record the durab
 - `architecture/` — durable subsystem models
 - `notes/` — durable cross-cutting observations
 - `security/` — current posture (`security/threat-model.md`) plus dated audit reports under `security/reports/`
-- `VISION.md` — **read-only, user-owned; never edit**; flag a vision-vs-reality contradiction to the user, never draft the fix
 
 Two history models: current-state surfaces (`architecture/`, `runbooks/`, `security/` posture) describe the system as it is now — edit them in place to match reality. Append-only surfaces (`builds/`, `adr/`, `notes/`, dated `security/reports/`) are never rewritten — supersede a stale record with a `Superseded by: <link>` line or a new dated one. At a build/session close, reconcile only the current-state surfaces to final state.
 
@@ -72,5 +71,5 @@ Project Memory seed line (used only when the captured body is empty — initiali
   docs describe.
 - **Emphasis discipline (variable sections)** — no bold and no MUST/NEVER shouting in the
   sections you generate. The fixed Runtime Rules block carries its own bold sub-labels
-  (`**Memory**`, `**Project Docs**`, the VISION flag) verbatim; don't add more.
+  (`**Memory**`, `**Project Docs**`) verbatim; don't add more.
 - **Plain text** — no diagrams or ASCII art; tables only as decision tables.

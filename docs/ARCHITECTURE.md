@@ -2,10 +2,10 @@
 
 Parallax is a delegation-first coding workflow for Claude Code, packaged as a toolbox.
 
-The public surface is three pipelines (each is a skill):
+The public surface is three stage skills, their composition, and autonomous-goal prep:
 
 ```text
-dev | goal-spec | review
+plan | build | review   →   dev (the composition)   ·   goal-spec
 ```
 
 ## Core idea
@@ -24,68 +24,59 @@ plx-engine --engine codex|grok|claude --mode ro|rw --repo <abs> \
   (--stdout | --out <f> --log <f>)
 ```
 
-What the subagents used to carry — the lane rubrics — now ships in `prompts/` (one deduped, engine-agnostic file per lane) and is injected at runtime by `--rubric` name: prepended to the prompt for Codex/Grok, appended to the system prompt (`--append-system-prompt-file`) for Claude. The caller's brief file opens with the section header the rubric expects (`## Review brief`, `## Task brief`, `## Draft plan`, `## Spec`).
+Lane rubrics ship in `prompts/` (one deduped, engine-agnostic file per lane) and are injected at runtime by `--rubric` name: prepended to the prompt for Codex/Grok, appended to the system prompt for Claude. The caller's brief file opens with the section header the rubric expects (`## Review brief`, `## Task brief`, `## Draft plan`, `## Spec`).
 
-`prompts/engines.md` is the judgment doc: engine characteristics, how to choose, when to escalate. Config values are **defaults, not limits** — the orchestrator has standing permission to swap engines or raise effort when output is weak.
+## The escalation ladder
 
-Fable spends its own intelligence at exactly three points: **plan authoring**, **review synthesis**, and the **final gate**. Everything bulk — the plan critique, the build, the review reads — runs in external engine lanes. The writer stays external even when it is Claude (`--engine claude --mode rw`): it preserves the orchestrator's context hygiene and keeps the review independent of the code's author.
+`prompts/engines.md` is the judgment doc, and it makes the config's role — **floor shape, not mandate** — concrete. It carries a cost/intelligence/taste ranking over the reachable models (gpt-5.5 via codex, opus-4.8/sonnet-5 via the claude engine, grok-composer-2.5; fable is the orchestrator itself, never delegated), application rules (intelligence > taste > cost for anything that ships; bulk → cheap; user-facing → taste ≥ 7; fixes → fast and cheap; standing permission to escalate), and the sizing ladder:
 
-**Cross-engine review is the default posture** — review with a different engine than the one that wrote. A different model family gives genuinely independent scrutiny.
+| scale | plan | build | review |
+| --- | --- | --- | --- |
+| trivial | none — decide and go | direct edit or one cheap rw lane | read the diff yourself |
+| small | in-context, no critic | 1 worker | 1 correctness lane |
+| default | in-context + 1 critic | 1 worker | 3 dims × 1 engine |
+| large / risky | spec doc + 1–2 critics | parallel file-disjoint workers | 3 dims × 2 engines, xhigh |
+
+The orchestrator **declares its chosen sizing in one line before launching** — the user's veto point. Plan artifacts follow the same logic: a plan is a chat message by default; a spec doc in `.project/builds/` only when the effort is multi-session or another agent must consume it.
+
+Fable spends its own intelligence at exactly three points: **plan authoring**, **review synthesis**, and the **final gate**. The writer stays external even when it is Claude (`--engine claude --mode rw`) — it preserves the orchestrator's context hygiene and keeps the review independent of the code's author. **Cross-engine review is the default posture.**
 
 ## The three atoms
 
-Every behavior is a composition of three stage atoms, each a lane pattern with a compact return contract:
-
-| Atom | What it does | Who acts | Returns |
+| Atom | Skill | Who acts | Returns |
 |---|---|---|---|
-| `plan` | produce an implementation plan | Fable authors it; read-only lanes advise — a red-team critic in `dev`, parallel consultants in `goal-spec` | draft + critique (dev) / Planning Briefs (goal-spec) → final plan doc |
-| `build` | execute a plan against the repo | exactly one rw writer lane | Buildout report (summaries + verification, never code bodies) |
-| `review` | independently review the work | parallel read-only lanes; Fable synthesizes and triages | Findings → fixes (in `dev`) or a repair plan (standalone) |
+| `plan` | `/plx:plan` | Fable authors; 0–2 read-only critic lanes red-team | final plan (chat or spec doc) |
+| `build` | `/plx:build` | 1–N writer lanes, one per disjoint path set | Buildout report (summaries, never code bodies) |
+| `review` | `/plx:review` | 1–6 read-only lanes; Fable synthesizes; cheap fix lanes apply the confirmed findings | findings → fixes applied (+ batched user question for uncertain calls) |
 
-## The dev pipeline — 7 steps
+`/plx:dev` strings the three together plus a final gate (Fable reads the diff once, fresh eyes, fixes nits, re-verifies). `goal-spec` is separate: interview → lock → planner lane → red-team → one self-contained `/goal`-ready spec.
 
-`dev` is the flagship composition: **plan → build → review + fix → final gate → docs**.
+## The review-fix loop
 
-1. **Fable authors the plan.** Reads the repo (scoped to what the design needs), settles the approach, writes the plan doc itself to the shared spec template — outcome-first: intent, success criteria, invariants, suggested path, validation.
-2. **One cross-engine red-team critic.** A read-only lane (`--rubric plan-critic`, Codex by default) stress-tests the draft against the repo — wrong facts, spec drift, missed work, a materially simpler design, unhandled edges, risk — and returns findings, never a rewrite.
-3. **Fable folds the critique.** Adopts or rebuts every finding with a reason, verifying load-bearing claims itself, then finalizes. Escape hatch: a fundamental objection → re-draft.
-4. **One writer lane.** Fable writes the final plan to a `## Spec` brief and launches one rw lane (`--rubric worker`, Claude by default). The worker implements, self-verifies with the repo's own checks, and returns a Buildout report — files touched, per-file summaries, decisions, verification. Summaries only, never code bodies.
-5. **Fable runs the review round.** It writes one neutral review brief from the Buildout report, launches three read-only lanes in parallel (`reviewer-correctness`, `reviewer-cleanup`, `reviewer-structural`) on engines that didn't write the code, then synthesizes as the integrating reviewer: dedup across lanes, correctness governs, verify each material finding against the cited code, kill false positives. Small fixes it applies itself; a large or risky fix set goes back through the writer engine as **one** rw fix turn. One round, hard cap.
-6. **Fable gates the work.** Reads the diff once, with fresh eyes — do the fixes hold, do the residuals matter, was anything missed? Fixes nits inline, re-runs verification. Escape hatch: structural rework → a fresh spec back through step 4.
-7. **Docs + commit.** Fable updates `.project/` documentation itself, then a **local commit only** — never a push, PR, or publish.
-
-## Pipelines
-
-| Pipeline (skill) | Config key | Purpose |
-|---|---|---|
-| `dev` | `dev` | build a change end to end |
-| `goal-spec` | `goal-spec` | interview-locked goal planning, no edits |
-| `review` | `review` | audit / debug / critique without edits |
-
-Explicit `/plx:*` commands run one of these three (see [`COMMANDS.md`](COMMANDS.md)). The single-engine passthroughs `/plx:codex` and `/plx:grok` run a task through one rw lane with no pipeline.
+Review lanes are read-only and report in the Finding Schema. Fable synthesizes — dedup across lanes, correctness governs, verify-before-trusting, false-positive filter — then triages survivors into **auto-fix** (the default bucket: confirmed finding, unambiguous remedy), **ask-first** (behavior/scope changes the user may not want — one batched question), and **won't-fix** (with reasons). Auto-fix items go to targeted fix lanes on a cheap fast engine (codex at medium effort, or grok) with a `## Spec` brief listing the findings verbatim: scoped fixes don't need taste. One fix round, hard cap; then verification with the repo's own toolchain.
 
 ## Running lanes
 
-- **Always background Bash.** Engine turns can run 10–40+ minutes; foreground Bash caps at 10. Lanes launch with `run_in_background` and `--out`/`--log` files; independent lanes fire in one message so they run concurrently; the harness notifies on completion.
+- **Always background Bash.** Engine turns can run 10–40+ minutes; foreground Bash caps at 10. Lanes launch with `run_in_background` and `--out`/`--log` files; independent lanes fire in one message; the harness notifies on completion.
 - Grok calls need the Claude Bash sandbox disabled for that call (grok needs network/keychain access); grok's own kernel sandbox still confines it.
-- Exit codes are uniform across engines: 0 ok · 1 engine failure · 2 usage error · 3 not signed in.
+- Failure playbook: exit 1 → read the log, retry once or escalate engines; a failed review lane among survivors → proceed and say so; a hung lane → check the log, kill, relaunch. Exit codes uniform: 0 ok · 1 engine failure · 2 usage error · 3 not signed in.
 
 ## Rubrics live in `prompts/`
 
-Any prompt text that is the same every run — the review dimension rubrics, the planner and plan-critic rubrics, the worker contract, the Finding Schema and output templates inside them — lives in `prompts/`, one engine-agnostic file per lane. Skills reference rubrics by bare `--rubric` name only; `plx-engine` resolves the files relative to itself, so skills stay self-contained with no path pointers. The orchestrator's brief carries only what changes per task.
+Any prompt text that is the same every run — the review dimension rubrics, the planner/plan-critic rubrics, the worker contract (which also serves the fix lanes) — lives in `prompts/`, one engine-agnostic file per lane. Skills reference rubrics by bare `--rubric` name only; `plx-engine` resolves the files relative to itself, so skills stay self-contained. The orchestrator's brief carries only what changes per task.
 
 ## Safety model
 
-- Critic, planner, and review lanes are `--mode ro`, always. There is exactly **one writer at a time**: the rw writer lane (or its single fix turn), plus Fable fixing nits at synthesis and the gate — never both simultaneously on the same files.
+- Critic, planner, and review lanes are `--mode ro`, always. Writers — build workers and fix lanes — follow **one writer per disjoint path set**: rw lanes may run in parallel only on non-overlapping files, each brief names the paths it owns, and the orchestrator never edits files a lane owns. The sandboxes are repo-wide; disjointness is brief discipline, so work splits only along genuinely independent seams. Verification runs after all writers land.
 - Safety is pinned inside `plx-engine` per engine, in code:
   - **codex** — `--ignore-user-config --ephemeral`, sandbox `read-only` (ro) / `workspace-write` (rw).
   - **grok** — kernel-enforced sandbox (Seatbelt on macOS, Landlock on Linux): `read-only` (ro) / `workspace` (rw, edits confined to the repo).
-  - **claude** — non-bare `claude -p` with `--setting-sources project`; ro = `--permission-mode dontAsk` + `Read,Grep,Glob` allowlist; rw = `--permission-mode acceptEdits` + scoped tool allowlist. Blocked tool calls abort the run rather than hang.
+  - **claude** — non-bare `claude -p` with `--setting-sources project`; ro = `--permission-mode dontAsk` + `Read,Grep,Glob` allowlist; rw = `--permission-mode acceptEdits` + scoped tool allowlist. Blocked tool calls abort rather than hang.
 - Wrappers never use `danger-full-access`, `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`. Skills never hand-construct raw `codex` / `grok` / `claude -p` commands — `plx-engine` is the only sanctioned path.
-- Neutral context: every review lane gets the same brief, never the caller's analysis or another lane's output.
+- Neutral context: every review lane gets the same brief, never the caller's analysis or another lane's output. Review scope comes from `git status` against the run's starting snapshot — ground truth, not the worker's self-report.
+- **Skills never commit or publish.** Version control follows the target repo's own agent instructions.
 - Parallax does not create `.parallax/` or any repo-local runtime state. Prompts, logs, and engine outputs live in shell temp directories, cleaned up after the run.
-- Every dev run ends with a local commit — never a push, PR, or publish step.
 
 ## Hooks policy
 
-Parallax installs no hooks. Safety comes from: one deterministic wrapper (`plx-engine`) with uniform flags, uniform exit codes, `--help` manuals, and safety pinned in code; read-only modes for every advisory lane; a scoped-write mode for the single writer; and no repo-local runtime state.
+Parallax installs no hooks. Safety comes from: one deterministic wrapper (`plx-engine`) with uniform flags, uniform exit codes, `--help` manuals, and safety pinned in code; read-only modes for every advisory lane; scoped-write modes for the writers; and no repo-local runtime state.

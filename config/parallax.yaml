@@ -1,11 +1,16 @@
 # Parallax engine configuration
 #
 # Binds pipeline ROLES to ENGINES, keyed by pipeline. Each skill names the key it
-# reads (dev -> `dev`, goal-spec -> `goal-spec`, review -> `review`). Each skill's
-# SKILL.md is fully self-contained — it documents its own pipeline steps — and
-# resolves each role to its engine from this file before running. The values below
-# are the shipped defaults: they are defaults, not limits — the orchestrator may
-# swap or add engines per the judgment doc (`plx-engine --print-rubric engines`).
+# reads (plan -> `plan`, build -> `build`, review -> `review`, dev -> `dev`,
+# goal-spec -> `goal-spec`). Each skill's SKILL.md is fully self-contained — it
+# documents its own pipeline steps — and resolves each role to its engine from this
+# file before running.
+#
+# The values below are the shipped DEFAULTS — the floor shape, not a mandate. The
+# orchestrator sizes every run per the judgment doc (`plx-engine --print-rubric
+# engines`): it may drop lanes for small tasks, add engines/lanes for large or risky
+# ones, and swap engines when the output doesn't meet the bar. It declares the
+# chosen sizing before launching.
 #
 # Every role runs as one headless `plx-engine` call made by the orchestrator —
 # no subagents. The role determines the rubric and mode:
@@ -14,12 +19,14 @@
 #   plan (goal-spec)    ro    planner
 #   plan-critic         ro    plan-critic
 #   code                rw    worker
+#   fix                 rw    worker   (targeted post-review fixes — cheap/fast engine)
 #   review-correctness  ro    reviewer-correctness
 #   review-cleanup      ro    reviewer-cleanup
 #   review-structural   ro    reviewer-structural
 #
 # Rules:
-#   - `code` takes exactly ONE engine — one writer at a time, always.
+#   - `code` and `fix` take ONE engine each. Writers may run in parallel only on
+#     disjoint path sets — one writer per path, always.
 #   - plan / plan-critic / review-* roles take LISTS and are always read-only
 #     (`--mode ro`), whatever engine fills them.
 #   - Plan authoring, review synthesis, and the final gate are always the
@@ -28,18 +35,26 @@
 #     didn't write the code.
 
 pipelines:
+  plan:
+    plan-critic: [codex]
+
+  build:
+    code: claude
+
+  review:
+    review-correctness: [codex]
+    review-cleanup: [codex]
+    review-structural: [codex]
+    fix: codex
+
   dev:
     plan-critic: [codex]
     code: claude
     review-correctness: [codex]
     review-cleanup: [codex]
     review-structural: [codex]
+    fix: codex
 
   goal-spec:
     plan: [claude]
     plan-critic: [codex]
-
-  review:
-    review-correctness: [codex]
-    review-cleanup: [codex]
-    review-structural: [codex]

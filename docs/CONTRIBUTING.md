@@ -1,14 +1,14 @@
 # Contributing
 
-Parallax is a Claude Code plugin: three fully self-contained pipeline skills (`dev`, `goal-spec`, `review`), two single-engine passthroughs (`codex`, `grok`), a setup skill (`init`), lane rubrics in `prompts/`, and a deterministic engine API in `bin/`. There are no subagents — the orchestrator drives every engine headless through `plx-engine`.
+Parallax is a Claude Code plugin: five fully self-contained pipeline skills (`plan`, `build`, `review`, `dev`, `goal-spec`), two single-engine passthroughs (`codex`, `grok`), a setup skill (`init`), lane rubrics in `prompts/`, and a deterministic engine API in `bin/`. There are no subagents — the orchestrator drives every engine headless through `plx-engine`.
 
 ## Project layout
 
 ```text
 .claude-plugin/   plugin.json + marketplace.json
-skills/           one dir per command — each SKILL.md is fully self-contained (dev, goal-spec, review, codex, grok, init)
+skills/           one dir per command — each SKILL.md is fully self-contained (plan, build, review, dev, goal-spec, codex, grok, init)
 prompts/          lane rubrics (reviewer-correctness/cleanup/structural, planner, plan-critic, worker) + engines.md judgment doc
-config/           default engine bindings (parallax.yaml — keys: dev, goal-spec, review)
+config/           default engine bindings (parallax.yaml — keys: plan, build, review, dev, goal-spec)
 bin/              engine API on PATH (plx-engine, plx-preflight, plx-config, plx-skill, plx-link-claude)
 docs/             human-facing docs
 tests/            deterministic harness (run.sh, check-plugin.sh, explain-skill.sh, smoke-scripts.sh, fixture/) + behavioral smoke/ suite

@@ -1,0 +1,6 @@
+# /plx:build — one writer lane implements a bounded raw task (no review round)
+NEEDS: claude
+FIXTURE: calc
+TASK: Add an empty-list guard to average() in calc.py so average([]) returns 0.0 instead of raising ZeroDivisionError. Edit calc.py only; keep it minimal.
+EXPECT_DIFF: average
+EXPECT_CHECK: python3 -c "from calc import average; assert average([])==0.0 and average([1,2,3])==2"

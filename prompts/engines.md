@@ -2,7 +2,8 @@
 
 Parallax gives the orchestrator **tools, not a script**: three coding engines, each
 drivable headless through one wrapper, plus a set of lane rubrics. You decide which
-engines to use for which work; this doc carries the judgment.
+engines to use for which work, and how much machinery a task deserves; this doc carries
+the judgment.
 
 ## The toolbox
 
@@ -27,7 +28,69 @@ open with the section header the rubric expects:
 | `reviewer-structural` | maintainability review        | `## Review brief`   |
 | `planner`             | architecture consulting       | `## Task brief`     |
 | `plan-critic`         | plan red-team                 | `## Draft plan`     |
-| `worker`              | implementation (rw mode)      | `## Spec`           |
+| `worker`              | implementation / fixes (rw)   | `## Spec`           |
+
+## Models (rankings — higher is better)
+
+Cost reflects what a call actually costs to run, not list price. Intelligence is how
+hard a problem you can hand the model unsupervised. Taste covers UI/UX, code quality,
+API design, and copy. *(Scores are shipped defaults — tune them to your own limits.)*
+
+| model              | how to call                                  | cost | intelligence | taste |
+| ------------------ | -------------------------------------------- | ---- | ------------ | ----- |
+| gpt-5.5            | `--engine codex` (default model)             | 9    | 8            | 5     |
+| grok-composer-2.5  | `--engine grok` (no model/effort knobs)      | 9    | 5            | 4     |
+| sonnet-5           | `--engine claude --model sonnet`             | 5    | 5            | 7     |
+| opus-4.8           | `--engine claude` (default model)            | 4    | 7            | 8     |
+| fable-5            | you — the orchestrator; never delegated      | 2    | 9            | 9     |
+
+How to apply:
+
+- **Defaults, not limits.** You have standing permission to override any binding in
+  `config/parallax.yaml`: if a cheaper model's output doesn't meet the bar, rerun the
+  work on a smarter engine or higher effort without asking. Judge the output, not the
+  price tag — escalating costs less than shipping mediocre work.
+- **When axes conflict for anything that ships: intelligence > taste > cost.** Cost is
+  a tie-breaker only.
+- **Bulk / mechanical work** (clear-spec implementation, migrations, data analysis) →
+  gpt-5.5 or grok — effectively free.
+- **Anything user-facing** (UI, copy, API design) needs **taste ≥ 7** — opus, or keep
+  the work with you.
+- **Reviews** → a smart model, plus optionally a cheap extra perspective. Always prefer
+  a *different* engine than the one that wrote the code — independence catches what
+  self-review can't.
+- **Targeted fixes from a review** → fast and cheap (grok composer, or codex at
+  `--effort medium`) — small scoped fixes don't need taste.
+- **Effort**: `high` is the default for reviews and builds; reserve `xhigh` for
+  cross-file contract changes, concurrency, data-integrity or money paths, and wide
+  refactors. `medium` is fine for mechanical fixes and trivial questions.
+- **Fable is never delegated.** You are fable — spend yourself where judgment is the
+  product (plan authoring, review synthesis, the final gate), not on bulk reads or
+  mechanical edits.
+
+## Sizing the run (the escalation ladder)
+
+Config bindings are the **floor shape**, not the ceiling or the mandate. Before
+launching lanes, size the task and **declare the shape you chose in one line** (e.g.
+`Sizing: 1 critic (codex xhigh) · 1 worker (claude) · review 3×1 (codex, high)`) — it
+gives the user a veto point before tokens burn. Scale down as readily as up.
+
+| scale | plan | build | review |
+| --- | --- | --- | --- |
+| **trivial** — one file, obvious change | none — decide and go | edit it yourself, or one rw lane | read the diff yourself |
+| **small** — clear task, low blast radius | plan in-context, no critic | 1 worker | 1 lane (correctness only) |
+| **default** | plan in-context + 1 critic | 1 worker | 3 dims × 1 engine |
+| **large / risky** | spec doc in the build thread + 1–2 critics | parallel file-disjoint workers | 3 dims × 2 engines, xhigh |
+
+Scale-up signals: cross-file contracts, concurrency, data-integrity or money paths,
+wide refactors, high ambiguity, code you can't easily verify. Scale-down signals: one
+file, an obvious mechanism, strong existing tests, a change you can read in one sitting.
+The smallest rung is **no machinery at all** — for a trivial ask, doing the work
+directly beats orchestrating it.
+
+Plan artifacts follow the same logic: a plan is a chat message by default; write it to
+`.project/builds/<thread>/` only when the effort is multi-session or another agent must
+consume it later. A spec doc for a one-shot task is overhead, not rigor.
 
 ## Running lanes
 
@@ -38,30 +101,22 @@ open with the section header the rubric expects:
   content into your own window.
 - **Grok calls need the Bash sandbox disabled** for the call
   (`dangerouslyDisableSandbox: true`) — grok needs network/keychain access the sandbox
-  blocks; grok's own kernel sandbox still confines it.
+  blocks; grok's own kernel sandbox still confines it. Grok takes no `--model`/`--effort`.
+- **If a lane fails (exit 1)**: read its log, then retry once — same engine, or a
+  smarter one if the failure looks like capability. If a review lane fails and others
+  succeeded, proceed with the survivors and say so. **If a lane hangs** well past its
+  expected runtime, check the log, kill it, and relaunch rather than waiting forever.
 - Exit codes are uniform: 0 ok · 1 engine failure · 2 usage error · 3 not signed in
   (tell the user to log in to that engine).
 
-## Engine characteristics
+## Writers
 
-| engine | via                | strengths                                             | notes |
-| ------ | ------------------ | ----------------------------------------------------- | ----- |
-| codex  | `codex exec`       | strong correctness reviewer; cheap bulk implementation | effort `low`–`xhigh`; no session resume (`--ephemeral`) |
-| grok   | `grok` headless    | fast, cheap second perspective                         | kernel-sandboxed; no model/effort knobs |
-| claude | `claude -p`        | deepest reasoning and taste; best for hard design, ambiguous specs, user-facing quality | effort via `--effort`; slower startup (loads project context) |
-
-## How to choose (defaults, not limits)
-
-- **Judge the output, not the price tag.** These are defaults; you have standing
-  permission to rerun weak output on a smarter engine or higher effort without asking.
-  Escalating costs less than shipping mediocre work.
-- **Cross-engine review.** Review work with a *different* engine than the one that wrote
-  it — independence catches what self-review can't. Add a second reviewer engine when
-  the change is high-risk (contracts, concurrency, data integrity, money paths).
-- **Bulk or mechanical work** (clear-spec implementation, migrations, data analysis) goes
-  to the cheaper engines; **anything that ships user-facing quality** (API design, UI,
-  copy, hard architecture) goes to the engine with the most taste, or stays with you.
-- **Effort**: `high` is the default for reviews and builds; reserve `xhigh` for
-  cross-file contract changes, concurrency, data-integrity or wide-refactor risk.
-- **One writer at a time, always.** Any number of parallel read-only lanes; exactly one
-  rw lane, and never rw while you are editing the same files yourself.
+- **One writer per disjoint path set.** Any number of parallel read-only lanes; rw lanes
+  may run in parallel **only** when their file sets don't overlap — each writer's brief
+  must name the paths it owns and state that other paths are being edited in parallel.
+  Never edit a file yourself while a lane owns it. When in doubt, one writer.
+- The sandboxes are repo-wide — path disjointness is brief discipline, not enforced.
+  Split work only along genuinely independent seams; shared files (barrel exports,
+  lockfiles, shared configs) mean the work is one package.
+- **Verification runs after all writers land** — parallel test runs against half-built
+  code in a shared worktree are noise.

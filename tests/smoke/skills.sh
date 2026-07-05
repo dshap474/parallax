@@ -105,7 +105,7 @@ run_skill() {
 if [ -n "$ONLY" ]; then
   if [ "$ONLY" = "goal-spec" ]; then goal_spec_note; else run_skill "$ONLY"; fi
 else
-  for s in dev review codex init; do run_skill "$s"; done
+  for s in plan build review dev codex init; do run_skill "$s"; done
   if [ "$WITH_GROK" -eq 1 ]; then run_skill grok; else _head "/plx:grok"; _skip "skipped (pass --with-grok)"; smoke_summary_row "$RUNDIR" L2 grok SKIP "no --with-grok"; fi
   goal_spec_note
 fi

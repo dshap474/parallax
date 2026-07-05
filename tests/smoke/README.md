@@ -14,7 +14,7 @@ just that it's wired correctly.
 | Layer | What it exercises | How | Cost |
 |---|---|---|---|
 | **L1 — engines** | `bin/plx-engine` actually drives each CLI (codex, claude; grok opt-in); `--mode ro` stays read-only and `--rubric` injection lands (the reviewer finds the seeded bug); `--mode rw` edits land in-repo and are correct | pure shell drives the wrapper | tiny (2 calls/engine) |
-| **L2 — skills** | each `/plx:*` skill runs start→finish (plan → red-team → build → review lanes → gate → docs → commit, etc.) | headless `claude --plugin-dir <this repo>` per skill | real (a full pipeline per skill) |
+| **L2 — skills** | each `/plx:*` skill runs start→finish (plan → red-team → build → review lanes → fixes → gate, etc.) | headless `claude --plugin-dir <this repo>` per skill | real (a full pipeline per skill) |
 
 L2 loads **this working copy** via `--plugin-dir`, so it tests uncommitted changes — not
 the installed cache. Skills launch their engine lanes as background Bash inside that
@@ -41,8 +41,10 @@ engine turns) — run it from a terminal, or via background Bash from an agent s
 
 | Skill | Tiny task | Passes when |
 |---|---|---|
+| `plan` | plan a `median()` addition | exit 0 · **no edits** · the delivered plan mentions `median` |
+| `build` | guard `average([])` (raw bounded task) | exit 0 · calc.py edited · `average([]) == 0.0` |
 | `dev` | add `median()` to calc.py + a test | exit 0 · diff has `def median` · functional check green · transcript shows a review round |
-| `review` | review the buggy calc.py | exit 0 · **no edits** · a finding names the empty-list / `ZeroDivisionError` bug |
+| `review` | review the buggy calc.py | exit 0 · a finding names the empty-list / `ZeroDivisionError` bug · **the fix is applied** (`average([]) == 0.0`) |
 | `codex` | guard `average([])` | exit 0 · calc.py edited · `average([]) == 0.0` |
 | `grok` | same (with `--with-grok`) | same |
 | `init` | run in a bare repo | exit 0 · `AGENTS.md` created · `CLAUDE.md` symlink |
@@ -85,7 +87,7 @@ automated run. To smoke it by hand:
 
 ## Fixtures
 
-- `tests/fixture/` (shared) — `calc.py` with the seeded empty-list bug; used by dev/review/codex/grok and the L1 engine lanes.
+- `tests/fixture/` (shared) — `calc.py` with the seeded empty-list bug; used by plan/build/dev/review/codex/grok and the L1 engine lanes.
 - `tests/smoke/fixtures/bare/` — a 1-file repo with no `AGENTS.md`; used by init.
 
 Each is copied to a fresh `mktemp` + `git init` per run; the templates are never edited.

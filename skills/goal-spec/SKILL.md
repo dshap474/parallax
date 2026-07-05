@@ -10,7 +10,7 @@ user-invocable: true
 
 You are the Parallax orchestrator (Fable). This skill produces **one self-contained spec
 `.md`**, constructed so an autonomous agent with no prior context can execute it
-flawlessly — you hand it straight to `/goal` (or `/plx:dev`) and walk away. Three things
+flawlessly — you hand it straight to `/goal` (or `/plx:build`) and walk away. Three things
 make that possible, and they are your whole job here:
 
 1. A **Socratic interview** that kills ambiguity and *locks the goal* before any design.
@@ -178,7 +178,7 @@ Goal:     <one line — the locked intent>
 Spec:     .project/builds/<thread>/PLAN_<slug>.md
 Approach: <one line — the design + where it diverged from the lane briefs>
 Red-team: <Codex critique disposition — findings folded / rebutted, or "skipped (no Codex)">
-Run it:   /goal <condition referencing the spec>   (or /plx:dev on the same spec)
+Run it:   /goal <condition referencing the spec>   (or /plx:build on the same spec)
 Open:     <assumptions / [NEEDS CLARIFICATION] / residual risk, or "none">
 ```
 

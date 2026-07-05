@@ -1,6 +1,7 @@
-# /plx:review — standalone, read-only: must catch the seeded empty-list bug, must change nothing
+# /plx:review — must catch the seeded empty-list bug AND auto-fix it (fix lanes are the default posture)
 NEEDS: codex
 FIXTURE: calc
 TASK: review calc.py for correctness bugs
-EXPECT_EMPTY_DIFF: true
+EXPECT_DIFF: average
+EXPECT_CHECK: python3 -c "from calc import average; assert average([])==0.0 and average([1,2,3])==2"
 EXPECT_OUTPUT: zerodivision|empty|divide by zero|len\(numbers\)

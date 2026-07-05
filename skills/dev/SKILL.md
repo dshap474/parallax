@@ -62,11 +62,14 @@ plx-engine --engine <e> --mode <ro|rw> --repo <repo> --prompt-file <brief> \
 
 ### 1. Plan
 
-Clarify first only if a material ambiguity would change the plan (≤3 sharp questions).
+Clarify first only if a material ambiguity would change the plan (≤3 sharp questions;
+for a large/risky effort, a short `AskUserQuestion` interview into the hard parts).
 Then **author the plan yourself** — read the repo scoped to what the design needs and
 settle the design, outcome-first. In-context plan by default; a spec doc in the build
 thread (`plx-skill --ref plan/spec-template` → `.project/builds/YYYY-MM-DD_<thread>/`)
-only for multi-session efforts.
+only for multi-session efforts. **The plan ends with a `Done means:` line** — the
+concrete command(s)/observable(s) that prove the work; the worker self-verifies against
+it and the gate re-runs it.
 
 Red-team it if sized in: `<tmp>/critic-brief.md` = `## Draft plan` + the plan verbatim;
 one ro lane per critic engine, `--rubric plan-critic`. Fold the critique — adopt or
@@ -82,7 +85,9 @@ independent seams (each brief names the paths it owns and warns others are paral
 when in doubt, one writer. Never edit the same files yourself while lanes run.
 
 Workers self-verify; with parallel packages, run the repo's checks once yourself after
-all writers land.
+all writers land. **While the writer builds, don't idle** — the lane's wall-clock is
+free orchestrator time: draft the stage-3 review brief (all but the files-touched line)
+and line up the verification commands.
 
 ### 3. Review + fix
 

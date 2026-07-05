@@ -20,6 +20,10 @@ Only the two manifests belong under `.claude-plugin/`. Do not put `skills/` or h
 
 Each `skills/<name>/SKILL.md` carries its **entire** pipeline inline — ordered steps, lane briefs, engine invocations, neutral-context rule. No path pointers (`prompts/`, `lib/`, `scripts/`), no `${CLAUDE_PLUGIN_ROOT}`, no `!`-command injection. The only external inputs a skill has arrive through `bin/` tools invoked by bare name: `config/parallax.yaml` bindings via `plx-config`, shared reference templates via `plx-skill --ref` (e.g. `plan/spec-template`, `init/AGENTS.template`), and rubrics via `plx-engine --rubric <name>`.
 
+## Design rule: prune before you add
+
+Skills and rubrics are advisory prose read by top-tier models — over-prescription degrades output more often than under-prescription does. When a skill misbehaves, default to deleting or sharpening an instruction, not adding another; a brief principle beats an enumerated list of cases. For each line ask: *would removing this cause mistakes?* If not, cut it.
+
 ## Design rule: rubrics live in `prompts/`
 
 Any prompt text that is the same every run — the lane rubrics, the Finding Schema, output templates — lives in `prompts/`, one deduped engine-agnostic file per lane. Skills reference a rubric by bare `--rubric` name only; `plx-engine` resolves `prompts/` relative to itself and injects the text (prepended to the prompt for codex/grok, `--append-system-prompt-file` for claude). Never paste rubric text into a brief, and never point a skill at a `prompts/` path. The brief file must open with the section header the rubric expects (`## Review brief`, `## Task brief`, `## Draft plan`, `## Spec`).

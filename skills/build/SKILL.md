@@ -26,8 +26,13 @@ The build input, in order of precedence:
 2. **A plan already in this conversation** (from `/plx:plan` or discussion) — use it
    verbatim; don't re-plan.
 3. **A raw task** — no plan exists. For a clear, bounded task, write a brief spec
-   inline yourself (intent, success criteria, constraints, validation) and proceed; for
-   anything ambiguous or wide, tell the user to run `/plx:plan` first and stop.
+   inline yourself (intent, success criteria, constraints) and proceed; for anything
+   ambiguous or wide, tell the user to run `/plx:plan` first and stop.
+
+Whatever the source, the spec must end with a **`Done means:` line** — the concrete
+command(s) or observable(s) that prove the work. If the plan lacks one, add it yourself
+before briefing the lane: it is what the worker self-verifies against, and what you
+re-run at integration.
 
 ## Bootstrap
 
@@ -77,6 +82,8 @@ claude, high) — packages: api/, cli/`). Run `plx-preflight --repo <repo>
    - Exit codes: 0 ok · 1 engine failure (read the log; retry once, or escalate to a
      smarter engine per the judgment doc) · 2 your usage error · 3 not signed in → tell
      the user and stop.
+   - **While lanes run, don't idle** — prepare the integration verification (which repo
+     commands, what pass signals) so step 3 starts the moment the reports land.
 
 3. **Read the Buildout report(s)** from the out-files — summaries only; don't pull code
    bodies into your window. Each worker self-verifies; with parallel packages, run the

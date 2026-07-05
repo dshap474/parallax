@@ -42,7 +42,10 @@ for each engine you'll use.
 1. **Clarify — only if it changes the plan.** If a material ambiguity would change what
    gets built — unclear scope, an unstated decision between real alternatives, a missing
    constraint — ask the user up to ~3 sharp questions and fold the answers in. Otherwise
-   skip; do not manufacture questions.
+   skip; do not manufacture questions. **On the large/risky rung, interview instead**: a
+   short `AskUserQuestion` round into the hard parts — edge cases, tradeoffs, decisions
+   the user hasn't stated — until the goal stops moving. A spec doc built on an
+   unexamined goal is rigor wasted.
 
 2. **Author the plan yourself.** Read the repo scoped to what the design needs (the
    files the task touches, their callers/callees, existing tests, project guidance) and
@@ -54,6 +57,11 @@ for each engine you'll use.
      (`plx-skill --ref plan/spec-template`) and write it to
      `.project/builds/YYYY-MM-DD_<thread>/PLAN_<slug>.md` per the repo's `AGENTS.md`
      Runtime Rules. A spec doc for a one-shot task is overhead, not rigor.
+
+   **Every plan — whatever its shape — ends with a `Done means:` line**: the concrete
+   command(s) or observable(s) that prove the work (test invocation + pass signal, build
+   exit, a behavior to demonstrate). This is what the build worker self-verifies against;
+   a plan whose completion can't be checked isn't finished.
 
 3. **Red-team it (if sized in).** Write `<tmp>/critic-brief.md` — a `## Draft plan`
    header, then the plan verbatim. Launch one lane per critic engine, in parallel,

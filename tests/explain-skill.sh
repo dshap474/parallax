@@ -5,7 +5,7 @@
 #
 # Usage:
 #   tests/explain-skill.sh              # list available skills
-#   tests/explain-skill.sh team-dev     # explain one skill
+#   tests/explain-skill.sh dev          # explain one skill
 set -uo pipefail
 PLX_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 YAML="$PLX_ROOT/config/parallax.yaml"

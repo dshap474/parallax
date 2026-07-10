@@ -9,7 +9,7 @@ usage() {
 plx-skill — print a Parallax pipeline skill file
 
 Usage:
-  plx-skill <name>             print skills/<name>/SKILL.md (e.g. plx-skill team-dev)
+  plx-skill <name>             print skills/<name>/SKILL.md (e.g. plx-skill dev)
   plx-skill --ref <skill>/<n>  print skills/<skill>/references/<n>.md (e.g. plan/spec-template)
   plx-skill --list             list available skill names
 

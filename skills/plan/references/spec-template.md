@@ -112,12 +112,11 @@ The only hard rules. Everything else is judgment within the worker instruction.
 
 ---
 
-## Delegation
+## Execution
 
-Work directly by default. Use subagents only when independent workstreams can
-genuinely run in parallel, a risky or broad change needs fresh-context
-verification, or parallel file discovery materially helps in a large codebase. Do
-not delegate merely to create process.
+Work directly by default. The Parallax orchestrator may split genuinely independent,
+file-disjoint work into headless `plx-engine` lanes before briefing each worker. A worker
+executing this spec must work without subagents or recursive delegation.
 
 ---
 

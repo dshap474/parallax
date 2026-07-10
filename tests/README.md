@@ -10,7 +10,7 @@ exercises the shell scripts in throwaway repos.
 | File | What it does |
 |---|---|
 | `run.sh` | Runs the whole deterministic suite (static checks + script smoke) and prints `ALL GREEN` / failures. |
-| `check-plugin.sh` | **Static integrity** — no `${CLAUDE_PLUGIN_ROOT}` in skills (bin/ tools are on PATH), every `plx-*` tool a skill names exists in `bin/` and is executable, config keys a skill names exist in `parallax.yaml`, no leftover `plx:<engine>-<persona>` subagent references, every `--rubric` name resolves to `prompts/<name>.md` and all lane rubrics are present, manifests are valid JSON, skills are self-contained. No model calls. |
+| `check-plugin.sh` | **Static integrity** — release versions agree across manifests/README/spec; no `${CLAUDE_PLUGIN_ROOT}` in skills (bin/ tools are on PATH); every named `plx-*` tool, config key, and rubric exists; no retired personas or affirmative subagent instructions remain; manifests are valid JSON; skills are self-contained. No model calls. |
 | `explain-skill.sh` | **Dry run** — prints what a skill would do: its config key, resolved engine bindings, preflight requirement, its inline sections, and the verbatim `## Pipeline` steps. Nothing executes. |
 | `smoke-scripts.sh` | Runs the real shell scripts (`preflight`) against an **isolated tmp repo** built from `fixture/`. Model-free unless `--with-engines`. |
 | `fixture/` | A tiny throwaway target repo (a `calc.average()` with an empty-list bug). Copied to `mktemp` per run — never edited in place. |

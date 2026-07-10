@@ -1,6 +1,6 @@
 # Parallax — Package Specification
 
-Status: v0.3.0
+Status: v0.4.0
 
 ## Purpose
 
@@ -54,7 +54,7 @@ The orchestrator is Claude (Fable). There are **no subagents**: the orchestrator
 ```json
 {
   "name": "plx",
-  "version": "0.3.0"
+  "version": "0.4.0"
 }
 ```
 
@@ -161,6 +161,7 @@ Raw engine CLIs appear only inside `bin/plx-engine` — never in skills or ad-ho
 
 ```bash
 ! grep -rE 'plx:(claude|codex|grok)-[a-z-]+' skills/ config/
+! grep -rEi 'use subagents|spawn (a |an )?subagent' skills/
 test ! -d agents
 ```
 

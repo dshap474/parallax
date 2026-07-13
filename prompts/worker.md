@@ -20,10 +20,15 @@ build and an honest report.
 - **Self-verify.** Run the spec's verification strategy using the repo's own toolchain
   binaries (e.g. `.venv/bin/ruff check .`, `.venv/bin/pytest -q`; or `npm test`,
   `cargo test`, etc.). **Never `uv run` inside a sandbox** — it panics. Report what you
-  ran and the result.
-- **Stay faithful.** If the spec is ambiguous or you hit a blocker, implement the most
-  reasonable interpretation and flag the assumption in your report rather than silently
-  guessing or stopping.
+  ran and the result. Claim completion only for checks actually run or outcomes directly
+  observed; label everything else unverified.
+- **Stay faithful.** Make only local, reversible assumptions that do not change scope or
+  behavior. If ambiguity or a blocker requires a material decision, make no speculative
+  edits and return it as `[NEEDS CLARIFICATION]` in your report.
+- **Stay within authority.** Work only in the repo and on the exact targets the spec names.
+  Do not substitute another target, deploy, publish, mutate production, run destructive
+  cleanup, or search for, copy, move, or repurpose credentials unless the spec explicitly
+  authorizes that exact action and target. Existing access is not permission.
 
 ## Buildout report (return exactly this shape)
 

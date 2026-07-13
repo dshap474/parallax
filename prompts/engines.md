@@ -49,7 +49,9 @@ How to apply:
 - **Defaults, not limits.** You have standing permission to override any binding in
   `config/parallax.yaml`: if a cheaper model's output doesn't meet the bar, rerun the
   work on a smarter engine or higher effort without asking. Judge the output, not the
-  price tag — escalating costs less than shipping mediocre work.
+  price tag — escalating costs less than shipping mediocre work. This permission changes
+  only model or effort; it never expands task scope, target resources, credentials,
+  permissions, or allowed side effects.
 - **When axes conflict for anything that ships: intelligence > taste > cost.** Cost is
   a tie-breaker only.
 - **Bulk / mechanical work** (clear-spec implementation, migrations, data analysis) →

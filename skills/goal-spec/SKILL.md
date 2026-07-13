@@ -9,8 +9,8 @@ user-invocable: true
 # /plx:goal-spec — interview-locked goal planning
 
 You are the Parallax orchestrator (Fable). This skill produces **one self-contained spec
-`.md`**, constructed so an autonomous agent with no prior context can execute it
-flawlessly — you hand it straight to `/goal` (or `/plx:build`) and walk away. Three things
+`.md`**, constructed so an autonomous agent with no prior context can execute from it —
+you hand it straight to `/goal` (or `/plx:build`) and walk away. Three things
 make that possible, and they are your whole job here:
 
 1. A **Socratic interview** that kills ambiguity and *locks the goal* before any design.
@@ -47,9 +47,9 @@ If Codex is unavailable, skip the red-team and say so in the final output.
 
 ### 1. Socratic interview — lock the goal
 
-Before any planning, interview the user with the **`AskUserQuestion` tool** until the goal
-is airtight — an autonomous `/goal` run cannot ask you questions later, so every hole you
-leave here becomes a way for it to go wrong.
+Before any planning, interview the user with the **`AskUserQuestion` tool** until material
+ambiguities are resolved or the bounded interview ends. An autonomous `/goal` run cannot
+ask questions later, so record any remaining material gap explicitly.
 
 Ask in a funnel — broad to narrow — and **defer every "how" question** (that is the
 planners' job):
@@ -68,12 +68,12 @@ Rules:
   readings), *conflict* (incompatible asks), *completeness* (unspecified behavior),
   *must-allow* scenarios, *must-refuse* scenarios.
 - **Only ask what changes the plan.** If an answer would not change what gets built, don't
-  ask it. If the request is already airtight, say so and skip to the lock summary — do not
-  manufacture questions.
+  ask it. If the request already resolves the material ambiguities, say so and skip to the
+  lock summary — do not manufacture questions.
 - **Accept "I don't know."** Record the gap as an `ASSUMPTION:` (state the default you will
   take) or an Open Question — never silently guess.
-- **Force at least three explicit non-goals.** Ambiguous scope derails more autonomous runs
-  than ambiguous requirements.
+- **Record only material non-goals.** Include exclusions that clarify a real scope
+  boundary; do not manufacture a quota.
 
 Close with a **reflect-back**: one tight paragraph — *Intent, Success Criteria (binary),
 Invariants, Non-goals* — as you now understand the goal.

@@ -185,8 +185,9 @@ Proceed autonomously for local, reversible decisions. Stop and ask only when:
 - the change would require breaking an invariant
 - satisfying the task would require substantial scope expansion
 
-Before ending, check your final paragraph. If it is a plan, a question, or a
-promise about work not yet done, do that work now or state the concrete blocker.
+Before ending, check your final paragraph. If it promises unfinished work, report the
+task as incomplete with the concrete blocker or next user decision. Do not continue solely
+to avoid an incomplete report.
 
 ---
 

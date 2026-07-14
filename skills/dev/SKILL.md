@@ -56,7 +56,8 @@ plx-engine --engine <e> --mode <ro|rw> --repo <repo> --prompt-file <brief> \
 - **Always background Bash** (`run_in_background`) — engine turns can outrun the 10-min
   foreground cap. Fire independent lanes in one message; read out-files when completion
   notifications arrive. Grok lanes: disable the Bash sandbox for the call
-  (`dangerouslyDisableSandbox: true`), no `--effort`/`--model`.
+  (`dangerouslyDisableSandbox: true`); the wrapper fixes `grok-4.5`, defaults effort to
+  `medium`, and accepts explicit `low|medium|high` (never `xhigh`).
 - Lane fails (exit 1) → read the log, retry once or escalate engines; a failed review
   lane among survivors → proceed and say so. Exit 3 → tell the user to log in and stop.
 
@@ -131,7 +132,7 @@ linter-catchable style, generic test wishes, speculative no-path edges, micro-op
 security findings (one-line handoff).
 
 **Fix automatically.** Confirmed findings go to a targeted fix lane on the `fix`
-engine (cheap + fast — codex `--effort medium` or grok): `<tmp>/fix.md` = `## Spec` +
+engine (cheap + fast — codex `--effort medium` or Grok 4.5 low/medium): `<tmp>/fix.md` = `## Spec` +
 the findings verbatim + "fix exactly these; change nothing else." Genuinely uncertain
 items (behavior/scope changes the user may not want) → one batched `AskUserQuestion`,
 run parallel to the fix lane, folded into a second pass. Tiny one-liners you may Edit

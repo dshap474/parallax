@@ -101,7 +101,8 @@ plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/task-brief.m
 ```
 
 Run it in background Bash (`run_in_background`) — planning turns can outrun the 10-min
-foreground cap; grok lanes need the Bash sandbox disabled and take no `--effort`. It
+foreground cap; Grok lanes need the Bash sandbox disabled, are fixed to `grok-4.5`, and
+use `--effort high` in place of the unsupported `xhigh`. It
 studies the repo in its own context and returns a **Planning Brief** (recommendation +
 steelman + repo facts) — the *how*. You do not study the codebase yourself; the lane does.
 

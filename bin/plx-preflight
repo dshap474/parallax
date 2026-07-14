@@ -88,8 +88,8 @@ probe() {
   fi
 
   printf '%s\n' "reply OK" > "$TMP_DIR/prompts/$engine-probe.md"
-  # bash 3.2 + set -u errors on expanding an empty array, so pass the effort
-  # flag (grok doesn't take one) via the ${arr[@]+...} guard idiom.
+  # Keep non-Grok probes cheap. Grok omits the flag so preflight validates its
+  # pinned grok-4.5 / medium default. Bash 3.2 + set -u needs the guard idiom.
   local -a extra
   [[ "$engine" != "grok" ]] && extra=(--effort low)
   if "$BIN_DIR/plx-engine" --engine "$engine" --mode ro \

@@ -28,7 +28,7 @@ Lane rubrics ship in `prompts/` (one deduped, engine-agnostic file per lane) and
 
 ## The escalation ladder
 
-`prompts/engines.md` is the judgment doc, and it makes the config's role — **floor shape, not mandate** — concrete. It carries a cost/intelligence/taste ranking over the general-purpose models (gpt-5.5 via codex, opus-4.8/sonnet-5 via the claude engine, grok-composer-2.5; fable is the orchestrator itself, never delegated), application rules (intelligence > taste > cost for anything that ships; bulk → cheap; user-facing → taste ≥ 7; fixes → fast and cheap; standing permission to escalate), and the sizing ladder:
+`prompts/engines.md` is the judgment doc, and it makes the config's role — **floor shape, not mandate** — concrete. It carries a cost/intelligence/taste ranking over the general-purpose models (gpt-5.5 via codex, opus-4.8/sonnet-5 via the claude engine, Grok 4.5; fable is the orchestrator itself, never delegated), application rules (intelligence > taste > cost for anything that ships; bulk → cheap; user-facing → taste ≥ 7; fixes → fast and cheap; standing permission to escalate), and the sizing ladder:
 
 | scale | plan | build | review |
 | --- | --- | --- | --- |
@@ -61,12 +61,12 @@ Fable spends its own intelligence at exactly three points: **plan authoring**, *
 
 ## The review-fix loop
 
-Review lanes are read-only and report in the Finding Schema. Fable synthesizes — dedup across lanes, correctness governs, verify-before-trusting, false-positive filter — then triages survivors into **auto-fix** (the default bucket: confirmed finding, unambiguous remedy), **ask-first** (behavior/scope changes the user may not want — one batched question), and **won't-fix** (with reasons). Auto-fix items go to targeted fix lanes on a cheap fast engine (codex at medium effort, or grok) with a `## Spec` brief listing the findings verbatim: scoped fixes don't need taste. One fix round, hard cap; then verification with the repo's own toolchain.
+Review lanes are read-only and report in the Finding Schema. Fable synthesizes — dedup across lanes, correctness governs, verify-before-trusting, false-positive filter — then triages survivors into **auto-fix** (the default bucket: confirmed finding, unambiguous remedy), **ask-first** (behavior/scope changes the user may not want — one batched question), and **won't-fix** (with reasons). Auto-fix items go to targeted fix lanes on a cheap fast engine (codex at medium effort, or Grok 4.5 at low/medium) with a `## Spec` brief listing the findings verbatim: scoped fixes don't need taste. One fix round, hard cap; then verification with the repo's own toolchain.
 
 ## Running lanes
 
 - **Always background Bash.** Engine turns can run 10–40+ minutes; foreground Bash caps at 10. Lanes launch with `run_in_background` and `--out`/`--log` files; independent lanes fire in one message; the harness notifies on completion.
-- Grok calls need the Claude Bash sandbox disabled for that call (grok needs network/keychain access); grok's own kernel sandbox still confines it.
+- Grok calls need the Claude Bash sandbox disabled for that call (grok needs network/keychain access); grok's own kernel sandbox still confines it. The wrapper fixes the model to `grok-4.5`, defaults effort to `medium`, and accepts explicit `low|high` sizing.
 - Failure playbook: pipeline-specific gates take precedence. Generally, exit 1 → read the log, retry once or escalate engines; a failed ordinary review lane among survivors → proceed and say so; a hung lane → inspect, terminate if stalled, relaunch. Required plan critics cannot silently degrade. Exit codes uniform: 0 ok · 1 engine failure · 2 usage error · 3 not signed in.
 
 ## Rubrics live in `prompts/`
@@ -78,7 +78,7 @@ Any prompt text that is the same every run — the review dimensions, planner, s
 - Critic, planner, and review lanes are `--mode ro`, always. Writers — build workers and fix lanes — follow **one writer per disjoint path set**: rw lanes may run in parallel only on non-overlapping files, each brief names the paths it owns, and the orchestrator never edits files a lane owns. The sandboxes are repo-wide; disjointness is brief discipline, so work splits only along genuinely independent seams. Verification runs after all writers land.
 - Safety is pinned inside `plx-engine` per engine, in code:
   - **codex** — `--ignore-user-config --ephemeral`, sandbox `read-only` (ro) / `workspace-write` (rw).
-  - **grok** — kernel-enforced sandbox (Seatbelt on macOS, Landlock on Linux): `read-only` (ro) / `workspace` (rw, edits confined to the repo).
+  - **grok** — fixed `grok-4.5`, effort `medium` by default (`low|high` explicit), no plan/subagent/memory features, and kernel-enforced sandbox (Seatbelt on macOS, Landlock on Linux): `read-only` (ro) / `workspace` (rw, edits confined to the repo). The permission layer is `bypassPermissions`; the kernel sandbox is the confinement boundary.
   - **claude** — non-bare `claude -p` with `--setting-sources project`; ro = `--permission-mode dontAsk` + `Read,Grep,Glob` allowlist; rw = `--permission-mode acceptEdits` + scoped tool allowlist. Blocked tool calls abort rather than hang.
 - Wrappers never use `danger-full-access`, `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`. Skills never hand-construct raw `codex` / `grok` / `claude -p` commands — `plx-engine` is the only sanctioned path.
 - Neutral context: every review lane gets the same brief, never the caller's analysis or another lane's output. Review scope comes from `git status` against the run's starting snapshot — ground truth, not the worker's self-report.

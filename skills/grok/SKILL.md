@@ -1,12 +1,12 @@
 ---
 name: "plx::grok"
-description: Single-engine passthrough — the orchestrator runs Grok (Composer, headless) directly via the write-capable wrapper. Answers, codes (with edits), or plans depending on what you ask. No multi-model review pipeline.
+description: Single-engine passthrough — the orchestrator runs Grok 4.5 headless at medium effort by default via the write-capable wrapper. Answers, codes (with edits), or plans depending on what you ask. No multi-model review pipeline.
 argument-hint: "<question, coding task, or plan request>"
 disable-model-invocation: true
 user-invocable: true
 ---
 
-# /plx:grok — single-engine passthrough (Grok Composer)
+# /plx:grok — single-engine passthrough (Grok 4.5)
 
 Run the user's request through **Grok only** — no Parallax review pipeline, no other engines, no subagent. You (the orchestrator) drive the engine wrapper yourself and return its output. Do not re-do or review the work.
 
@@ -22,7 +22,7 @@ Three tool calls — no subagent.
    plx-engine --engine grok --mode rw --repo <repo> --prompt-file <tmp>/prompt.md --stdout; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
    ```
 
-   `plx-engine` is on your PATH (shipped in the plugin's `bin/`); it runs one headless grok turn with safety pinned (kernel-enforced `workspace` sandbox scoped to `--repo` + bypassPermissions) and emits only the model's final text — the write boundary is that sandbox; writes outside it are OS-denied. rw mode is used for **every** ask type; for a pure question or plan grok simply writes nothing, so there is no separate read-only path.
+   `plx-engine` is on your PATH (shipped in the plugin's `bin/`); it runs one headless Grok 4.5 turn at `medium` effort by default with safety pinned (kernel-enforced `workspace` sandbox scoped to `--repo` + bypassPermissions) and emits only the model's final text — the write boundary is that sandbox; writes outside it are OS-denied. rw mode is used for **every** ask type; for a pure question or plan grok simply writes nothing, so there is no separate read-only path.
 
    Two caller rules from the wrapper's own help text:
    - **Disable the Claude Bash sandbox for this call** (`dangerouslyDisableSandbox: true` on the Bash invocation) — grok needs the network/keychain access the sandbox blocks. The kernel workspace sandbox still confines grok's writes.

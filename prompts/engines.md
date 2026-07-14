@@ -40,7 +40,7 @@ API design, and copy. *(Scores are shipped defaults — tune them to your own li
 | model              | how to call                                  | cost | intelligence | taste |
 | ------------------ | -------------------------------------------- | ---- | ------------ | ----- |
 | gpt-5.5            | `--engine codex` (default model)             | 9    | 8            | 5     |
-| grok-composer-2.5  | `--engine grok` (no model/effort knobs)      | 9    | 5            | 4     |
+| grok-4.5           | `--engine grok` (medium effort by default)   | 9    | 8            | 7     |
 | sonnet-5           | `--engine claude --model sonnet`             | 5    | 5            | 7     |
 | opus-4.8           | `--engine claude` (default model)            | 4    | 7            | 8     |
 | fable-5            | you — the orchestrator; never delegated      | 2    | 9            | 9     |
@@ -65,11 +65,12 @@ How to apply:
 - **Reviews** → a smart model, plus optionally a cheap extra perspective. Always prefer
   a *different* engine than the one that wrote the code — independence catches what
   self-review can't.
-- **Targeted fixes from a review** → fast and cheap (grok composer, or codex at
+- **Targeted fixes from a review** → fast and cheap (Grok 4.5 at low/medium, or codex at
   `--effort medium`) — small scoped fixes don't need taste.
-- **Effort**: `high` is the default for reviews and builds; reserve `xhigh` for
-  cross-file contract changes, concurrency, data-integrity or money paths, and wide
-  refactors. `medium` is fine for mechanical fixes and trivial questions.
+- **Effort**: Codex and Claude default to `high`; Grok 4.5 defaults to `medium`.
+  Use Grok `low` for trivial work and `high` for risky work. Reserve `xhigh` for
+  engines that support it on cross-file contracts, concurrency, data-integrity or
+  money paths, and wide refactors; Grok 4.5 supports only `low|medium|high`.
 - **Fable is never delegated.** You are fable — spend yourself where judgment is the
   product (plan authoring, review synthesis, the final gate), not on bulk reads or
   mechanical edits.
@@ -114,7 +115,8 @@ consume it later. A spec doc for a one-shot task is overhead, not rigor.
   content into your own window.
 - **Grok calls need the Bash sandbox disabled** for the call
   (`dangerouslyDisableSandbox: true`) — grok needs network/keychain access the sandbox
-  blocks; grok's own kernel sandbox still confines it. Grok takes no `--model`/`--effort`.
+  blocks; grok's own kernel sandbox still confines it. The wrapper fixes the model to
+  `grok-4.5`, defaults effort to `medium`, and accepts explicit `low|medium|high`.
 - **Pipeline-specific retry and completion rules override this general playbook.** If a lane
   fails (exit 1), read its log, then retry once — same engine, or a
   smarter one if the failure looks like capability. If a review lane fails and others

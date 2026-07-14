@@ -26,16 +26,35 @@ Codex writes only in `--mode rw` (the `code: codex` binding or `/plx:codex`). No
 
 ## Grok
 
-Install and authenticate the Grok CLI (`grok login`, or set `XAI_API_KEY`). Verified with grok 0.2.32 (`grok-composer-2.5-fast`); final-message extraction and headless permission behavior re-verified with 0.2.39.
+Install Grok Build 0.2.89 or newer and authenticate it (`grok login`, or set
+`XAI_API_KEY`). Version 0.2.89 introduced the current effort flags; this release is
+verified against grok 0.2.101 with `grok-4.5` available.
+
+`plx-engine --engine grok` fixes the model to `grok-4.5`. Effort defaults to `medium`;
+callers may explicitly select `low` or `high`. Any other model or effort, including
+`xhigh`, is a usage error. The wrapper passes current headless automation flags:
+`--no-auto-update`, `--no-plan`, `--no-subagents`, `--no-memory`, `--no-alt-screen`, and
+`--output-format json`.
+
+These settings follow the current xAI [Grok 4.5 model documentation](https://docs.x.ai/developers/grok-4-5),
+[CLI reference](https://docs.x.ai/build/cli/reference),
+[headless scripting guide](https://docs.x.ai/build/cli/headless-scripting), and
+[enterprise sandbox documentation](https://docs.x.ai/build/enterprise).
 
 `plx-engine --engine grok` pins a kernel-enforced sandbox (Seatbelt on macOS, Landlock on Linux):
 
 - `--mode ro` → `--sandbox read-only`: grok may read but cannot write the repo (OS-denied).
 - `--mode rw` → `--sandbox workspace`: edits confined to the repo; writes outside are kernel-denied and logged to `~/.grok/sandbox-events.jsonl`.
 
-Both modes pass `--permission-mode bypassPermissions`, because grok's CLI only *enforces* that mode (and `default`) — `acceptEdits`/`plan` are accepted but unenforced and would cancel the turn in headless. Confinement comes from the sandbox, not the permission mode.
+Both modes pass `--permission-mode bypassPermissions` so arbitrary repo-specific toolchains
+can complete headlessly. Grok Build defines this as an always-approve permission posture;
+confinement comes from the kernel sandbox, not the permission mode. Parallax never uses the
+`--always-approve` or `--yolo` spellings.
 
-The wrapper emits only the model's final message (recovered from grok's session store, since the JSON envelope aggregates narration and subagent streams) and deletes the run's `~/.grok/sessions` entry on success (kept on failure for debugging — grok has no `--ephemeral`). Grok takes no `--effort`/`--model` flags: `grok-composer-2.5-fast` rejects the `reasoningEffort` parameter (API 400).
+The wrapper emits only the model's final message. It retains the session-store fallback for
+older Grok builds whose JSON envelope aggregated narration and subagent streams, even though
+current Parallax runs disable subagents. It deletes the run's `~/.grok/sessions` entry on
+success and keeps it on failure for debugging because Grok has no `--ephemeral` flag.
 
 When invoking grok from Claude Code, disable the Claude Bash sandbox for that call only (grok needs network/keychain access the sandbox blocks). The wrapper decides success from grok's `stopReason` + output: **0** = ok, **3** = not signed in (run `grok login`), **1** = real failure. grok prints non-fatal `AuthorizationRequired` worker lines to stderr even on success — judge by the exit code.
 

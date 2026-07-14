@@ -14,8 +14,8 @@ WITH_GROK="${PLX_SMOKE_WITH_GROK:-0}"
 RUNDIR="$(smoke_run_dir)"; mkdir -p "$RUNDIR/engines"
 echo "L1 engine smoke — run dir: $RUNDIR"
 
-# effort_flags <engine> — grok takes no --effort/--model; keep the others cheap.
-effort_flags() { [ "$1" = "grok" ] && return 0; printf -- '--effort low'; }
+# effort_flags <engine> — every engine accepts low effort for this tiny fixture.
+effort_flags() { printf -- '--effort low'; }
 
 # READ-ONLY + RUBRIC: review the seeded bug via --rubric reviewer-correctness.
 # Assert exit 0, a finding that names the empty-list/ZeroDivisionError bug, repo untouched.

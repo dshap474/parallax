@@ -46,7 +46,8 @@ re-run at integration.
 Read the engine config (`plx-config`) → key `build`. Shipped default: `code: claude` —
 one writer. Size per the judgment doc:
 
-- **trivial** → a single rw lane on a cheap engine (codex medium / grok) — or, if it's
+- **trivial** → a single rw lane on a cheap engine (codex medium / Grok 4.5 low or
+  medium) — or, if it's
   a one-line change, just make it yourself and skip the machinery.
 - **default** → one writer lane, the `code` engine, `--effort high`.
 - **large and separable** → split the spec into **file-disjoint work packages** —
@@ -77,8 +78,9 @@ claude, high) — packages: api/, cli/`). Run `plx-preflight --repo <repo>
 
    - **One writer per disjoint path set** — never two lanes on overlapping paths, and
      never edit the files yourself while a lane owns them.
-   - Grok lanes need the Bash sandbox disabled (`dangerouslyDisableSandbox: true`) and
-     take no `--effort`/`--model`.
+   - Grok lanes need the Bash sandbox disabled (`dangerouslyDisableSandbox: true`). The
+     wrapper fixes their model to `grok-4.5`; size effort as `low|medium|high` (default
+     `medium`) and never pass `xhigh`.
    - Exit codes: 0 ok · 1 engine failure (read the log; retry once, or escalate to a
      smarter engine per the judgment doc) · 2 your usage error · 3 not signed in → tell
      the user and stop.

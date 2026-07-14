@@ -42,7 +42,7 @@ Critic, planner, and review lanes are always read-only. Writers follow **one wri
 
 ## Choosing engines and sizes
 
-`config/parallax.yaml` binds each pipeline role to a default engine. [`prompts/engines.md`](prompts/engines.md) carries the judgment: a cost/intelligence/taste table over the reachable models (gpt-5.5 via codex, opus/sonnet via the claude engine, grok-composer), rules for when to escalate (intelligence > taste > cost for anything that ships; bulk work → cheap engines; user-facing → taste; fixes → fast and cheap), and the sizing ladder. Plan authoring, review synthesis, and the final gate are always the orchestrator.
+`config/parallax.yaml` binds each pipeline role to a default engine. [`prompts/engines.md`](prompts/engines.md) carries the judgment: a cost/intelligence/taste table over the reachable models (gpt-5.5 via codex, opus/sonnet via the claude engine, Grok 4.5), rules for when to escalate (intelligence > taste > cost for anything that ships; bulk work → cheap engines; user-facing → taste; fixes → fast and cheap), and the sizing ladder. Plan authoring, review synthesis, and the final gate are always the orchestrator.
 
 ## Requirements
 
@@ -58,7 +58,7 @@ The shipped configs need Codex. See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.m
 
 ## Architecture
 
-Three stage atoms — `plan`, `build`, `review` — exposed as skills and composed by `dev`. The safety model: every lane goes through `plx-engine`, which pins safety per engine in code — Codex config-isolated and sandboxed (`read-only` / `workspace-write`), Grok kernel-sandboxed (Seatbelt/Landlock), Claude headless with scoped permission modes and tool allowlists. Wrappers never use `danger-full-access`, `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`, and skills never hand-construct raw engine commands. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+Three stage atoms — `plan`, `build`, `review` — exposed as skills and composed by `dev`. The safety model: every lane goes through `plx-engine`, which pins safety per engine in code — Codex config-isolated and sandboxed (`read-only` / `workspace-write`), Grok 4.5 kernel-sandboxed (Seatbelt/Landlock) at medium effort by default, Claude headless with scoped permission modes and tool allowlists. Wrappers never use `danger-full-access`, `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`, and skills never hand-construct raw engine commands. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Repo layout
 
@@ -76,7 +76,7 @@ Each `skills/<name>/SKILL.md` carries its pipeline inline — no `${CLAUDE_PLUGI
 
 ## Status
 
-v0.4.2
+v0.4.3
 
 ## License
 

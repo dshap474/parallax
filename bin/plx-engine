@@ -4,7 +4,8 @@ set -euo pipefail
 # Parallax engine API — the ONE wrapper that drives all engines headless.
 # Safety flags are pinned here per engine, not decided by callers:
 #   codex  : --ignore-user-config, --ephemeral, sandbox read-only | workspace-write
-#   grok   : kernel sandbox read-only | workspace (Seatbelt/Landlock),
+#   grok   : grok-4.5, effort medium by default (low|high may be explicit),
+#            kernel sandbox read-only | workspace (Seatbelt/Landlock),
 #            bypassPermissions (required for headless completion; the kernel
 #            sandbox — not the permission mode — is the safety boundary)
 #   claude : non-bare `claude -p` (bare mode breaks subscription auth),
@@ -37,9 +38,10 @@ Flags:
   --repo <dir>          absolute path to the target repo (required)
   --prompt-file <file>  file containing the brief/spec (required)
   --rubric <name>       lane rubric to inject (a file name under prompts/, no .md)
-  --model <m>           codex: default gpt-5.5 · claude: default opus · grok: unsupported
+  --model <m>           codex: default gpt-5.5 · claude: default opus ·
+                        grok: fixed grok-4.5 (any other value is rejected)
   --effort <e>          codex: low|medium|high|xhigh · claude: per `claude --help` ·
-                        grok: unsupported (default high)
+                        grok: low|medium|high (default medium)
   --stdout              print the final message to stdout; temp files auto-cleaned
   --out <f> --log <f>   instead of --stdout: write final message / full log to files
   --print-rubric <n>    print the named rubric (e.g. reviewer-correctness, engines)
@@ -124,15 +126,24 @@ PROMPT="$(abspath "$PROMPT")"
 [[ -n "$OUT" ]] && OUT="$(abspath "$OUT")"
 [[ -n "$LOG" ]] && LOG="$(abspath "$LOG")"
 
-if [[ "$ENGINE" == "grok" && ( -n "$MODEL" || -n "$EFFORT" ) ]]; then
-  echo "grok does not support --model/--effort" >&2; exit 2
-fi
-[[ -n "$EFFORT" ]] || EFFORT="high"
-if [[ -z "$MODEL" ]]; then
-  case "$ENGINE" in
-    codex) MODEL="gpt-5.5" ;;   # gpt-5.3-codex is NOT available on ChatGPT-account auth
-    claude) MODEL="opus" ;;
+if [[ "$ENGINE" == "grok" ]]; then
+  [[ -n "$MODEL" ]] || MODEL="grok-4.5"
+  [[ "$MODEL" == "grok-4.5" ]] || {
+    echo "grok model is fixed to grok-4.5 (got: $MODEL)" >&2; exit 2
+  }
+  [[ -n "$EFFORT" ]] || EFFORT="medium"
+  case "$EFFORT" in
+    low|medium|high) ;;
+    *) echo "grok effort must be low|medium|high (got: $EFFORT)" >&2; exit 2 ;;
   esac
+else
+  [[ -n "$EFFORT" ]] || EFFORT="high"
+  if [[ -z "$MODEL" ]]; then
+    case "$ENGINE" in
+      codex) MODEL="gpt-5.5" ;;   # gpt-5.3-codex is NOT available on ChatGPT-account auth
+      claude) MODEL="opus" ;;
+    esac
+  fi
 fi
 
 RUBRIC_FILE=""
@@ -209,8 +220,10 @@ run_grok() {
   raw="$TMP_DIR/raw.json"
 
   set +e
-  grok --cwd "$REPO" --permission-mode bypassPermissions --sandbox "$sandbox" \
-    --no-alt-screen --output-format json \
+  grok --no-auto-update --cwd "$REPO" \
+    --model "$MODEL" --effort "$EFFORT" \
+    --permission-mode bypassPermissions --sandbox "$sandbox" \
+    --no-plan --no-subagents --no-memory --no-alt-screen --output-format json \
     --prompt-file "$EXEC_PROMPT" > "$raw" 2> "$LOG"
   rc=$?
   set -e
@@ -256,11 +269,10 @@ except Exception:
 
   [[ -n "$text" ]] || { echo "plx-engine: grok empty output (stopReason=$stop)" >&2; exit 1; }
 
-  # The envelope `text` aggregates EVERY text chunk grok emitted during the turn —
-  # parallel subagent streams interleave into it (mid-word) and pre-tool-call
-  # narration prepends to it. The session store keeps proper message records; the
-  # last assistant record is the true final message. Prefer it; fall back to the
-  # envelope text on any miss. (Verified grok 0.2.39, 2026-06-11:
+  # Older Grok builds aggregated every text chunk into the envelope, including
+  # interleaved subagent output and pre-tool narration. The session store keeps
+  # proper message records; retain that compatibility fallback even though current
+  # Parallax runs disable subagents. (Verified grok 0.2.39, 2026-06-11:
   # tests/evals/2026-06-11_grok-output-aggregation-eval.md)
   final="$(python3 -c 'import json,os,sys,urllib.parse
 try:

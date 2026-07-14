@@ -8,7 +8,7 @@ Every entry point lives under the `plx` plugin namespace. Stage skills let you d
 |---|---|
 | `/plx:plan` | Fable authors the candidate, then one implementation critic and one system critic compare it with the task contract in parallel. No code written. |
 | `/plx:build` | Writer lane(s) implement a plan — taken from a spec doc path, the plan already in the conversation, or a raw bounded task. One worker by default; parallel file-disjoint workers for large separable work. Verifies and reports; no review round. |
-| `/plx:review` | Sized review round — 1 lane (small change) up to 3 dimensions × 2 engines (risky change) — then synthesis and **automatic fixes** via cheap targeted fix lanes (codex medium / grok). Genuinely uncertain findings go to the user as one batched question. Say "report only" to skip fixes. |
+| `/plx:review` | Sized review round — 1 lane (small change) up to 3 dimensions × 2 engines (risky change) — then synthesis and **automatic fixes** via cheap targeted fix lanes (codex medium / Grok 4.5 low or medium). Genuinely uncertain findings go to the user as one batched question. Say "report only" to skip fixes. |
 
 ## Composition
 
@@ -24,7 +24,7 @@ Adapts to intent: ask a question → it answers; ask for code → it edits; ask 
 | Command | Engine |
 |---|---|
 | `/plx:codex` | Codex (`plx-engine --engine codex --mode rw`) |
-| `/plx:grok` | Grok (`plx-engine --engine grok --mode rw`) |
+| `/plx:grok` | Grok 4.5, medium effort by default (`plx-engine --engine grok --mode rw`) |
 
 There is no `/plx:claude` — the orchestrator *is* Claude; just ask it directly.
 

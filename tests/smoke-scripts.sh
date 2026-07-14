@@ -34,6 +34,61 @@ if "$PLX_ROOT/bin/plx-engine" --print-rubric reviewer-correctness 2>/dev/null | 
 else
   _fail "--print-rubric reviewer-correctness failed"
 fi
+
+_head "plx-engine pins Grok 4.5 and sizes supported effort"
+fake_bin="$WORK/fake-bin"
+fake_args="$WORK/grok-args.txt"
+fake_prompt="$WORK/grok-prompt.md"
+fake_out="$WORK/grok-out.md"
+fake_log="$WORK/grok.log"
+mkdir -p "$fake_bin"
+printf '%s\n' '#!/usr/bin/env bash' \
+  '# Fake Grok CLI — records argv and returns one successful headless envelope.' \
+  'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
+  'printf '\''{"text":"OK","stopReason":"EndTurn","sessionId":""}\n'\''' \
+  > "$fake_bin/grok"
+chmod +x "$fake_bin/grok"
+printf '%s\n' 'reply OK' > "$fake_prompt"
+
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
+  "$PLX_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
+rc=$?
+if [ "$rc" -eq 0 ]; then _pass "Grok default invocation exits 0"; else _fail "Grok default invocation exits $rc"; fi
+assert_contains "grok-4.5" "$fake_args" "Grok model is grok-4.5"
+assert_contains "medium" "$fake_args" "Grok effort defaults to medium"
+for flag in --no-auto-update --no-plan --no-subagents --no-memory --no-alt-screen; do
+  assert_contains "$flag" "$fake_args" "Grok receives $flag"
+done
+assert_contains "read-only" "$fake_args" "Grok ro uses read-only sandbox"
+
+for effort in low high; do
+  PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
+    "$PLX_ROOT/bin/plx-engine" --engine grok --mode rw --repo "$REPO" \
+    --prompt-file "$fake_prompt" --model grok-4.5 --effort "$effort" \
+    --out "$fake_out" --log "$fake_log" >/dev/null
+  rc=$?
+  if [ "$rc" -eq 0 ] && grep -qx "$effort" "$fake_args"; then
+    _pass "Grok accepts explicit $effort effort"
+  else
+    _fail "Grok failed explicit $effort effort"
+  fi
+done
+assert_contains "workspace" "$fake_args" "Grok rw uses workspace sandbox"
+
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
+  "$PLX_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --model grok-composer-2.5-fast \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 2 ]; then _pass "Grok rejects Composer"; else _fail "Grok Composer expected exit 2, got $rc"; fi
+
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
+  "$PLX_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --effort xhigh \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 2 ]; then _pass "Grok rejects xhigh"; else _fail "Grok xhigh expected exit 2, got $rc"; fi
 if "$PLX_ROOT/bin/plx-engine" --print-rubric no-such-rubric >/dev/null 2>&1; then
   _fail "should reject unknown rubric"
 else

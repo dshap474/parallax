@@ -72,8 +72,10 @@ Declare the sizing in one line before launching (e.g. `Sizing: review 3×2
      --out <tmp>/<e>-<dimension>.md --log <tmp>/<e>-<dimension>.log
    ```
 
-   Grok lanes take no `--effort`/`--model` and need the Bash sandbox disabled for the
-   call (`dangerouslyDisableSandbox: true`). Exit codes: 0 ok · 1 engine failure (read
+   Grok lanes need the Bash sandbox disabled for the call
+   (`dangerouslyDisableSandbox: true`). The wrapper fixes `grok-4.5`; use `high` for a
+   risky Grok review or omit effort for its `medium` default, never `xhigh`. Exit codes:
+   0 ok · 1 engine failure (read
    the log; if other lanes succeeded, proceed with the survivors and say so) · 2 your
    usage error · 3 not signed in → tell the user to log in.
 
@@ -112,7 +114,7 @@ Declare the sizing in one line before launching (e.g. `Sizing: review 3×2
    severity + the repair plan) and stop here.
 
 5. **Fix automatically.** Launch targeted fix lanes on the `fix` engine — cheap and
-   fast (codex `--effort medium`, or grok); scoped fixes don't need taste:
+   fast (codex `--effort medium`, or Grok 4.5 low/medium); scoped fixes don't need taste:
 
    ```
    plx-engine --engine <fix-engine> --mode rw --repo <repo> \

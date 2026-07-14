@@ -63,6 +63,23 @@ if grep -rqE 'plx:(claude|codex|grok)-[a-z-]+' "$PLX_ROOT/skills" "$PLX_ROOT/con
 else
   _pass "no plx:<engine>-<persona> references in skills/ or config/"
 fi
+
+_head "Grok runtime policy is current"
+if grep -rqi 'grok-composer' \
+  "$PLX_ROOT/README.md" "$PLX_ROOT/docs" "$PLX_ROOT/prompts" \
+  "$PLX_ROOT/skills" "$PLX_ROOT/bin" "$PLX_ROOT/config" \
+  "$PLX_ROOT/.project/architecture" 2>/dev/null; then
+  _fail "a shipped surface still references Grok Composer"
+else
+  _pass "no shipped Grok Composer references"
+fi
+if grep -q 'MODEL="grok-4.5"' "$PLX_ROOT/bin/plx-engine" &&
+   grep -q 'EFFORT="medium"' "$PLX_ROOT/bin/plx-engine" &&
+   grep -q -- '--no-plan --no-subagents --no-memory' "$PLX_ROOT/bin/plx-engine"; then
+  _pass "plx-engine pins Grok 4.5 with medium default and isolated headless features"
+else
+  _fail "plx-engine Grok model/effort/isolation policy is incomplete"
+fi
 if grep -rqiE 'use subagents|spawn (a |an )?subagent' "$PLX_ROOT/skills" 2>/dev/null; then
   _fail "a skill or reference still instructs the caller to spawn subagents"
 else

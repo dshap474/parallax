@@ -86,9 +86,11 @@ gives the user a veto point before tokens burn. Scale down as readily as up.
 | **default** | plan in-context + implementation critic | 1 worker | 3 dims × 1 engine |
 | **large / risky** | spec doc + implementation and system critics | parallel file-disjoint workers | 3 dims × 2 engines, xhigh |
 
-Standalone `/plx:plan` deliberately overrides the default plan rung: every non-small plan
-runs both critic dimensions in parallel on `gpt-5.6-sol` at `xhigh`. `/plx:dev` keeps the
-table's proportional plan sizing as part of the larger end-to-end run.
+Standalone `/plx:plan` deliberately overrides the default plan rung: every explicit
+invocation runs both critic dimensions in parallel. Shipped Codex bindings use
+`gpt-5.6-sol` at `xhigh`; explicit config or current-message overrides win. Both dimensions
+must return before the plan is final. `/plx:dev` keeps the table's proportional plan sizing
+as part of the larger end-to-end run.
 
 Scale-up signals: cross-file contracts, concurrency, data-integrity or money paths,
 wide refactors, high ambiguity, code you can't easily verify. Scale-down signals: one

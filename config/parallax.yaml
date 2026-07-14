@@ -30,6 +30,9 @@
 #     disjoint path sets — one writer per path, always.
 #   - plan / plan-critic-* / review-* roles take LISTS and are always read-only
 #     (`--mode ro`), whatever engine fills them.
+#   - Standalone plan runs both critic roles by default. Its shipped Codex bindings use
+#     gpt-5.6-sol at xhigh; an engine substitution is an explicit config override and the
+#     plan skill applies that engine's supported model/effort flags.
 #   - Plan authoring, review synthesis, and the final gate are always the
 #     orchestrator. Never delegated, not configurable.
 #   - Cross-engine review is the default posture: prefer review engines that

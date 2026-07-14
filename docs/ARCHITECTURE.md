@@ -38,8 +38,11 @@ Lane rubrics ship in `prompts/` (one deduped, engine-agnostic file per lane) and
 | large / risky | spec doc + implementation and system critics | parallel file-disjoint workers | 3 dims × 2 engines, xhigh |
 
 Standalone `/plx:plan` is intentionally deeper than the composite default shown above:
-for every non-small request, Fable authors the draft and both plan-critic dimensions run in
-parallel on GPT-5.6 Sol at `xhigh`. `/plx:dev` retains proportional plan sizing because it
+every explicit invocation runs both plan-critic dimensions in parallel. Their neutral brief
+contains the original request, confirmed clarifications, and Fable's draft as distinct
+sections. Shipped Codex bindings use GPT-5.6 Sol at `xhigh`; configured substitutions win.
+If either dimension still fails after one retry, the draft is returned as
+`[RED-TEAM INCOMPLETE]`, not final. `/plx:dev` retains proportional plan sizing because it
 also pays for build, review, fixes, and the final gate.
 
 The orchestrator **declares its chosen sizing in one line before launching** — the user's veto point. Plan artifacts follow the same logic: a plan is a chat message by default; a spec doc in `.project/builds/` only when the effort is multi-session or another agent must consume it.
@@ -50,7 +53,7 @@ Fable spends its own intelligence at exactly three points: **plan authoring**, *
 
 | Atom | Skill | Who acts | Returns |
 |---|---|---|---|
-| `plan` | `/plx:plan` | Fable authors; by default parallel GPT-5.6 Sol `xhigh` implementation/system critics red-team | final plan (chat or spec doc) |
+| `plan` | `/plx:plan` | Fable authors; parallel implementation/system critics compare the draft with the task contract | final plan, or explicit incomplete draft if a critic fails |
 | `build` | `/plx:build` | 1–N writer lanes, one per disjoint path set | Buildout report (summaries, never code bodies) |
 | `review` | `/plx:review` | 1–6 read-only lanes; Fable synthesizes; cheap fix lanes apply the confirmed findings | findings → fixes applied (+ batched user question for uncertain calls) |
 

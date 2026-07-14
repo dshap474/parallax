@@ -1,6 +1,6 @@
 # Parallax — Package Specification
 
-Status: v0.4.0
+Status: v0.4.1
 
 ## Purpose
 
@@ -54,7 +54,7 @@ The orchestrator is Claude (Fable). There are **no subagents**: the orchestrator
 ```json
 {
   "name": "plx",
-  "version": "0.4.0"
+  "version": "0.4.1"
 }
 ```
 
@@ -79,7 +79,7 @@ Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev
 - Preflight and wrappers use shell temp directories only and clean them up before returning.
 - Plan authoring, review synthesis, and the final gate are always the orchestrator. Critic/planner/review lanes are always `--mode ro`. Writers (build workers, fix lanes) follow **one writer per disjoint path set**: parallel rw lanes only on non-overlapping files, each brief naming the paths it owns; verification after all writers land.
 - Sizing is declared before launch: the orchestrator prints its chosen shape (critics × workers × review lanes × effort) as a one-line veto point.
-- Standalone `/plx:plan` pins both plan-critic dimensions to Codex `gpt-5.6-sol` at `xhigh` for every non-small plan; `/plx:dev` retains proportional plan sizing.
+- Standalone `/plx:plan` always launches both plan-critic dimensions unless the current user message explicitly overrides the shape. Shipped Codex bindings use `gpt-5.6-sol` at `xhigh`; configured engine substitutions are honored. Both dimensions must return before finalization; one failed retry yields `[RED-TEAM INCOMPLETE]`. `/plx:dev` retains proportional plan sizing.
 - **Skills never commit or publish** — version control follows the target repo's own agent instructions.
 - Final results are returned in chat, not written to a results file.
 
@@ -87,7 +87,7 @@ Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev
 
 The shapes that flow between stages:
 
-1. **Brief headers** — every brief file opens with the section header its rubric expects: `## Review brief` (reviewer-*), `## Task brief` (planner), `## Draft plan` (plan-critic-*), `## Spec` (worker — both build specs and fix briefs).
+1. **Brief headers** — every brief file opens with the section header its rubric expects: `## Review brief` (reviewer-*), `## Task brief` (planner), `## Draft plan` (plan-critic-*), `## Spec` (worker — both build specs and fix briefs). A standalone plan-critic brief separates `Original request (verbatim)`, `Confirmed clarifications`, and `Orchestrator-authored plan` so reviewers can detect interpretation drift.
 2. **Planning Brief** — recommended design + steelman, alternatives rejected, repo facts, constraints/invariants, suggested success criteria, validation, risks. Output of each planner lane (goal-spec); Fable arbitrates and authors the final plan itself.
 3. **Buildout report** — every file touched, per-file summary, coding decisions, verification (commands + results), blockers/skips. Summaries only, never code bodies. Output of every writer lane; cross-checked against `git status` vs the run's starting snapshot.
 4. **Review brief** — repo, files touched (from git ground truth), what was implemented and why, spec pointer. Written by the orchestrator; identical for every lane, no steer.

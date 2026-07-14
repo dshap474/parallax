@@ -4,7 +4,7 @@ Multi-model coding-agent orchestration for Claude Code — as a **toolbox, not a
 
 The orchestrator is Claude (Fable). It drives three coding engines — **Codex, Grok, and Claude itself** — headless, directly, through one wrapper (`plx-engine`). There are no subagents: evals showed operator subagents only add wall-clock time. What survives from them is the part that mattered — the lane rubrics, now shipped in [`prompts/`](prompts/) and injected at runtime by name.
 
-The core idea is an **escalation ladder**: the shipped config is the floor shape, and the orchestrator sizes every run from a shipped judgment doc ([`prompts/engines.md`](prompts/engines.md)) — model rankings by cost/intelligence/taste, plus the ladder. A trivial task gets no machinery at all; the full dev pipeline sizes planning proportionally, then scales workers and review lanes with risk. Standalone `/plx:plan` is intentionally deeper: after Fable authors any non-small plan, parallel GPT-5.6 Sol `xhigh` implementation and system critics red-team it. The orchestrator declares its chosen sizing before launching, so you can veto before tokens burn. Cross-engine review — a different engine than the one that wrote — is the default posture, and confirmed review findings are **fixed automatically** by cheap targeted fix lanes.
+The core idea is an **escalation ladder**: the shipped config is the floor shape, and the orchestrator sizes every run from a shipped judgment doc ([`prompts/engines.md`](prompts/engines.md)) — model rankings by cost/intelligence/taste, plus the ladder. A trivial task gets no machinery at all; the full dev pipeline sizes planning proportionally, then scales workers and review lanes with risk. Standalone `/plx:plan` is intentionally deeper: after Fable authors the plan, parallel implementation and system critics compare it with the original task. Shipped defaults run both on GPT-5.6 Sol at `xhigh`; explicit config or current-message overrides win. The orchestrator declares its chosen sizing before launching, so you can veto before tokens burn. Cross-engine review — a different engine than the one that wrote — is the default posture, and confirmed review findings are **fixed automatically** by cheap targeted fix lanes.
 
 Explicit `/plx:*` commands run a stage (`plan`, `build`, `review`), the full run (`dev`), autonomous-goal prep (`goal-spec`), a single engine (`codex`, `grok`), or repo bootstrap (`init`) — see [`docs/COMMANDS.md`](docs/COMMANDS.md). Default engine bindings live in [`config/parallax.yaml`](config/parallax.yaml).
 
@@ -28,7 +28,7 @@ Each skill is fully self-contained — steps, lane briefs, and engine invocation
 
 | Command | Use case |
 |---|---|
-| `plan` | Fable authors; by default parallel GPT-5.6 Sol `xhigh` implementation/system critics red-team; spec doc only for large or multi-session work |
+| `plan` | Fable authors; parallel implementation/system critics compare against the task contract; both must return before finalization; spec doc only for large or multi-session work |
 | `build` | writer lane(s) implement a plan — from a spec path, the conversation, or a raw task; parallel file-disjoint workers for large separable work |
 | `review` | sized review round (1–6 read-only lanes) → synthesis → **automatic fixes** via cheap fix lanes; asks only about genuinely uncertain calls |
 | `dev` | plan → build → review + fix → final gate, strung together with per-stage sizing |
@@ -76,7 +76,7 @@ Each `skills/<name>/SKILL.md` carries its pipeline inline — no `${CLAUDE_PLUGI
 
 ## Status
 
-v0.4.0
+v0.4.1
 
 ## License
 

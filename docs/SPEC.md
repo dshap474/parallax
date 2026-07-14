@@ -1,6 +1,6 @@
 # Parallax — Package Specification
 
-Status: v0.4.5
+Status: v0.4.6
 
 ## Purpose
 
@@ -54,7 +54,7 @@ The orchestrator is Claude (Fable). There are **no subagents**: the orchestrator
 ```json
 {
   "name": "plx",
-  "version": "0.4.5"
+  "version": "0.4.6"
 }
 ```
 
@@ -72,7 +72,7 @@ Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev
 
 - Each pipeline is a **self-contained skill**: its ordered steps, lane briefs, and engine invocations are all inline in its `SKILL.md`. External inputs arrive only through `bin/` tools invoked by bare name: engine bindings via `plx-config`, shared templates via `plx-skill --ref`, rubrics via `plx-engine --rubric <name>`.
 - Skills contain no `!`-command injection, no `${CLAUDE_PLUGIN_ROOT}`, and no pointers into `prompts/`, `lib/`, or `scripts/` — rubrics are referenced by bare name only; `plx-engine` resolves the files relative to itself.
-- All engine execution goes through `plx-engine`. Skills never hand-construct raw `codex` / `grok` / `claude -p` commands. Safety and runtime identity are pinned inside the wrapper per engine: codex `--ignore-user-config --ephemeral` + `read-only`/`workspace-write` sandbox; Grok fixed to `grok-4.5`, medium effort by default, isolated from plan/subagent/memory features, and kernel-sandboxed `read-only`/`workspace`; claude non-bare `-p` + `dontAsk`/`acceptEdits` with scoped tool allowlists. Wrappers never use `danger-full-access`, `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`.
+- All engine execution goes through `plx-engine`. Skills never hand-construct raw `codex` / `grok` / `claude -p` commands. Safety and runtime identity are pinned inside the wrapper per engine: Codex defaults to `gpt-5.6-sol` at medium effort with `--ignore-user-config --ephemeral` + `read-only`/`workspace-write` sandbox; Grok is fixed to `grok-4.5` at medium effort by default, isolated from plan/subagent/memory features, and kernel-sandboxed `read-only`/`workspace`; Claude provides optional Opus lanes via non-bare `-p` + `dontAsk`/`acceptEdits` with scoped tool allowlists. GPT-5.5 and Sonnet are rejected. Wrappers never use `danger-full-access`, `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`.
 - Lanes run as background Bash (`run_in_background`) with `--out`/`--log` files; independent lanes launch in one message.
 - No hooks. No repo-local runtime state — never create `.parallax/`, `.parallax/cache`, or `.parallax/runs`.
 - The orchestrator establishes repo ground truth itself (Bootstrap: `git rev-parse --show-toplevel`, `git status --short`).

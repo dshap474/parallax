@@ -73,6 +73,32 @@ if grep -rqi 'grok-composer' \
 else
   _pass "no shipped Grok Composer references"
 fi
+
+_head "Implementation model policy is current"
+if grep -q '^    code: codex$' "$PLX_ROOT/config/parallax.yaml" &&
+   [ "$(grep -c '^    code: codex$' "$PLX_ROOT/config/parallax.yaml")" -eq 2 ]; then
+  _pass "build and dev default to Codex writers"
+else
+  _fail "build/dev writer bindings are not both Codex"
+fi
+if grep -q 'MODEL="gpt-5.6-sol"' "$PLX_ROOT/bin/plx-engine" &&
+   grep -q 'EFFORT="medium"' "$PLX_ROOT/bin/plx-engine"; then
+  _pass "Codex defaults to GPT-5.6 Sol at medium effort"
+else
+  _fail "Codex model or effort default is stale"
+fi
+if grep -q 'GPT-5.5 and Sonnet are forbidden' "$PLX_ROOT/prompts/engines.md"; then
+  _pass "engine judgment doc states the forbidden-model rule"
+else
+  _fail "engine judgment doc omits the forbidden-model rule"
+fi
+if grep -rqiE 'default (model )?`?gpt-5\.5|code: claude|writer lane.*claude|gpt-5\.5 or grok|opus/sonnet' \
+  "$PLX_ROOT/README.md" "$PLX_ROOT/docs" "$PLX_ROOT/prompts" \
+  "$PLX_ROOT/skills" "$PLX_ROOT/config" "$PLX_ROOT/.project/architecture" 2>/dev/null; then
+  _fail "an active surface still teaches the retired implementation policy"
+else
+  _pass "no active surface teaches the retired implementation policy"
+fi
 if grep -rqiE 'use subagents|spawn (a |an )?subagent' "$PLX_ROOT/skills" 2>/dev/null; then
   _fail "a skill or reference still instructs the caller to spawn subagents"
 else

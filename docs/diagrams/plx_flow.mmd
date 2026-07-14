@@ -18,7 +18,7 @@ flowchart TD
       S1["① 🧠 Fable authors the draft plan (reads the repo, scoped)<br/>writes the spec to the shared template"]
       S2["② Sized red-team (read-only)<br/>implementation critic; add system critic for risky plans → findings, not rewrites"]
       S3["③ 🧠 Fable folds the critique → finalizes the plan<br/>(verifies load-bearing claims; escape hatch: re-draft)"]
-      S4["④ One writer lane ✍️<br/>plx-engine --mode rw --rubric worker (Claude default) ← ## Spec brief"]
+      S4["④ One writer lane ✍️<br/>plx-engine --mode rw --rubric worker (Sol medium default) ← ## Spec brief"]
       S4R["⑤ Fable runs 3 parallel review lanes (read-only)<br/>--rubric reviewer-correctness · -cleanup · -structural, cross-engine<br/>synthesizes · verifies findings · fixes small ones ✍️ or ONE rw fix turn"]
       S5["Buildout report + review disposition — summaries,<br/>never code bodies (out-files read selectively)"]
       S6["⑥ 🧠 Fable's final gate — reads the diff ONCE, fresh eyes<br/>fixes nits inline ✍️ · re-runs the repo's checks<br/>escape hatch: structural rework → fresh build"]

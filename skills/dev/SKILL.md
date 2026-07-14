@@ -30,13 +30,13 @@ the judgment doc (model rankings, the sizing ladder, writer rules).
 ## Size the whole run — then declare it
 
 Read the engine config (`plx-config`) → key `dev`. Shipped defaults:
-`plan-critic-implementation: [codex]` · `plan-critic-system: [codex]` · `code: claude` ·
+`plan-critic-implementation: [codex]` · `plan-critic-system: [codex]` · `code: codex` ·
 each review dimension `[codex]` · `fix: codex`. These are available lanes, not a mandate
 to run all of them — size each stage per the judgment doc's ladder and declare it in one
 line before launching anything, e.g.:
 
 ```
-Sizing: implementation critic (codex, high) · 1 worker (claude, high) · review 3×1 (codex, high) · fixes codex medium
+Sizing: implementation critic (codex, high) · 1 worker (codex, medium) · review 3×1 (grok, high) · fixes codex medium
 ```
 
 **The smallest rung is no machinery at all**: for a trivial ask (one file, obvious

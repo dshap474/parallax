@@ -28,7 +28,7 @@ Lane rubrics ship in `prompts/` (one deduped, engine-agnostic file per lane) and
 
 ## The escalation ladder
 
-`prompts/engines.md` is the judgment doc, and it makes the config's role — **floor shape, not mandate** — concrete. It carries a cost/intelligence/taste ranking over the general-purpose models (gpt-5.5 via codex, opus-4.8/sonnet-5 via the claude engine, Grok 4.5; fable is the orchestrator itself, never delegated), application rules (intelligence > taste > cost for anything that ships; bulk → cheap; user-facing → taste ≥ 7; fixes → fast and cheap; standing permission to escalate), and the sizing ladder:
+`prompts/engines.md` is the judgment doc, and it makes the config's role — **floor shape, not mandate** — concrete. GPT-5.6 Sol medium is the shipped implementation default and Grok 4.5 medium is Fable's standing alternative. Opus remains optional for planning, review, and taste-heavy judgment; GPT-5.5 and Sonnet are forbidden. The doc carries task-fit rules, bounded effort escalation, and the sizing ladder:
 
 | scale | plan | build | review |
 | --- | --- | --- | --- |
@@ -47,7 +47,7 @@ and the final gate. All three planning flows use the same critic-brief contract.
 
 The orchestrator **declares its chosen sizing in one line before launching** — the user's veto point. Plan artifacts follow the same logic: a plan is a chat message by default; a spec doc in `.project/builds/` only when the effort is multi-session or another agent must consume it.
 
-Fable spends its own intelligence at exactly three points: **plan authoring**, **review synthesis**, and the **final gate**. The writer stays external even when it is Claude (`--engine claude --mode rw`) — it preserves the orchestrator's context hygiene and keeps the review independent of the code's author. **Cross-engine review is the default posture.**
+Fable spends its own intelligence at exactly three points: **plan authoring**, **review synthesis**, and the **final gate**. Writers stay in external Sol or Grok lanes, preserving the orchestrator's context hygiene. **Cross-engine review is the default posture.**
 
 ## The three atoms
 
@@ -77,9 +77,10 @@ Any prompt text that is the same every run — the review dimensions, planner, s
 
 - Critic, planner, and review lanes are `--mode ro`, always. Writers — build workers and fix lanes — follow **one writer per disjoint path set**: rw lanes may run in parallel only on non-overlapping files, each brief names the paths it owns, and the orchestrator never edits files a lane owns. The sandboxes are repo-wide; disjointness is brief discipline, so work splits only along genuinely independent seams. Verification runs after all writers land.
 - Safety is pinned inside `plx-engine` per engine, in code:
-  - **codex** — `--ignore-user-config --ephemeral`, sandbox `read-only` (ro) / `workspace-write` (rw).
+  - **codex** — default `gpt-5.6-sol` at medium effort, `--ignore-user-config --ephemeral`, sandbox `read-only` (ro) / `workspace-write` (rw).
   - **grok** — fixed `grok-4.5`, effort `medium` by default (`low|high` explicit), no plan/subagent/memory features, and kernel-enforced sandbox (Seatbelt on macOS, Landlock on Linux): `read-only` (ro) / `workspace` (rw, edits confined to the repo). The permission layer is `bypassPermissions`; the kernel sandbox is the confinement boundary.
-  - **claude** — non-bare `claude -p` with `--setting-sources project`; ro = `--permission-mode dontAsk` + `Read,Grep,Glob` allowlist; rw = `--permission-mode acceptEdits` + scoped tool allowlist. Blocked tool calls abort rather than hang.
+  - **claude** — optional Opus lanes via non-bare `claude -p` with `--setting-sources project`; ro = `--permission-mode dontAsk` + `Read,Grep,Glob` allowlist; rw = `--permission-mode acceptEdits` + scoped tool allowlist. Blocked tool calls abort rather than hang.
+- The wrapper rejects GPT-5.5 and Sonnet before invoking any engine.
 - Wrappers never use `danger-full-access`, `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`. Skills never hand-construct raw `codex` / `grok` / `claude -p` commands — `plx-engine` is the only sanctioned path.
 - Neutral context: every review lane gets the same brief, never the caller's analysis or another lane's output. Review scope comes from `git status` against the run's starting snapshot — ground truth, not the worker's self-report.
 - **Skills never commit or publish.** Version control follows the target repo's own agent instructions.

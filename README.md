@@ -42,7 +42,7 @@ Critic, planner, and review lanes are always read-only. Writers follow **one wri
 
 ## Choosing engines and sizes
 
-`config/parallax.yaml` binds each pipeline role to a default engine. [`prompts/engines.md`](prompts/engines.md) carries the judgment: a cost/intelligence/taste table over the reachable models (gpt-5.5 via codex, opus/sonnet via the claude engine, Grok 4.5), rules for when to escalate (intelligence > taste > cost for anything that ships; bulk work → cheap engines; user-facing → taste; fixes → fast and cheap), and the sizing ladder. Plan authoring, review synthesis, and the final gate are always the orchestrator.
+`config/parallax.yaml` binds each pipeline role to a default engine. [`prompts/engines.md`](prompts/engines.md) carries the judgment: GPT-5.6 Sol medium is the shipped implementation default, Grok 4.5 medium is the standing alternative, and Fable may choose between them by task fit. Effort escalates only for concrete complexity or risk. GPT-5.5 and Sonnet are forbidden. Plan authoring, review synthesis, and the final gate are always the orchestrator.
 
 ## Requirements
 
@@ -50,9 +50,9 @@ Parallax orchestrates external model CLIs you install and authenticate yourself.
 
 | Engine | Install | Used by default |
 |---|---|---|
-| Codex | `codex` CLI + auth | critic and review lanes, review fixes; `/plx:codex` |
-| Grok | `grok` CLI + auth | `/plx:grok`; optional cheap fix/second-perspective lanes |
-| Claude | `claude` CLI (already present — it runs the session) | the writer lane; any lane you bind it to |
+| Codex | `codex` CLI + auth | default writer, critic and review lanes, review fixes; `/plx:codex` |
+| Grok | `grok` CLI + auth | approved writer alternative; optional fix/second-perspective lanes; `/plx:grok` |
+| Claude | `claude` CLI (already present — it runs the session) | optional Opus planning/review lanes |
 
 The shipped configs need Codex. See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
 
@@ -76,7 +76,7 @@ Each `skills/<name>/SKILL.md` carries its pipeline inline — no `${CLAUDE_PLUGI
 
 ## Status
 
-v0.4.5
+v0.4.6
 
 ## License
 

@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Parallax engine API — the ONE wrapper that drives all engines headless.
 # Safety flags are pinned here per engine, not decided by callers:
-#   codex  : --ignore-user-config, --ephemeral, sandbox read-only | workspace-write
+#   codex  : gpt-5.6-sol, effort medium by default, --ignore-user-config,
+#            --ephemeral, sandbox read-only | workspace-write
 #   grok   : grok-4.5, effort medium by default (low|high may be explicit),
 #            kernel sandbox read-only | workspace (Seatbelt/Landlock),
 #            bypassPermissions (required for headless completion; the kernel
@@ -38,9 +39,10 @@ Flags:
   --repo <dir>          absolute path to the target repo (required)
   --prompt-file <file>  file containing the brief/spec (required)
   --rubric <name>       lane rubric to inject (a file name under prompts/, no .md)
-  --model <m>           codex: default gpt-5.5 · claude: default opus ·
+  --model <m>           codex: default gpt-5.6-sol · claude: default opus ·
                         grok: fixed grok-4.5 (any other value is rejected)
-  --effort <e>          codex: low|medium|high|xhigh · claude: per `claude --help` ·
+  --effort <e>          codex: low|medium|high|xhigh (default medium) ·
+                        claude: per `claude --help` ·
                         grok: low|medium|high (default medium)
   --stdout              print the final message to stdout; temp files auto-cleaned
   --out <f> --log <f>   instead of --stdout: write final message / full log to files
@@ -126,6 +128,13 @@ PROMPT="$(abspath "$PROMPT")"
 [[ -n "$OUT" ]] && OUT="$(abspath "$OUT")"
 [[ -n "$LOG" ]] && LOG="$(abspath "$LOG")"
 
+model_lower="$(printf '%s' "$MODEL" | tr '[:upper:]' '[:lower:]')"
+case "$model_lower" in
+  gpt-5.5|gpt-5.5-*|*sonnet*)
+    echo "model is forbidden by Parallax policy: $MODEL" >&2
+    exit 2 ;;
+esac
+
 if [[ "$ENGINE" == "grok" ]]; then
   [[ -n "$MODEL" ]] || MODEL="grok-4.5"
   [[ "$MODEL" == "grok-4.5" ]] || {
@@ -136,14 +145,12 @@ if [[ "$ENGINE" == "grok" ]]; then
     low|medium|high) ;;
     *) echo "grok effort must be low|medium|high (got: $EFFORT)" >&2; exit 2 ;;
   esac
+elif [[ "$ENGINE" == "codex" ]]; then
+  [[ -n "$MODEL" ]] || MODEL="gpt-5.6-sol"
+  [[ -n "$EFFORT" ]] || EFFORT="medium"
 else
+  [[ -n "$MODEL" ]] || MODEL="opus"
   [[ -n "$EFFORT" ]] || EFFORT="high"
-  if [[ -z "$MODEL" ]]; then
-    case "$ENGINE" in
-      codex) MODEL="gpt-5.5" ;;   # gpt-5.3-codex is NOT available on ChatGPT-account auth
-      claude) MODEL="opus" ;;
-    esac
-  fi
 fi
 
 RUBRIC_FILE=""

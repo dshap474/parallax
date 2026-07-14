@@ -6,9 +6,9 @@ Parallax orchestrates external model CLIs that you install and authenticate. It 
 
 | Engine | Install | Used by default | Required? |
 |---|---|---|---|
-| Codex | `codex` CLI + auth | implementation/system plan critics, planner, and review lanes in `dev`/`goal-spec`/`review`; `/plx:codex` | required for the shipped pipeline configs |
-| Grok | `grok` CLI + auth | `/plx:grok`; optional second-perspective lanes | optional |
-| Claude | `claude` CLI (already present — it runs your session) | the writer lane (`code: claude`); any lane you bind it to | present by definition |
+| Codex | `codex` CLI + auth | default writer, implementation/system plan critics, planner, and review lanes; `/plx:codex` | required for the shipped pipeline configs |
+| Grok | `grok` CLI + auth | approved writer alternative; optional fix/second-perspective lanes; `/plx:grok` | optional |
+| Claude | `claude` CLI (already present — it runs your session) | optional Opus planning/review lanes | present by definition |
 
 The shipped configs bind the critic/planner/reviewer lanes to Codex, so Codex is required to run the pipelines as configured. Bindings are defaults, not limits — see `prompts/engines.md`. Validate whatever a run needs with `plx-preflight --repo <repo> --require-<engine>` (each probe spends a tiny model call).
 
@@ -20,9 +20,11 @@ Install and authenticate the Codex CLI (`codex` on `PATH`).
 
 - `--ignore-user-config` and `--ephemeral` (no session state, no user-config bleed)
 - sandbox `read-only` (`--mode ro`) or `workspace-write` (`--mode rw`)
-- `--effort low|medium|high|xhigh` (default `high`) and `--model` (default `gpt-5.5` — `gpt-5.3-codex` is unavailable on some ChatGPT-account auth)
+- `--effort low|medium|high|xhigh` (default `medium`) and `--model` (default `gpt-5.6-sol`)
 
-Codex writes only in `--mode rw` (the `code: codex` binding or `/plx:codex`). No mode uses `danger-full-access` or `--yolo`.
+Codex writes only in `--mode rw` (the `code: codex` binding or `/plx:codex`). GPT-5.5
+and Sonnet are forbidden across every engine and rejected as usage errors. No mode uses
+`danger-full-access` or `--yolo`.
 
 ## Grok
 
@@ -66,6 +68,9 @@ The `claude` CLI is already installed and authenticated — it is the session yo
 - `--mode ro` → `--permission-mode dontAsk` + `Read,Grep,Glob` allowlist
 - `--mode rw` → `--permission-mode acceptEdits` + `Read,Grep,Glob,Edit,Write,Bash` allowlist
 - `--effort` (default `high`) and `--model` (default `opus`); rubrics injected via `--append-system-prompt-file`
+
+Sonnet is not an allowed model. Claude remains available for optional Opus planning and
+review work; it is not a shipped implementation default.
 
 Blocked tool calls abort the run rather than hang. No bypass flags, ever.
 

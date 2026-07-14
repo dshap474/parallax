@@ -31,22 +31,18 @@ open with the section header the rubric expects:
 | `plan-critic-system`  | system/design red-team        | `## Draft plan`     |
 | `worker`              | implementation / fixes (rw)   | `## Spec`           |
 
-## Models (rankings — higher is better)
+## Models
 
-Cost reflects what a call actually costs to run, not list price. Intelligence is how
-hard a problem you can hand the model unsupervised. Taste covers UI/UX, code quality,
-API design, and copy. *(Scores are shipped defaults — tune them to your own limits.)*
+| model | how to call | default role |
+| --- | --- | --- |
+| gpt-5.6-sol | `--engine codex` (medium effort by default) | default implementation, fixes, and Codex review lanes |
+| grok-4.5 | `--engine grok` (medium effort by default) | implementation alternative and independent review perspective |
+| opus-4.8 | `--engine claude` | optional planning, review, or taste-heavy judgment |
+| fable-5 | you — the orchestrator; never delegated | plan authoring, synthesis, and final gate |
 
-| model              | how to call                                  | cost | intelligence | taste |
-| ------------------ | -------------------------------------------- | ---- | ------------ | ----- |
-| gpt-5.5            | `--engine codex` (default model)             | 9    | 8            | 5     |
-| grok-4.5           | `--engine grok` (medium effort by default)   | 9    | 8            | 7     |
-| sonnet-5           | `--engine claude --model sonnet`             | 5    | 5            | 7     |
-| opus-4.8           | `--engine claude` (default model)            | 4    | 7            | 8     |
-| fable-5            | you — the orchestrator; never delegated      | 2    | 9            | 9     |
-
-`gpt-5.6-sol` at `xhigh` is the specialized standalone plan-critic default. It is not a
-general-purpose rung in this table.
+GPT-5.5 and Sonnet are forbidden. Do not select them even when explicitly requested as
+an engine substitution; `plx-engine` rejects both. Standalone Codex plan critics keep
+their deliberate `gpt-5.6-sol` at `xhigh` binding.
 
 How to apply:
 
@@ -55,22 +51,22 @@ How to apply:
   work on a smarter engine or higher effort without asking. Judge the output, not the
   price tag — escalating costs less than shipping mediocre work. This permission changes
   only model or effort; it never expands task scope, target resources, credentials,
-  permissions, or allowed side effects.
-- **When axes conflict for anything that ships: intelligence > taste > cost.** Cost is
-  a tie-breaker only.
-- **Bulk / mechanical work** (clear-spec implementation, migrations, data analysis) →
-  gpt-5.5 or grok — effectively free.
-- **Anything user-facing** (UI, copy, API design) needs **taste ≥ 7** — opus, or keep
-  the work with you.
-- **Reviews** → a smart model, plus optionally a cheap extra perspective. Always prefer
+  permissions, allowed side effects, or the forbidden-model rule.
+- **Implementation starts with GPT-5.6 Sol medium or Grok 4.5 medium.** Prefer Sol for
+  complex code reasoning and cross-file precision. Prefer Grok for clear mechanical
+  work or an independent implementation perspective. The shipped scalar binding is
+  Codex; choosing Grok needs no user confirmation.
+- **Anything user-facing** (UI, copy, API design) may use Opus for a taste-focused
+  advisory pass, while implementation remains Sol or Grok.
+- **Reviews** → a capable model, plus optionally an independent perspective. Always prefer
   a *different* engine than the one that wrote the code — independence catches what
   self-review can't.
 - **Targeted fixes from a review** → fast and cheap (Grok 4.5 at low/medium, or codex at
   `--effort medium`) — small scoped fixes don't need taste.
-- **Effort**: Codex and Claude default to `high`; Grok 4.5 defaults to `medium`.
-  Use Grok `low` for trivial work and `high` for risky work. Reserve `xhigh` for
-  engines that support it on cross-file contracts, concurrency, data-integrity or
-  money paths, and wide refactors; Grok 4.5 supports only `low|medium|high`.
+- **Effort**: Codex and Grok default to `medium`; Claude defaults to `high`. Escalate
+  only for concrete complexity or risk. Reserve Codex `xhigh` for cross-file contracts,
+  concurrency, data-integrity or money paths, wide refactors, and standalone plan
+  critics. Grok supports only `low|medium|high`.
 - **Fable is never delegated.** You are fable — spend yourself where judgment is the
   product (plan authoring, review synthesis, the final gate), not on bulk reads or
   mechanical edits.
@@ -79,8 +75,8 @@ How to apply:
 
 Config bindings are the **floor shape**, not the ceiling or the mandate. Before
 launching lanes, size the task and **declare the shape you chose in one line** (e.g.
-`Sizing: implementation critic (codex, high) · 1 worker (claude) · review 3×1
-(codex, high)`) — it
+`Sizing: implementation critic (codex, high) · 1 worker (codex, medium) · review 3×1
+(grok, high)`) — it
 gives the user a veto point before tokens burn. Scale down as readily as up.
 
 | scale | plan | build | review |

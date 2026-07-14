@@ -45,7 +45,7 @@ pipelines:
     plan-critic-system: [codex]
 
   build:
-    code: claude
+    code: codex
 
   review:
     review-correctness: [codex]
@@ -56,7 +56,7 @@ pipelines:
   dev:
     plan-critic-implementation: [codex]
     plan-critic-system: [codex]
-    code: claude
+    code: codex
     review-correctness: [codex]
     review-cleanup: [codex]
     review-structural: [codex]

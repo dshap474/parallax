@@ -24,7 +24,9 @@ Three tool calls — no subagent.
 
    `plx-engine` is on your PATH (shipped in the plugin's `bin/`); it runs one headless `codex exec` turn with safety pinned (workspace-write sandbox scoped to `--repo`, `--ignore-user-config`, `--ephemeral`) and prints only Codex's final message — the write boundary is that sandbox, nothing else can be touched. rw mode is used for **every** ask type; for a pure question or plan Codex simply writes nothing, so there is no separate read-only path.
 
-   - Effort: `--effort medium` for a trivial question; `--effort xhigh` for everything else. Pick one — always pass the flag.
+   - Effort: `--effort medium` by default. Use `high` or `xhigh` only when concrete
+     complexity or risk warrants it: cross-file contracts, concurrency, data integrity,
+     money paths, or a wide refactor. Pick one — always pass the flag.
    - If the call may run long, use the Bash tool's `run_in_background` option rather than blocking (the post-run status/diff then happens after the completion notification).
    - Exit codes: **0** ok · **1** Codex failure (surface the stderr/log excerpt to the user) · **2** usage error (your invocation is wrong — fix it) · **3** not signed in → tell the user to run `codex login` and stop.
 

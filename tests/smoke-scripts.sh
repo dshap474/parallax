@@ -95,6 +95,41 @@ else
   _pass "non-zero exit on unknown rubric"
 fi
 
+_head "plx-engine defaults Codex to GPT-5.6 Sol at medium effort"
+fake_codex_args="$WORK/codex-args.txt"
+printf '%s\n' '#!/usr/bin/env bash' \
+  '# Fake Codex CLI — records argv and writes the requested final output.' \
+  'printf '\''%s\n'\'' "$@" > "$PLX_CODEX_ARGS_FILE"' \
+  'while [ "$#" -gt 0 ]; do' \
+  '  if [ "$1" = "-o" ]; then printf '\''OK\n'\'' > "$2"; exit 0; fi' \
+  '  shift' \
+  'done' \
+  'exit 1' \
+  > "$fake_bin/codex"
+chmod +x "$fake_bin/codex"
+
+PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
+  "$PLX_ROOT/bin/plx-engine" --engine codex --mode rw --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
+rc=$?
+if [ "$rc" -eq 0 ]; then _pass "Codex default invocation exits 0"; else _fail "Codex default invocation exits $rc"; fi
+assert_contains "gpt-5.6-sol" "$fake_codex_args" "Codex model defaults to GPT-5.6 Sol"
+assert_contains "model_reasoning_effort=medium" "$fake_codex_args" "Codex effort defaults to medium"
+assert_contains "workspace-write" "$fake_codex_args" "Codex rw uses workspace-write sandbox"
+
+PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
+  "$PLX_ROOT/bin/plx-engine" --engine codex --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --model gpt-5.5 \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 2 ]; then _pass "Codex rejects GPT-5.5"; else _fail "GPT-5.5 expected exit 2, got $rc"; fi
+
+"$PLX_ROOT/bin/plx-engine" --engine claude --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --model sonnet \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 2 ]; then _pass "Claude rejects Sonnet"; else _fail "Sonnet expected exit 2, got $rc"; fi
+
 _head "plx-config prints the engine config"
 out="$WORK/config.txt"
 "$PLX_ROOT/bin/plx-config" > "$out" 2>&1

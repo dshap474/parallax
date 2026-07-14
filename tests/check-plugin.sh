@@ -87,6 +87,13 @@ for r in reviewer-correctness reviewer-cleanup reviewer-structural planner plan-
   if [ -s "$PLX_ROOT/prompts/$r.md" ]; then _pass "prompts/$r.md"; else _fail "missing rubric: prompts/$r.md"; fi
 done
 
+_head "Standalone plan critic defaults"
+if grep -q -- '--model gpt-5.6-sol --effort xhigh' "$PLX_ROOT/skills/plan/SKILL.md"; then
+  _pass "plan pins GPT-5.6 Sol at xhigh"
+else
+  _fail "plan does not pin GPT-5.6 Sol at xhigh"
+fi
+
 _head "Skills are self-contained (no pointers into lib/, prompts/, scripts/, or router.md)"
 if grep -rqE 'lib/(pipeline|engines)\.md|prompts/|scripts/|router\.md' "$PLX_ROOT"/skills/*/SKILL.md; then
   _fail "a skill still points at lib/, prompts/, scripts/, or router.md"

@@ -79,6 +79,7 @@ Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev
 - Preflight and wrappers use shell temp directories only and clean them up before returning.
 - Plan authoring, review synthesis, and the final gate are always the orchestrator. Critic/planner/review lanes are always `--mode ro`. Writers (build workers, fix lanes) follow **one writer per disjoint path set**: parallel rw lanes only on non-overlapping files, each brief naming the paths it owns; verification after all writers land.
 - Sizing is declared before launch: the orchestrator prints its chosen shape (critics × workers × review lanes × effort) as a one-line veto point.
+- Standalone `/plx:plan` pins both plan-critic dimensions to Codex `gpt-5.6-sol` at `xhigh` for every non-small plan; `/plx:dev` retains proportional plan sizing.
 - **Skills never commit or publish** — version control follows the target repo's own agent instructions.
 - Final results are returned in chat, not written to a results file.
 

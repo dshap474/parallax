@@ -1,6 +1,6 @@
 ---
 name: "plx::plan"
-description: The Parallax plan stage, standalone — the orchestrator authors the plan itself (clarifying first only if needed), sizes a read-only implementation/system red-team from the task's risk, folds the critiques, and delivers the final plan. In-context by default; persisted to the build thread only for large or multi-session efforts. No code is written.
+description: The Parallax plan stage, standalone — the orchestrator authors the plan itself (clarifying first only if needed), then by default parallel GPT-5.6 Sol xhigh implementation and system critics red-team it before the orchestrator delivers the final plan. Small/clear tasks may skip critics; spec docs are reserved for large or multi-session efforts. No code is written.
 argument-hint: "<task to plan>"
 disable-model-invocation: true
 user-invocable: true
@@ -24,19 +24,19 @@ the judgment doc (model rankings, sizing ladder, when to escalate).
 
 ## Size the run — then declare it
 
-Read the engine config (`plx-config`) → key `plan`. Shipped defaults:
-`plan-critic-implementation: [codex]` · `plan-critic-system: [codex]`. These are the
-available dimensions, not a mandate to run both — size per the judgment doc:
+Read the engine config (`plx-config`) → key `plan`. Shipped defaults enable both critic
+dimensions. Unless the user explicitly asks for a different shape in the current request,
+standalone `/plx:plan` pins each enabled dimension to **Codex · `gpt-5.6-sol` · `xhigh`**:
 
 - **small / clear task** → no critic; plan in-context.
-- **default** → implementation critic only; plan in-context.
+- **default** → implementation and system critics in parallel; plan in-context.
 - **large / risky** (cross-file contracts, concurrency, data-integrity or money paths,
-  public or trust boundaries, wide refactors, multi-session effort) → implementation and
-  system critics in parallel at `xhigh`; persist the plan as a spec doc in the build thread.
+  public or trust boundaries, wide refactors, multi-session effort) → the same two critics;
+  persist the plan as a spec doc in the build thread.
 
-Declare your sizing in one line before launching anything (e.g. `Sizing: implementation
-critic (codex, high) · plan in-context`). Run `plx-preflight --repo <repo>
---require-<engine>` for each engine you'll use.
+Declare your sizing in one line before launching anything (e.g. `Sizing: plan authored by
+Fable · critics: implementation + system (gpt-5.6-sol, xhigh, parallel) · plan in-context`).
+Run `plx-preflight --repo <repo> --require-codex` before launching.
 
 ## Pipeline (run in order)
 
@@ -64,27 +64,27 @@ critic (codex, high) · plan in-context`). Run `plx-preflight --repo <repo>
    exit, a behavior to demonstrate). This is what the build worker self-verifies against;
    a plan whose completion can't be checked isn't finished.
 
-3. **Red-team it (if sized in).** Write one neutral `<tmp>/critic-brief.md` — a
-   `## Draft plan` header, then the plan verbatim. Launch the sized dimensions in parallel,
-   one lane per configured engine, background Bash (`run_in_background`; engine turns can
-   outrun the 10-min foreground cap). The implementation critic assumes the design is
+3. **Red-team it (unless the small/clear rung skipped it).** Write one neutral
+   `<tmp>/critic-brief.md` — a `## Draft plan` header, then the plan verbatim. Launch both
+   dimensions in parallel through Codex at `gpt-5.6-sol` + `xhigh`, background Bash
+   (`run_in_background`; engine turns can outrun the 10-min foreground cap). The
+   implementation critic assumes the design is
    settled and checks checkout-level executability; the system critic assumes faithful
    execution and checks whether the resulting system is right:
 
    ```
-   plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/critic-brief.md \
-     --rubric plan-critic-<dimension> --effort <high|xhigh> \
-     --out <tmp>/critic-<dimension>-<e>.md --log <tmp>/critic-<dimension>-<e>.log
+   plx-engine --engine codex --mode ro --repo <repo> --prompt-file <tmp>/critic-brief.md \
+     --rubric plan-critic-<implementation|system> --model gpt-5.6-sol --effort xhigh \
+     --out <tmp>/critic-<dimension>.md --log <tmp>/critic-<dimension>.log
    ```
 
-   Grok lanes need the Bash sandbox disabled (`dangerouslyDisableSandbox: true`) and
-   take no `--effort`/`--model`. Each returns findings, never a rewrite. Exit codes:
-   0 ok · 1 engine failure (read the log; retry once or proceed without, and say so) ·
-   2 your usage error · 3 not signed in → tell the user and stop.
+   Each returns findings, never a rewrite. Exit codes: 0 ok · 1 engine failure (read the
+   log; retry once, then proceed with the survivor and say so) · 2 your usage error ·
+   3 not signed in → tell the user and stop.
 
 4. **Fold the critiques, then finalize.** Deduplicate across dimensions, then triage every
-   finding with the repo in front of
-   you: adopt it or reject it with a reason — never silently drop one, and verify a
+   finding with the repo in front of you: adopt it or reject it with a reason — never
+   silently drop one, and verify a
    load-bearing claim yourself before acting on it (a critic can be wrong). One round,
    hard cap. **Escape hatch:** a fundamental objection → re-draft (step 2).
 

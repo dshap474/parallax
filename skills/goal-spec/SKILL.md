@@ -1,6 +1,6 @@
 ---
 name: "plx::goal-spec"
-description: Interview-locked goal planning for long-running efforts. A Socratic interview (AskUserQuestion) locks the goal — intent, binary success criteria, invariants, non-goals — then a single planner lane designs the how, parallel system and implementation critics red-team it at xhigh, and the orchestrator synthesizes ONE self-contained spec to the shared template, persists it to the build thread under .project/builds/, and hands back a paste-ready /goal condition pointing at it. No code is written.
+description: Interview-locked goal planning for long-running efforts. A Socratic interview (AskUserQuestion) locks the goal — intent, binary success criteria, invariants, non-goals — then a single planner lane designs the how, parallel system and implementation critics red-team it at their engine-supported high effort, and the orchestrator synthesizes ONE self-contained spec to the shared template, persists it to the build thread under .project/builds/, and hands back a paste-ready /goal condition pointing at it. No code is written.
 argument-hint: "<the goal to plan>"
 disable-model-invocation: true
 user-invocable: true
@@ -42,8 +42,9 @@ Establish ground truth with your own tools — nothing is injected for you:
 
 Read the engine config (run `plx-config`) → key `goal-spec`. Shipped defaults:
 `plan: [claude]` · `plan-critic-implementation: [codex]` ·
-`plan-critic-system: [codex]`. Run `plx-preflight --repo <repo> --require-codex`. If
-Codex is unavailable, skip the red-team and say so in the final output.
+`plan-critic-system: [codex]`. Declare the resolved shape, then run `plx-preflight --repo
+<repo> --require-<engine>` once per **distinct** resolved engine. If a required engine is
+unavailable, report `[RED-TEAM INCOMPLETE]` and stop; never silently drop a configured lane.
 
 ## Pipeline (run in order)
 
@@ -135,6 +136,11 @@ plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/critic-brief
   --out <tmp>/critique-<dimension>-<e>.md --log <tmp>/critic-<dimension>-<e>.log
 ```
 
+A failed required lane gets one retry on the same binding after log inspection. Correct an
+exit-2 invocation error once; exit 3 requires authentication and stops the run. If the planner or
+either configured critic still has no result, return `[RED-TEAM INCOMPLETE]` with the diagnosis
+and surviving artifacts; do not author or persist a final spec.
+
 The implementation critic checks whether the design can be executed correctly against the
 checkout; the system critic checks whether faithful execution would produce the right
 integrated and operable system. Both return findings, never rewrites. If either configured
@@ -151,7 +157,7 @@ by every engine, not a copy inlined here. Load it with `plx-skill --ref plan/spe
 then fill it:
 
 - The **locked goal** populates **Intent**, **Success Criteria**, and **Invariants** (fold
-  in the VISION constraints and the ≥3 non-goals).
+  in the VISION constraints and material non-goals).
 - The **synthesis** populates **Context**, **Suggested Path**, and **Validation**.
 - Keep **Stop Rules** — they keep an autonomous run from over-shooting the goal.
 - Because this is a long-running effort, **turn on the optional Milestones + Progress Log

@@ -1,6 +1,6 @@
 # Parallax — Package Specification
 
-Status: v0.4.4
+Status: v0.4.5
 
 ## Purpose
 
@@ -54,7 +54,7 @@ The orchestrator is Claude (Fable). There are **no subagents**: the orchestrator
 ```json
 {
   "name": "plx",
-  "version": "0.4.4"
+  "version": "0.4.5"
 }
 ```
 

@@ -104,10 +104,12 @@ else
   _fail "plan does not pin GPT-5.6 Sol at xhigh"
 fi
 if grep -q -- '--effort <resolved-effort>' "$PLX_ROOT/skills/goal-spec/SKILL.md" &&
-   grep -q 'Grok uses `high`' "$PLX_ROOT/skills/goal-spec/SKILL.md"; then
-  _pass "goal-spec sizes Grok critic effort within its supported range"
+   grep -q 'Grok uses `high`' "$PLX_ROOT/skills/goal-spec/SKILL.md" &&
+   grep -q 'once per \*\*distinct\*\* resolved engine' "$PLX_ROOT/skills/goal-spec/SKILL.md" &&
+   grep -q '\[RED-TEAM INCOMPLETE\]' "$PLX_ROOT/skills/goal-spec/SKILL.md"; then
+  _pass "goal-spec sizes and preflights every required engine"
 else
-  _fail "goal-spec may pass unsupported critic effort to Grok"
+  _fail "goal-spec engine sizing or required-lane contract is incomplete"
 fi
 if grep -q 'exactly one' "$PLX_ROOT/skills/plan/SKILL.md" &&
    grep -q 'plan-critic-<dimension>' "$PLX_ROOT/skills/plan/SKILL.md"; then

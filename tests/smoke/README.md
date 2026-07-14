@@ -83,7 +83,7 @@ automated run. To smoke it by hand:
 
 1. Copy a fixture: `cp -R tests/fixture /tmp/plx-pg && (cd /tmp/plx-pg && git init -q && git add -A && git commit -qm init)`
 2. From that dir, run `/plx:goal-spec add a small stats module to calc.py` in an interactive Claude Code session.
-3. Confirm: it interviews you, locks the goal at an approval gate, runs the planner lanes, and writes **one** `/goal`-ready spec under `.project/builds/<thread>/`, then prints a paste-ready `/goal` condition pointing at it.
+3. Confirm: it interviews you, locks the goal at an approval gate, runs the planner and critic lanes, and writes **one** `/goal`-ready spec under `.project/builds/<thread>/`, then prints a paste-ready `/goal` condition pointing at it.
 
 ## Fixtures
 

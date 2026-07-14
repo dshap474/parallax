@@ -32,7 +32,7 @@ flowchart TD
     subgraph LEG ["Pipelines at a glance"]
       direction TB
       L1["🛠️ dev:  ① → ⑦ (full pipeline)"]
-      L2["📐 goal-spec:  interview → lock → parallel planner lanes + Fable authors a /goal-ready spec → build thread"]
+      L2["📐 goal-spec:  interview → lock → planner + parallel critic lanes → Fable authors a /goal-ready spec → build thread"]
       L3["🔎 review:  standalone — three read-only lanes + Fable synthesis"]
       L4["🤖 passthrough:  /plx:codex · /plx:grok — one rw lane, no pipeline"]
     end

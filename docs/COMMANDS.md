@@ -6,7 +6,7 @@ Every entry point lives under the `plx` plugin namespace. Stage skills let you d
 
 | Command | What it does |
 |---|---|
-| `/plx:plan` | Fable authors the plan itself (clarifying first only if needed), then parallel implementation/system critics compare it with the original task and clarifications. Shipped defaults use GPT-5.6 Sol `xhigh`; config/current-message overrides win. Both must return before Fable finalizes. No code written. |
+| `/plx:plan` | Fable authors the candidate, then one implementation critic and one system critic compare it with the task contract in parallel. No code written. |
 | `/plx:build` | Writer lane(s) implement a plan — taken from a spec doc path, the plan already in the conversation, or a raw bounded task. One worker by default; parallel file-disjoint workers for large separable work. Verifies and reports; no review round. |
 | `/plx:review` | Sized review round — 1 lane (small change) up to 3 dimensions × 2 engines (risky change) — then synthesis and **automatic fixes** via cheap targeted fix lanes (codex medium / grok). Genuinely uncertain findings go to the user as one batched question. Say "report only" to skip fixes. |
 

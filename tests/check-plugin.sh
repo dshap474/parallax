@@ -93,26 +93,44 @@ if grep -q -- '--model gpt-5.6-sol --effort xhigh' "$PLX_ROOT/skills/plan/SKILL.
 else
   _fail "plan does not pin GPT-5.6 Sol at xhigh"
 fi
-if grep -q 'Every explicit `/plx:plan` invocation' "$PLX_ROOT/skills/plan/SKILL.md"; then
-  _pass "plan runs both critic dimensions by default"
+if grep -q 'exactly one' "$PLX_ROOT/skills/plan/SKILL.md" &&
+   grep -q 'plan-critic-<dimension>' "$PLX_ROOT/skills/plan/SKILL.md"; then
+  _pass "plan requires one engine per critic dimension"
 else
-  _fail "plan still has an implicit critic bypass"
+  _fail "plan critic cardinality is not explicit"
 fi
-if grep -q '### Original request (verbatim)' "$PLX_ROOT/skills/plan/SKILL.md" &&
-   grep -q '### Orchestrator-authored plan' "$PLX_ROOT/skills/plan/SKILL.md"; then
-  _pass "plan critic brief carries task contract separately"
+brief_contract_ok=1
+for s in plan dev goal-spec; do
+  for heading in '### Original request' '### Confirmed decisions' '### Candidate plan'; do
+    grep -q "$heading" "$PLX_ROOT/skills/$s/SKILL.md" || brief_contract_ok=0
+  done
+done
+if [ "$brief_contract_ok" -eq 1 ]; then
+  _pass "all plan critics receive the canonical task contract"
 else
-  _fail "plan critic brief does not separate task contract from draft"
+  _fail "a plan critic consumer has a stale brief shape"
 fi
-if grep -q '\[RED-TEAM INCOMPLETE\]' "$PLX_ROOT/skills/plan/SKILL.md"; then
-  _pass "failed critic blocks final-plan status"
+if grep -q 'confirmed decisions' "$PLX_ROOT/prompts/plan-critic-implementation.md" &&
+   grep -q 'candidate plan' "$PLX_ROOT/prompts/plan-critic-implementation.md" &&
+   grep -q 'confirmed decisions' "$PLX_ROOT/prompts/plan-critic-system.md" &&
+   grep -q 'candidate plan' "$PLX_ROOT/prompts/plan-critic-system.md"; then
+  _pass "plan critic rubrics consume the canonical contract"
 else
-  _fail "plan can silently finalize after a critic failure"
+  _fail "plan critic rubrics do not match the brief contract"
 fi
-if grep -q 'Honor configured engine substitutions' "$PLX_ROOT/skills/plan/SKILL.md"; then
-  _pass "plan honors configured critic engines"
+if grep -q 'once per \*\*distinct\*\* resolved engine' "$PLX_ROOT/skills/plan/SKILL.md" &&
+   grep -q 'one retry on the same binding' "$PLX_ROOT/skills/plan/SKILL.md" &&
+   grep -q -- '--mode ro' "$PLX_ROOT/skills/plan/SKILL.md" &&
+   grep -q '\[RED-TEAM INCOMPLETE\]' "$PLX_ROOT/skills/plan/SKILL.md"; then
+  _pass "plan preflight and failure paths are bounded"
 else
-  _fail "plan hard-codes critic engines over config"
+  _fail "plan preflight or failure contract is incomplete"
+fi
+if grep -q 'current-message engine substitution' "$PLX_ROOT/skills/plan/SKILL.md" &&
+   grep -q 'explicit model/effort settings' "$PLX_ROOT/skills/plan/SKILL.md"; then
+  _pass "plan override precedence is explicit"
+else
+  _fail "plan override precedence is ambiguous"
 fi
 
 _head "Skills are self-contained (no pointers into lib/, prompts/, scripts/, or router.md)"

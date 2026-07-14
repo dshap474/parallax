@@ -45,6 +45,9 @@ API design, and copy. *(Scores are shipped defaults — tune them to your own li
 | opus-4.8           | `--engine claude` (default model)            | 4    | 7            | 8     |
 | fable-5            | you — the orchestrator; never delegated      | 2    | 9            | 9     |
 
+`gpt-5.6-sol` at `xhigh` is the specialized standalone plan-critic default. It is not a
+general-purpose rung in this table.
+
 How to apply:
 
 - **Defaults, not limits.** You have standing permission to override any binding in
@@ -86,11 +89,11 @@ gives the user a veto point before tokens burn. Scale down as readily as up.
 | **default** | plan in-context + implementation critic | 1 worker | 3 dims × 1 engine |
 | **large / risky** | spec doc + implementation and system critics | parallel file-disjoint workers | 3 dims × 2 engines, xhigh |
 
-Standalone `/plx:plan` deliberately overrides the default plan rung: every explicit
-invocation runs both critic dimensions in parallel. Shipped Codex bindings use
-`gpt-5.6-sol` at `xhigh`; explicit config or current-message overrides win. Both dimensions
-must return before the plan is final. `/plx:dev` keeps the table's proportional plan sizing
-as part of the larger end-to-end run.
+Standalone `/plx:plan` deliberately overrides the default plan rung: it resolves exactly
+one engine for each critic dimension and runs both in parallel. Shipped Codex bindings use
+`gpt-5.6-sol` at `xhigh`; explicit current-message substitutions win. Both required
+dimensions must return before the plan is final. `/plx:dev` keeps the proportional sizing
+above as part of the larger end-to-end run.
 
 Scale-up signals: cross-file contracts, concurrency, data-integrity or money paths,
 wide refactors, high ambiguity, code you can't easily verify. Scale-down signals: one
@@ -112,9 +115,11 @@ consume it later. A spec doc for a one-shot task is overhead, not rigor.
 - **Grok calls need the Bash sandbox disabled** for the call
   (`dangerouslyDisableSandbox: true`) — grok needs network/keychain access the sandbox
   blocks; grok's own kernel sandbox still confines it. Grok takes no `--model`/`--effort`.
-- **If a lane fails (exit 1)**: read its log, then retry once — same engine, or a
+- **Pipeline-specific retry and completion rules override this general playbook.** If a lane
+  fails (exit 1), read its log, then retry once — same engine, or a
   smarter one if the failure looks like capability. If a review lane fails and others
-  succeeded, proceed with the survivors and say so. **If a lane hangs** well past its
+  succeeded, proceed with the survivors and say so; this survivor rule does not apply to
+  required plan critics. **If a lane hangs** well past its
   expected runtime, check the log, kill it, and relaunch rather than waiting forever.
 - Exit codes are uniform: 0 ok · 1 engine failure · 2 usage error · 3 not signed in
   (tell the user to log in to that engine).

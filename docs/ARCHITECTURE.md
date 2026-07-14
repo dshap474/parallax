@@ -28,7 +28,7 @@ Lane rubrics ship in `prompts/` (one deduped, engine-agnostic file per lane) and
 
 ## The escalation ladder
 
-`prompts/engines.md` is the judgment doc, and it makes the config's role — **floor shape, not mandate** — concrete. It carries a cost/intelligence/taste ranking over the reachable models (gpt-5.5 via codex, opus-4.8/sonnet-5 via the claude engine, grok-composer-2.5; fable is the orchestrator itself, never delegated), application rules (intelligence > taste > cost for anything that ships; bulk → cheap; user-facing → taste ≥ 7; fixes → fast and cheap; standing permission to escalate), and the sizing ladder:
+`prompts/engines.md` is the judgment doc, and it makes the config's role — **floor shape, not mandate** — concrete. It carries a cost/intelligence/taste ranking over the general-purpose models (gpt-5.5 via codex, opus-4.8/sonnet-5 via the claude engine, grok-composer-2.5; fable is the orchestrator itself, never delegated), application rules (intelligence > taste > cost for anything that ships; bulk → cheap; user-facing → taste ≥ 7; fixes → fast and cheap; standing permission to escalate), and the sizing ladder:
 
 | scale | plan | build | review |
 | --- | --- | --- | --- |
@@ -37,13 +37,13 @@ Lane rubrics ship in `prompts/` (one deduped, engine-agnostic file per lane) and
 | default | in-context + implementation critic | 1 worker | 3 dims × 1 engine |
 | large / risky | spec doc + implementation and system critics | parallel file-disjoint workers | 3 dims × 2 engines, xhigh |
 
-Standalone `/plx:plan` is intentionally deeper than the composite default shown above:
-every explicit invocation runs both plan-critic dimensions in parallel. Their neutral brief
-contains the original request, confirmed clarifications, and Fable's draft as distinct
-sections. Shipped Codex bindings use GPT-5.6 Sol at `xhigh`; configured substitutions win.
-If either dimension still fails after one retry, the draft is returned as
-`[RED-TEAM INCOMPLETE]`, not final. `/plx:dev` retains proportional plan sizing because it
-also pays for build, review, fixes, and the final gate.
+Standalone `/plx:plan` is intentionally deeper than the composite default shown above. It
+resolves exactly one engine for each critic dimension and runs both in parallel against a
+canonical brief: original request, confirmed decisions, candidate plan. Shipped bindings
+use GPT-5.6 Sol at `xhigh`. A missing critic result after one retry returns
+`[RED-TEAM INCOMPLETE]`; a fundamental redesign receives at most one final review pass.
+`/plx:dev` retains proportional plan sizing because it also pays for build, review, fixes,
+and the final gate. All three planning flows use the same critic-brief contract.
 
 The orchestrator **declares its chosen sizing in one line before launching** — the user's veto point. Plan artifacts follow the same logic: a plan is a chat message by default; a spec doc in `.project/builds/` only when the effort is multi-session or another agent must consume it.
 
@@ -67,7 +67,7 @@ Review lanes are read-only and report in the Finding Schema. Fable synthesizes �
 
 - **Always background Bash.** Engine turns can run 10–40+ minutes; foreground Bash caps at 10. Lanes launch with `run_in_background` and `--out`/`--log` files; independent lanes fire in one message; the harness notifies on completion.
 - Grok calls need the Claude Bash sandbox disabled for that call (grok needs network/keychain access); grok's own kernel sandbox still confines it.
-- Failure playbook: exit 1 → read the log, retry once or escalate engines; a failed review lane among survivors → proceed and say so; a hung lane → check the log, kill, relaunch. Exit codes uniform: 0 ok · 1 engine failure · 2 usage error · 3 not signed in.
+- Failure playbook: pipeline-specific gates take precedence. Generally, exit 1 → read the log, retry once or escalate engines; a failed ordinary review lane among survivors → proceed and say so; a hung lane → inspect, terminate if stalled, relaunch. Required plan critics cannot silently degrade. Exit codes uniform: 0 ok · 1 engine failure · 2 usage error · 3 not signed in.
 
 ## Rubrics live in `prompts/`
 

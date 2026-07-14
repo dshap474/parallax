@@ -29,10 +29,11 @@
 #   - `code` and `fix` take ONE engine each. Writers may run in parallel only on
 #     disjoint path sets — one writer per path, always.
 #   - plan / plan-critic-* / review-* roles take LISTS and are always read-only
-#     (`--mode ro`), whatever engine fills them.
+#     (`--mode ro`), whatever engine fills them. Standalone `plan` is the narrow exception:
+#     each critic role must contain exactly one engine, preserving its fixed two-lane shape.
 #   - Standalone plan runs both critic roles by default. Its shipped Codex bindings use
-#     gpt-5.6-sol at xhigh; an engine substitution is an explicit config override and the
-#     plan skill applies that engine's supported model/effort flags.
+#     gpt-5.6-sol at xhigh; an explicit current-message substitution overrides the configured
+#     engine, and the plan skill applies that engine's supported model/effort flags.
 #   - Plan authoring, review synthesis, and the final gate are always the
 #     orchestrator. Never delegated, not configurable.
 #   - Cross-engine review is the default posture: prefer review engines that

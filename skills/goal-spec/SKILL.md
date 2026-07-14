@@ -108,9 +108,24 @@ steelman + repo facts) — the *how*. You do not study the codebase yourself; th
 ### 4. Parallel two-dimension red-team (xhigh)
 
 Cross-model rigor comes from review, not a second planner. Resolve both critic dimensions
-from the config, write one neutral `<tmp>/critic-brief.md` — a `## Draft plan` header, then
-the planner's brief verbatim — and launch both **in parallel at `xhigh` effort** (background
-Bash), one lane per configured engine:
+from the config and write one neutral `<tmp>/critic-brief.md`:
+
+```markdown
+## Draft plan
+
+### Original request
+<$ARGUMENTS verbatim>
+
+### Confirmed decisions
+<the user-approved lock summary verbatim>
+
+### Candidate plan
+<the planner's brief verbatim>
+```
+
+The approved lock overrides conflicting original wording; together they are the task
+contract. Launch both dimensions **in parallel at `xhigh` effort** (background Bash), one
+lane per configured engine:
 
 ```
 plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/critic-brief.md \
@@ -123,7 +138,7 @@ checkout; the system critic checks whether faithful execution would produce the 
 integrated and operable system. Both return findings, never rewrites. If either configured
 dimension is empty, skip that dimension and note it.
 
-### 5. Synthesize the final spec — your intelligence is the product
+### 5. Synthesize the final spec
 
 Weigh the planner's brief against both critiques: where are the critics right, where is the
 design sound, what did they miss, is there a simpler approach? Deduplicate shared findings

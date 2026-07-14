@@ -73,12 +73,27 @@ only for multi-session efforts. **The plan ends with a `Done means:` line** — 
 concrete command(s)/observable(s) that prove the work; the worker self-verifies against
 it and the gate re-runs it.
 
-Red-team it if sized in: `<tmp>/critic-brief.md` = `## Draft plan` + the plan verbatim.
-Default: one ro `plan-critic-implementation` lane. Large/risky: launch
+Red-team it if sized in. Write one neutral `<tmp>/critic-brief.md` for every critic:
+
+```markdown
+## Draft plan
+
+### Original request
+<$ARGUMENTS verbatim>
+
+### Confirmed decisions
+<material answers from clarification, or "none">
+
+### Candidate plan
+<the plan verbatim>
+```
+
+Confirmed decisions override conflicting original wording; together they are the task
+contract. Default: one ro `plan-critic-implementation` lane. Large/risky: launch
 `plan-critic-implementation` and `plan-critic-system` in parallel against that same neutral
 brief, one lane per configured engine. Deduplicate, then fold the critiques — adopt or reject
-every finding with a reason, verifying load-bearing claims yourself. One round. **Escape
-hatch:** fundamental objection → re-draft.
+every finding with a reason, verifying load-bearing claims yourself. If a fundamental
+objection invalidates the plan, revise once and rerun the sized critics once before build.
 
 ### 2. Build
 
@@ -128,8 +143,8 @@ residuals. Re-run verification after fixes.
 Read the diff once (`git -C <repo> diff`, scoped to the touched files; mind
 pre-existing dirt) — a fresh-eyes sanity pass, not a re-review: does the change satisfy
 the plan's success criteria? Do the fix-lane changes hold? Did every lane miss something
-obvious? Fix nits inline, re-verify proportional to what you touched. **Escape hatch:**
-structural rework → a fresh spec back through stage 2.
+obvious? Fix nits inline and re-verify proportional to what you touched. If structural
+rework is required, write a fresh spec and return to stage 2.
 
 ### 5. Docs + report
 

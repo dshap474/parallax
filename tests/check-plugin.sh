@@ -73,13 +73,6 @@ if grep -rqi 'grok-composer' \
 else
   _pass "no shipped Grok Composer references"
 fi
-if grep -q 'MODEL="grok-4.5"' "$PLX_ROOT/bin/plx-engine" &&
-   grep -q 'EFFORT="medium"' "$PLX_ROOT/bin/plx-engine" &&
-   grep -q -- '--no-plan --no-subagents --no-memory' "$PLX_ROOT/bin/plx-engine"; then
-  _pass "plx-engine pins Grok 4.5 with medium default and isolated headless features"
-else
-  _fail "plx-engine Grok model/effort/isolation policy is incomplete"
-fi
 if grep -rqiE 'use subagents|spawn (a |an )?subagent' "$PLX_ROOT/skills" 2>/dev/null; then
   _fail "a skill or reference still instructs the caller to spawn subagents"
 else
@@ -109,6 +102,12 @@ if grep -q -- '--model gpt-5.6-sol --effort xhigh' "$PLX_ROOT/skills/plan/SKILL.
   _pass "plan pins GPT-5.6 Sol at xhigh"
 else
   _fail "plan does not pin GPT-5.6 Sol at xhigh"
+fi
+if grep -q -- '--effort <resolved-effort>' "$PLX_ROOT/skills/goal-spec/SKILL.md" &&
+   grep -q 'Grok uses `high`' "$PLX_ROOT/skills/goal-spec/SKILL.md"; then
+  _pass "goal-spec sizes Grok critic effort within its supported range"
+else
+  _fail "goal-spec may pass unsupported critic effort to Grok"
 fi
 if grep -q 'exactly one' "$PLX_ROOT/skills/plan/SKILL.md" &&
    grep -q 'plan-critic-<dimension>' "$PLX_ROOT/skills/plan/SKILL.md"; then

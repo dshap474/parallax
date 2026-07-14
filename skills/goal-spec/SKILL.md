@@ -106,7 +106,7 @@ use `--effort high` in place of the unsupported `xhigh`. It
 studies the repo in its own context and returns a **Planning Brief** (recommendation +
 steelman + repo facts) — the *how*. You do not study the codebase yourself; the lane does.
 
-### 4. Parallel two-dimension red-team (xhigh)
+### 4. Parallel two-dimension red-team (engine-sized effort)
 
 Cross-model rigor comes from review, not a second planner. Resolve both critic dimensions
 from the config and write one neutral `<tmp>/critic-brief.md`:
@@ -125,12 +125,13 @@ from the config and write one neutral `<tmp>/critic-brief.md`:
 ```
 
 The approved lock overrides conflicting original wording; together they are the task
-contract. Launch both dimensions **in parallel at `xhigh` effort** (background Bash), one
-lane per configured engine:
+contract. Resolve effort per engine before launch: Grok uses `high`; Codex and Claude use
+`xhigh`. Launch both dimensions **in parallel** (background Bash), one lane per configured
+engine:
 
 ```
 plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/critic-brief.md \
-  --rubric plan-critic-<dimension> --effort xhigh \
+  --rubric plan-critic-<dimension> --effort <resolved-effort> \
   --out <tmp>/critique-<dimension>-<e>.md --log <tmp>/critic-<dimension>-<e>.log
 ```
 

@@ -4,7 +4,7 @@ Multi-model coding-agent orchestration for Claude Code — as a **toolbox, not a
 
 The orchestrator is Claude (Fable). It drives three coding engines — **Codex, Grok, and Claude itself** — headless, directly, through one wrapper (`plx-engine`). There are no subagents: evals showed operator subagents only add wall-clock time. What survives from them is the part that mattered — the lane rubrics, now shipped in [`prompts/`](prompts/) and injected at runtime by name.
 
-The core idea is an **escalation ladder**: the shipped config is the floor shape, and the orchestrator sizes every run from a shipped judgment doc ([`prompts/engines.md`](prompts/engines.md)) — model rankings by cost/intelligence/taste, plus the ladder. A trivial task gets no machinery at all; a default task gets one critic, one worker, three review lanes; a risky one gets parallel file-disjoint workers and six review lanes at xhigh. The orchestrator declares its chosen sizing before launching, so you can veto before tokens burn. Cross-engine review — a different engine than the one that wrote — is the default posture, and confirmed review findings are **fixed automatically** by cheap targeted fix lanes.
+The core idea is an **escalation ladder**: the shipped config is the floor shape, and the orchestrator sizes every run from a shipped judgment doc ([`prompts/engines.md`](prompts/engines.md)) — model rankings by cost/intelligence/taste, plus the ladder. A trivial task gets no machinery at all; a default task gets an implementation-plan critic, one worker, and three review lanes; a risky one adds a parallel system-plan critic, file-disjoint workers, and six review lanes at xhigh. The orchestrator declares its chosen sizing before launching, so you can veto before tokens burn. Cross-engine review — a different engine than the one that wrote — is the default posture, and confirmed review findings are **fixed automatically** by cheap targeted fix lanes.
 
 Explicit `/plx:*` commands run a stage (`plan`, `build`, `review`), the full run (`dev`), autonomous-goal prep (`goal-spec`), a single engine (`codex`, `grok`), or repo bootstrap (`init`) — see [`docs/COMMANDS.md`](docs/COMMANDS.md). Default engine bindings live in [`config/parallax.yaml`](config/parallax.yaml).
 
@@ -28,7 +28,7 @@ Each skill is fully self-contained — steps, lane briefs, and engine invocation
 
 | Command | Use case |
 |---|---|
-| `plan` | the orchestrator authors a plan, sized red-team (0–2 critic lanes); in-context by default, spec doc only for multi-session work |
+| `plan` | the orchestrator authors a plan, sized implementation/system red-team; in-context by default, spec doc only for multi-session work |
 | `build` | writer lane(s) implement a plan — from a spec path, the conversation, or a raw task; parallel file-disjoint workers for large separable work |
 | `review` | sized review round (1–6 read-only lanes) → synthesis → **automatic fixes** via cheap fix lanes; asks only about genuinely uncertain calls |
 | `dev` | plan → build → review + fix → final gate, strung together with per-stage sizing |

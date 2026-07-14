@@ -83,7 +83,7 @@ for sc in plx-engine plx-preflight plx-config plx-skill plx-link-claude; do
 done
 
 _head "Lane rubrics present (prompts/, injected by plx-engine --rubric)"
-for r in reviewer-correctness reviewer-cleanup reviewer-structural planner plan-critic worker engines; do
+for r in reviewer-correctness reviewer-cleanup reviewer-structural planner plan-critic-implementation plan-critic-system worker engines; do
   if [ -s "$PLX_ROOT/prompts/$r.md" ]; then _pass "prompts/$r.md"; else _fail "missing rubric: prompts/$r.md"; fi
 done
 

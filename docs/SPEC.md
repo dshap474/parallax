@@ -12,13 +12,13 @@ plan | build | review   →   dev   ·   goal-spec
 
 Each pipeline establishes repo ground truth (Bootstrap), then runs its steps. Explicit `/plx:*` commands run a stage, the composition, or hand a task to a single engine (see `docs/COMMANDS.md`).
 
-The orchestrator is Claude (Fable). There are **no subagents**: the orchestrator drives Codex, Grok, and Claude headless itself through one wrapper (`bin/plx-engine`), launching every lane as background Bash with out/log files. Lane rubrics ship in `prompts/` and are injected at runtime by `--rubric` name. The orchestrator spends its own intelligence at plan authoring, review synthesis, and the final gate; all bulk work runs in external engine lanes. Config values are the **floor shape**: the orchestrator sizes every run per the shipped judgment doc (`prompts/engines.md`) — 0–2 critics, 1–N file-disjoint workers, 1–6 review lanes — and declares the chosen sizing before launching. Confirmed review findings are fixed automatically by cheap targeted fix lanes; only genuinely uncertain calls go to the user. Critic, planner, and review lanes are read-only; writers follow one-writer-per-disjoint-path-set. Skills never commit.
+The orchestrator is Claude (Fable). There are **no subagents**: the orchestrator drives Codex, Grok, and Claude headless itself through one wrapper (`bin/plx-engine`), launching every lane as background Bash with out/log files. Lane rubrics ship in `prompts/` and are injected at runtime by `--rubric` name. The orchestrator spends its own intelligence at plan authoring, review synthesis, and the final gate; all bulk work runs in external engine lanes. Config values are the **floor shape**: the orchestrator sizes every run per the shipped judgment doc (`prompts/engines.md`) — no plan critic, implementation only, or implementation + system; 1–N file-disjoint workers; and 1–6 review lanes — then declares the sizing before launch. Confirmed review findings are fixed automatically by cheap targeted fix lanes; only genuinely uncertain calls go to the user. Critic, planner, and review lanes are read-only; writers follow one-writer-per-disjoint-path-set. Skills never commit.
 
 ## What ships
 
 - 5 pipeline skills, each **self-contained** (steps, lane briefs, and engine invocations written out inline — no path pointers, no `${CLAUDE_PLUGIN_ROOT}`, no script injection; external inputs arrive only through `bin/` tools: `plx-config` bindings, `plx-skill --ref` templates, `plx-engine --rubric` rubric injection): `plx:plan`, `plx:build`, `plx:review` (review + auto-fix), `plx:dev` (the composition), `plx:goal-spec` (interview-locked goal planning)
 - 2 single-engine passthroughs: `plx:codex`, `plx:grok` (no `plx:claude` — the orchestrator *is* Claude); 1 setup skill: `plx:init`
-- Lane rubrics in `prompts/`: `reviewer-correctness`, `reviewer-cleanup`, `reviewer-structural`, `planner`, `plan-critic`, `worker` (serves build workers and fix lanes) — one deduped engine-agnostic file per lane — plus `engines.md`, the judgment doc (model cost/intelligence/taste rankings, sizing ladder, writer rules)
+- Lane rubrics in `prompts/`: `reviewer-correctness`, `reviewer-cleanup`, `reviewer-structural`, `planner`, `plan-critic-implementation`, `plan-critic-system`, `worker` (serves build workers and fix lanes) — one deduped engine-agnostic file per lane — plus `engines.md`, the judgment doc (model cost/intelligence/taste rankings, sizing ladder, writer rules)
 - 1 default engine-binding config (`config/parallax.yaml`), keyed by pipeline: `plan`, `build`, `review`, `dev`, `goal-spec`
 - A deterministic engine API in `bin/` (on the Bash PATH while the plugin is enabled): `plx-engine` (the unified wrapper: `--engine codex|grok|claude --mode ro|rw --repo --prompt-file [--rubric] [--effort] [--model] (--stdout | --out --log)`, plus `--print-rubric <name>`), `plx-preflight` (probes any engine), `plx-config`, `plx-skill`, `plx-link-claude` — uniform exit codes (0 ok · 1 engine failure · 2 usage error · 3 auth needed) and `--help` manuals
 
@@ -86,7 +86,7 @@ Each skill path `skills/<name>/SKILL.md` maps to `/plx:<name>` (e.g. `skills/dev
 
 The shapes that flow between stages:
 
-1. **Brief headers** — every brief file opens with the section header its rubric expects: `## Review brief` (reviewer-*), `## Task brief` (planner), `## Draft plan` (plan-critic), `## Spec` (worker — both build specs and fix briefs).
+1. **Brief headers** — every brief file opens with the section header its rubric expects: `## Review brief` (reviewer-*), `## Task brief` (planner), `## Draft plan` (plan-critic-*), `## Spec` (worker — both build specs and fix briefs).
 2. **Planning Brief** — recommended design + steelman, alternatives rejected, repo facts, constraints/invariants, suggested success criteria, validation, risks. Output of each planner lane (goal-spec); Fable arbitrates and authors the final plan itself.
 3. **Buildout report** — every file touched, per-file summary, coding decisions, verification (commands + results), blockers/skips. Summaries only, never code bodies. Output of every writer lane; cross-checked against `git status` vs the run's starting snapshot.
 4. **Review brief** — repo, files touched (from git ground truth), what was implemented and why, spec pointer. Written by the orchestrator; identical for every lane, no steer.
@@ -126,7 +126,7 @@ bin/plx-config | grep -q "pipelines:"
 ### Rubrics
 
 ```bash
-for r in reviewer-correctness reviewer-cleanup reviewer-structural planner plan-critic worker engines; do
+for r in reviewer-correctness reviewer-cleanup reviewer-structural planner plan-critic-implementation plan-critic-system worker engines; do
   test -s "prompts/$r.md"
 done
 ```

@@ -6,7 +6,7 @@ Every entry point lives under the `plx` plugin namespace. Stage skills let you d
 
 | Command | What it does |
 |---|---|
-| `/plx:plan` | Fable authors the plan itself (clarifying first only if needed), sizes the red-team (0–2 read-only critic lanes), folds the critique, delivers the final plan. In-context by default; persisted to `.project/builds/` only for multi-session efforts. No code written. |
+| `/plx:plan` | Fable authors the plan itself (clarifying first only if needed), sizes an implementation/system red-team, folds the critiques, and delivers the final plan. In-context by default; persisted to `.project/builds/` only for multi-session efforts. No code written. |
 | `/plx:build` | Writer lane(s) implement a plan — taken from a spec doc path, the plan already in the conversation, or a raw bounded task. One worker by default; parallel file-disjoint workers for large separable work. Verifies and reports; no review round. |
 | `/plx:review` | Sized review round — 1 lane (small change) up to 3 dimensions × 2 engines (risky change) — then synthesis and **automatic fixes** via cheap targeted fix lanes (codex medium / grok). Genuinely uncertain findings go to the user as one batched question. Say "report only" to skip fixes. |
 
@@ -15,7 +15,7 @@ Every entry point lives under the `plx` plugin namespace. Stage skills let you d
 | Command | What it does |
 |---|---|
 | `/plx:dev` | plan → build → review + fix → final gate, in one run, with per-stage sizing. For a trivial ask it skips the machinery entirely (direct edit or one cheap rw lane). Ends with a `.project/` docs pass per the repo's own rules. |
-| `/plx:goal-spec` | Interview-locked goal planning for autonomous efforts: a Socratic interview locks the goal, a planner lane designs the how, Codex red-teams it, and Fable authors one self-contained `/goal`-ready spec into `.project/builds/` plus a paste-ready `/goal` condition. No code written. |
+| `/plx:goal-spec` | Interview-locked goal planning for autonomous efforts: a Socratic interview locks the goal, a planner lane designs the how, parallel implementation/system critics red-team it, and Fable authors one self-contained `/goal`-ready spec into `.project/builds/` plus a paste-ready `/goal` condition. No code written. |
 
 ## Single-engine asks (raw passthrough — no pipeline)
 

@@ -27,7 +27,8 @@ open with the section header the rubric expects:
 | `reviewer-cleanup`    | reuse/simplification review   | `## Review brief`   |
 | `reviewer-structural` | maintainability review        | `## Review brief`   |
 | `planner`             | architecture consulting       | `## Task brief`     |
-| `plan-critic`         | plan red-team                 | `## Draft plan`     |
+| `plan-critic-implementation` | checkout/execution red-team | `## Draft plan` |
+| `plan-critic-system`  | system/design red-team        | `## Draft plan`     |
 | `worker`              | implementation / fixes (rw)   | `## Spec`           |
 
 ## Models (rankings — higher is better)
@@ -74,15 +75,16 @@ How to apply:
 
 Config bindings are the **floor shape**, not the ceiling or the mandate. Before
 launching lanes, size the task and **declare the shape you chose in one line** (e.g.
-`Sizing: 1 critic (codex xhigh) · 1 worker (claude) · review 3×1 (codex, high)`) — it
+`Sizing: implementation critic (codex, high) · 1 worker (claude) · review 3×1
+(codex, high)`) — it
 gives the user a veto point before tokens burn. Scale down as readily as up.
 
 | scale | plan | build | review |
 | --- | --- | --- | --- |
 | **trivial** — one file, obvious change | none — decide and go | edit it yourself, or one rw lane | read the diff yourself |
 | **small** — clear task, low blast radius | plan in-context, no critic | 1 worker | 1 lane (correctness only) |
-| **default** | plan in-context + 1 critic | 1 worker | 3 dims × 1 engine |
-| **large / risky** | spec doc in the build thread + 1–2 critics | parallel file-disjoint workers | 3 dims × 2 engines, xhigh |
+| **default** | plan in-context + implementation critic | 1 worker | 3 dims × 1 engine |
+| **large / risky** | spec doc + implementation and system critics | parallel file-disjoint workers | 3 dims × 2 engines, xhigh |
 
 Scale-up signals: cross-file contracts, concurrency, data-integrity or money paths,
 wide refactors, high ambiguity, code you can't easily verify. Scale-down signals: one

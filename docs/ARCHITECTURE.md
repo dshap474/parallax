@@ -34,8 +34,8 @@ Lane rubrics ship in `prompts/` (one deduped, engine-agnostic file per lane) and
 | --- | --- | --- | --- |
 | trivial | none — decide and go | direct edit or one cheap rw lane | read the diff yourself |
 | small | in-context, no critic | 1 worker | 1 correctness lane |
-| default | in-context + 1 critic | 1 worker | 3 dims × 1 engine |
-| large / risky | spec doc + 1–2 critics | parallel file-disjoint workers | 3 dims × 2 engines, xhigh |
+| default | in-context + implementation critic | 1 worker | 3 dims × 1 engine |
+| large / risky | spec doc + implementation and system critics | parallel file-disjoint workers | 3 dims × 2 engines, xhigh |
 
 The orchestrator **declares its chosen sizing in one line before launching** — the user's veto point. Plan artifacts follow the same logic: a plan is a chat message by default; a spec doc in `.project/builds/` only when the effort is multi-session or another agent must consume it.
 
@@ -45,11 +45,11 @@ Fable spends its own intelligence at exactly three points: **plan authoring**, *
 
 | Atom | Skill | Who acts | Returns |
 |---|---|---|---|
-| `plan` | `/plx:plan` | Fable authors; 0–2 read-only critic lanes red-team | final plan (chat or spec doc) |
+| `plan` | `/plx:plan` | Fable authors; sized implementation/system critic lanes red-team | final plan (chat or spec doc) |
 | `build` | `/plx:build` | 1–N writer lanes, one per disjoint path set | Buildout report (summaries, never code bodies) |
 | `review` | `/plx:review` | 1–6 read-only lanes; Fable synthesizes; cheap fix lanes apply the confirmed findings | findings → fixes applied (+ batched user question for uncertain calls) |
 
-`/plx:dev` strings the three together plus a final gate (Fable reads the diff once, fresh eyes, fixes nits, re-verifies). `goal-spec` is separate: interview → lock → planner lane → red-team → one self-contained `/goal`-ready spec.
+`/plx:dev` strings the three together plus a final gate (Fable reads the diff once, fresh eyes, fixes nits, re-verifies). `goal-spec` is separate: interview → lock → planner lane → parallel implementation/system red-team → one self-contained `/goal`-ready spec.
 
 ## The review-fix loop
 
@@ -63,7 +63,7 @@ Review lanes are read-only and report in the Finding Schema. Fable synthesizes �
 
 ## Rubrics live in `prompts/`
 
-Any prompt text that is the same every run — the review dimension rubrics, the planner/plan-critic rubrics, the worker contract (which also serves the fix lanes) — lives in `prompts/`, one engine-agnostic file per lane. Skills reference rubrics by bare `--rubric` name only; `plx-engine` resolves the files relative to itself, so skills stay self-contained. The orchestrator's brief carries only what changes per task.
+Any prompt text that is the same every run — the review dimensions, planner, system and implementation plan critics, and worker contract (which also serves the fix lanes) — lives in `prompts/`, one engine-agnostic file per lane. Skills reference rubrics by bare `--rubric` name only; `plx-engine` resolves the files relative to itself, so skills stay self-contained. The orchestrator's brief carries only what changes per task.
 
 ## Safety model
 

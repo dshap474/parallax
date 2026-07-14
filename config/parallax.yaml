@@ -17,7 +17,8 @@
 #
 #   role                mode  rubric
 #   plan (goal-spec)    ro    planner
-#   plan-critic         ro    plan-critic
+#   plan-critic-implementation ro plan-critic-implementation
+#   plan-critic-system  ro    plan-critic-system
 #   code                rw    worker
 #   fix                 rw    worker   (targeted post-review fixes — cheap/fast engine)
 #   review-correctness  ro    reviewer-correctness
@@ -27,7 +28,7 @@
 # Rules:
 #   - `code` and `fix` take ONE engine each. Writers may run in parallel only on
 #     disjoint path sets — one writer per path, always.
-#   - plan / plan-critic / review-* roles take LISTS and are always read-only
+#   - plan / plan-critic-* / review-* roles take LISTS and are always read-only
 #     (`--mode ro`), whatever engine fills them.
 #   - Plan authoring, review synthesis, and the final gate are always the
 #     orchestrator. Never delegated, not configurable.
@@ -36,7 +37,8 @@
 
 pipelines:
   plan:
-    plan-critic: [codex]
+    plan-critic-implementation: [codex]
+    plan-critic-system: [codex]
 
   build:
     code: claude
@@ -48,7 +50,8 @@ pipelines:
     fix: codex
 
   dev:
-    plan-critic: [codex]
+    plan-critic-implementation: [codex]
+    plan-critic-system: [codex]
     code: claude
     review-correctness: [codex]
     review-cleanup: [codex]
@@ -57,4 +60,5 @@ pipelines:
 
   goal-spec:
     plan: [claude]
-    plan-critic: [codex]
+    plan-critic-implementation: [codex]
+    plan-critic-system: [codex]

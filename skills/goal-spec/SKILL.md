@@ -1,6 +1,6 @@
 ---
 name: "plx::goal-spec"
-description: Interview-locked goal planning for long-running efforts. A Socratic interview (AskUserQuestion) locks the goal — intent, binary success criteria, invariants, non-goals — then a single planner lane designs the how, a Codex lane red-teams it at xhigh, and the orchestrator synthesizes ONE self-contained spec to the shared template, persists it to the build thread under .project/builds/, and hands back a paste-ready /goal condition pointing at it. No code is written.
+description: Interview-locked goal planning for long-running efforts. A Socratic interview (AskUserQuestion) locks the goal — intent, binary success criteria, invariants, non-goals — then a single planner lane designs the how, parallel system and implementation critics red-team it at xhigh, and the orchestrator synthesizes ONE self-contained spec to the shared template, persists it to the build thread under .project/builds/, and hands back a paste-ready /goal condition pointing at it. No code is written.
 argument-hint: "<the goal to plan>"
 disable-model-invocation: true
 user-invocable: true
@@ -14,8 +14,9 @@ you hand it straight to `/goal` (or `/plx:build`) and walk away. Three things
 make that possible, and they are your whole job here:
 
 1. A **Socratic interview** that kills ambiguity and *locks the goal* before any design.
-2. A **single planner lane** that designs the *how*, **red-teamed by Codex**.
-3. **Your synthesis** of that design and the critique into one airtight, self-verifying spec.
+2. A **single planner lane** that designs the *how*, red-teamed by **system and
+   implementation critics in parallel**.
+3. **Your synthesis** of that design and the critiques into one airtight, self-verifying spec.
 
 The deliverable lands in the build thread under `.project/builds/<thread>/`, and you return
 a paste-ready `/goal` condition that points at it. **No code is written.**
@@ -40,8 +41,9 @@ Establish ground truth with your own tools — nothing is injected for you:
 ## Engines & preflight
 
 Read the engine config (run `plx-config`) → key `goal-spec`. Shipped defaults:
-`plan: [claude]` · `plan-critic: [codex]`. Run `plx-preflight --repo <repo> --require-codex`.
-If Codex is unavailable, skip the red-team and say so in the final output.
+`plan: [claude]` · `plan-critic-implementation: [codex]` ·
+`plan-critic-system: [codex]`. Run `plx-preflight --repo <repo> --require-codex`. If
+Codex is unavailable, skip the red-team and say so in the final output.
 
 ## Pipeline (run in order)
 
@@ -103,30 +105,29 @@ foreground cap; grok lanes need the Bash sandbox disabled and take no `--effort`
 studies the repo in its own context and returns a **Planning Brief** (recommendation +
 steelman + repo facts) — the *how*. You do not study the codebase yourself; the lane does.
 
-### 4. Codex red-team (xhigh)
+### 4. Parallel two-dimension red-team (xhigh)
 
-Cross-model rigor comes from review, not a second planner. Resolve the critic engine from
-the config (`plan-critic`), write `<tmp>/critic-brief.md` — a `## Draft plan` header, then
-the planner's brief verbatim — and launch it **at `xhigh` effort** (background Bash):
+Cross-model rigor comes from review, not a second planner. Resolve both critic dimensions
+from the config, write one neutral `<tmp>/critic-brief.md` — a `## Draft plan` header, then
+the planner's brief verbatim — and launch both **in parallel at `xhigh` effort** (background
+Bash), one lane per configured engine:
 
 ```
 plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/critic-brief.md \
-  --rubric plan-critic --effort xhigh --out <tmp>/critique.md --log <tmp>/critic.log
+  --rubric plan-critic-<dimension> --effort xhigh \
+  --out <tmp>/critique-<dimension>-<e>.md --log <tmp>/critic-<dimension>-<e>.log
 ```
 
-The user has locked the
-goal, so the critic red-teams the **design's soundness and goal-readiness**, not whether the
-goal is worth doing: wrong repo facts, spec drift from the locked goal, missed work, a
-materially simpler approach, unhandled edges, and — looking ahead to the spec — whether the
-success criteria can be made self-checkable and the validation concrete. It returns a
-critique (findings), never a rewrite. If `plan-critic` is empty (Codex unavailable), skip
-this step and note it.
+The implementation critic checks whether the design can be executed correctly against the
+checkout; the system critic checks whether faithful execution would produce the right
+integrated and operable system. Both return findings, never rewrites. If either configured
+dimension is empty, skip that dimension and note it.
 
 ### 5. Synthesize the final spec — your intelligence is the product
 
-Weigh the planner's brief against the critique: where is the critic right, where is the
-design sound, what did both miss, is there a simpler approach? Settle it yourself — not a
-merge.
+Weigh the planner's brief against both critiques: where are the critics right, where is the
+design sound, what did they miss, is there a simpler approach? Deduplicate shared findings
+and settle it yourself — not a merge.
 
 Then author **one** spec doc to the canonical template — the single source of truth shared
 by every engine, not a copy inlined here. Load it with `plx-skill --ref plan/spec-template`,
@@ -148,7 +149,7 @@ you emit — no `<placeholder>`s; if a check genuinely cannot be automated, writ
 leftover placeholder leaves the goal unsatisfiable. Record any unresolved gap under Open
 Questions with the assumption you took.
 
-Note where the final spec diverges from the planner's brief and the critique, and why.
+Note where the final spec diverges from the planner's brief and the critiques, and why.
 
 ### 6. Persist to the thread + emit the /goal handoff
 
@@ -177,7 +178,7 @@ End with a compact report:
 Goal:     <one line — the locked intent>
 Spec:     .project/builds/<thread>/PLAN_<slug>.md
 Approach: <one line — the design + where it diverged from the lane briefs>
-Red-team: <Codex critique disposition — findings folded / rebutted, or "skipped (no Codex)">
+Red-team: <system + implementation dispositions — findings folded / rebutted / skipped>
 Run it:   /goal <condition referencing the spec>   (or /plx:build on the same spec)
 Open:     <assumptions / [NEEDS CLARIFICATION] / residual risk, or "none">
 ```
@@ -185,7 +186,7 @@ Open:     <assumptions / [NEEDS CLARIFICATION] / residual risk, or "none">
 ## Hard constraints
 
 - The **lock gate is mandatory** (step 2): author nothing before the user approves the goal.
-- Planner and plan-critic lanes are read-only, always. The only write in this skill is you
+- Planner and implementation/system critic lanes are read-only, always. The only write in this skill is you
   persisting the spec to the thread under `.project/builds/`.
 - You write the spec yourself, following the repo's `AGENTS.md` Runtime Rules; there is no
   docs subagent. **Never edit `VISION.md`.**

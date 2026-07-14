@@ -1,6 +1,6 @@
 ---
 name: "plx::plan"
-description: The Parallax plan stage, standalone — the orchestrator authors the plan itself (clarifying first only if needed), sizes the red-team from the task's risk (0–2 read-only critic lanes, headless via plx-engine), folds the critique, and delivers the final plan. In-context by default; persisted to the build thread only for large or multi-session efforts. No code is written.
+description: The Parallax plan stage, standalone — the orchestrator authors the plan itself (clarifying first only if needed), sizes a read-only implementation/system red-team from the task's risk, folds the critiques, and delivers the final plan. In-context by default; persisted to the build thread only for large or multi-session efforts. No code is written.
 argument-hint: "<task to plan>"
 disable-model-invocation: true
 user-invocable: true
@@ -24,18 +24,19 @@ the judgment doc (model rankings, sizing ladder, when to escalate).
 
 ## Size the run — then declare it
 
-Read the engine config (`plx-config`) → key `plan`. Shipped default: `plan-critic:
-[codex]`. That is the floor shape, not a mandate — size per the judgment doc:
+Read the engine config (`plx-config`) → key `plan`. Shipped defaults:
+`plan-critic-implementation: [codex]` · `plan-critic-system: [codex]`. These are the
+available dimensions, not a mandate to run both — size per the judgment doc:
 
 - **small / clear task** → no critic; plan in-context.
-- **default** → 1 critic lane; plan in-context.
+- **default** → implementation critic only; plan in-context.
 - **large / risky** (cross-file contracts, concurrency, data-integrity or money paths,
-  wide refactors, multi-session effort) → 1–2 critic lanes at `xhigh`; persist the plan
-  as a spec doc in the build thread.
+  public or trust boundaries, wide refactors, multi-session effort) → implementation and
+  system critics in parallel at `xhigh`; persist the plan as a spec doc in the build thread.
 
-Declare your sizing in one line before launching anything (e.g. `Sizing: 1 critic
-(codex, xhigh) · plan in-context`). Run `plx-preflight --repo <repo> --require-<engine>`
-for each engine you'll use.
+Declare your sizing in one line before launching anything (e.g. `Sizing: implementation
+critic (codex, high) · plan in-context`). Run `plx-preflight --repo <repo>
+--require-<engine>` for each engine you'll use.
 
 ## Pipeline (run in order)
 
@@ -63,14 +64,17 @@ for each engine you'll use.
    exit, a behavior to demonstrate). This is what the build worker self-verifies against;
    a plan whose completion can't be checked isn't finished.
 
-3. **Red-team it (if sized in).** Write `<tmp>/critic-brief.md` — a `## Draft plan`
-   header, then the plan verbatim. Launch one lane per critic engine, in parallel,
-   background Bash (`run_in_background`; engine turns can outrun the 10-min foreground
-   cap):
+3. **Red-team it (if sized in).** Write one neutral `<tmp>/critic-brief.md` — a
+   `## Draft plan` header, then the plan verbatim. Launch the sized dimensions in parallel,
+   one lane per configured engine, background Bash (`run_in_background`; engine turns can
+   outrun the 10-min foreground cap). The implementation critic assumes the design is
+   settled and checks checkout-level executability; the system critic assumes faithful
+   execution and checks whether the resulting system is right:
 
    ```
    plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/critic-brief.md \
-     --rubric plan-critic --effort <high|xhigh> --out <tmp>/critic-<e>.md --log <tmp>/critic-<e>.log
+     --rubric plan-critic-<dimension> --effort <high|xhigh> \
+     --out <tmp>/critic-<dimension>-<e>.md --log <tmp>/critic-<dimension>-<e>.log
    ```
 
    Grok lanes need the Bash sandbox disabled (`dangerouslyDisableSandbox: true`) and
@@ -78,7 +82,8 @@ for each engine you'll use.
    0 ok · 1 engine failure (read the log; retry once or proceed without, and say so) ·
    2 your usage error · 3 not signed in → tell the user and stop.
 
-4. **Fold the critique, then finalize.** Triage every finding with the repo in front of
+4. **Fold the critiques, then finalize.** Deduplicate across dimensions, then triage every
+   finding with the repo in front of
    you: adopt it or reject it with a reason — never silently drop one, and verify a
    load-bearing claim yourself before acting on it (a critic can be wrong). One round,
    hard cap. **Escape hatch:** a fundamental objection → re-draft (step 2).

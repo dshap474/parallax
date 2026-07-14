@@ -29,20 +29,22 @@ the judgment doc (model rankings, the sizing ladder, writer rules).
 
 ## Size the whole run — then declare it
 
-Read the engine config (`plx-config`) → key `dev`. Shipped defaults: `plan-critic:
-[codex]` · `code: claude` · each review dimension `[codex]` · `fix: codex`. That is the
-floor shape — size each stage per the judgment doc's ladder and declare it in one line
-before launching anything, e.g.:
+Read the engine config (`plx-config`) → key `dev`. Shipped defaults:
+`plan-critic-implementation: [codex]` · `plan-critic-system: [codex]` · `code: claude` ·
+each review dimension `[codex]` · `fix: codex`. These are available lanes, not a mandate
+to run all of them — size each stage per the judgment doc's ladder and declare it in one
+line before launching anything, e.g.:
 
 ```
-Sizing: 1 critic (codex, xhigh) · 1 worker (claude, high) · review 3×1 (codex, high) · fixes codex medium
+Sizing: implementation critic (codex, high) · 1 worker (claude, high) · review 3×1 (codex, high) · fixes codex medium
 ```
 
 **The smallest rung is no machinery at all**: for a trivial ask (one file, obvious
 change), skip the stages — make the edit yourself or fire one cheap rw lane, verify,
-and report. For large/risky work, scale up: 2 critics, parallel file-disjoint workers,
-review 3×2 at xhigh. Run `plx-preflight --repo <repo> --require-<engine>` for each
-engine the run will use.
+and report. Default planning uses only the implementation critic. For large/risky work,
+scale up to implementation + system critics in parallel, file-disjoint workers, and review
+3×2 at xhigh. Run `plx-preflight --repo <repo> --require-<engine>` for each engine the
+run will use.
 
 ## Lane mechanics (every stage)
 
@@ -71,10 +73,12 @@ only for multi-session efforts. **The plan ends with a `Done means:` line** — 
 concrete command(s)/observable(s) that prove the work; the worker self-verifies against
 it and the gate re-runs it.
 
-Red-team it if sized in: `<tmp>/critic-brief.md` = `## Draft plan` + the plan verbatim;
-one ro lane per critic engine, `--rubric plan-critic`. Fold the critique — adopt or
-reject every finding with a reason, verifying load-bearing claims yourself. One round.
-**Escape hatch:** fundamental objection → re-draft.
+Red-team it if sized in: `<tmp>/critic-brief.md` = `## Draft plan` + the plan verbatim.
+Default: one ro `plan-critic-implementation` lane. Large/risky: launch
+`plan-critic-implementation` and `plan-critic-system` in parallel against that same neutral
+brief, one lane per configured engine. Deduplicate, then fold the critiques — adopt or reject
+every finding with a reason, verifying load-bearing claims yourself. One round. **Escape
+hatch:** fundamental objection → re-draft.
 
 ### 2. Build
 

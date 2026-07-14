@@ -6,7 +6,7 @@ Parallax orchestrates external model CLIs that you install and authenticate. It 
 
 | Engine | Install | Used by default | Required? |
 |---|---|---|---|
-| Codex | `codex` CLI + auth | plan-critic, planner, and review lanes in `dev`/`goal-spec`/`review`; `/plx:codex` | required for the shipped pipeline configs |
+| Codex | `codex` CLI + auth | implementation/system plan critics, planner, and review lanes in `dev`/`goal-spec`/`review`; `/plx:codex` | required for the shipped pipeline configs |
 | Grok | `grok` CLI + auth | `/plx:grok`; optional second-perspective lanes | optional |
 | Claude | `claude` CLI (already present — it runs your session) | the writer lane (`code: claude`); any lane you bind it to | present by definition |
 

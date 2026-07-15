@@ -107,8 +107,9 @@ implementation session, then it runs passively:
 
 - Keep `implementation-notes.md` in the build thread. When an edge case forces a
   deviation from the plan, take the conservative option, log it under **Deviations**
-  (what was planned, what was found, what was done instead), and keep going — don't
-  stop to renegotiate unless the deviation breaks a locked invariant.
+  (what was planned, what was found, what was done instead), and continue only when the
+  choice is local, reversible, and preserves scope, behavior, and locked invariants.
+  Otherwise stop and ask.
 - At session end, review the Deviations list with the user: each one is a map error,
   and the fix is usually to the spec or their prompting, not just the code.
 

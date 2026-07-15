@@ -37,9 +37,9 @@ re-run at integration.
 ## Bootstrap
 
 - Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
-- Snapshot `git status --short` — pre-existing edits must not be attributed to this
-  build.
 - `mktemp -d` for briefs and lane outputs; call it `<tmp>`.
+- Snapshot `git status --short` and the current staged/unstaged diff into `<tmp>` —
+  pre-existing edits must be preserved and must not be attributed to this build.
 
 ## Size the run — then declare it
 
@@ -64,8 +64,11 @@ codex, medium) — packages: api/, cli/`). Run `plx-preflight --repo <repo>
 
 1. **Write the spec brief(s).** `<tmp>/spec.md` (or `<tmp>/spec-<package>.md` each):
    a `## Spec` header, then the full plan verbatim — the lane runs headless and fresh;
-   the brief is everything it knows beyond the repo itself. For parallel packages, each
-   brief carries the shared intent plus its own scope and an explicit boundary: **"You
+   the brief is everything it knows beyond the repo itself. Each brief carries a
+   `### Pre-existing worktree state` section listing dirty paths (or
+   `clean`) and instructing the worker to preserve them. If a target path is already dirty,
+   include the relevant baseline-diff context. For parallel packages, each brief carries
+   the shared intent plus its own scope and an explicit boundary: **"You
    own only these paths: <list>. Other paths are being edited in parallel — do not
    touch them."**
 
@@ -85,8 +88,8 @@ codex, medium) — packages: api/, cli/`). Run `plx-preflight --repo <repo>
    - Exit codes: 0 ok · 1 engine failure (read the log; retry once, or escalate to a
      smarter engine per the judgment doc) · 2 your usage error · 3 not signed in → tell
      the user and stop.
-   - **While lanes run, don't idle** — prepare the integration verification (which repo
-     commands, what pass signals) so step 3 starts the moment the reports land.
+   - While lanes run, prepare only the integration commands and pass signals already
+     required by this task.
 
 3. **Read the Buildout report(s)** from the out-files — summaries only; don't pull code
    bodies into your window. Each worker self-verifies; with parallel packages, run the

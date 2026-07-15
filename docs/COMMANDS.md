@@ -23,8 +23,8 @@ Adapts to intent: ask a question → it answers; ask for code → it edits; ask 
 
 | Command | Engine |
 |---|---|
-| `/plx:codex` | Codex (`plx-engine --engine codex --mode rw`) |
-| `/plx:grok` | Grok 4.5, medium effort by default (`plx-engine --engine grok --mode rw`) |
+| `/plx:codex` | Codex (`--mode ro` for questions/plans; `--mode rw` for explicit edits) |
+| `/plx:grok` | Grok 4.5, medium by default (`--mode ro` for questions/plans; `--mode rw` for explicit edits) |
 
 There is no `/plx:claude` — the orchestrator *is* Claude; just ask it directly.
 

@@ -22,7 +22,8 @@ Install and authenticate the Codex CLI (`codex` on `PATH`).
 - sandbox `read-only` (`--mode ro`) or `workspace-write` (`--mode rw`)
 - `--effort low|medium|high|xhigh` (default `medium`) and `--model` (default `gpt-5.6-sol`)
 
-Codex writes only in `--mode rw` (the `code: codex` binding or `/plx:codex`). GPT-5.5
+Codex writes only in `--mode rw` (the `code: codex` binding or an explicit implementation
+request through `/plx:codex`); questions, audits, and plans use `--mode ro`. GPT-5.5
 and Sonnet are forbidden across every engine and rejected as usage errors. No mode uses
 `danger-full-access` or `--yolo`.
 

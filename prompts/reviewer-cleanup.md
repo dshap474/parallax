@@ -40,8 +40,8 @@ candidates only; the caller verifies and ranks across lanes. Each finding uses t
 
 Confidence: **High** = cost and remedy both concrete and proven · **Medium** = strong, or
 plausible with one open question · **Low** = suspicious pattern only (report Low only as
-`Action: investigate`). Pass through any candidate with a nameable cost; don't pre-filter —
-the caller verifies. Empty findings if nothing qualifies; never invent findings to look thorough.
+`Action: investigate` when the potential cost is material and realistic). Empty findings if
+nothing qualifies; never invent findings to look thorough.
 
 ## Scope & false positives
 

@@ -76,7 +76,7 @@ Each `skills/<name>/SKILL.md` carries its pipeline inline — no `${CLAUDE_PLUGI
 
 ## Status
 
-v0.4.6
+v0.4.7
 
 ## License
 

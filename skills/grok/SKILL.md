@@ -1,6 +1,6 @@
 ---
 name: "plx::grok"
-description: Single-engine passthrough — the orchestrator runs Grok 4.5 headless at medium effort by default via the write-capable wrapper. Answers, codes (with edits), or plans depending on what you ask. No multi-model review pipeline.
+description: Single-engine passthrough — the orchestrator runs Grok 4.5 headless at medium effort by default, read-only for questions/plans and write-capable only for explicit implementation requests. No multi-model review pipeline.
 argument-hint: "<question, coding task, or plan request>"
 disable-model-invocation: true
 user-invocable: true
@@ -15,14 +15,15 @@ Run the user's request through **Grok only** — no Parallax review pipeline, no
 Three tool calls — no subagent.
 
 1. **One Bash call** to set up: `git rev-parse --show-toplevel && git status --short && mktemp -d`. The first line is `<repo>` (the wrapper needs an absolute `--repo`, and that path is the write boundary); the status snapshot is so pre-existing edits aren't later attributed to Grok; the last line is `<tmp>`.
-2. **One Write call** to write `<tmp>/prompt.md` as a self-contained brief — grok runs headless and fresh, seeing only this file plus the repo it reads itself, never your conversation. Lead with the user's request verbatim. Add a short `## Context` heading **only if** the ask leans on the conversation ("ok build this", "use the approach we discussed") — the minimum it needs: decisions already made, stated constraints, specific files/paths discussed. Terse bullets, no transcript dumps; carry conversation-held facts only, not repo facts (grok reads the repo). No analysis, opinions, or proposed solution of your own — context, not coaching; the passthrough's point is grok's take. A self-contained ask needs no `## Context`. The ask type (question / coding / plan) only shapes the prompt — the steps are identical for all three.
+2. **One Write call** to write `<tmp>/prompt.md` as a self-contained brief — grok runs headless and fresh, seeing only this file plus the repo it reads itself, never your conversation. Lead with the user's request verbatim. Add a short `## Context` heading **only if** the ask leans on the conversation ("ok build this", "use the approach we discussed") — the minimum it needs: decisions already made, stated constraints, specific files/paths discussed. Terse bullets, no transcript dumps; carry conversation-held facts only, not repo facts (grok reads the repo). No analysis, opinions, or proposed solution of your own — context, not coaching; the passthrough's point is grok's take. A self-contained ask needs no `## Context`.
+   Choose `<mode>` from the request: questions, audits, investigations, reviews, and plans use `ro`; only an explicit implementation or edit request uses `rw`. When context says "don't code yet" or equivalent, use `ro`.
 3. **One Bash call** to run, check, and clean up in a single `;`-chained command (so status/cleanup run even on engine failure):
 
    ```
-   plx-engine --engine grok --mode rw --repo <repo> --prompt-file <tmp>/prompt.md --stdout; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
+   plx-engine --engine grok --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --stdout; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
    ```
 
-   `plx-engine` is on your PATH (shipped in the plugin's `bin/`); it runs one headless Grok 4.5 turn at `medium` effort by default with safety pinned (kernel-enforced `workspace` sandbox scoped to `--repo` + bypassPermissions) and emits only the model's final text — the write boundary is that sandbox; writes outside it are OS-denied. rw mode is used for **every** ask type; for a pure question or plan grok simply writes nothing, so there is no separate read-only path.
+   `plx-engine` is on your PATH (shipped in the plugin's `bin/`); it runs one headless Grok 4.5 turn at `medium` effort by default with safety pinned (kernel-enforced `read-only` or repo-scoped `workspace` sandbox + bypassPermissions) and emits only the model's final text.
 
    Two caller rules from the wrapper's own help text:
    - **Disable the Claude Bash sandbox for this call** (`dangerouslyDisableSandbox: true` on the Bash invocation) — grok needs the network/keychain access the sandbox blocks. The kernel workspace sandbox still confines grok's writes.

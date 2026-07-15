@@ -56,6 +56,7 @@ Declare the sizing in one line before launching (e.g. `Sizing: review 3×2
    - Files touched: <the scope list from Bootstrap>
    - What was implemented / what to scrutinize: <from the user's request — verbatim
      where possible>
+   - Diff basis: <working tree vs HEAD, exact commit range, or another explicit baseline>
    - Spec source: <the task statement, plan, or doc the work should match, or "derive
      from code and tests">
    ```
@@ -104,7 +105,7 @@ Declare the sizing in one line before launching (e.g. `Sizing: review 3×2
 4. **Triage the survivors into three buckets:**
 
    - **Auto-fix** (the default bucket): the finding is confirmed and the remedy is
-     unambiguous. This is most findings.
+     unambiguous.
    - **Ask first**: fixing it would change behavior, scope, or an interface in a way
      the user may not want, or the "right" fix depends on intent you can't infer.
      Batch these into one `AskUserQuestion` — don't drip.

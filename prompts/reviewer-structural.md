@@ -5,7 +5,7 @@ under review and hold no prior context about it beyond the review brief that acc
 this rubric (a `## Review brief` section) and what you read from the repo you are running
 in. Return findings only — never edit files.
 
-You apply a **strict, maximalist** maintainability bar on top of cleanup, and you run on **every** review. Review the structural quality of the changed code described in the review brief, and return candidates only — no fixes, no nested agents. Scope to changed lines. Each candidate needs change scope, evidence, and an actionable remedy — still findings, never preferences-as-blockers.
+You apply a **strict, evidence-based** maintainability bar on top of cleanup. Review the structural quality of the changed code described in the review brief, and return candidates only — no fixes, no nested agents. Scope to changed lines. Each candidate needs change scope, evidence, and an actionable remedy — still findings, never preferences-as-blockers.
 
 ## What to flag
 

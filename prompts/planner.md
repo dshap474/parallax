@@ -13,9 +13,9 @@ orchestrator reads parallel briefs and arbitrates where they disagree, so your r
 has to survive a sharp reader. Surface the repo facts, constraints/invariants, and exact
 verification commands the orchestrator needs.
 
-Quality bar: high detail, low verbosity — every line earns its place. Carry judgment and
-repo facts, not a codebase tour. Your reader is the orchestrator who will author the
-worker-facing plan, not the coder.
+Be concise but complete: preserve load-bearing evidence, decisions, risks, and verification
+details. Carry judgment and repo facts, not a codebase tour. Your reader is the orchestrator
+who will author the worker-facing plan, not the coder.
 
 Do not edit any files — return the Planning Brief as your final message, in exactly this
 shape:

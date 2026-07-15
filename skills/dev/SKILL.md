@@ -22,10 +22,10 @@ the judgment doc (model rankings, the sizing ladder, writer rules).
 ## Bootstrap
 
 - Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
-- If the worktree is dirty, read `git status --short` — so you don't clobber unrelated
-  user changes or mistake pre-existing edits for the build's.
 - `mktemp -d` for stage artifacts; call it `<tmp>`. Never write Parallax state into the
   target repo.
+- Snapshot `git status --short` and the current staged/unstaged diff into `<tmp>` so
+  pre-existing edits are preserved and never attributed to this run.
 
 ## Size the whole run — then declare it
 
@@ -98,16 +98,18 @@ objection invalidates the plan, revise once and rerun the sized critics once bef
 
 ### 2. Build
 
-Write `<tmp>/spec.md`: a `## Spec` header, then the final plan verbatim. Launch the
+Write `<tmp>/spec.md`: a `## Spec` header, then the final plan verbatim, followed by a
+`### Pre-existing worktree state` section listing dirty paths (or `clean`) and instructing
+the worker to preserve them. If a target path is already dirty, include the relevant
+baseline-diff context. Launch the
 writer lane(s) — `--rubric worker --mode rw`, the `code` engine. **One writer per
 disjoint path set**: parallel workers only when the plan splits along genuinely
 independent seams (each brief names the paths it owns and warns others are parallel);
 when in doubt, one writer. Never edit the same files yourself while lanes run.
 
 Workers self-verify; with parallel packages, run the repo's checks once yourself after
-all writers land. **While the writer builds, don't idle** — the lane's wall-clock is
-free orchestrator time: draft the stage-3 review brief (all but the files-touched line)
-and line up the verification commands.
+all writers land. While the writer builds, prepare only the stage-3 brief fields and
+verification commands already required by this task.
 
 ### 3. Review + fix
 
@@ -120,7 +122,8 @@ lane, no steer:
 - Files touched: <from git status vs the Bootstrap snapshot — ground truth, not the
   worker's report>
 - What was implemented / what to scrutinize: <from the spec and the Buildout report>
-- Spec source: <tmp>/spec.md
+- Diff basis: <task-produced changes vs the saved Bootstrap status/diff>
+- Task contract: <the final plan verbatim>
 ```
 
 Launch the sized review lanes in one message (`--mode ro`, rubrics

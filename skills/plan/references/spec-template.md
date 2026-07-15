@@ -26,11 +26,12 @@ security, money movement, permissions, or production data.
 
 ## Engine Settings
 
-Recommended (tune to the engine and task):
+Follow the active engine policy and tune to the task:
 
-- effort / reasoning: `high` for coding and agentic work; `xhigh` for the hardest
-  or most capability-sensitive tasks; lower (`medium` / `low`) for routine work
-- thinking / verbosity: adaptive; keep worker output concise
+- effort / reasoning: GPT-5.6 Sol and Grok 4.5 start at `medium`; Claude starts at
+  its configured default. Use `high` or `xhigh` only for concrete complexity, risk,
+  or measured capability need; Grok does not support `xhigh`
+- thinking / verbosity: adaptive; preserve evidence, caveats, decisions, and verification
 
 Escalate effort only when task complexity justifies the extra latency and cost.
 

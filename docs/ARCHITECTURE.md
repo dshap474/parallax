@@ -18,8 +18,9 @@ gate. Headless lanes read broadly, implement, or return independent judgment. Th
 no orchestration subagents: every lane is one `plx-engine` process.
 
 The Claude package keeps Claude as host and defaults plan/review lanes to Codex. The
-Codex package flips that judgment polarity: Codex remains host and writer, while Claude
-supplies the default plan critics and review lanes. Grok 4.5 is an optional alternative.
+Codex package flips that judgment polarity: Codex remains host while Claude supplies
+the default plan critics and review lanes. Both packages default implementation and
+targeted fixes to Grok 4.5.
 
 ## Package boundaries
 
@@ -39,14 +40,14 @@ The three stage atoms are `plan`, `build`, and `review`; `dev` composes them and
 final gate. `goal-spec` prepares a self-contained autonomous goal. The host declares
 task sizing before launching anything:
 
-- trivial: direct host edit and direct diff review;
+- trivial: one Grok writer lane and direct host verification;
 - small: one writer and one correctness reviewer;
-- default: implementation critic, one writer, three review dimensions;
+- default: two plan critics, one Grok writer, three opposite-engine review dimensions;
 - large/risky: two critics, file-disjoint writers, and up to two engines per review
   dimension.
 
-Critic, planner, and review lanes are always read-only. Write lanes use one writer per
-disjoint path set. Confirmed review findings are fixed once through targeted Codex write
+Critic and review lanes are always read-only. Write lanes use one writer per
+disjoint path set. Confirmed review findings are fixed once through targeted Grok write
 lanes; behavior-changing or ambiguous findings go back to the user.
 
 ## Runtime and safety

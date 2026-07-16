@@ -1,6 +1,6 @@
 ---
 name: plx-goal-spec
-description: Interview-locked goal planning for long-running efforts. A Socratic interview (`request_user_input`) locks the goal — intent, binary success criteria, invariants, non-goals — then a single planner lane designs the how, parallel system and implementation critics red-team it at their engine-supported high effort, and the orchestrator synthesizes ONE self-contained spec to the shared template, persists it to the build thread under .project/builds/, and hands back a paste-ready /goal condition pointing at it. No code is written.
+description: Interview-locked goal planning for long-running efforts. A Socratic interview (`request_user_input`) locks the goal — intent, binary success criteria, invariants, non-goals — then the Codex host designs the how, parallel Claude system and implementation critics red-team it, and the host synthesizes ONE self-contained spec to the shared template. No code is written.
 argument-hint: "<the goal to plan>"
 ---
 
@@ -12,15 +12,15 @@ you hand it straight to `/goal` (or `$plx-build`) and walk away. Three things
 make that possible, and they are your whole job here:
 
 1. A **Socratic interview** that kills ambiguity and *locks the goal* before any design.
-2. A **single planner lane** that designs the *how*, red-teamed by **system and
-   implementation critics in parallel**.
+2. **Your design** of the *how*, red-teamed by **Claude system and implementation
+   critics in parallel**.
 3. **Your synthesis** of that design and the critiques into one airtight, self-verifying spec.
 
 The deliverable lands in the build thread under `.project/builds/<thread>/`, and you return
 a paste-ready `/goal` condition that points at it. **No code is written.**
 
-Your context discipline: you do not study the codebase yourself for the *how* — the
-planner lane does, in its own context window.
+Your context discipline: inspect only the repository surfaces needed to author a concrete
+plan, then keep the external lanes focused on independent criticism.
 
 ## Bootstrap
 
@@ -40,8 +40,8 @@ Establish ground truth with your own tools — nothing is injected for you:
 
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
 `/skills/goal-spec/SKILL.md`. Read `<plugin-root>/bin/plx-config` → key `goal-spec`.
-Shipped defaults: `plan: [claude]` · `plan-critic-implementation: [claude]` ·
-`plan-critic-system: [claude]`. Declare the resolved shape, then run `<plugin-root>/bin/plx-preflight --repo
+Shipped defaults: `plan-critic-implementation: [claude]` ·
+`plan-critic-system: [claude]`. You are the planner. Declare the resolved shape, then run `<plugin-root>/bin/plx-preflight --repo
 <repo> --require-<engine>` once per **distinct** resolved engine. If a required engine is
 unavailable, report `[RED-TEAM INCOMPLETE]` and stop; never silently drop a configured lane.
 
@@ -53,8 +53,8 @@ Before any planning, interview the user with **`request_user_input`** until mate
 ambiguities are resolved or the bounded interview ends. An autonomous `/goal` run cannot
 ask questions later, so record any remaining material gap explicitly.
 
-Ask in a funnel — broad to narrow — and **defer every "how" question** (that is the
-planners' job):
+Ask in a funnel — broad to narrow — and **defer every "how" question** until the
+host-authored design step:
 
 1. **Problem & users** — what outcome, for whom, and why now.
 2. **Scope & non-goals** — what is in, and explicitly what is *out*.
@@ -87,28 +87,16 @@ approval is the lock: the goal is now fixed, and planning designs against it. Th
 to skip the gate is if you genuinely asked no questions because the request was already
 airtight — and even then, show the reflect-back and get a yes.
 
-### 3. Single-planner design — fill the how
+### 3. Host-authored design — fill the how
 
-Write one neutral **task brief** from the *locked* goal into `<tmp>/task-brief.md` (from a
-`mktemp -d` dir): a `## Task brief` header, then its intent, success criteria, and
-invariants verbatim, plus repo facts from Bootstrap. No preferred approach of your own.
-
-Launch **one** planner lane — the `plan` engine the config resolves — headless:
-
-```
-<plugin-root>/bin/plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/task-brief.md \
-  --rubric planner --effort xhigh --out <tmp>/plan-brief.md --log <tmp>/plan.log
-```
-
-Run it in background shell (`a retained background execution session`) — planning turns can outrun the 10-min
-foreground cap; Grok lanes may need narrowly scoped host approval when network or keychain access is blocked, are fixed to `grok-4.5`, and
-use `--effort high` in place of the unsupported `xhigh`. It
-studies the repo in its own context and returns a **Planning Brief** (recommendation +
-steelman + repo facts) — the *how*. You do not study the codebase yourself; the lane does.
+Study the repository surfaces needed to resolve the design, then author one concrete
+candidate plan from the locked goal. Include the recommended path, material alternatives,
+load-bearing repository facts, exact files or components involved, and observable
+validation. Save that draft verbatim to `<tmp>/plan-brief.md` for neutral critic input.
 
 ### 4. Parallel two-dimension red-team (engine-sized effort)
 
-Cross-model rigor comes from review, not a second planner. Resolve both critic dimensions
+Cross-model rigor comes from review, not delegated plan authorship. Resolve both critic dimensions
 from the config and write one neutral `<tmp>/critic-brief.md`:
 
 ```markdown
@@ -121,7 +109,7 @@ from the config and write one neutral `<tmp>/critic-brief.md`:
 <the user-approved lock summary verbatim>
 
 ### Candidate plan
-<the planner's brief verbatim>
+<your candidate plan verbatim>
 ```
 
 The approved lock overrides conflicting original wording; together they are the task
@@ -136,7 +124,7 @@ engine:
 ```
 
 A failed required lane gets one retry on the same binding after log inspection. Correct an
-exit-2 invocation error once; exit 3 requires authentication and stops the run. If the planner or
+exit-2 invocation error once; exit 3 requires authentication and stops the run. If
 either configured critic still has no result, return `[RED-TEAM INCOMPLETE]` with the diagnosis
 and surviving artifacts; do not author or persist a final spec.
 
@@ -147,7 +135,7 @@ dimension is empty, skip that dimension and note it.
 
 ### 5. Synthesize the final spec
 
-Weigh the planner's brief against both critiques: where are the critics right, where is the
+Weigh your candidate plan against both critiques: where are the critics right, where is the
 design sound, what did they miss, is there a simpler approach? Deduplicate shared findings
 and settle it yourself — not a merge.
 
@@ -171,7 +159,7 @@ you emit — no `<placeholder>`s; if a check genuinely cannot be automated, writ
 leftover placeholder leaves the goal unsatisfiable. Record any unresolved gap under Open
 Questions with the assumption you took.
 
-Note where the final spec diverges from the planner's brief and the critiques, and why.
+Note where the final spec diverges from the candidate plan and the critiques, and why.
 
 ### 6. Persist to the thread + emit the /goal handoff
 

@@ -43,21 +43,19 @@ re-run at integration.
 
 ## Size the run — then declare it
 
-Read the engine config (`<plugin-root>/bin/plx-config`) → key `build`. Shipped default: `code: codex` —
-one GPT-5.6 Sol writer at medium effort. Codex may choose Grok 4.5 at medium when it
-better fits the task. Size per the judgment doc:
+Read the engine config (`<plugin-root>/bin/plx-config`) → key `build`. Shipped default: `code: grok` —
+one Grok 4.5 writer at medium effort. Use Codex only as a reported fallback when Grok
+is unavailable or its verified output does not meet the bar. Size per the judgment doc:
 
-- **trivial** → a single rw lane on a cheap engine (codex medium / Grok 4.5 low or
-  medium) — or, if it's
-  a one-line change, just make it yourself and skip the machinery.
+- **trivial** → a single rw lane on Grok 4.5 low or medium; the host still verifies.
 - **default** → one writer lane, the `code` engine, `--effort medium`.
 - **large and separable** → split the spec into **file-disjoint work packages** —
   only along genuinely independent seams (shared files, barrel exports, lockfiles,
   shared configs mean it's one package) — and run one writer lane per package in
   parallel. When in doubt, one writer.
 
-Declare the sizing in one line before launching (e.g. `Sizing: 2 workers (codex ×
-codex, medium) — packages: api/, cli/`). Run `<plugin-root>/bin/plx-preflight --repo <repo>
+Declare the sizing in one line before launching (e.g. `Sizing: 2 workers (grok ×
+grok, medium) — packages: api/, cli/`). Run `<plugin-root>/bin/plx-preflight --repo <repo>
 --require-<engine>` for each engine the run will use.
 
 ## Pipeline (run in order)

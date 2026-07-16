@@ -37,8 +37,8 @@ open with the section header the rubric expects:
 
 | model | how to call | default role |
 | --- | --- | --- |
-| gpt-5.6-sol | `--engine codex` (medium effort by default) | implementation, fixes, and review when selected by the host config |
-| grok-4.5 | `--engine grok` (medium effort by default) | implementation alternative and independent review perspective |
+| gpt-5.6-sol | `--engine codex` (medium effort by default) | Claude-host plan/review judgment and implementation fallback |
+| grok-4.5 | `--engine grok` (medium effort by default) | default implementation and targeted fixes |
 | opus-4.8 | `--engine claude` | planning, review, or taste-heavy judgment when selected by the host config |
 | host orchestrator | you — never delegated | plan authoring, synthesis, and final gate |
 
@@ -55,17 +55,17 @@ How to apply:
   price tag — escalating costs less than shipping mediocre work. This permission changes
   only model or effort; it never expands task scope, target resources, credentials,
   permissions, allowed side effects, or the forbidden-model rule.
-- **Implementation starts with GPT-5.6 Sol medium or Grok 4.5 medium.** Prefer Sol for
-  complex code reasoning and cross-file precision. Prefer Grok for clear mechanical
-  work or an independent implementation perspective. The shipped scalar binding is
-  Codex; choosing Grok needs no user confirmation.
+- **Implementation starts with Grok 4.5 medium.** It is the shipped writer and fixer for
+  both host packages. Substitute Codex only when Grok is unavailable or its verified
+  output does not meet the bar, and report the substitution.
 - **Anything user-facing** (UI, copy, API design) may use Opus for a taste-focused
-  advisory pass, while implementation remains Sol or Grok.
+  advisory pass, while implementation remains on the configured Grok writer unless
+  the reported fallback rule is triggered.
 - **Reviews** → a capable model, plus optionally an independent perspective. Always prefer
   a *different* engine than the one that wrote the code — independence catches what
   self-review can't.
-- **Targeted fixes from a review** → fast and cheap (Grok 4.5 at low/medium, or codex at
-  `--effort medium`) — small scoped fixes don't need taste.
+- **Targeted fixes from a review** → Grok 4.5 at low/medium by default; use Codex medium
+  only as the reported fallback — small scoped fixes don't need taste.
 - **Effort**: Codex and Grok default to `medium`; Claude defaults to `high`. Escalate
   only for concrete complexity or risk. Reserve Codex `xhigh` for cross-file contracts,
   concurrency, data-integrity or money paths, wide refactors, and standalone plan
@@ -84,22 +84,22 @@ gives the user a veto point before tokens burn. Scale down as readily as up.
 
 | scale | plan | build | review |
 | --- | --- | --- | --- |
-| **trivial** — one file, obvious change | none — decide and go | edit it yourself, or one rw lane | read the diff yourself |
+| **trivial** — one file, obvious change | none — decide and go | one Grok rw lane | read the diff yourself |
 | **small** — clear task, low blast radius | plan in-context, no critic | 1 worker | 1 lane (correctness only) |
-| **default** | plan in-context + implementation critic | 1 worker | 3 dims × 1 engine |
-| **large / risky** | spec doc + implementation and system critics | parallel file-disjoint workers | 3 dims × 2 engines, xhigh |
+| **default** | plan in-context + implementation and system critics | 1 Grok worker | 3 dims × 1 opposite engine |
+| **large / risky** | spec doc + both critics | parallel file-disjoint Grok workers | 3 dims × 1 opposite engine; add a second non-writer engine when proportionate |
 
-The standalone plan skill deliberately overrides the default plan rung: it resolves
-exactly one engine for each critic dimension from the host package and runs both in
+The standalone plan skill preserves the full default plan rung: it resolves exactly one
+engine for each critic dimension from the host package and runs both in
 parallel. Explicit current-message substitutions win. Both required dimensions must
-return before the plan is final. The full dev skill keeps the proportional sizing above
-as part of the larger end-to-end run.
+return before the plan is final. The full dev skill uses the same two-critic default as
+part of the larger end-to-end run.
 
 Scale-up signals: cross-file contracts, concurrency, data-integrity or money paths,
 wide refactors, high ambiguity, code you can't easily verify. Scale-down signals: one
 file, an obvious mechanism, strong existing tests, a change you can read in one sitting.
-The smallest rung is **no machinery at all** — for a trivial ask, doing the work
-directly beats orchestrating it.
+The smallest rung skips advisory fanout, not implementation delegation: even a trivial
+code change uses one Grok rw lane, followed by host verification.
 
 Plan artifacts follow the same logic: a plan is a chat message by default; write it to
 `.project/builds/<thread>/` only when the effort is multi-session or another agent must

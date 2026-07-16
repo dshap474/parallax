@@ -8,10 +8,10 @@ flowchart TD
     C --> P[Plan authoring]
     X --> P
     P --> CR[Read-only opposite-engine critics]
-    CR --> B[File-disjoint Codex writer lanes]
+    CR --> B[File-disjoint Grok 4.5 writer lanes]
     B --> R[Read-only correctness / cleanup / structural review]
     R --> S[Host synthesis]
-    S --> F[One targeted Codex fix round]
+    S --> F[One targeted Grok 4.5 fix round]
     F --> G[Host final gate and verification]
 
     SB[(shared/bin + shared/prompts)] -. synchronized copies .-> C

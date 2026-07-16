@@ -32,17 +32,17 @@ surgically, guided by the findings.
 
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
 `/skills/review/SKILL.md`. Read `<plugin-root>/bin/plx-config` → key `review`.
-Shipped default: every review dimension `[claude]`, `fix: codex`. That is the
+Shipped default: every review dimension `[claude]`, `fix: grok`. That is the
 floor shape — size per the judgment doc:
 
 - **small change, low blast radius** → 1 lane: `reviewer-correctness` only, one engine.
 - **default** → 3 dimensions × 1 engine.
 - **large / risky** (cross-file contracts, concurrency, data-integrity or money paths,
-  wide refactors) → 3 dimensions × 2 engines (e.g. claude + grok — six lanes), at
-  `high`. Prefer engines that didn't write the code.
+  wide refactors) → keep all three Claude dimensions at `high`; add a second non-writer
+  engine only when another independent perspective is proportionate.
 
-Declare the sizing in one line before launching (e.g. `Sizing: review 3×2
-(claude high + grok high) · fixes: codex medium`). Run `<plugin-root>/bin/plx-preflight --repo <repo>
+Declare the sizing in one line before launching (e.g. `Sizing: review 3×1
+(claude high) · fixes: grok medium`). Run `<plugin-root>/bin/plx-preflight --repo <repo>
 --require-<engine>` for each engine the round will use.
 
 ## Pipeline (run in order)
@@ -113,8 +113,9 @@ Declare the sizing in one line before launching (e.g. `Sizing: review 3×2
    If the user asked for **report only**: present the synthesis (findings ranked by
    severity + the repair plan) and stop here.
 
-5. **Fix automatically.** Launch targeted fix lanes on the `fix` engine — cheap and
-   fast (codex `--effort medium`, or Grok 4.5 low/medium); scoped fixes don't need taste:
+5. **Fix automatically.** Launch targeted fix lanes on the `fix` engine — Grok 4.5 at
+   low/medium by default. Use Codex medium only as a reported fallback when Grok is
+   unavailable or its verified output does not meet the bar; scoped fixes don't need taste:
 
    ```
    <plugin-root>/bin/plx-engine --engine <fix-engine> --mode rw --repo <repo> \
@@ -125,9 +126,8 @@ Declare the sizing in one line before launching (e.g. `Sizing: review 3×2
    `<tmp>/fix.md` is a `## Spec` header + the confirmed findings verbatim (file:line,
    what breaks, the minimal fix) + "fix exactly these; change nothing else." One lane
    for the lot by default; split into parallel lanes only when the fixes group into
-   disjoint path sets — **one writer per path, always**. A trivial one-liner you can
-   `Edit` yourself faster than a lane spin-up — allowed, but never while a fix lane
-   owns that file. Run the ask-first question in parallel with the auto-fix lane; fold
+   disjoint path sets — **one writer per path, always**. The host does not edit
+   implementation code. Run the ask-first question in parallel with the auto-fix lane; fold
    approved items into a second fix pass (one round, hard cap).
 
 6. **Verify and deliver.** When fix lanes land: read the diff surgically — did each

@@ -1,6 +1,6 @@
 ---
 name: plx-dev
-description: Explicit full Parallax pipeline for Codex. Codex plans, delegates implementation, synthesizes opposite-engine review, fixes confirmed findings, and performs the final gate.
+description: Explicit full Parallax pipeline for Codex. Codex plans, delegates implementation and fixes to Grok, synthesizes opposite-engine review, and performs the final gate.
 argument-hint: "<coding task>"
 ---
 
@@ -30,20 +30,20 @@ the judgment doc (model rankings, the sizing ladder, writer rules).
 ## Size the whole run — then declare it
 
 Read the engine config (`<plugin-root>/bin/plx-config`) → key `dev`. Shipped defaults:
-`plan-critic-implementation: [claude]` · `plan-critic-system: [claude]` · `code: codex` ·
-each review dimension `[claude]` · `fix: codex`. These are available lanes, not a mandate
+`plan-critic-implementation: [claude]` · `plan-critic-system: [claude]` · `code: grok` ·
+each review dimension `[claude]` · `fix: grok`. These are available lanes, not a mandate
 to run all of them — size each stage per the judgment doc's ladder and declare it in one
 line before launching anything, e.g.:
 
 ```
-Sizing: implementation critic (claude, high) · 1 worker (codex, medium) · review 3×1 (claude, high) · fixes codex medium
+Sizing: implementation critic (claude, high) · 1 worker (grok, medium) · review 3×1 (claude, high) · fixes grok medium
 ```
 
-**The smallest rung is no machinery at all**: for a trivial ask (one file, obvious
-change), skip the stages — make the edit yourself or fire one cheap rw lane, verify,
-and report. Default planning uses only the implementation critic. For large/risky work,
-scale up to implementation + system critics in parallel, file-disjoint workers, and review
-3×2 at xhigh. Run `<plugin-root>/bin/plx-preflight --repo <repo> --require-<engine>` for each engine the
+**The smallest rung skips advisory fanout, not the writer**: for a trivial ask (one file,
+obvious change), launch one cheap Grok rw lane, verify, and report. The host never writes
+implementation code in this pipeline. The default runs both plan-critic dimensions and
+all three review dimensions on Claude. For large/risky work, use file-disjoint workers
+and add a second non-writer review engine only when proportionate. Run `<plugin-root>/bin/plx-preflight --repo <repo> --require-<engine>` for each engine the
 run will use.
 
 ## Lane mechanics (every stage)
@@ -134,11 +134,10 @@ linter-catchable style, generic test wishes, speculative no-path edges, micro-op
 security findings (one-line handoff).
 
 **Fix automatically.** Confirmed findings go to a targeted fix lane on the `fix`
-engine (cheap + fast — codex `--effort medium` or Grok 4.5 low/medium): `<tmp>/fix.md` = `## Spec` +
+engine (Grok 4.5 low/medium by default; Codex medium only as a reported fallback): `<tmp>/fix.md` = `## Spec` +
 the findings verbatim + "fix exactly these; change nothing else." Genuinely uncertain
 items (behavior/scope changes the user may not want) → one batched `request_user_input` call,
-run parallel to the fix lane, folded into a second pass. Tiny one-liners you may Edit
-yourself — never on files a lane owns. One fix round, hard cap; leftovers are
+run parallel to the fix lane, folded into a second pass. One fix round, hard cap; leftovers are
 residuals. Re-run verification after fixes.
 
 ### 4. Final gate
@@ -146,8 +145,9 @@ residuals. Re-run verification after fixes.
 Read the diff once (`git -C <repo> diff`, scoped to the touched files; mind
 pre-existing dirt) — a fresh-eyes sanity pass, not a re-review: does the change satisfy
 the plan's success criteria? Do the fix-lane changes hold? Did every lane miss something
-obvious? Fix nits inline and re-verify proportional to what you touched. If structural
-rework is required, write a fresh spec and return to stage 2.
+obvious? Do not edit implementation code yourself. If the fix cap remains, send a
+targeted Grok fix lane and re-verify; otherwise report the issue as residual. If
+structural rework is required, write a fresh spec and return to stage 2.
 
 ### 5. Docs + report
 

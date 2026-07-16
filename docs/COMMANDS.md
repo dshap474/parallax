@@ -8,7 +8,7 @@ Both packages expose the same nine capabilities with platform-native invocation 
 | Build | `/plx:build` | `$plx-build` | One or more file-disjoint writer lanes implement and verify |
 | Review | `/plx:review` | `$plx-review` | Sized read-only review, synthesis, and one targeted fix round |
 | Dev | `/plx:dev` | `$plx-dev` | Plan → build → review/fix → final gate |
-| Goal spec | `/plx:goal-spec` | `$plx-goal-spec` | Interview, planner, red-team, and autonomous-ready spec |
+| Goal spec | `/plx:goal-spec` | `$plx-goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |
 | Other host | `/plx:codex` | `$plx-claude` | One isolated opposite-engine passthrough |
 | Grok | `/plx:grok` | `$plx-grok` | One isolated Grok 4.5 passthrough |
 | Init | `/plx:init` | `$plx-init` | Bootstrap root `AGENTS.md`, `CLAUDE.md`, and `.project/` policy |

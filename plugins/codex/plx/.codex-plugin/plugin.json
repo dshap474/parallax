@@ -1,6 +1,6 @@
 {
   "name": "plx",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Parallax for Codex: nine multi-model planning, implementation, review, goal-preparation, passthrough, initialization, and blindspot workflows.",
   "author": {
     "name": "Daniel Shapiro",
@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Parallax",
     "shortDescription": "Multi-model planning, building, and review for Codex",
-    "longDescription": "Parallax lets Codex orchestrate isolated Codex workers plus Claude and Grok critics through safety-pinned headless lanes, with proportional planning, implementation, review, fixes, and final verification.",
+    "longDescription": "Parallax lets Codex author plans, use Claude critics and reviewers, and delegate implementation and fixes to isolated Grok 4.5 workers through safety-pinned headless lanes.",
     "developerName": "Daniel Shapiro",
     "category": "Developer Tools",
     "capabilities": [

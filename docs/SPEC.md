@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.0
+Status: v0.5.1
 
 ## Required tree
 
@@ -14,7 +14,7 @@ shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.0`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.1`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains nine
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
@@ -25,8 +25,10 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
   `agents/openai.yaml` with `allow_implicit_invocation: false`.
 - The Codex opposite-host passthrough is `plx-claude`; the Claude opposite-host
   passthrough is `plx:codex`.
-- Claude-host defaults: Codex writer, plan critics, and reviewers.
-- Codex-host defaults: Codex writer/fixer; Claude plan critics, planner, and reviewers.
+- Claude-host defaults: Claude plans and synthesizes; Codex supplies plan critics and
+  all three review dimensions; Grok writes and fixes.
+- Codex-host defaults: Codex plans and synthesizes; Claude supplies plan critics and
+  all three review dimensions; Grok writes and fixes.
 - Shared runtime copies must exactly match `shared/`.
 
 ## Runtime contracts

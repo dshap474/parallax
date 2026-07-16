@@ -1,0 +1,6 @@
+interface:
+  display_name: "Parallax Init"
+  short_description: "Bootstrap repository agent documentation"
+  default_prompt: "Use $plx-init to bootstrap this repository's agent documentation."
+policy:
+  allow_implicit_invocation: false

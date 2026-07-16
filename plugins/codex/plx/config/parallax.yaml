@@ -1,0 +1,29 @@
+# Parallax engine defaults for the Codex-hosted plugin.
+# Codex is the orchestrator and writer; Claude is the opposite-engine critic.
+pipelines:
+  plan:
+    plan-critic-implementation: [claude]
+    plan-critic-system: [claude]
+
+  build:
+    code: codex
+
+  review:
+    review-correctness: [claude]
+    review-cleanup: [claude]
+    review-structural: [claude]
+    fix: codex
+
+  dev:
+    plan-critic-implementation: [claude]
+    plan-critic-system: [claude]
+    code: codex
+    review-correctness: [claude]
+    review-cleanup: [claude]
+    review-structural: [claude]
+    fix: codex
+
+  goal-spec:
+    plan: [claude]
+    plan-critic-implementation: [claude]
+    plan-critic-system: [claude]

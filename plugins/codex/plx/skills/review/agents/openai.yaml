@@ -1,0 +1,6 @@
+interface:
+  display_name: "Parallax Review"
+  short_description: "Run multi-lane review and fix confirmed findings"
+  default_prompt: "Use $plx-review to review my current changes and fix confirmed findings."
+policy:
+  allow_implicit_invocation: false

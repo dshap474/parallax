@@ -1,0 +1,6 @@
+interface:
+  display_name: "Parallax Unknown Unknowns"
+  short_description: "Surface blindspots before they get expensive"
+  default_prompt: "Use $plx-unknown-unknowns to surface what I may be missing about this work."
+policy:
+  allow_implicit_invocation: false

@@ -86,11 +86,11 @@ gives the user a veto point before tokens burn. Scale down as readily as up.
 | **default** | plan in-context + implementation critic | 1 worker | 3 dims × 1 engine |
 | **large / risky** | spec doc + implementation and system critics | parallel file-disjoint workers | 3 dims × 2 engines, xhigh |
 
-Standalone `/plx:plan` deliberately overrides the default plan rung: it resolves exactly
-one engine for each critic dimension and runs both in parallel. Shipped Codex bindings use
-`gpt-5.6-sol` at `xhigh`; explicit current-message substitutions win. Both required
-dimensions must return before the plan is final. `/plx:dev` keeps the proportional sizing
-above as part of the larger end-to-end run.
+The standalone plan skill deliberately overrides the default plan rung: it resolves
+exactly one engine for each critic dimension from the host package and runs both in
+parallel. Explicit current-message substitutions win. Both required dimensions must
+return before the plan is final. The full dev skill keeps the proportional sizing above
+as part of the larger end-to-end run.
 
 Scale-up signals: cross-file contracts, concurrency, data-integrity or money paths,
 wide refactors, high ambiguity, code you can't easily verify. Scale-down signals: one
@@ -104,15 +104,13 @@ consume it later. A spec doc for a one-shot task is overhead, not rigor.
 
 ## Running lanes
 
-- **Always background Bash.** Engine turns can run 10–40+ minutes; foreground Bash caps
-  at 10. Launch with `run_in_background` and `--out <f> --log <f>`, fire independent
-  lanes in one message so they run concurrently, and synthesize when the harness reports
-  completion. Results live on disk — read the out-files selectively; don't pull bulk
-  content into your own window.
-- **Grok calls need the Bash sandbox disabled** for the call
-  (`dangerouslyDisableSandbox: true`) — grok needs network/keychain access the sandbox
-  blocks; grok's own kernel sandbox still confines it. The wrapper fixes the model to
-  `grok-4.5`, defaults effort to `medium`, and accepts explicit `low|medium|high`.
+- **Always use a retained/background shell session.** Engine turns can run 10–40+
+  minutes. Launch with `--out <f> --log <f>`, fire independent lanes concurrently, and
+  synthesize after completion. Results live on disk — read the out-files selectively;
+  don't pull bulk content into your own window.
+- **Grok may require narrowly scoped host approval** for network or keychain access;
+  Grok's own kernel sandbox still confines it. The wrapper fixes the model to `grok-4.5`,
+  defaults effort to `medium`, and accepts explicit `low|medium|high`.
 - **Pipeline-specific retry and completion rules override this general playbook.** If a lane
   fails (exit 1), read its log, then retry once — same engine, or a
   smarter one if the failure looks like capability. If a review lane fails and others

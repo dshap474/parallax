@@ -1,51 +1,25 @@
-# Parallax test environment
+# Test environment
 
-A small, deterministic harness for inspecting and smoke-testing the plugin. It does
-**not** run a self-improvement loop and does **not** spend model tokens by default —
-it checks that the plugin is wired correctly, shows what each skill *would* do, and
-exercises the shell scripts in throwaway repos.
-
-## What's here
-
-| File | What it does |
-|---|---|
-| `run.sh` | Runs the whole deterministic suite (static checks + script smoke) and prints `ALL GREEN` / failures. |
-| `check-plugin.sh` | **Static integrity** — release versions agree across manifests/README/spec; no `${CLAUDE_PLUGIN_ROOT}` in skills (bin/ tools are on PATH); every named `plx-*` tool, config key, and rubric exists; no retired personas or affirmative subagent instructions remain; manifests are valid JSON; skills are self-contained. No model calls. |
-| `explain-skill.sh` | **Dry run** — prints what a skill would do: its config key, resolved engine bindings, preflight requirement, its inline sections, and the verbatim `## Pipeline` steps. Nothing executes. |
-| `smoke-scripts.sh` | Runs the real shell scripts (`preflight`) against an **isolated tmp repo** built from `fixture/`. Model-free unless `--with-engines`. |
-| `fixture/` | A tiny throwaway target repo (a `calc.average()` with an empty-list bug). Copied to `mktemp` per run — never edited in place. |
-| `lib.sh` | Shared assert/counter helpers + the isolated-repo builder. |
-
-## Usage
+The default suite is deterministic and model-free:
 
 ```bash
-# Everything deterministic, no engine calls:
 bash tests/run.sh
+```
 
-# See what a skill would execute, without running it:
-bash tests/explain-skill.sh              # list skills
-bash tests/explain-skill.sh dev          # dry-run one
-bash tests/explain-skill.sh review
+It runs dual-package static integrity checks, then exercises the same packaged runtime
+tests once from `plugins/claude/plx` and once from `plugins/codex/plx` using fake engine
+executables and throwaway Git repositories.
 
-# Just the wiring check, or just the script smoke:
-bash tests/check-plugin.sh
-bash tests/smoke-scripts.sh
+Useful commands:
 
-# Also probe codex/grok auth (spends a tiny model call each, env-dependent):
-bash tests/smoke-scripts.sh --with-engines
+```bash
+tests/explain-skill.sh claude dev
+tests/explain-skill.sh codex dev
+tests/smoke-scripts.sh claude
+tests/smoke-scripts.sh codex
 bash tests/run.sh --with-engines
 ```
 
-## Scope / what this does NOT do
-
-These checks cover the **deterministic** layer: wiring, contracts, and the projected
-pipeline. They do **not** run a full skill end-to-end (a real `dev` run drives
-critic/writer/reviewer engine lanes headless and edits a repo — that's a behavioral
-test, model-driven and non-deterministic).
-
-That behavioral layer now has its own opt-in suite: **`tests/smoke/`** runs the skills
-and engine tools for real against throwaway 1-file fixtures and captures the full
-transcript of every lane (`bash tests/smoke/run-smoke.sh` for the cheap engine pass,
-`--skills` for the full per-skill audit). It spends tokens, so it's separate from the
-free suite above. See [`smoke/README.md`](smoke/README.md). The `fixture/` empty-list
-bug is shared by both — it's there so a review lane has something real to catch.
+`--with-engines` performs small real authentication/model probes and is intentionally
+off by default. `tests/smoke/` contains the larger behavioral suite and should be run
+deliberately because it spends model tokens.

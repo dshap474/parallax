@@ -1,57 +1,25 @@
+%% Parallax dual-host pipeline overview.
+%% Usage: render with any Mermaid flowchart-compatible renderer.
 flowchart TD
-    U(["👤 User: an explicit /plx:* command «task»"]) --> SKL["📋 SKILL.md loads the request"]
-    SKL --> IN["⚙️ Bootstrap — orchestrator (Fable) resolves with its own tools<br/>absolute repo root · dirty-worktree check · mktemp stage dir"]
-    IN --> RT{"🧭 Which pipeline the command runs"}
+    U([User request]) --> H{Host plugin}
+    H -->|Claude Code /plx:*| C[Claude orchestrator]
+    H -->|Codex $plx-*| X[Codex orchestrator]
 
-    RT -->|"/plx:dev — build a change"| DEV["🛠️ dev — full 7-step pipeline"]
-    RT -->|"/plx:goal-spec — lock a goal, no edits"| PL["📐 goal-spec — interview → goal spec"]
-    RT -->|"/plx:review — audit / debug, no edits"| RV["🔎 review — standalone, read-only"]
+    C --> P[Plan authoring]
+    X --> P
+    P --> CR[Read-only opposite-engine critics]
+    CR --> B[File-disjoint Codex writer lanes]
+    B --> R[Read-only correctness / cleanup / structural review]
+    R --> S[Host synthesis]
+    S --> F[One targeted Codex fix round]
+    F --> G[Host final gate and verification]
 
-    CFG[("🗂️ config/parallax.yaml — default engine per lane<br/>defaults, not limits (prompts/engines.md carries the judgment)")] -. "binds lanes" .-> DEV
-    CFG -. .-> PL
-    CFG -. .-> RV
+    SB[(shared/bin + shared/prompts)] -. synchronized copies .-> C
+    SB -. synchronized copies .-> X
 
-    DEV --> PIPE
-
-    subgraph PIPE ["🔁 dev pipeline — no subagents; every lane is a background plx-engine call"]
-      direction TB
-      S1["① 🧠 Fable authors the draft plan (reads the repo, scoped)<br/>writes the spec to the shared template"]
-      S2["② Sized red-team (read-only)<br/>implementation critic; add system critic for risky plans → findings, not rewrites"]
-      S3["③ 🧠 Fable folds the critique → finalizes the plan<br/>(verifies load-bearing claims; escape hatch: re-draft)"]
-      S4["④ One writer lane ✍️<br/>plx-engine --mode rw --rubric worker (Sol medium default) ← ## Spec brief"]
-      S4R["⑤ Fable runs 3 parallel review lanes (read-only)<br/>--rubric reviewer-correctness · -cleanup · -structural, cross-engine<br/>synthesizes · verifies findings · fixes small ones ✍️ or ONE rw fix turn"]
-      S5["Buildout report + review disposition — summaries,<br/>never code bodies (out-files read selectively)"]
-      S6["⑥ 🧠 Fable's final gate — reads the diff ONCE, fresh eyes<br/>fixes nits inline ✍️ · re-runs the repo's checks<br/>escape hatch: structural rework → fresh build"]
-      S1 --> S2 --> S3 --> S4
-      S4 --> S5 --> S4R --> S6
-    end
-
-    PIPE --> DOC["⑦ Fable updates .project/ docs → LOCAL commit only<br/>never push / PR / publish"]
-    DOC --> REP(["📝 Final chat report"])
-
-    subgraph LEG ["Pipelines at a glance"]
-      direction TB
-      L1["🛠️ dev:  ① → ⑦ (full pipeline)"]
-      L2["📐 goal-spec:  interview → lock → planner + parallel critic lanes → Fable authors a /goal-ready spec → build thread"]
-      L3["🔎 review:  standalone — three read-only lanes + Fable synthesis"]
-      L4["🤖 passthrough:  /plx:codex · /plx:grok — one rw lane, no pipeline"]
-    end
-
-    classDef start fill:#0d3b66,stroke:#9ecbff,stroke-width:2px,color:#ffffff
-    classDef step fill:#13334d,stroke:#5fb0ff,stroke-width:1.5px,color:#eaf2ff
-    classDef decision fill:#7a5a00,stroke:#ffd166,stroke-width:2px,color:#fff8e1
-    classDef write fill:#0b4d2c,stroke:#5ce39b,stroke-width:2px,color:#eafff3
-    classDef review fill:#3a2d5c,stroke:#c2a8ff,stroke-width:2px,color:#f3edff
-    classDef synth fill:#4a3500,stroke:#ffcf66,stroke-width:2px,color:#fff6df
-    classDef cfg fill:#14463f,stroke:#5fe0c8,stroke-width:1.5px,color:#e8fff9
-    classDef legend fill:#11161d,stroke:#6b7785,stroke-width:1px,color:#cdd6e0
-
-    class U,REP start
-    class SKL,IN,DOC step
-    class RT decision
-    class S4 write
-    class S4R,S2 review
-    class S1,S3,S6 synth
-    class CFG cfg
-    class DEV,PL,RV,S5 step
-    class L1,L2,L3,L4 legend
+    classDef host fill:#1e3a5f,stroke:#78b7ff,color:#fff
+    classDef lane fill:#243447,stroke:#9ab6d3,color:#fff
+    classDef shared fill:#174c45,stroke:#6de0c9,color:#fff
+    class C,X host
+    class P,CR,B,R,S,F,G lane
+    class SB shared

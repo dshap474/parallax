@@ -5,10 +5,14 @@
 
 # Repo root = parent of this tests/ dir.
 PLX_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-export PLX_ROOT
-# The plugin path variable the skills use. The harness points it at the repo
-# itself so referenced paths resolve exactly as they would when installed.
-export CLAUDE_PLUGIN_ROOT="$PLX_ROOT"
+PLX_CLAUDE="$PLX_ROOT/plugins/claude/plx"
+PLX_CODEX="$PLX_ROOT/plugins/codex/plx"
+case "${PLX_PACKAGE:-claude}" in
+  claude) PLUGIN_ROOT="$PLX_CLAUDE" ;;
+  codex) PLUGIN_ROOT="$PLX_CODEX" ;;
+  *) echo "PLX_PACKAGE must be claude or codex" >&2; return 2 ;;
+esac
+export PLX_ROOT PLX_CLAUDE PLX_CODEX PLUGIN_ROOT
 
 PASS=0
 FAIL=0

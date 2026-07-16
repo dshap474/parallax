@@ -32,7 +32,7 @@ engine_ro() {
   } > "$q"
   out="$RUNDIR/engines/$eng-ro.out"; log="$RUNDIR/engines/$eng-ro.log"
   # shellcheck disable=SC2046
-  "$PLX_ROOT/bin/plx-engine" --engine "$eng" --mode ro --repo "$repo" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine "$eng" --mode ro --repo "$repo" \
     --prompt-file "$q" --rubric reviewer-correctness $(effort_flags "$eng") \
     --out "$out" --log "$log"; rc=$?
   echo "$rc" > "$RUNDIR/engines/$eng-ro.rc"
@@ -56,7 +56,7 @@ engine_rw() {
   p="$(mktemp)"; printf 'Add an empty-list guard to average() in calc.py so average([]) returns 0.0 instead of raising ZeroDivisionError. Edit calc.py only; keep it minimal.\n' > "$p"
   out="$RUNDIR/engines/$eng-rw.out"; log="$RUNDIR/engines/$eng-rw.log"
   # shellcheck disable=SC2046
-  "$PLX_ROOT/bin/plx-engine" --engine "$eng" --mode rw --repo "$repo" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine "$eng" --mode rw --repo "$repo" \
     --prompt-file "$p" $(effort_flags "$eng") \
     --out "$out" --log "$log"; rc=$?
   echo "$rc" > "$RUNDIR/engines/$eng-rw.rc"
@@ -79,7 +79,7 @@ run_engine() {
 
 # Free check first: rubric plumbing answers without a model call.
 _head "plx-engine --print-rubric (no model call)"
-if "$PLX_ROOT/bin/plx-engine" --print-rubric engines | grep -q "Engines"; then
+if "$PLUGIN_ROOT/bin/plx-engine" --print-rubric engines | grep -q "Engines"; then
   _pass "--print-rubric engines resolves prompts/"
 else
   _fail "--print-rubric engines failed — prompts/ resolution broken"

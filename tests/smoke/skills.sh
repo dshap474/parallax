@@ -56,8 +56,8 @@ run_skill() {
   if [ -n "$task" ]; then prompt="/plx:$skill $task"; else prompt="/plx:$skill"; fi
   {
     printf 'cd %s\n' "$repo"
-    printf 'PATH=%s/bin:$PATH CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p %s \\\n' "$PLX_ROOT" "$(printf '%q' "$prompt")"
-    printf '  --plugin-dir %s --permission-mode bypassPermissions \\\n' "$PLX_ROOT"
+    printf 'PATH=%s/bin:$PATH CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p %s \\\n' "$PLUGIN_ROOT" "$(printf '%q' "$prompt")"
+    printf '  --plugin-dir %s --permission-mode bypassPermissions \\\n' "$PLUGIN_ROOT"
     printf '  --output-format stream-json --verbose\n'
   } > "$d/cmd.txt"
 
@@ -67,8 +67,8 @@ run_skill() {
     rm -rf "$repo"; return
   fi
 
-  ( cd "$repo" && PATH="$PLX_ROOT/bin:$PATH" CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p "$prompt" \
-      --plugin-dir "$PLX_ROOT" --permission-mode bypassPermissions \
+  ( cd "$repo" && PATH="$PLUGIN_ROOT/bin:$PATH" CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p "$prompt" \
+      --plugin-dir "$PLUGIN_ROOT" --permission-mode bypassPermissions \
       --output-format stream-json --verbose ) > "$d/transcript.jsonl" 2> "$d/stderr.log"
   rc=$?; echo "$rc" > "$d/rc"
   git -C "$repo" diff "$base" > "$d/diff.patch" 2>/dev/null

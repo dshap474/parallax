@@ -1,7 +1,7 @@
-# Parallax behavioral smoke suite
+# Parallax Claude-package behavioral smoke suite
 
 This is the **end-to-end audit** the deterministic harness (`tests/run.sh`) deliberately
-skips. It runs the real skills and the real engine wrapper against throwaway 1-file
+skips. It runs the real Claude skills and the real engine wrapper against throwaway 1-file
 fixtures with **real (small) model calls**, then asserts on what actually happened and
 captures the full transcript of every lane. Use it to confirm the live system works, not
 just that it's wired correctly.
@@ -16,8 +16,9 @@ just that it's wired correctly.
 | **L1 — engines** | `bin/plx-engine` actually drives each CLI (codex, claude; grok opt-in); `--mode ro` stays read-only and `--rubric` injection lands (the reviewer finds the seeded bug); `--mode rw` edits land in-repo and are correct | pure shell drives the wrapper | tiny (2 calls/engine) |
 | **L2 — skills** | each `/plx:*` skill runs start→finish (plan → red-team → build → review lanes → fixes → gate, etc.) | headless `claude --plugin-dir <this repo>` per skill | real (a full pipeline per skill) |
 
-L2 loads **this working copy** via `--plugin-dir`, so it tests uncommitted changes — not
-the installed cache. Skills launch their engine lanes as background Bash inside that
+L2 loads `plugins/claude/plx` via `--plugin-dir`, so it tests uncommitted changes — not
+the installed cache. The Codex package is covered by the deterministic dual-package
+suite. Claude skills launch their engine lanes as background shell calls inside that
 headless session, so the runner sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` — without
 it, headless `claude -p` stops waiting on background work after 10 minutes and long lanes
 get orphaned.

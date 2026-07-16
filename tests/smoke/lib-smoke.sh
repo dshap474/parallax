@@ -37,7 +37,7 @@ preflight_ok() {
   case " $ENGINE_OK " in *" $1 "*) return 0 ;; esac
   case " $ENGINE_NO " in *" $1 "*) return 1 ;; esac
   local r; r="$(make_tmp_repo)"
-  if "$PLX_ROOT/bin/plx-preflight" --repo "$r" --require-"$1" >/dev/null 2>&1; then
+  if "$PLUGIN_ROOT/bin/plx-preflight" --repo "$r" --require-"$1" >/dev/null 2>&1; then
     ENGINE_OK="$ENGINE_OK $1"; rm -rf "$r"; return 0
   fi
   ENGINE_NO="$ENGINE_NO $1"; rm -rf "$r"; return 1

@@ -1,42 +1,22 @@
-# Parallax command surface (`/plx:*`)
+# Command surface
 
-Every entry point lives under the `plx` plugin namespace. Stage skills let you drive an implementation stage-by-stage; `dev` strings them together; `goal-spec` preps autonomous runs.
+Both packages expose the same nine capabilities with platform-native invocation syntax.
 
-## Stage skills
+| Capability | Claude Code | Codex | Behavior |
+| --- | --- | --- | --- |
+| Plan | `/plx:plan` | `$plx-plan` | Host authors; implementation and system critics red-team; no code |
+| Build | `/plx:build` | `$plx-build` | One or more file-disjoint writer lanes implement and verify |
+| Review | `/plx:review` | `$plx-review` | Sized read-only review, synthesis, and one targeted fix round |
+| Dev | `/plx:dev` | `$plx-dev` | Plan → build → review/fix → final gate |
+| Goal spec | `/plx:goal-spec` | `$plx-goal-spec` | Interview, planner, red-team, and autonomous-ready spec |
+| Other host | `/plx:codex` | `$plx-claude` | One isolated opposite-engine passthrough |
+| Grok | `/plx:grok` | `$plx-grok` | One isolated Grok 4.5 passthrough |
+| Init | `/plx:init` | `$plx-init` | Bootstrap root `AGENTS.md`, `CLAUDE.md`, and `.project/` policy |
+| Unknowns | `/plx:unknown-unknowns` | `$plx-unknown-unknowns` | Host-only blindspot and comprehension work |
 
-| Command | What it does |
-|---|---|
-| `/plx:plan` | Fable authors the candidate, then one implementation critic and one system critic compare it with the task contract in parallel. No code written. |
-| `/plx:build` | Writer lane(s) implement a plan — taken from a spec doc path, the plan already in the conversation, or a raw bounded task. One worker by default; parallel file-disjoint workers for large separable work. Verifies and reports; no review round. |
-| `/plx:review` | Sized review round — 1 lane (small change) up to 3 dimensions × 2 engines (risky change) — then synthesis and **automatic fixes** via cheap targeted fix lanes (codex medium / Grok 4.5 low or medium). Genuinely uncertain findings go to the user as one batched question. Say "report only" to skip fixes. |
+Codex skills are explicit-only (`allow_implicit_invocation: false`) so an expensive
+pipeline never starts merely because a prompt resembles its description.
 
-## Composition
-
-| Command | What it does |
-|---|---|
-| `/plx:dev` | plan → build → review + fix → final gate, in one run, with per-stage sizing. For a trivial ask it skips the machinery entirely (direct edit or one cheap rw lane). Ends with a `.project/` docs pass per the repo's own rules. |
-| `/plx:goal-spec` | Interview-locked goal planning for autonomous efforts: a Socratic interview locks the goal, a planner lane designs the how, parallel implementation/system critics red-team it, and Fable authors one self-contained `/goal`-ready spec into `.project/builds/` plus a paste-ready `/goal` condition. No code written. |
-
-## Single-engine asks (raw passthrough — no pipeline)
-
-Adapts to intent: ask a question → it answers; ask for code → it edits; ask for a plan → it writes one.
-
-| Command | Engine |
-|---|---|
-| `/plx:codex` | Codex (`--mode ro` for questions/plans; `--mode rw` for explicit edits) |
-| `/plx:grok` | Grok 4.5, medium by default (`--mode ro` for questions/plans; `--mode rw` for explicit edits) |
-
-There is no `/plx:claude` — the orchestrator *is* Claude; just ask it directly.
-
-## Setup
-
-| Command | What it does |
-|---|---|
-| `/plx:init` | Bootstrap or repair a repo's agent-docs setup: classify the root `AGENTS.md` and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror `CLAUDE.md` symlinks via `plx-link-claude`, and keep `.project/` git-ignored. Root-only, idempotent; say "dry run" to preview. |
-
-## Notes
-
-- Each command **is** its pipeline, written out in full: its `SKILL.md` carries the ordered steps, lane briefs, and engine invocations inline, resolving engine bindings from `config/parallax.yaml` and shared reference templates via `plx-skill --ref`.
-- **No subagents.** Every lane is a `plx-engine` call the orchestrator makes itself, launched as background Bash with `--out`/`--log` files. Rubrics are injected by `--rubric` name from the plugin's `prompts/` directory.
-- **Sizing is declared up front.** Config bindings are the floor shape; the orchestrator sizes each run per `prompts/engines.md` (critics, workers, review lanes, effort, engines) and prints the chosen shape before launching — your veto point.
-- **Skills never commit or publish.** Version control follows the target repo's own agent instructions.
+Every pipeline reads its package-local `config/parallax.yaml`. Config is the floor shape,
+not a limit: the host may scale lanes down or up and must declare the chosen shape before
+launching. Skills never commit or publish; target-repository instructions govern Git.

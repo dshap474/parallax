@@ -1,0 +1,339 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Parallax engine API — the ONE wrapper that drives all engines headless.
+# Safety flags are pinned here per engine, not decided by callers:
+#   codex  : gpt-5.6-sol, effort medium by default, --ignore-user-config,
+#            --ephemeral, sandbox read-only | workspace-write
+#   grok   : grok-4.5, effort medium by default (low|high may be explicit),
+#            kernel sandbox read-only | workspace (Seatbelt/Landlock),
+#            bypassPermissions (required for headless completion; the kernel
+#            sandbox — not the permission mode — is the safety boundary)
+#   claude : non-bare `claude -p` (bare mode breaks subscription auth),
+#            ro = dontAsk + read-only tools, rw = acceptEdits + explicit tools,
+#            --setting-sources project (user-level config/plugins never load)
+# Never danger-full-access, never --dangerously-*, never --yolo.
+
+usage() {
+  cat <<'EOF'
+plx-engine — run a coding engine headless against a repo (Parallax engine API)
+
+Usage:
+  plx-engine --engine codex|grok|claude --mode ro|rw --repo <abs-path> \
+    --prompt-file <file> [--rubric <name>] [--model <m>] [--effort <e>] --stdout
+  plx-engine ... --out <file> --log <file>     (instead of --stdout)
+  plx-engine --print-rubric <name>             (print prompts/<name>.md and exit)
+
+What it does:
+  One non-interactive engine turn with safety pinned per engine (see the header
+  of this script). Mode `ro` = the engine cannot edit anything; `rw` = edits
+  confined to --repo. With --rubric, the named rubric from the plugin's
+  prompts/ dir is injected ahead of your prompt (codex/grok: prepended to the
+  prompt; claude: appended to the system prompt). Your prompt file should open
+  with the section header the rubric expects (see prompts/engines.md).
+  Only the engine's FINAL message is emitted; progress/noise goes to the log.
+
+Flags:
+  --engine <e>          codex | grok | claude (required)
+  --mode <m>            ro | rw (required; rw's write boundary is --repo)
+  --repo <dir>          absolute path to the target repo (required)
+  --prompt-file <file>  file containing the brief/spec (required)
+  --rubric <name>       lane rubric to inject (a file name under prompts/, no .md)
+  --model <m>           codex: default gpt-5.6-sol · claude: default opus ·
+                        grok: fixed grok-4.5 (any other value is rejected)
+  --effort <e>          codex: low|medium|high|xhigh (default medium) ·
+                        claude: per `claude --help` ·
+                        grok: low|medium|high (default medium)
+  --stdout              print the final message to stdout; temp files auto-cleaned
+  --out <f> --log <f>   instead of --stdout: write final message / full log to files
+  --print-rubric <n>    print the named rubric (e.g. reviewer-correctness, engines)
+  --help                this text
+
+Caller notes:
+  * Engine turns can be LONG (10-40+ min). Use a retained/background shell
+    session with --out/--log rather than relying on a foreground timeout.
+  * grok only: the host may require narrowly scoped approval for network/keychain
+    access. Grok's own kernel sandbox remains the confinement boundary.
+  * grok only: TRUST THE EXIT CODE, not stderr — grok prints non-fatal
+    `worker quit ... AuthorizationRequired` lines to stderr even on success.
+  * rw mode: inspect what changed with `git -C <repo> status --short` / `diff`.
+
+Exit codes:
+  0  success — stdout (or --out) holds the engine's final message
+  1  engine failure — details on stderr / in the log
+  2  usage error — bad flags or missing/empty inputs
+  3  not signed in — tell the user to log in (codex login / grok login / claude /login)
+EOF
+}
+
+# Resolve symlinks so prompts/ is found when reached via a PATH symlink.
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+  d="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$d/$src" ;; esac
+done
+BIN_DIR="$(cd -P "$(dirname "$src")" && pwd)"
+PROMPTS_DIR="$BIN_DIR/../prompts"
+
+ENGINE=""
+MODE=""
+REPO=""
+PROMPT=""
+RUBRIC=""
+MODEL=""
+EFFORT=""
+OUT=""
+LOG=""
+STDOUT=0
+TMP_DIR=""
+
+cleanup() { if [[ -n "$TMP_DIR" ]]; then rm -rf "$TMP_DIR"; fi; }
+trap cleanup EXIT
+
+need_value() { [[ -n "${2:-}" ]] || { echo "missing value for $1" >&2; exit 2; }; }
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --engine) need_value "$1" "${2:-}"; ENGINE="$2"; shift 2 ;;
+    --mode) need_value "$1" "${2:-}"; MODE="$2"; shift 2 ;;
+    --repo) need_value "$1" "${2:-}"; REPO="$2"; shift 2 ;;
+    --prompt-file) need_value "$1" "${2:-}"; PROMPT="$2"; shift 2 ;;
+    --rubric) need_value "$1" "${2:-}"; RUBRIC="$2"; shift 2 ;;
+    --model) need_value "$1" "${2:-}"; MODEL="$2"; shift 2 ;;
+    --effort) need_value "$1" "${2:-}"; EFFORT="$2"; shift 2 ;;
+    --out) need_value "$1" "${2:-}"; OUT="$2"; shift 2 ;;
+    --log) need_value "$1" "${2:-}"; LOG="$2"; shift 2 ;;
+    --stdout) STDOUT=1; shift ;;
+    --print-rubric)
+      need_value "$1" "${2:-}"
+      RF="$PROMPTS_DIR/$2.md"
+      [[ -f "$RF" ]] || { echo "no such rubric: $2 (looked at $RF)" >&2; exit 2; }
+      cat "$RF"; exit 0 ;;
+    --help|-h) usage; exit 0 ;;
+    *) echo "unknown arg: $1 (see --help)" >&2; exit 2 ;;
+  esac
+done
+
+case "$ENGINE" in codex|grok|claude) ;; *) echo "--engine must be codex|grok|claude" >&2; exit 2 ;; esac
+case "$MODE" in ro|rw) ;; *) echo "--mode must be ro|rw" >&2; exit 2 ;; esac
+[[ -d "$REPO" ]] || { echo "repo not found: $REPO" >&2; exit 2; }
+[[ -s "$PROMPT" ]] || { echo "prompt file missing/empty: $PROMPT" >&2; exit 2; }
+
+# The claude engine runs inside a `cd $REPO` subshell — caller-relative paths
+# must be absolutized before that.
+abspath() { case "$1" in /*) printf '%s' "$1" ;; *) printf '%s' "$PWD/$1" ;; esac; }
+PROMPT="$(abspath "$PROMPT")"
+[[ -n "$OUT" ]] && OUT="$(abspath "$OUT")"
+[[ -n "$LOG" ]] && LOG="$(abspath "$LOG")"
+
+model_lower="$(printf '%s' "$MODEL" | tr '[:upper:]' '[:lower:]')"
+case "$model_lower" in
+  gpt-5.5|gpt-5.5-*|*sonnet*)
+    echo "model is forbidden by Parallax policy: $MODEL" >&2
+    exit 2 ;;
+esac
+
+if [[ "$ENGINE" == "grok" ]]; then
+  [[ -n "$MODEL" ]] || MODEL="grok-4.5"
+  [[ "$MODEL" == "grok-4.5" ]] || {
+    echo "grok model is fixed to grok-4.5 (got: $MODEL)" >&2; exit 2
+  }
+  [[ -n "$EFFORT" ]] || EFFORT="medium"
+  case "$EFFORT" in
+    low|medium|high) ;;
+    *) echo "grok effort must be low|medium|high (got: $EFFORT)" >&2; exit 2 ;;
+  esac
+elif [[ "$ENGINE" == "codex" ]]; then
+  [[ -n "$MODEL" ]] || MODEL="gpt-5.6-sol"
+  [[ -n "$EFFORT" ]] || EFFORT="medium"
+else
+  [[ -n "$MODEL" ]] || MODEL="opus"
+  [[ -n "$EFFORT" ]] || EFFORT="high"
+fi
+
+RUBRIC_FILE=""
+if [[ -n "$RUBRIC" ]]; then
+  RUBRIC_FILE="$PROMPTS_DIR/$RUBRIC.md"
+  [[ -s "$RUBRIC_FILE" ]] || { echo "no such rubric: $RUBRIC (looked at $RUBRIC_FILE)" >&2; exit 2; }
+fi
+
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/parallax-engine.XXXXXX")"
+if [[ "$STDOUT" -eq 1 ]]; then
+  OUT="$TMP_DIR/output.md"
+  LOG="$TMP_DIR/engine.log"
+else
+  [[ -n "$OUT" ]] || { echo "--out required (or use --stdout)" >&2; exit 2; }
+  [[ -n "$LOG" ]] || { echo "--log required (or use --stdout)" >&2; exit 2; }
+fi
+mkdir -p "$(dirname "$OUT")" "$(dirname "$LOG")"
+
+# codex/grok take one prompt stream: rubric (if any) prepended to the brief.
+# claude keeps them separate: rubric -> system prompt, brief -> user prompt.
+EXEC_PROMPT="$PROMPT"
+if [[ -n "$RUBRIC_FILE" && "$ENGINE" != "claude" ]]; then
+  EXEC_PROMPT="$TMP_DIR/prompt.md"
+  cat "$RUBRIC_FILE" > "$EXEC_PROMPT"
+  printf '\n\n' >> "$EXEC_PROMPT"
+  cat "$PROMPT" >> "$EXEC_PROMPT"
+fi
+
+run_codex() {
+  local sandbox
+  [[ "$MODE" == "ro" ]] && sandbox="read-only" || sandbox="workspace-write"
+  if ! codex exec --ignore-user-config --sandbox "$sandbox" --skip-git-repo-check \
+    -C "$REPO" -m "$MODEL" -c model_reasoning_effort="$EFFORT" --ephemeral \
+    -o "$OUT" - < "$EXEC_PROMPT" > "$LOG" 2>&1; then
+    if grep -qiE "not logged in|401 unauthorized|codex login|invalid api key" "$LOG"; then
+      echo "plx-engine: codex not authenticated — run \`codex login\` (or set CODEX_API_KEY), then retry." >&2
+      exit 3
+    fi
+    echo "codex invocation failed" >&2
+    [[ -s "$LOG" ]] && sed -n '1,40p' "$LOG" >&2
+    exit 1
+  fi
+  [[ -s "$OUT" ]] || { echo "codex produced empty output: $OUT" >&2; exit 1; }
+}
+
+run_claude() {
+  local -a flags
+  flags=(--model "$MODEL" --effort "$EFFORT" --setting-sources project)
+  if [[ "$MODE" == "ro" ]]; then
+    flags+=(--permission-mode dontAsk --allowedTools "Read,Grep,Glob")
+  else
+    flags+=(--permission-mode acceptEdits --allowedTools "Read,Grep,Glob,Edit,Write,Bash")
+  fi
+  [[ -n "$RUBRIC_FILE" ]] && flags+=(--append-system-prompt-file "$RUBRIC_FILE")
+  if ! (cd "$REPO" && claude -p "${flags[@]}" < "$EXEC_PROMPT" > "$OUT" 2> "$LOG"); then
+    if grep -qiE "not logged in|please run /login" "$OUT" "$LOG"; then
+      echo "plx-engine: claude not authenticated — run \`claude /login\`, then retry." >&2
+      exit 3
+    fi
+    echo "claude invocation failed" >&2
+    [[ -s "$LOG" ]] && sed -n '1,40p' "$LOG" >&2
+    exit 1
+  fi
+  if grep -qiE "not logged in|please run /login" "$OUT"; then
+    echo "plx-engine: claude not authenticated — run \`claude /login\`, then retry." >&2
+    exit 3
+  fi
+  [[ -s "$OUT" ]] || { echo "claude produced empty output: $OUT" >&2; exit 1; }
+}
+
+run_grok() {
+  local sandbox raw rc stop text pyrc final
+  [[ "$MODE" == "ro" ]] && sandbox="read-only" || sandbox="workspace"
+  raw="$TMP_DIR/raw.json"
+
+  set +e
+  grok --no-auto-update --cwd "$REPO" \
+    --model "$MODEL" --effort "$EFFORT" \
+    --permission-mode bypassPermissions --sandbox "$sandbox" \
+    --no-plan --no-subagents --no-memory --no-alt-screen --output-format json \
+    --prompt-file "$EXEC_PROMPT" > "$raw" 2> "$LOG"
+  rc=$?
+  set -e
+
+  # Genuine "not signed in" prints the OAuth sign-in prompt to stderr. This is
+  # the real login signal — NOT the AuthorizationRequired worker noise, which
+  # also appears on success.
+  if grep -qiE "Open this URL to sign in|Signing in with Grok" "$LOG"; then
+    echo "plx-engine: grok not authenticated — run \`grok login\` (or export XAI_API_KEY), then retry." >&2
+    exit 3
+  fi
+
+  if [[ $rc -ne 0 ]]; then
+    echo "grok invocation failed (exit $rc)" >&2
+    [[ -s "$LOG" ]] && sed -n '1,40p' "$LOG" >&2
+    exit 1
+  fi
+
+  set +e
+  stop="$(python3 -c 'import json,sys
+try:
+    print(json.load(open(sys.argv[1])).get("stopReason") or "")
+except Exception:
+    print("")' "$raw")"
+  text="$(python3 -c 'import json,sys
+try:
+    sys.stdout.write(json.load(open(sys.argv[1])).get("text") or "")
+except Exception:
+    sys.exit(7)' "$raw")"
+  pyrc=$?
+  set -e
+
+  if [[ $pyrc -ne 0 ]]; then
+    # JSON parse failed (unexpected grok output shape) — fall back to raw text.
+    text="$(cat "$raw")"
+  fi
+
+  if [[ "$stop" == "Cancelled" ]]; then
+    echo "plx-engine: grok turn was Cancelled — a tool call was gated, not auto-approved." >&2
+    echo "plx-engine: expected only if bypassPermissions is not taking effect (check grok version)." >&2
+    exit 1
+  fi
+
+  [[ -n "$text" ]] || { echo "plx-engine: grok empty output (stopReason=$stop)" >&2; exit 1; }
+
+  # Older Grok builds aggregated every text chunk into the envelope, including
+  # interleaved subagent output and pre-tool narration. The session store keeps
+  # proper message records; retain that compatibility fallback even though current
+  # Parallax runs disable subagents. (Verified grok 0.2.39, 2026-06-11:
+  # tests/evals/2026-06-11_grok-output-aggregation-eval.md)
+  final="$(python3 -c 'import json,os,sys,urllib.parse
+try:
+    sid = json.load(open(sys.argv[1])).get("sessionId") or ""
+    if not sid:
+        sys.exit(0)
+    repo = os.path.realpath(sys.argv[2])
+    path = os.path.join(os.path.expanduser("~/.grok/sessions"),
+                        urllib.parse.quote(repo, safe=""), sid, "chat_history.jsonl")
+    last = None
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            m = json.loads(line)
+            if m.get("type") == "assistant":
+                last = m
+    c = (last or {}).get("content")
+    if isinstance(c, str) and c.strip():
+        sys.stdout.write(c)
+except Exception:
+    pass' "$raw" "$REPO")"
+  [[ -n "$final" ]] && text="$final"
+
+  printf '%s\n' "$text" > "$OUT"
+
+  # Headless one-shot runs never resume; drop this run's session dir so
+  # ~/.grok/sessions doesn't grow without bound (grok has no --ephemeral).
+  # Failure paths exit above and keep the session for debugging.
+  python3 -c 'import json,os,shutil,sys,urllib.parse
+try:
+    sid = json.load(open(sys.argv[1])).get("sessionId") or ""
+    if not sid:
+        sys.exit(0)
+    repo = os.path.realpath(sys.argv[2])
+    d = os.path.join(os.path.expanduser("~/.grok/sessions"),
+                     urllib.parse.quote(repo, safe=""), sid)
+    if os.path.isdir(d):
+        shutil.rmtree(d)
+        parent = os.path.dirname(d)
+        if os.listdir(parent) in ([], ["prompt_history.jsonl"]):
+            shutil.rmtree(parent)
+except Exception:
+    pass' "$raw" "$REPO" || true
+}
+
+case "$ENGINE" in
+  codex) run_codex ;;
+  claude) run_claude ;;
+  grok) run_grok ;;
+esac
+
+if [[ "$STDOUT" -eq 1 ]]; then
+  cat "$OUT"
+else
+  echo "OK plx-engine engine=$ENGINE mode=$MODE out=$OUT log=$LOG"
+fi

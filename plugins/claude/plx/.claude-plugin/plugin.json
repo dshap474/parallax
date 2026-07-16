@@ -1,0 +1,10 @@
+{
+  "name": "plx",
+  "version": "0.5.0",
+  "description": "Parallax for Claude Code: nine multi-model planning, implementation, review, goal-preparation, passthrough, initialization, and blindspot workflows driven through one safety-pinned headless engine wrapper.",
+  "author": { "name": "Daniel Shapiro", "url": "https://github.com/dshap474" },
+  "homepage": "https://github.com/dshap474/parallax",
+  "repository": "https://github.com/dshap474/parallax",
+  "license": "MIT",
+  "keywords": ["multi-model", "code-review", "orchestration", "codex", "grok", "headless", "claude-code", "parallax", "plx"]
+}

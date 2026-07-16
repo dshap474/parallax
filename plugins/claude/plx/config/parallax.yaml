@@ -1,0 +1,68 @@
+# Parallax engine configuration
+#
+# Binds pipeline ROLES to ENGINES, keyed by pipeline. Each skill names the key it
+# reads (plan -> `plan`, build -> `build`, review -> `review`, dev -> `dev`,
+# goal-spec -> `goal-spec`). Each skill's SKILL.md is fully self-contained — it
+# documents its own pipeline steps — and resolves each role to its engine from this
+# file before running.
+#
+# The values below are the shipped DEFAULTS — the floor shape, not a mandate. The
+# orchestrator sizes every run per the judgment doc (`plx-engine --print-rubric
+# engines`): it may drop lanes for small tasks, add engines/lanes for large or risky
+# ones, and swap engines when the output doesn't meet the bar. It declares the
+# chosen sizing before launching.
+#
+# Every role runs as one headless `plx-engine` call made by the orchestrator —
+# no subagents. The role determines the rubric and mode:
+#
+#   role                mode  rubric
+#   plan (goal-spec)    ro    planner
+#   plan-critic-implementation ro plan-critic-implementation
+#   plan-critic-system  ro    plan-critic-system
+#   code                rw    worker
+#   fix                 rw    worker   (targeted post-review fixes — cheap/fast engine)
+#   review-correctness  ro    reviewer-correctness
+#   review-cleanup      ro    reviewer-cleanup
+#   review-structural   ro    reviewer-structural
+#
+# Rules:
+#   - `code` and `fix` take ONE engine each. Writers may run in parallel only on
+#     disjoint path sets — one writer per path, always.
+#   - plan / plan-critic-* / review-* roles take LISTS and are always read-only
+#     (`--mode ro`), whatever engine fills them. Standalone `plan` is the narrow exception:
+#     each critic role must contain exactly one engine, preserving its fixed two-lane shape.
+#   - Standalone plan runs both critic roles by default. Its shipped Codex bindings use
+#     gpt-5.6-sol at xhigh; an explicit current-message substitution overrides the configured
+#     engine, and the plan skill applies that engine's supported model/effort flags.
+#   - Plan authoring, review synthesis, and the final gate are always the
+#     orchestrator. Never delegated, not configurable.
+#   - Cross-engine review is the default posture: prefer review engines that
+#     didn't write the code.
+
+pipelines:
+  plan:
+    plan-critic-implementation: [codex]
+    plan-critic-system: [codex]
+
+  build:
+    code: codex
+
+  review:
+    review-correctness: [codex]
+    review-cleanup: [codex]
+    review-structural: [codex]
+    fix: codex
+
+  dev:
+    plan-critic-implementation: [codex]
+    plan-critic-system: [codex]
+    code: codex
+    review-correctness: [codex]
+    review-cleanup: [codex]
+    review-structural: [codex]
+    fix: codex
+
+  goal-spec:
+    plan: [claude]
+    plan-critic-implementation: [codex]
+    plan-critic-system: [codex]

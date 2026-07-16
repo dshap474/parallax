@@ -1,13 +1,13 @@
 {
   "name": "parallax-marketplace",
   "owner": { "name": "Daniel Shapiro", "url": "https://github.com/dshap474" },
-  "description": "Parallax — multi-model orchestration for Claude Code.",
+  "description": "Parallax multi-model orchestration plugins.",
   "plugins": [
     {
       "name": "plx",
-      "source": "./",
+      "source": "./plugins/claude/plx",
       "description": "Parallax (plx) — multi-model orchestration as a toolbox. Stage skills (plan/build/review) compose into dev; the orchestrator drives Codex, Grok, and Claude headless (no subagents), sizes every run, and auto-fixes review findings.",
-      "version": "0.4.7",
+      "version": "0.5.0",
       "category": "development",
       "keywords": ["multi-model", "code-review", "orchestration", "plx"],
       "license": "MIT"

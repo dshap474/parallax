@@ -1,5 +1,5 @@
 interface:
-  display_name: "Parallax Claude"
+  display_name: "PLX::Claude"
   short_description: "Run one isolated Claude passthrough"
   default_prompt: "Use $plx-claude to get Claude's independent take on this request."
 policy:

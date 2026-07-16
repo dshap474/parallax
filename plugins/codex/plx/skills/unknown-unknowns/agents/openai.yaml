@@ -1,5 +1,5 @@
 interface:
-  display_name: "Parallax Unknown Unknowns"
+  display_name: "PLX::UnknownUnknowns"
   short_description: "Surface blindspots before they get expensive"
   default_prompt: "Use $plx-unknown-unknowns to surface what I may be missing about this work."
 policy:

@@ -1,5 +1,5 @@
 interface:
-  display_name: "Parallax Dev"
+  display_name: "PLX::Dev"
   short_description: "Plan, build, review, fix, and verify"
   default_prompt: "Use $plx-dev to complete this coding task end to end."
 policy:

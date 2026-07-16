@@ -59,6 +59,23 @@ for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
   else
     _fail "Codex $name missing explicit-only metadata"
   fi
+  case "$name" in
+    build) display_name="PLX::Build" ;;
+    claude) display_name="PLX::Claude" ;;
+    dev) display_name="PLX::Dev" ;;
+    goal-spec) display_name="PLX::GoalSpec" ;;
+    grok) display_name="PLX::Grok" ;;
+    init) display_name="PLX::Init" ;;
+    plan) display_name="PLX::Plan" ;;
+    review) display_name="PLX::Review" ;;
+    unknown-unknowns) display_name="PLX::UnknownUnknowns" ;;
+    *) display_name="" ;;
+  esac
+  if [ -n "$display_name" ] && grep -qx "  display_name: \"$display_name\"" "$metadata"; then
+    _pass "Codex $name display: $display_name"
+  else
+    _fail "Codex $name display name is not PLX PascalCase"
+  fi
 done
 
 if [ -f "$PLX_CLAUDE/skills/codex/SKILL.md" ] &&

@@ -1,5 +1,5 @@
 interface:
-  display_name: "Parallax Plan"
+  display_name: "PLX::Plan"
   short_description: "Author and red-team a coding plan"
   default_prompt: "Use $plx-plan to produce a decision-complete implementation plan for this task."
 policy:

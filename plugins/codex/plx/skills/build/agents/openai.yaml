@@ -1,5 +1,5 @@
 interface:
-  display_name: "Parallax Build"
+  display_name: "PLX::Build"
   short_description: "Implement a plan through isolated writer lanes"
   default_prompt: "Use $plx-build to implement and verify this accepted plan."
 policy:

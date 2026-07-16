@@ -84,7 +84,10 @@ else
   _pass "shared engine guidance is host-neutral"
 fi
 
-if grep -q 'claude + grok' "$PLX_CODEX/skills/review/SKILL.md" &&
+codex_review_sizing="$(grep -A1 'claude + grok — six lanes), at' "$PLX_CODEX/skills/review/SKILL.md")"
+if [ -n "$codex_review_sizing" ] &&
+   printf '%s\n' "$codex_review_sizing" | grep -q '`high`' &&
+   ! printf '%s\n' "$codex_review_sizing" | grep -q '`xhigh`' &&
    grep -q 'claude high + grok high' "$PLX_CODEX/skills/review/SKILL.md" &&
    ! grep -q 'codex + grok' "$PLX_CODEX/skills/review/SKILL.md"; then
   _pass "Codex review examples preserve opposite-engine polarity"

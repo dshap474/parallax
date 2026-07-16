@@ -39,7 +39,7 @@ floor shape — size per the judgment doc:
 - **default** → 3 dimensions × 1 engine.
 - **large / risky** (cross-file contracts, concurrency, data-integrity or money paths,
   wide refactors) → 3 dimensions × 2 engines (e.g. claude + grok — six lanes), at
-  `xhigh`. Prefer engines that didn't write the code.
+  `high`. Prefer engines that didn't write the code.
 
 Declare the sizing in one line before launching (e.g. `Sizing: review 3×2
 (claude high + grok high) · fixes: codex medium`). Run `<plugin-root>/bin/plx-preflight --repo <repo>

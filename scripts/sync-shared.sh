@@ -39,6 +39,21 @@ sync_tree() {
     fi
   done < <(find "$source" -type f | sort)
 
+  if [ -d "$destination" ]; then
+    while IFS= read -r destination_file; do
+      relative="${destination_file#"$destination/"}"
+      source_file="$source/$relative"
+      if [ ! -f "$source_file" ]; then
+        if [ "$MODE" = "--check" ]; then
+          echo "orphan: ${destination_file#"$ROOT/"}" >&2
+          drift=1
+        else
+          rm -f -- "$destination_file"
+        fi
+      fi
+    done < <(find "$destination" -type f | sort)
+  fi
+
   return "$drift"
 }
 

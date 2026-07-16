@@ -7,7 +7,15 @@ set -uo pipefail
 . "$(cd "$(dirname "$0")" && pwd)/lib.sh"
 
 WITH_ENGINES=0
-[ "${1:-}" = "--with-engines" ] && WITH_ENGINES=1
+if [ "$#" -gt 1 ]; then
+  echo "usage: PLX_PACKAGE=claude|codex tests/smoke-scripts.sh [--with-engines]" >&2
+  exit 2
+fi
+case "${1:-}" in
+  "") ;;
+  --with-engines) WITH_ENGINES=1 ;;
+  *) echo "usage: PLX_PACKAGE=claude|codex tests/smoke-scripts.sh [--with-engines]" >&2; exit 2 ;;
+esac
 
 REPO="$(make_tmp_repo)"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/plx-smoke.XXXXXX")"

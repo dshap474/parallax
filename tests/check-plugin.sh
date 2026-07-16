@@ -77,6 +77,21 @@ else
   _fail "engine polarity drift"
 fi
 
+if grep -qE 'fable-5|Codex review lanes|Standalone Codex plan critics|implementation critic \(codex' \
+  "$PLX_ROOT/shared/prompts/engines.md"; then
+  _fail "shared engine guidance contains Claude-host assumptions"
+else
+  _pass "shared engine guidance is host-neutral"
+fi
+
+if grep -q 'claude + grok' "$PLX_CODEX/skills/review/SKILL.md" &&
+   grep -q 'claude high + grok high' "$PLX_CODEX/skills/review/SKILL.md" &&
+   ! grep -q 'codex + grok' "$PLX_CODEX/skills/review/SKILL.md"; then
+  _pass "Codex review examples preserve opposite-engine polarity"
+else
+  _fail "Codex review examples contradict configured polarity"
+fi
+
 # --------------------------------------------------------------------------- #
 # Runtime packaging
 # --------------------------------------------------------------------------- #
@@ -86,6 +101,29 @@ if "$PLX_ROOT/scripts/sync-shared.sh" --check >/dev/null; then
   _pass "shared bin/prompts/license copies are current"
 else
   _fail "shared runtime drift"
+fi
+
+SYNC_TMP="$(mktemp -d "${TMPDIR:-/tmp}/plx-sync-check.XXXXXX")"
+trap 'rm -rf "$SYNC_TMP"' EXIT
+SYNC_REPO="$SYNC_TMP/repo"
+mkdir -p "$SYNC_REPO/scripts" "$SYNC_REPO/plugins/claude/plx" "$SYNC_REPO/plugins/codex/plx"
+cp -R "$PLX_ROOT/shared" "$SYNC_REPO/shared"
+cp "$PLX_ROOT/LICENSE" "$SYNC_REPO/LICENSE"
+cp "$PLX_ROOT/scripts/sync-shared.sh" "$SYNC_REPO/scripts/sync-shared.sh"
+"$SYNC_REPO/scripts/sync-shared.sh" >/dev/null
+printf 'orphan\n' > "$SYNC_REPO/plugins/codex/plx/prompts/orphan.md"
+orphan_output="$("$SYNC_REPO/scripts/sync-shared.sh" --check 2>&1)"
+orphan_rc=$?
+if [ "$orphan_rc" -eq 1 ] && printf '%s\n' "$orphan_output" | grep -q 'orphan: plugins/codex/plx/prompts/orphan.md'; then
+  _pass "shared check rejects destination-only files"
+else
+  _fail "shared check missed a destination-only file"
+fi
+"$SYNC_REPO/scripts/sync-shared.sh" >/dev/null
+if [ ! -e "$SYNC_REPO/plugins/codex/plx/prompts/orphan.md" ]; then
+  _pass "shared sync prunes destination-only files"
+else
+  _fail "shared sync left a destination-only file"
 fi
 
 for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
@@ -113,6 +151,30 @@ if grep -RE '^[[:space:]]*[^#].*(danger-full-access|dangerously-bypass-approvals
   _fail "forbidden broad-permission flag in shared runtime"
 else
   _pass "shared runtime rejects broad-permission patterns"
+fi
+
+# --------------------------------------------------------------------------- #
+# Maintainer helper contracts
+# --------------------------------------------------------------------------- #
+
+_head "Maintainer helper contracts"
+"$PLX_ROOT/tests/smoke-scripts.sh" codex >/dev/null 2>&1
+smoke_rc=$?
+"$PLX_ROOT/tests/smoke-scripts.sh" --with-engines codex >/dev/null 2>&1
+smoke_extra_rc=$?
+if [ "$smoke_rc" -eq 2 ] && [ "$smoke_extra_rc" -eq 2 ]; then
+  _pass "smoke harness rejects positional package selectors"
+else
+  _fail "smoke harness silently accepted a positional package selector"
+fi
+
+explain_output="$("$PLX_ROOT/tests/explain-skill.sh" codex dev)"
+if printf '%s\n' "$explain_output" | grep -q 'config key: dev' &&
+   printf '%s\n' "$explain_output" | grep -q 'review-correctness: \[claude\]' &&
+   printf '%s\n' "$explain_output" | grep -q '^preflight: plx-preflight'; then
+  _pass "skill explanation resolves Codex bindings and preflight"
+else
+  _fail "skill explanation omitted Codex bindings or preflight"
 fi
 
 summary

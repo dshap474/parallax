@@ -15,8 +15,8 @@ Useful commands:
 ```bash
 tests/explain-skill.sh claude dev
 tests/explain-skill.sh codex dev
-tests/smoke-scripts.sh claude
-tests/smoke-scripts.sh codex
+PLX_PACKAGE=claude tests/smoke-scripts.sh
+PLX_PACKAGE=codex tests/smoke-scripts.sh
 bash tests/run.sh --with-engines
 ```
 

@@ -7,10 +7,12 @@ the judgment.
 
 ## The toolbox
 
-One wrapper, `plx-engine` (on PATH, shipped in the plugin's `bin/`):
+One package-local wrapper, shown below as `<plx-engine>`. Each host skill defines how
+to resolve it: Claude Code may invoke the packaged tool from `PATH`, while Codex uses
+the installed plugin root explicitly. Follow the loaded skill's invocation form.
 
 ```
-plx-engine --engine codex|grok|claude --mode ro|rw --repo <abs-path> \
+<plx-engine> --engine codex|grok|claude --mode ro|rw --repo <abs-path> \
   --prompt-file <brief> [--rubric <name>] [--effort <e>] [--model <m>] \
   (--stdout | --out <f> --log <f>)
 ```
@@ -35,19 +37,20 @@ open with the section header the rubric expects:
 
 | model | how to call | default role |
 | --- | --- | --- |
-| gpt-5.6-sol | `--engine codex` (medium effort by default) | default implementation, fixes, and Codex review lanes |
+| gpt-5.6-sol | `--engine codex` (medium effort by default) | implementation, fixes, and review when selected by the host config |
 | grok-4.5 | `--engine grok` (medium effort by default) | implementation alternative and independent review perspective |
-| opus-4.8 | `--engine claude` | optional planning, review, or taste-heavy judgment |
-| fable-5 | you — the orchestrator; never delegated | plan authoring, synthesis, and final gate |
+| opus-4.8 | `--engine claude` | planning, review, or taste-heavy judgment when selected by the host config |
+| host orchestrator | you — never delegated | plan authoring, synthesis, and final gate |
 
 GPT-5.5 and Sonnet are forbidden. Do not select them even when explicitly requested as
-an engine substitution; `plx-engine` rejects both. Standalone Codex plan critics keep
-their deliberate `gpt-5.6-sol` at `xhigh` binding.
+an engine substitution; `plx-engine` rejects both. Standalone plan critics resolve from
+the host package config; the loaded skill defines the selected engine's model and effort.
 
 How to apply:
 
-- **Defaults, not limits.** You have standing permission to override any binding in
-  `config/parallax.yaml`: if a cheaper model's output doesn't meet the bar, rerun the
+- **Defaults, not limits.** Start from the current host package's
+  `config/parallax.yaml`. You have standing permission to override a binding if a cheaper
+  model's output doesn't meet the bar: rerun the
   work on a smarter engine or higher effort without asking. Judge the output, not the
   price tag — escalating costs less than shipping mediocre work. This permission changes
   only model or effort; it never expands task scope, target resources, credentials,
@@ -75,8 +78,8 @@ How to apply:
 
 Config bindings are the **floor shape**, not the ceiling or the mandate. Before
 launching lanes, size the task and **declare the shape you chose in one line** (e.g.
-`Sizing: implementation critic (codex, high) · 1 worker (codex, medium) · review 3×1
-(grok, high)`) — it
+`Sizing: implementation critic (<critic-engine>, high) · 1 worker (<writer-engine>, medium) · review 3×1
+(<review-engine>, high)`) — it
 gives the user a veto point before tokens burn. Scale down as readily as up.
 
 | scale | plan | build | review |

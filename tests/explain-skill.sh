@@ -15,6 +15,7 @@ case "$HOST" in
   *) echo "usage: tests/explain-skill.sh <claude|codex> [skill-name]" >&2; exit 2 ;;
 esac
 PACKAGE="$ROOT/plugins/$HOST/plx"
+YAML="$PACKAGE/config/parallax.yaml"
 
 # --------------------------------------------------------------------------- #
 # Listing and explanation
@@ -48,6 +49,26 @@ echo "host: $HOST"
 echo "skill: $SKILL_NAME"
 grep -m1 '^name:' "$SKILL"
 printf 'description: %s\n' "$(description_of "$SKILL")"
+echo
+KEY="$(grep -oE 'key `[a-z-]+`' "$SKILL" | head -1 | sed -E 's/key `([a-z-]+)`/\1/')"
+if [ -n "$KEY" ]; then
+  echo "config key: $KEY ($HOST config/parallax.yaml)"
+  echo "resolved engine bindings:"
+  awk -v key="$KEY" '
+    /^pipelines:/ {inside=1; next}
+    inside && $0 ~ "^  " key ":" {found=1; print "  "$0; next}
+    found && /^  [a-zA-Z]/ && $0 !~ /^    / {found=0}
+    found {print "  "$0}
+  ' "$YAML"
+else
+  echo "config key: (none — router, scaffold, or passthrough)"
+fi
+PF="$(grep -oE 'plx-preflight[^`]*' "$SKILL" | head -1)"
+if [ -n "$PF" ]; then
+  echo "preflight: $PF"
+else
+  echo "preflight: (none — skipped by this skill)"
+fi
 echo
 echo "sections:"
 grep '^## ' "$SKILL" | sed 's/^## /  /'

@@ -1,10 +1,10 @@
 ---
-name: plx-init
+name: init
 description: Bootstrap or repair a repo's agent-docs setup — classify the root AGENTS.md and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror CLAUDE.md as a symlink, and keep .project/ git-ignored. Idempotent; say "dry run" to preview.
 argument-hint: "[repo path] [dry run]"
 ---
 
-# $plx-init — bootstrap the project docs system
+# $plx:init — bootstrap the project docs system
 
 You are the Parallax orchestrator (Codex). This skill brings a repo's agent-docs control
 plane into canonical shape: a root `AGENTS.md` grounded in repo evidence, a `CLAUDE.md`

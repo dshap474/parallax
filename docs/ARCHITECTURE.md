@@ -4,7 +4,7 @@ Parallax ships two host-native plugins over one runtime contract.
 
 ```text
 Claude Code host                         Codex host
-/plx:* skills                            $plx-* skills
+/plx:* skills                            $plx:<skill> skills
       │                                        │
       └────────── package-local plx-engine ────┘
                     │

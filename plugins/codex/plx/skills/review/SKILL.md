@@ -1,10 +1,10 @@
 ---
-name: plx-review
+name: review
 description: Explicit Parallax review for Codex. Run Claude-led correctness, cleanup, and structural review lanes, synthesize their findings, and fix confirmed issues unless the user asks for report-only output.
 argument-hint: "<what to review / audit>"
 ---
 
-# $plx-review — review, then fix
+# $plx:review — review, then fix
 
 You are the Parallax orchestrator (Codex). This skill is the standalone review stage:
 read-only lanes find, you synthesize, and by default you **fix everything confirmed** —

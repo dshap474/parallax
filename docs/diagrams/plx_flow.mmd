@@ -3,7 +3,7 @@
 flowchart TD
     U([User request]) --> H{Host plugin}
     H -->|Claude Code /plx:*| C[Claude orchestrator]
-    H -->|Codex $plx-*| X[Codex orchestrator]
+    H -->|Codex $plx:skill| X[Codex orchestrator]
 
     C --> P[Plan authoring]
     X --> P

@@ -1,10 +1,10 @@
 ---
-name: plx-claude
+name: claude
 description: Explicit single-engine Claude passthrough for Codex. Use for a Claude second opinion, plan, investigation, or implementation without the multi-model Parallax pipeline.
 argument-hint: "<question, coding task, or plan request>"
 ---
 
-# $plx-claude — single-engine passthrough (Claude)
+# $plx:claude — single-engine passthrough (Claude)
 
 Run the user's request through **Claude only** — no Parallax review pipeline, no other engines. You (the Codex orchestrator) drive the engine wrapper yourself and return its output. Do not re-do or review the work.
 

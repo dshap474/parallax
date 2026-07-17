@@ -24,21 +24,21 @@ codex plugin marketplace add dshap474/parallax
 codex plugin add plx@parallax-marketplace
 ```
 
-Start a new Codex session, then use `$plx-dev`.
+Start a new Codex session, then use `$plx:dev`.
 
 ## Capabilities
 
 | Capability | Claude Code | Codex |
 | --- | --- | --- |
-| Plan | `/plx:plan` | `$plx-plan` |
-| Build | `/plx:build` | `$plx-build` |
-| Review and fix | `/plx:review` | `$plx-review` |
-| Full pipeline | `/plx:dev` | `$plx-dev` |
-| Autonomous goal spec | `/plx:goal-spec` | `$plx-goal-spec` |
-| Opposite-engine passthrough | `/plx:codex` | `$plx-claude` |
-| Grok passthrough | `/plx:grok` | `$plx-grok` |
-| Repository setup | `/plx:init` | `$plx-init` |
-| Blindspot work | `/plx:unknown-unknowns` | `$plx-unknown-unknowns` |
+| Plan | `/plx:plan` | `$plx:plan` |
+| Build | `/plx:build` | `$plx:build` |
+| Review and fix | `/plx:review` | `$plx:review` |
+| Full pipeline | `/plx:dev` | `$plx:dev` |
+| Autonomous goal spec | `/plx:goal-spec` | `$plx:goal-spec` |
+| Opposite-engine passthrough | `/plx:codex` | `$plx:claude` |
+| Grok passthrough | `/plx:grok` | `$plx:grok` |
+| Repository setup | `/plx:init` | `$plx:init` |
+| Blindspot work | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` |
 
 Claude is the host orchestrator in the Claude package. Codex is the host orchestrator
 in the Codex package. Both use isolated Grok 4.5 writers and fixers by default. The
@@ -71,7 +71,7 @@ See [Architecture](docs/ARCHITECTURE.md), [Commands](docs/COMMANDS.md),
 
 ## Status
 
-v0.5.2
+v0.5.3
 
 ## License
 

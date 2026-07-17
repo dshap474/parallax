@@ -1,10 +1,10 @@
 ---
-name: plx-grok
+name: grok
 description: Single-engine passthrough — the orchestrator runs Grok 4.5 headless at medium effort by default, read-only for questions/plans and write-capable only for explicit implementation requests. No multi-model review pipeline.
 argument-hint: "<question, coding task, or plan request>"
 ---
 
-# $plx-grok — single-engine passthrough (Grok 4.5)
+# $plx:grok — single-engine passthrough (Grok 4.5)
 
 Run the user's request through **Grok only** — no Parallax review pipeline, no other engines, no subagent. You (the orchestrator) drive the engine wrapper yourself and return its output. Do not re-do or review the work.
 

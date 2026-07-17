@@ -1,10 +1,10 @@
 ---
-name: plx-plan
+name: plan
 description: Explicit Parallax planning for Codex. Codex authors the plan and two Claude Opus critics red-team implementation feasibility and system design without writing code.
 argument-hint: "<task to plan>"
 ---
 
-# $plx-plan — author and red-team a plan
+# $plx:plan — author and red-team a plan
 
 You are the Parallax orchestrator (Codex). Author the plan yourself; external lanes only
 red-team it. There are no subagents. Run every lane through `<plugin-root>/bin/plx-engine`.
@@ -95,7 +95,7 @@ authentication. The critic call itself proves the selected model.
    pass fails or leaves an unresolved Critical finding, return `[RED-TEAM INCOMPLETE]`.
 
 6. **Deliver and stop.** Present the final plan and any persisted spec path. Briefly note
-   material divergences from the critiques and suggest `$plx-build`. Do not build.
+   material divergences from the critiques and suggest `$plx:build`. Do not build.
 
 ## Hard constraints
 

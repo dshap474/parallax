@@ -1,10 +1,10 @@
 ---
-name: plx-build
+name: build
 description: Explicit Parallax build stage for Codex. Headless writer lanes implement a supplied plan or bounded task, then Codex verifies and reports without running the review stage.
 argument-hint: "<spec path, or the task — omit to build the plan from this conversation>"
 ---
 
-# $plx-build — delegate a build to writer lanes
+# $plx:build — delegate a build to writer lanes
 
 You are the Parallax orchestrator (Codex). This skill turns a plan into a verified
 implementation through headless writer lanes. Your context discipline: the writer reads
@@ -21,13 +21,13 @@ the judgment doc (model rankings, sizing ladder, writer rules).
 
 The build input, in order of precedence:
 
-1. **A spec doc path** in the arguments (e.g. from `$plx-plan` or `$plx-goal-spec`) —
+1. **A spec doc path** in the arguments (e.g. from `$plx:plan` or `$plx:goal-spec`) —
    read it; that file is the spec.
-2. **A plan already in this conversation** (from `$plx-plan` or discussion) — use it
+2. **A plan already in this conversation** (from `$plx:plan` or discussion) — use it
    verbatim; don't re-plan.
 3. **A raw task** — no plan exists. For a clear, bounded task, write a brief spec
    inline yourself (intent, success criteria, constraints) and proceed; for anything
-   ambiguous or wide, tell the user to run `$plx-plan` first and stop.
+   ambiguous or wide, tell the user to run `$plx:plan` first and stop.
 
 Whatever the source, the spec must end with a **`Done means:` line** — the concrete
 command(s) or observable(s) that prove the work. If the plan lacks one, add it yourself
@@ -103,12 +103,12 @@ grok, medium) — packages: api/, cli/`). Run `<plugin-root>/bin/plx-preflight -
    Files: <from the reports — cross-checked against git status vs the Bootstrap snapshot>
    Verification: <commands + results>
    Assumptions/blockers: <from the reports, or "none">
-   Next: $plx-review [scope]
+   Next: $plx:review [scope]
    ```
 
    Cross-check "files touched" against `git status --short` vs the Bootstrap snapshot —
    ground truth over the worker's testimony. No review round here — that's
-   `$plx-review`. This skill does not commit; version control follows the repo's own
+   `$plx:review`. This skill does not commit; version control follows the repo's own
    agent instructions. Clean up `<tmp>`.
 
 ## Hard constraints

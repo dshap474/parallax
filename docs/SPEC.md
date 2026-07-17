@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.2
+Status: v0.5.3
 
 ## Required tree
 
@@ -15,14 +15,15 @@ shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.2`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.3`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains nine
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
 ## Package contracts
 
 - Claude skill paths map to `/plx:<name>` and use the Claude package config.
-- Codex skill frontmatter names map to `$plx-<name>`; every skill has
+- Codex skill frontmatter uses the bare capability name, which the plugin namespace
+  exposes as `$plx:<name>`; every skill has
   `agents/openai.yaml` with `allow_implicit_invocation: false`.
 - The Codex opposite-host passthrough is `plx-claude`; the Claude opposite-host
   passthrough is `plx:codex`.

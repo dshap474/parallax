@@ -1,14 +1,14 @@
 ---
-name: plx-goal-spec
+name: goal-spec
 description: Interview-locked goal planning for long-running efforts. A Socratic interview (`request_user_input`) locks the goal — intent, binary success criteria, invariants, non-goals — then the Codex host designs the how, parallel Claude system and implementation critics red-team it, and the host synthesizes ONE self-contained spec to the shared template. No code is written.
 argument-hint: "<the goal to plan>"
 ---
 
-# $plx-goal-spec — interview-locked goal planning
+# $plx:goal-spec — interview-locked goal planning
 
 You are the Parallax orchestrator (Codex). This skill produces **one self-contained spec
 `.md`**, constructed so an autonomous agent with no prior context can execute from it —
-you hand it straight to `/goal` (or `$plx-build`) and walk away. Three things
+you hand it straight to `/goal` (or `$plx:build`) and walk away. Three things
 make that possible, and they are your whole job here:
 
 1. A **Socratic interview** that kills ambiguity and *locks the goal* before any design.
@@ -189,7 +189,7 @@ Goal:     <one line — the locked intent>
 Spec:     .project/builds/<thread>/PLAN_<slug>.md
 Approach: <one line — the design + where it diverged from the lane briefs>
 Red-team: <system + implementation dispositions — findings folded / rebutted / skipped>
-Run it:   /goal <condition referencing the spec>   (or $plx-build on the same spec)
+Run it:   /goal <condition referencing the spec>   (or $plx:build on the same spec)
 Open:     <assumptions / [NEEDS CLARIFICATION] / residual risk, or "none">
 ```
 

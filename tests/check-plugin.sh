@@ -28,7 +28,7 @@ version_of() {
 claude_version="$(version_of "$PLX_CLAUDE/.claude-plugin/plugin.json")"
 codex_version="$(version_of "$PLX_CODEX/.codex-plugin/plugin.json")"
 market_version="$(version_of "$PLX_ROOT/.claude-plugin/marketplace.json")"
-if [ "$claude_version" = "0.5.2" ] && [ "$claude_version" = "$codex_version" ] &&
+if [ "$claude_version" = "0.5.3" ] && [ "$claude_version" = "$codex_version" ] &&
    [ "$claude_version" = "$market_version" ] &&
    grep -qx "v$claude_version" "$PLX_ROOT/README.md" &&
    grep -qx "Status: v$claude_version" "$PLX_ROOT/docs/SPEC.md"; then
@@ -52,7 +52,12 @@ for skill in "$PLX_CLAUDE"/skills/*/SKILL.md; do
 done
 for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
   name="$(basename "$(dirname "$skill")")"
-  grep -qE '^name:[[:space:]]*plx-[a-z-]+$' "$skill" || _fail "bad Codex name: $skill"
+  declared_name="$(sed -n 's/^name:[[:space:]]*//p' "$skill" | head -1)"
+  if [ "$declared_name" = "$name" ]; then
+    _pass "Codex $name invocation: \$plx:$name"
+  else
+    _fail "Codex $name repeats or changes the plugin namespace: $declared_name"
+  fi
   metadata="$(dirname "$skill")/agents/openai.yaml"
   if [ -f "$metadata" ] && grep -q 'allow_implicit_invocation: false' "$metadata"; then
     _pass "Codex $name explicit-only"
@@ -75,6 +80,11 @@ for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
     _pass "Codex $name display: $display_name"
   else
     _fail "Codex $name display name is not PLX PascalCase"
+  fi
+  if grep -Fq "Use \$plx:$name " "$metadata"; then
+    _pass "Codex $name default prompt uses the namespaced invocation"
+  else
+    _fail "Codex $name default prompt does not use \$plx:$name"
   fi
 done
 

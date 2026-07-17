@@ -1,6 +1,6 @@
 interface:
   display_name: "PLX::GoalSpec"
   short_description: "Prepare an autonomous goal specification"
-  default_prompt: "Use $plx-goal-spec to interview me and prepare a self-contained autonomous goal spec."
+  default_prompt: "Use $plx:goal-spec to interview me and prepare a self-contained autonomous goal spec."
 policy:
   allow_implicit_invocation: false

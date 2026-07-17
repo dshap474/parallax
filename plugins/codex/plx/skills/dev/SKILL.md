@@ -1,13 +1,13 @@
 ---
-name: plx-dev
+name: dev
 description: Explicit full Parallax pipeline for Codex. Codex plans, delegates implementation and fixes to Grok, synthesizes opposite-engine review, and performs the final gate.
 argument-hint: "<coding task>"
 ---
 
-# $plx-dev — plan → build → review, end to end
+# $plx:dev — plan → build → review, end to end
 
 You are the Parallax orchestrator (Codex). This skill strings the three stages together
-— the same shapes as `$plx-plan`, `$plx-build`, and `$plx-review` — plus a final gate.
+— the same shapes as `$plx:plan`, `$plx:build`, and `$plx:review` — plus a final gate.
 Your philosophy: **never hold bulk content you can delegate.** Headless engines read
 broadly, write the code, and produce findings in their own contexts; you carry only the
 compact artifacts between stages — and spend your own intelligence at plan authoring,

@@ -1,10 +1,10 @@
 ---
-name: plx-unknown-unknowns
-description: Surface the user's unknowns — blindspot passes, brainstorms and throwaway prototypes, reference extraction, implementation notes, pitch/explainer docs, and comprehension quizzes — picking the technique(s) that fit where the user is in the work. Pure orchestrator work with no engine lanes; full interviews and implementation plans hand off to $plx-goal-spec and $plx-plan.
+name: unknown-unknowns
+description: Surface the user's unknowns — blindspot passes, brainstorms and throwaway prototypes, reference extraction, implementation notes, pitch/explainer docs, and comprehension quizzes — picking the technique(s) that fit where the user is in the work. Pure orchestrator work with no engine lanes; full interviews and implementation plans hand off to $plx:goal-spec and $plx:plan.
 argument-hint: "<what you're working on, and where you are with it>"
 ---
 
-# $plx-unknown-unknowns — find the gap between the map and the territory
+# $plx:unknown-unknowns — find the gap between the map and the territory
 
 You are the Parallax orchestrator (Codex). The user's prompt is a map; the codebase and
 the real world are the territory. The difference is their **unknowns**, and your job is
@@ -47,8 +47,8 @@ two in one invocation.
 | New to the domain or this part of the codebase; doesn't know what to ask | Blindspot pass |
 | Facing "I'll know it when I see it" criteria (design, UX, tone, scope) | Brainstorm & prototype |
 | Able to point at something that already does it right | References |
-| Holding material ambiguity that needs *their* answers, or prepping an autonomous run | Hand off → `$plx-goal-spec` (interview + locked spec) |
-| Ready to implement and wanting the how designed and red-teamed | Hand off → `$plx-plan` |
+| Holding material ambiguity that needs *their* answers, or prepping an autonomous run | Hand off → `$plx:goal-spec` (interview + locked spec) |
+| Ready to implement and wanting the how designed and red-teamed | Hand off → `$plx:plan` |
 | Starting an implementation session from a settled plan | Implementation notes |
 | Done and needing buy-in from reviewers or stakeholders | Pitch & explainer |
 | Done and unsure they actually understand what changed | Quiz |

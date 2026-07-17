@@ -37,7 +37,8 @@ Start a new Codex session, then use `$plx:dev`.
 | Autonomous goal spec | `/plx:goal-spec` | `$plx:goal-spec` |
 | Opposite-engine passthrough | `/plx:codex` | `$plx:claude` |
 | Grok passthrough | `/plx:grok` | `$plx:grok` |
-| Repository setup | `/plx:init` | `$plx:init` |
+| Session primer | `/plx:init` | — |
+| Repository setup | `/plx:agents-memory` | `$plx:init` |
 | Blindspot work | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` |
 
 Claude is the host orchestrator in the Claude package. Codex is the host orchestrator

@@ -1,6 +1,6 @@
 # Canonical root AGENTS.md template
 
-The `/plx:init` skill authors a repo's root `AGENTS.md` to this shape. **Fixed sections**
+The `/plx:agents-memory` skill authors a repo's root `AGENTS.md` to this shape. **Fixed sections**
 are emitted verbatim — byte-for-byte, never paraphrased. **Variable sections** are
 generated from repo evidence per the guidance in each. The section order is exact, and
 `## Project Memory` is always the final section.

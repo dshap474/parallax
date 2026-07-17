@@ -48,7 +48,7 @@ engine turns) — run it from a terminal, or via background Bash from an agent s
 | `review` | review the buggy calc.py | exit 0 · a finding names the empty-list / `ZeroDivisionError` bug · **the fix is applied** (`average([]) == 0.0`) |
 | `codex` | guard `average([])` | exit 0 · calc.py edited · `average([]) == 0.0` |
 | `grok` | same (with `--with-grok`) | same |
-| `init` | run in a bare repo | exit 0 · `AGENTS.md` created · `CLAUDE.md` symlink |
+| `agents-memory` | run in a bare repo | exit 0 · `AGENTS.md` created · `CLAUDE.md` symlink |
 | `goal-spec` | — | **manual** (see below) |
 
 Scenarios live in `scenarios/<skill>.txt` — edit the `TASK:` / `EXPECT_*:` lines there;
@@ -89,6 +89,6 @@ automated run. To smoke it by hand:
 ## Fixtures
 
 - `tests/fixture/` (shared) — `calc.py` with the seeded empty-list bug; used by plan/build/dev/review/codex/grok and the L1 engine lanes.
-- `tests/smoke/fixtures/bare/` — a 1-file repo with no `AGENTS.md`; used by init.
+- `tests/smoke/fixtures/bare/` — a 1-file repo with no `AGENTS.md`; used by agents-memory.
 
 Each is copied to a fresh `mktemp` + `git init` per run; the templates are never edited.

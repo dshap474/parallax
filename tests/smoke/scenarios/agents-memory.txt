@@ -1,4 +1,4 @@
-# /plx:init — bootstrap agent-docs in a bare repo (Claude orchestrator; no engine CLI)
+# /plx:agents-memory — bootstrap agent-docs in a bare repo (Claude orchestrator; no engine CLI)
 NEEDS:
 FIXTURE: bare
 TASK:

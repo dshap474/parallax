@@ -1,6 +1,8 @@
 # Command surface
 
-Both packages expose the same nine capabilities with platform-native invocation syntax.
+Both packages expose the same core capabilities with platform-native invocation syntax.
+(The Codex package has not yet mirrored the init/agents-memory split — its `$plx:init`
+is still the docs-bootstrap skill.)
 
 | Capability | Claude Code | Codex | Behavior |
 | --- | --- | --- | --- |
@@ -11,7 +13,8 @@ Both packages expose the same nine capabilities with platform-native invocation 
 | Goal spec | `/plx:goal-spec` | `$plx:goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; Claude may explicitly persist Codex context |
 | Grok | `/plx:grok` | `$plx:grok` | One isolated Grok 4.5 passthrough |
-| Init | `/plx:init` | `$plx:init` | Bootstrap root `AGENTS.md`, `CLAUDE.md`, and `.project/` policy |
+| Init | `/plx:init` | — | Prime the orchestrator: delegation posture + plx skill map; writes nothing |
+| Agents memory | `/plx:agents-memory` | `$plx:init` | Bootstrap root `AGENTS.md`, `CLAUDE.md`, and `.project/` policy |
 | Unknowns | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` | Host-only blindspot and comprehension work |
 
 Codex skills are explicit-only (`allow_implicit_invocation: false`) so an expensive

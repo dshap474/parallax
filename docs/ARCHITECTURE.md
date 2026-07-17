@@ -34,6 +34,11 @@ paths therefore never traverse to repository-level shared files.
 configs remain platform-specific because invocation syntax, host tools, and review
 polarity differ.
 
+The Claude package additionally vendors `codex-app-client` and a thin
+`plx-codex-thread` wrapper. They support optional persistence only for `/plx:codex`;
+the Codex package does not ship them. Shared synchronization explicitly preserves that
+one Claude-only wrapper.
+
 ## Pipeline
 
 The three stage atoms are `plan`, `build`, and `review`; `dev` composes them and adds a
@@ -52,7 +57,7 @@ lanes; behavior-changing or ambiguous findings go back to the user.
 
 ## Runtime and safety
 
-`plx-engine` is the only code path that invokes external engines. It pins:
+Pipeline lanes and default passthroughs use `plx-engine`. It pins:
 
 - Codex: `gpt-5.6-sol`, isolated config, ephemeral session, read-only or workspace-write;
 - Claude: Opus, project-only settings, scoped read or edit tool allowlists;
@@ -63,3 +68,8 @@ GPT-5.5 and Sonnet are rejected. The wrapper never uses `danger-full-access`,
 `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`. Runtime briefs, logs, and
 outputs use temporary directories and are removed after the run; Parallax creates no
 `.parallax/` state.
+
+As a narrow exception, `/plx:codex` may use `plx-codex-thread` to start or resume a
+Codex app-server session. It is ephemeral by default, keeps no Parallax registry,
+returns the thread ID to the user, and re-derives `inspect` or `edit` access on every
+turn. Plan, build, goal-spec, dev, and review lanes never use this path.

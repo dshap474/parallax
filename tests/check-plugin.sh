@@ -28,7 +28,7 @@ version_of() {
 claude_version="$(version_of "$PLX_CLAUDE/.claude-plugin/plugin.json")"
 codex_version="$(version_of "$PLX_CODEX/.codex-plugin/plugin.json")"
 market_version="$(version_of "$PLX_ROOT/.claude-plugin/marketplace.json")"
-if [ "$claude_version" = "0.5.1" ] && [ "$claude_version" = "$codex_version" ] &&
+if [ "$claude_version" = "0.5.2" ] && [ "$claude_version" = "$codex_version" ] &&
    [ "$claude_version" = "$market_version" ] &&
    grep -qx "v$claude_version" "$PLX_ROOT/README.md" &&
    grep -qx "Status: v$claude_version" "$PLX_ROOT/docs/SPEC.md"; then
@@ -84,6 +84,19 @@ if [ -f "$PLX_CLAUDE/skills/codex/SKILL.md" ] &&
   _pass "opposite-host passthroughs are platform-correct"
 else
   _fail "opposite-host passthrough contract is wrong"
+fi
+
+if grep -q 'Default to the existing \*\*ephemeral\*\*' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
+   grep -q 'plx-codex-thread start' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
+   grep -q 'plx-codex-thread resume' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
+   grep -q 'thread_id' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
+   ! grep -Rqi 'plx-codex-thread' \
+     "$PLX_CLAUDE/skills/build" "$PLX_CLAUDE/skills/dev" \
+     "$PLX_CLAUDE/skills/goal-spec" "$PLX_CLAUDE/skills/plan" \
+     "$PLX_CLAUDE/skills/review"; then
+  _pass "persistent Codex is explicit, resumable, and passthrough-only"
+else
+  _fail "persistent Codex skill contract drift"
 fi
 
 if [ "$(grep -c '^    code: grok$' "$PLX_CODEX/config/parallax.yaml")" -eq 2 ] &&
@@ -144,6 +157,13 @@ cp -R "$PLX_ROOT/shared" "$SYNC_REPO/shared"
 cp "$PLX_ROOT/LICENSE" "$SYNC_REPO/LICENSE"
 cp "$PLX_ROOT/scripts/sync-shared.sh" "$SYNC_REPO/scripts/sync-shared.sh"
 "$SYNC_REPO/scripts/sync-shared.sh" >/dev/null
+printf '#!/usr/bin/env bash\n' > "$SYNC_REPO/plugins/claude/plx/bin/plx-codex-thread"
+chmod +x "$SYNC_REPO/plugins/claude/plx/bin/plx-codex-thread"
+if "$SYNC_REPO/scripts/sync-shared.sh" --check >/dev/null 2>&1; then
+  _pass "shared check permits the Claude-only Codex thread wrapper"
+else
+  _fail "shared check rejects the Claude-only Codex thread wrapper"
+fi
 printf 'orphan\n' > "$SYNC_REPO/plugins/codex/plx/prompts/orphan.md"
 orphan_output="$("$SYNC_REPO/scripts/sync-shared.sh" --check 2>&1)"
 orphan_rc=$?
@@ -168,6 +188,15 @@ for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
     [ -s "$package/prompts/$rubric.md" ] || _fail "$label missing rubric $rubric"
   done
 done
+
+if [ -x "$PLX_CLAUDE/bin/plx-codex-thread" ] &&
+   [ -s "$PLX_CLAUDE/tools/codex-app-client/pyproject.toml" ] &&
+   [ -s "$PLX_CLAUDE/tools/codex-app-client/uv.lock" ] &&
+   [ ! -e "$PLX_CODEX/tools/codex-app-client" ]; then
+  _pass "persistent Codex runtime is packaged only with Claude"
+else
+  _fail "persistent Codex runtime packaging drift"
+fi
 
 if grep -RqiE 'use subagents|spawn (a |an )?subagent' "$PLX_ROOT/plugins"; then
   _fail "a skill still instructs subagent orchestration"

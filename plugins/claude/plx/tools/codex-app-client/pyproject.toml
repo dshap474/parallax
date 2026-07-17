@@ -1,0 +1,51 @@
+# Thin local client for Codex app-server.
+# USAGE:
+#   uv sync --all-extras
+#   uv run cxa doctor
+#   uv run pytest
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "codex-app-client"
+version = "0.1.0"
+description = "Thin local client for Codex app-server"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+dependencies = [
+    "openai-codex @ git+https://github.com/openai/codex.git@0f44bca9154e056a32fde7a89026b4620599e6f2#subdirectory=sdk/python",
+    "pydantic>=2.12,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-timeout>=2",
+    "ruff>=0.9",
+]
+
+[project.scripts]
+cxa = "codex_app_client.cli:main"
+
+[tool.uv]
+prerelease = "allow"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: tests that need credentials and the real pinned Codex runtime",
+]
+addopts = "-m 'not integration'"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

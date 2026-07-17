@@ -134,6 +134,56 @@ PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
 rc=$?
 if [ "$rc" -eq 2 ]; then _pass "Codex rejects GPT-5.5"; else _fail "GPT-5.5 expected exit 2, got $rc"; fi
 
+if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
+  _head "plx-codex-thread starts and resumes app-server threads"
+  cxa_args="$WORK/cxa-args.txt"
+  cxa_prompt="$WORK/cxa-prompt.md"
+  cxa_env="$WORK/cxa-env.txt"
+  printf '%s\n' '#!/usr/bin/env bash' \
+    '# Fake uv runner for plx-codex-thread smoke tests.' \
+    '#' \
+    '# Usage: uv <recorded arguments>' \
+    'printf '\''%s\n'\'' "$@" > "$PLX_CXA_ARGS_FILE"' \
+    'printf '\''%s\n'\'' "$UV_PROJECT_ENVIRONMENT" > "$PLX_CXA_ENV_FILE"' \
+    'cat > "$PLX_CXA_PROMPT_FILE"' \
+    'printf '\''{"thread_id":"thread-123","status":"completed","final_response":"OK"}\n'\''' \
+    > "$fake_bin/uv"
+  chmod +x "$fake_bin/uv"
+
+  PATH="$fake_bin:$PATH" PLX_CXA_ARGS_FILE="$cxa_args" \
+    PLX_CXA_PROMPT_FILE="$cxa_prompt" PLX_CXA_ENV_FILE="$cxa_env" \
+    XDG_CACHE_HOME="$WORK/cache" \
+    "$PLUGIN_ROOT/bin/plx-codex-thread" start --repo "$REPO" --mode ro \
+    --prompt-file "$fake_prompt" > "$WORK/cxa-start.json"
+  rc=$?
+  if [ "$rc" -eq 0 ]; then _pass "persistent start exits 0"; else _fail "persistent start exits $rc"; fi
+  assert_contains "--persistent" "$cxa_args" "start requests a persistent thread"
+  assert_contains "inspect" "$cxa_args" "ro maps to inspect"
+  assert_contains "gpt-5.6-sol" "$cxa_args" "persistent Codex model is pinned"
+  assert_contains "$PLUGIN_ROOT/bin/../tools/codex-app-client" "$cxa_args" "uses the packaged app client"
+  assert_contains "$WORK/cache/parallax/codex-app-client" "$cxa_env" "uv environment stays outside the plugin"
+  assert_contains "reply OK" "$cxa_prompt" "prompt is sent over stdin"
+
+  PATH="$fake_bin:$PATH" PLX_CXA_ARGS_FILE="$cxa_args" \
+    PLX_CXA_PROMPT_FILE="$cxa_prompt" PLX_CXA_ENV_FILE="$cxa_env" \
+    XDG_CACHE_HOME="$WORK/cache" \
+    "$PLUGIN_ROOT/bin/plx-codex-thread" resume --thread thread-123 \
+    --repo "$REPO" --mode rw --prompt-file "$fake_prompt" > "$WORK/cxa-resume.json"
+  rc=$?
+  if [ "$rc" -eq 0 ]; then _pass "persistent resume exits 0"; else _fail "persistent resume exits $rc"; fi
+  assert_contains "thread-123" "$cxa_args" "resume passes the thread ID"
+  assert_contains "edit" "$cxa_args" "rw maps to edit"
+  if grep -qx -- '--persistent' "$cxa_args"; then
+    _fail "resume unexpectedly requests a new persistent thread"
+  else
+    _pass "resume does not start a new thread"
+  fi
+  "$PLUGIN_ROOT/bin/plx-codex-thread" resume --repo "$REPO" --mode ro \
+    --prompt-file "$fake_prompt" >/dev/null 2>&1
+  rc=$?
+  if [ "$rc" -eq 2 ]; then _pass "resume requires a thread ID"; else _fail "missing thread ID expected exit 2, got $rc"; fi
+fi
+
 "$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode ro --repo "$REPO" \
   --prompt-file "$fake_prompt" --model sonnet \
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1

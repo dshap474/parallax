@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+# Start or resume one persistent Codex app-server thread for /plx:codex.
+#
+# Usage:
+#   plx-codex-thread start --repo /abs/repo --mode ro|rw --prompt-file /abs/prompt.md
+#   plx-codex-thread resume --thread ID --repo /abs/repo --mode ro|rw --prompt-file /abs/prompt.md
+set -euo pipefail
+
+# --------------------------------------------------------------------------- #
+# Usage
+# --------------------------------------------------------------------------- #
+
+usage() {
+  cat <<'EOF'
+plx-codex-thread — persistent Codex app-server turns for /plx:codex
+
+Usage:
+  plx-codex-thread start --repo <absolute-path> --mode ro|rw --prompt-file <file>
+  plx-codex-thread resume --thread <id> --repo <absolute-path> --mode ro|rw \
+    --prompt-file <file>
+
+The command emits the codex-app-client JSON result on stdout. It stores resumable
+Codex transcripts in the normal Codex session store and no Parallax thread registry.
+EOF
+}
+
+fail_usage() {
+  echo "$1" >&2
+  usage >&2
+  exit 2
+}
+
+need_value() {
+  [[ -n "${2:-}" ]] || fail_usage "missing value for $1"
+}
+
+# --------------------------------------------------------------------------- #
+# Arguments
+# --------------------------------------------------------------------------- #
+
+[[ $# -gt 0 ]] || fail_usage "missing action"
+case "$1" in
+  start|resume) ACTION="$1"; shift ;;
+  --help|-h) usage; exit 0 ;;
+  *) fail_usage "action must be start or resume" ;;
+esac
+
+THREAD=""
+REPO=""
+MODE=""
+PROMPT=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --thread) need_value "$1" "${2:-}"; THREAD="$2"; shift 2 ;;
+    --repo) need_value "$1" "${2:-}"; REPO="$2"; shift 2 ;;
+    --mode) need_value "$1" "${2:-}"; MODE="$2"; shift 2 ;;
+    --prompt-file) need_value "$1" "${2:-}"; PROMPT="$2"; shift 2 ;;
+    --help|-h) usage; exit 0 ;;
+    *) fail_usage "unknown argument: $1" ;;
+  esac
+done
+
+[[ "$REPO" = /* ]] || fail_usage "--repo must be an absolute path"
+[[ -d "$REPO" ]] || fail_usage "repo not found: $REPO"
+case "$MODE" in
+  ro) CXA_MODE="inspect" ;;
+  rw) CXA_MODE="edit" ;;
+  *) fail_usage "--mode must be ro or rw" ;;
+esac
+[[ -s "$PROMPT" ]] || fail_usage "prompt file missing or empty: $PROMPT"
+
+if [[ "$ACTION" == "start" && -n "$THREAD" ]]; then
+  fail_usage "--thread is valid only with resume"
+fi
+if [[ "$ACTION" == "resume" && -z "$THREAD" ]]; then
+  fail_usage "resume requires --thread"
+fi
+
+# --------------------------------------------------------------------------- #
+# Packaged client
+# --------------------------------------------------------------------------- #
+
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -L "$SOURCE" ]]; do
+  SOURCE_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  case "$SOURCE" in /*) ;; *) SOURCE="$SOURCE_DIR/$SOURCE" ;; esac
+done
+BIN_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+CLIENT_DIR="$BIN_DIR/../tools/codex-app-client"
+
+[[ -f "$CLIENT_DIR/pyproject.toml" && -f "$CLIENT_DIR/uv.lock" ]] || {
+  echo "packaged codex-app-client is incomplete: $CLIENT_DIR" >&2
+  exit 3
+}
+command -v uv >/dev/null 2>&1 || {
+  echo "plx-codex-thread requires uv on PATH" >&2
+  exit 3
+}
+
+CACHE_HOME="${XDG_CACHE_HOME:-${HOME:?HOME is required}/.cache}"
+export UV_PROJECT_ENVIRONMENT="$CACHE_HOME/parallax/codex-app-client"
+
+# --------------------------------------------------------------------------- #
+# Entry point
+# --------------------------------------------------------------------------- #
+
+ARGS=(
+  run --project "$CLIENT_DIR" --locked cxa run
+  --cwd "$REPO"
+  --mode "$CXA_MODE"
+  --instructions headless
+  --model gpt-5.6-sol
+)
+
+if [[ "$ACTION" == "start" ]]; then
+  ARGS+=(--persistent)
+else
+  ARGS+=(--thread "$THREAD")
+fi
+
+exec uv "${ARGS[@]}" < "$PROMPT"

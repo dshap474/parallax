@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.1
+Status: v0.5.2
 
 ## Required tree
 
@@ -10,11 +10,12 @@ Status: v0.5.1
 plugins/claude/plx/.claude-plugin/plugin.json
 plugins/codex/plx/.codex-plugin/plugin.json
 plugins/{claude,codex}/plx/{skills,config,bin,prompts}/
+plugins/claude/plx/tools/codex-app-client/
 shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.1`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.2`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains nine
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
@@ -25,6 +26,9 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
   `agents/openai.yaml` with `allow_implicit_invocation: false`.
 - The Codex opposite-host passthrough is `plx-claude`; the Claude opposite-host
   passthrough is `plx:codex`.
+- Claude `/plx:codex` is ephemeral by default and may start or resume a persistent
+  app-server thread only for explicit continuation or material multi-turn reuse. It
+  returns the thread ID and keeps no Parallax thread registry.
 - Claude-host defaults: Claude plans and synthesizes; Codex supplies plan critics and
   all three review dimensions; Grok writes and fixes.
 - Codex-host defaults: Codex plans and synthesizes; Claude supplies plan critics and
@@ -40,6 +44,8 @@ decisions, candidate plan, and an observable done condition.
 
 No skill constructs a raw external-engine command. No wrapper uses forbidden broad
 permission flags. Temporary artifacts are cleaned up. Skills never commit or publish.
+Persistent Codex access is passthrough-only and derives read or write scope for each
+turn; every pipeline lane remains isolated and ephemeral.
 
 ## Acceptance
 

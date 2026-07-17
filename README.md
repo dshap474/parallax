@@ -44,6 +44,10 @@ Claude is the host orchestrator in the Claude package. Codex is the host orchest
 in the Codex package. Both use isolated Grok 4.5 writers and fixers by default. The
 opposite host engine supplies the plan critics and three code-review lanes.
 
+Claude's `/plx:codex` remains one-shot by default, but it may start or explicitly
+resume a persistent Codex app-server thread when later continuation will materially
+benefit from retained context. Pipeline lanes remain isolated and ephemeral.
+
 ## Repository layout
 
 ```text
@@ -67,7 +71,7 @@ See [Architecture](docs/ARCHITECTURE.md), [Commands](docs/COMMANDS.md),
 
 ## Status
 
-v0.5.1
+v0.5.2
 
 ## License
 

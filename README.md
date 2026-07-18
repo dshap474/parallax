@@ -42,8 +42,9 @@ Start a new Codex session, then use `$plx:dev`.
 | Blindspot work | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` |
 
 Claude is the host orchestrator in the Claude package. Codex is the host orchestrator
-in the Codex package. Both use isolated Grok 4.5 writers and fixers by default. The
-opposite host engine supplies the plan critics and three code-review lanes.
+in the Codex package. Both use isolated Grok 4.5 writers by default. The
+opposite host engine supplies the plan critics and three code-review lanes; the host
+applies confirmed review fixes itself.
 
 Claude's `/plx:codex` remains one-shot by default, but it may start or explicitly
 resume a persistent Codex app-server thread when later continuation will materially

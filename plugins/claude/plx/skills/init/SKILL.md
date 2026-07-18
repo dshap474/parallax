@@ -32,8 +32,9 @@ everything else:
   window — never bulk-read what a subagent can summarize. (The Sonnet/GPT-5.5 ban in
   the judgment doc applies to `plx-engine` lanes, not host subagents.)
 - **Implementation → headless engine lanes** (`plx-engine`, mode rw) — never subagents,
-  and never your own context beyond trivial single-file edits. **Grok 4.5 medium** is
-  the default writer and fixer; **Codex (GPT-5.6 Sol)** is the reported fallback and
+  and never your own context beyond trivial single-file edits and post-review targeted
+  fixes (those are yours). **Grok 4.5 medium** is
+  the default writer; **Codex (GPT-5.6 Sol)** is the reported fallback and
   the plan/review judgment engine; **Opus 4.8** advises on user-facing taste. One
   writer per disjoint path set.
 - **Review → read-only lanes on the opposite engine** from whichever wrote the code.
@@ -49,7 +50,7 @@ one, recommend it by name and let the user invoke it.
 | --- | --- |
 | `/plx:plan` | A task needs a plan; you author it, two opposite-engine critics red-team it. No code. |
 | `/plx:build` | A plan/spec/task needs implementing — writer lanes build, you verify. No review round. |
-| `/plx:review` | Changes need review — sized read-only lanes, synthesis, then targeted fix lanes ("report only" skips fixes). |
+| `/plx:review` | Changes need review — sized read-only lanes, synthesis, then you apply the confirmed fixes yourself ("report only" skips fixes). |
 | `/plx:dev` | The full run: plan → build → review/fix → your final gate. |
 | `/plx:goal-spec` | A long-running goal needs an interview-locked, red-teamed, self-contained spec. No code. |
 | `/plx:codex` | A one-off Codex passthrough (question, plan, or explicit implementation). |

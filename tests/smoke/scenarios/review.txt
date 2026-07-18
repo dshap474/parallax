@@ -1,4 +1,4 @@
-# /plx:review — must catch the seeded empty-list bug AND auto-fix it (fix lanes are the default posture)
+# /plx:review — must catch the seeded empty-list bug AND auto-fix it (host-applied fixes are the default posture)
 NEEDS: codex
 FIXTURE: calc
 TASK: review calc.py for correctness bugs

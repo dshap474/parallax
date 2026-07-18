@@ -1,6 +1,6 @@
 ---
 name: dev
-description: Explicit full Parallax pipeline for Codex. Codex plans, delegates implementation and fixes to Grok, synthesizes opposite-engine review, and performs the final gate.
+description: Explicit full Parallax pipeline for Codex. Codex plans, delegates implementation to Grok, synthesizes opposite-engine review, applies the confirmed fixes itself, and performs the final gate.
 argument-hint: "<coding task>"
 ---
 
@@ -31,17 +31,18 @@ the judgment doc (model rankings, the sizing ladder, writer rules).
 
 Read the engine config (`<plugin-root>/bin/plx-config`) → key `dev`. Shipped defaults:
 `plan-critic-implementation: [claude]` · `plan-critic-system: [claude]` · `code: grok` ·
-each review dimension `[claude]` · `fix: grok`. These are available lanes, not a mandate
+each review dimension `[claude]`; confirmed post-review fixes are yours. These are available lanes, not a mandate
 to run all of them — size each stage per the judgment doc's ladder and declare it in one
 line before launching anything, e.g.:
 
 ```
-Sizing: implementation critic (claude, high) · 1 worker (grok, medium) · review 3×1 (claude, high) · fixes grok medium
+Sizing: implementation critic (claude, high) · 1 worker (grok, medium) · review 3×1 (claude, high) · fixes: host
 ```
 
 **The smallest rung skips advisory fanout, not the writer**: for a trivial ask (one file,
 obvious change), launch one cheap Grok rw lane, verify, and report. The host never writes
-implementation code in this pipeline. The default runs both plan-critic dimensions and
+initial implementation code in this pipeline — its only edits are the post-review
+targeted fixes. The default runs both plan-critic dimensions and
 all three review dimensions on Claude. For large/risky work, use file-disjoint workers
 and add a second non-writer review engine only when proportionate. Run `<plugin-root>/bin/plx-preflight --repo <repo> --require-<engine>` for each engine the
 run will use.
@@ -133,20 +134,22 @@ across lanes; correctness governs; verify each material finding against the cite
 linter-catchable style, generic test wishes, speculative no-path edges, micro-opts,
 security findings (one-line handoff).
 
-**Fix automatically.** Confirmed findings go to a targeted fix lane on the `fix`
-engine (Grok 4.5 low/medium by default; Codex medium only as a reported fallback): `<tmp>/fix.md` = `## Spec` +
-the findings verbatim + "fix exactly these; change nothing else." Genuinely uncertain
+**Fix directly.** You apply the confirmed fixes yourself — small targeted edits at the
+cited sites, exactly the confirmed findings, nothing else; you already hold the
+findings and the code context, so a fix lane plus a verification pass is wasted steps.
+Wait for every review lane to return first. Genuinely uncertain
 items (behavior/scope changes the user may not want) → one batched `request_user_input` call,
-run parallel to the fix lane, folded into a second pass. One fix round, hard cap; leftovers are
-residuals. Re-run verification after fixes.
+folded into one follow-up pass. One fix round, hard cap; leftovers are
+residuals. A build-sized remedy is not a targeted fix — report it as residual or write
+a fresh spec and return to stage 2. Re-run verification after fixes.
 
 ### 4. Final gate
 
 Read the diff once (`git -C <repo> diff`, scoped to the touched files; mind
 pre-existing dirt) — a fresh-eyes sanity pass, not a re-review: does the change satisfy
-the plan's success criteria? Do the fix-lane changes hold? Did every lane miss something
-obvious? Do not edit implementation code yourself. If the fix cap remains, send a
-targeted Grok fix lane and re-verify; otherwise report the issue as residual. If
+the plan's success criteria? Do the fixes hold? Did every lane miss something
+obvious? If the fix cap remains, apply a targeted fix yourself and re-verify;
+otherwise report the issue as residual. If
 structural rework is required, write a fresh spec and return to stage 2.
 
 ### 5. Docs + report
@@ -170,9 +173,10 @@ Residual risk: <what to watch>
 
 ## Hard constraints
 
-- Critic and review lanes are `--mode ro`, always. Writers (build + fix lanes) follow
+- Critic and review lanes are `--mode ro`, always. Build lanes follow
   **one writer per disjoint path set** — never two writers on overlapping paths, never
-  you editing files a lane owns.
+  you editing files a lane owns. Post-review fixes are your own targeted edits, applied
+  only when no lane is running.
 - Never hand-construct raw `codex` / `grok` / `claude -p` commands — `<plugin-root>/bin/plx-engine` is
   the only sanctioned path; safety is pinned inside it.
 - Rubrics are injected by `--rubric` name; never paste rubric text into briefs.

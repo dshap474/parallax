@@ -1,6 +1,6 @@
 ---
 name: review
-description: Explicit Parallax review for Codex. Run Claude-led correctness, cleanup, and structural review lanes, synthesize their findings, and fix confirmed issues unless the user asks for report-only output.
+description: Explicit Parallax review for Codex. Run Claude-led correctness, cleanup, and structural review lanes, synthesize their findings, and apply the confirmed fixes yourself as small targeted edits unless the user asks for report-only output.
 argument-hint: "<what to review / audit>"
 ---
 
@@ -8,7 +8,7 @@ argument-hint: "<what to review / audit>"
 
 You are the Parallax orchestrator (Codex). This skill is the standalone review stage:
 read-only lanes find, you synthesize, and by default you **fix everything confirmed** —
-automatically, through cheap targeted fix lanes — asking the user only where you are
+yourself, as small targeted edits — asking the user only where you are
 genuinely unsure a fix is wanted. If the user said "report only" (or equivalent), stop
 after the synthesis.
 
@@ -32,8 +32,8 @@ surgically, guided by the findings.
 
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
 `/skills/review/SKILL.md`. Read `<plugin-root>/bin/plx-config` → key `review`.
-Shipped default: every review dimension `[claude]`, `fix: grok`. That is the
-floor shape — size per the judgment doc:
+Shipped default: every review dimension `[claude]`; confirmed fixes are yours. That is
+the floor shape — size per the judgment doc:
 
 - **small change, low blast radius** → 1 lane: `reviewer-correctness` only, one engine.
 - **default** → 3 dimensions × 1 engine.
@@ -42,7 +42,7 @@ floor shape — size per the judgment doc:
   engine only when another independent perspective is proportionate.
 
 Declare the sizing in one line before launching (e.g. `Sizing: review 3×1
-(claude high) · fixes: grok medium`). Run `<plugin-root>/bin/plx-preflight --repo <repo>
+(claude high) · fixes: host`). Run `<plugin-root>/bin/plx-preflight --repo <repo>
 --require-<engine>` for each engine the round will use.
 
 ## Pipeline (run in order)
@@ -113,31 +113,25 @@ Declare the sizing in one line before launching (e.g. `Sizing: review 3×1
    If the user asked for **report only**: present the synthesis (findings ranked by
    severity + the repair plan) and stop here.
 
-5. **Fix automatically.** Launch targeted fix lanes on the `fix` engine — Grok 4.5 at
-   low/medium by default. Use Codex medium only as a reported fallback when Grok is
-   unavailable or its verified output does not meet the bar; scoped fixes don't need taste:
+5. **Fix directly.** You apply the confirmed fixes yourself — small targeted edits at
+   the cited sites, exactly the confirmed findings, nothing else. You already hold the
+   findings, the verification reads, and the code context; launching a fix lane and
+   then verifying its diff is wasted steps and compute. Do not fix while any review
+   lane is still running. Batch the ask-first questions while you fix; fold approved
+   items into one follow-up pass (one round, hard cap).
 
-   ```
-   <plugin-root>/bin/plx-engine --engine <fix-engine> --mode rw --repo <repo> \
-     --prompt-file <tmp>/fix.md --rubric worker --effort medium \
-     --out <tmp>/fix-out.md --log <tmp>/fix.log
-   ```
+   If a confirmed remedy turns out to be build-sized (a wide refactor, a new module),
+   it is not a targeted fix — leave it, report it as residual, and recommend a
+   `$plx:build` run.
 
-   `<tmp>/fix.md` is a `## Spec` header + the confirmed findings verbatim (file:line,
-   what breaks, the minimal fix) + "fix exactly these; change nothing else." One lane
-   for the lot by default; split into parallel lanes only when the fixes group into
-   disjoint path sets — **one writer per path, always**. The host does not edit
-   implementation code. Run the ask-first question in parallel with the auto-fix lane; fold
-   approved items into a second fix pass (one round, hard cap).
-
-6. **Verify and deliver.** When fix lanes land: read the diff surgically — did each
-   fix land, and nothing else? Run the repo's own checks (toolchain binaries; never
+6. **Verify and deliver.** Re-read your own diff — did each fix land, and nothing
+   else? Run the repo's own checks (toolchain binaries; never
    `uv run` in a sandbox). Report:
 
    ```text
    Reviewed: <scope> — sizing <lanes × engines, effort>
    Findings: <n confirmed / n false-positive killed / n filtered>
-   Fixed: <n, by the fix lane(s) — one line each>
+   Fixed: <n, by you — one line each>
    Asked: <items awaiting/answered user confirmation, or "none">
    Won't fix: <items + one-line reasons, or "none">
    Verification: <commands + results>
@@ -148,8 +142,8 @@ Declare the sizing in one line before launching (e.g. `Sizing: review 3×1
 
 ## Hard constraints
 
-- Review lanes are `--mode ro`, always. Fix lanes are the only writers — one writer
-  per disjoint path set, and never edit a file yourself while a lane owns it.
+- Review lanes are `--mode ro`, always. You are the only writer in this skill — fixes
+  are your own targeted edits, applied only after every lane has returned.
 - Never hand-construct raw `codex` / `grok` / `claude -p` commands — `<plugin-root>/bin/plx-engine` is
   the only sanctioned path; safety is pinned inside it.
 - Rubrics are injected by `--rubric` name; never paste rubric text into briefs.

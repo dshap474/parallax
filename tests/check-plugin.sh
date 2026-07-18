@@ -111,13 +111,13 @@ fi
 
 if [ "$(grep -c '^    code: grok$' "$PLX_CODEX/config/parallax.yaml")" -eq 2 ] &&
    [ "$(grep -c '^    code: grok$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 2 ] &&
-   [ "$(grep -c '^    fix: grok$' "$PLX_CODEX/config/parallax.yaml")" -eq 2 ] &&
-   [ "$(grep -c '^    fix: grok$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 2 ] &&
+   ! grep -q '^    fix:' "$PLX_CODEX/config/parallax.yaml" &&
+   ! grep -q '^    fix:' "$PLX_CLAUDE/config/parallax.yaml" &&
    [ "$(grep -c '\[claude\]' "$PLX_CODEX/config/parallax.yaml")" -eq 12 ] &&
    [ "$(grep -c '\[codex\]' "$PLX_CLAUDE/config/parallax.yaml")" -eq 12 ] &&
    ! grep -q '^    plan:' "$PLX_CODEX/config/parallax.yaml" &&
    ! grep -q '^    plan:' "$PLX_CLAUDE/config/parallax.yaml"; then
-  _pass "host plans, opposite engine reviews, and Grok writes"
+  _pass "host plans, opposite engine reviews, Grok writes, host fixes"
 else
   _fail "engine polarity drift"
 fi
@@ -129,21 +129,23 @@ else
   _pass "shared engine guidance is host-neutral"
 fi
 
-if grep -q '(claude high) · fixes: grok medium' "$PLX_CODEX/skills/review/SKILL.md" &&
-   grep -q '(codex xhigh) · fixes: grok medium' "$PLX_CLAUDE/skills/review/SKILL.md" &&
+if grep -q '(claude high) · fixes: host' "$PLX_CODEX/skills/review/SKILL.md" &&
+   grep -q '(codex xhigh) · fixes: host' "$PLX_CLAUDE/skills/review/SKILL.md" &&
+   ! grep -qiE 'fix lanes? on|fix-engine|fixes: grok' "$PLX_CODEX/skills/review/SKILL.md" "$PLX_CLAUDE/skills/review/SKILL.md" \
+     "$PLX_CODEX/skills/dev/SKILL.md" "$PLX_CLAUDE/skills/dev/SKILL.md" &&
    ! grep -qE '(claude|codex) \+ grok' "$PLX_CODEX/skills/review/SKILL.md" "$PLX_CLAUDE/skills/review/SKILL.md"; then
-  _pass "review examples preserve opposite-engine review and Grok fixes"
+  _pass "review examples preserve opposite-engine review and host-applied fixes"
 else
   _fail "Codex review examples contradict configured polarity"
 fi
 
 if ! grep -RqiE 'make the edit yourself|fix nits inline|one-liner you can.*edit|edit it yourself' \
-     "$PLX_CLAUDE/skills/build" "$PLX_CLAUDE/skills/dev" "$PLX_CLAUDE/skills/review" \
-     "$PLX_CODEX/skills/build" "$PLX_CODEX/skills/dev" "$PLX_CODEX/skills/review" \
-     "$PLX_ROOT/shared/prompts/engines.md" &&
+     "$PLX_CLAUDE/skills/build" "$PLX_CODEX/skills/build" &&
+   [ -z "$(grep -L 'Fix directly' "$PLX_CLAUDE/skills/review/SKILL.md" "$PLX_CODEX/skills/review/SKILL.md" \
+     "$PLX_CLAUDE/skills/dev/SKILL.md" "$PLX_CODEX/skills/dev/SKILL.md")" ] &&
    ! grep -q -- '--rubric planner' "$PLX_CLAUDE/skills/goal-spec/SKILL.md" \
      "$PLX_CODEX/skills/goal-spec/SKILL.md"; then
-  _pass "hosts delegate all implementation and author goal specs themselves"
+  _pass "hosts delegate implementation, apply post-review fixes themselves, and author goal specs"
 else
   _fail "host implementation or delegated goal-spec planning drift"
 fi

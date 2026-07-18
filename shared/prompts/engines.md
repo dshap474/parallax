@@ -31,7 +31,7 @@ open with the section header the rubric expects:
 | `planner`             | architecture consulting       | `## Task brief`     |
 | `plan-critic-implementation` | checkout/execution red-team | `## Draft plan` |
 | `plan-critic-system`  | system/design red-team        | `## Draft plan`     |
-| `worker`              | implementation / fixes (rw)   | `## Spec`           |
+| `worker`              | implementation (rw)           | `## Spec`           |
 
 ## Models
 
@@ -40,7 +40,7 @@ open with the section header the rubric expects:
 | gpt-5.6-sol | `--engine codex` (medium effort by default) | Claude-host plan/review judgment and implementation fallback |
 | grok-4.5 | `--engine grok` (medium effort by default) | default implementation and targeted fixes |
 | opus-4.8 | `--engine claude` | planning, review, or taste-heavy judgment when selected by the host config |
-| host orchestrator | you — never delegated | plan authoring, synthesis, and final gate |
+| host orchestrator | you — never delegated | plan authoring, synthesis, post-review targeted fixes, and final gate |
 
 GPT-5.5 and Sonnet are forbidden. Do not select them even when explicitly requested as
 an engine substitution; `plx-engine` rejects both. Standalone plan critics resolve from
@@ -64,15 +64,18 @@ How to apply:
 - **Reviews** → a capable model, plus optionally an independent perspective. Always prefer
   a *different* engine than the one that wrote the code — independence catches what
   self-review can't.
-- **Targeted fixes from a review** → Grok 4.5 at low/medium by default; use Codex medium
-  only as the reported fallback — small scoped fixes don't need taste.
+- **Targeted fixes from a review** → the host orchestrator applies them itself, as
+  small scoped edits at the cited sites. It already holds the findings and the code
+  context; a fix lane plus a verification pass of that lane's diff is wasted steps and
+  compute. Fix only after every lane has returned; a build-sized remedy is not a
+  targeted fix — send it back to a writer lane.
 - **Effort**: Codex and Grok default to `medium`; Claude defaults to `high`. Escalate
   only for concrete complexity or risk. Reserve Codex `xhigh` for cross-file contracts,
   concurrency, data-integrity or money paths, wide refactors, and standalone plan
   critics. Grok supports only `low|medium|high`.
 - **The host orchestrator is never delegated.** Spend the main session where judgment
-  is the product (plan authoring, review synthesis, the final gate), not on bulk reads
-  or mechanical edits.
+  is the product (plan authoring, review synthesis, post-review targeted fixes, the
+  final gate), not on bulk reads or bulk implementation.
 
 ## Sizing the run (the escalation ladder)
 

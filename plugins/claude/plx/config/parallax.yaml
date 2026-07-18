@@ -19,14 +19,14 @@
 #   plan-critic-implementation ro plan-critic-implementation
 #   plan-critic-system  ro    plan-critic-system
 #   code                rw    worker
-#   fix                 rw    worker   (targeted post-review fixes — cheap/fast engine)
 #   review-correctness  ro    reviewer-correctness
 #   review-cleanup      ro    reviewer-cleanup
 #   review-structural   ro    reviewer-structural
 #
 # Rules:
-#   - `code` and `fix` take ONE engine each. Writers may run in parallel only on
-#     disjoint path sets — one writer per path, always.
+#   - `code` takes ONE engine. Writers may run in parallel only on
+#     disjoint path sets — one writer per path, always. Targeted post-review
+#     fixes are applied by the host orchestrator directly — there is no fix role.
 #   - plan / plan-critic-* / review-* roles take LISTS and are always read-only
 #     (`--mode ro`), whatever engine fills them. Standalone `plan` is the narrow exception:
 #     each critic role must contain exactly one engine, preserving its fixed two-lane shape.
@@ -50,7 +50,6 @@ pipelines:
     review-correctness: [codex]
     review-cleanup: [codex]
     review-structural: [codex]
-    fix: grok
 
   dev:
     plan-critic-implementation: [codex]
@@ -59,7 +58,6 @@ pipelines:
     review-correctness: [codex]
     review-cleanup: [codex]
     review-structural: [codex]
-    fix: grok
 
   goal-spec:
     plan-critic-implementation: [codex]

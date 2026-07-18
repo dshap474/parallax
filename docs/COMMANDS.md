@@ -8,7 +8,7 @@ is still the docs-bootstrap skill.)
 | --- | --- | --- | --- |
 | Plan | `/plx:plan` | `$plx:plan` | Host authors; implementation and system critics red-team; no code |
 | Build | `/plx:build` | `$plx:build` | One or more file-disjoint writer lanes implement and verify |
-| Review | `/plx:review` | `$plx:review` | Sized read-only review, synthesis, and one targeted fix round |
+| Review | `/plx:review` | `$plx:review` | Sized read-only review, synthesis, and one host-applied fix round |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
 | Goal spec | `/plx:goal-spec` | `$plx:goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; Claude may explicitly persist Codex context |

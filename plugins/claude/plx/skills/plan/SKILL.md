@@ -47,7 +47,12 @@ authentication. The critic call itself proves the selected model.
    would materially change the plan. Otherwise continue without manufacturing questions.
 
 2. **Author the candidate plan.** Read the relevant repo guidance, files, callers/callees,
-   and tests. Pin intent, success criteria, invariants, suggested path, and validation while
+   and tests. If the design depends on external facts (library APIs, official docs, version
+   behavior), launch one read-only doc-lookup lane in parallel with the repo reading —
+   `plx-engine --engine codex --model gpt-5.6-terra --effort low --mode ro` with a compact
+   research brief — and fold its findings into the plan. Lookup research runs at low
+   effort; higher effort buys latency, not accuracy.
+   Pin intent, success criteria, invariants, suggested path, and validation while
    leaving local implementation choices to the builder. End with `Done means:` followed by
    the commands or observable behavior that prove completion.
 

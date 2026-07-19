@@ -69,7 +69,11 @@ plx-engine --engine <e> --mode <ro|rw> --repo <repo> --prompt-file <brief> \
 Clarify first only if a material ambiguity would change the plan (≤3 sharp questions;
 for a large/risky effort, a short `AskUserQuestion` interview into the hard parts).
 Then **author the plan yourself** — read the repo scoped to what the design needs and
-settle the design, outcome-first. In-context plan by default; a spec doc in the build
+settle the design, outcome-first. If the design depends on external facts (library APIs,
+official docs, version behavior), launch one read-only doc-lookup lane in parallel with
+the repo reading — `plx-engine --engine codex --model gpt-5.6-terra --effort low
+--mode ro` with a compact research brief — and fold its findings into the plan; lookup
+research runs at low effort, higher effort buys latency, not accuracy. In-context plan by default; a spec doc in the build
 thread (`plx-skill --ref plan/spec-template` → `.project/builds/YYYY-MM-DD_<thread>/`)
 only for multi-session efforts. **The plan ends with a `Done means:` line** — the
 concrete command(s)/observable(s) that prove the work; the worker self-verifies against

@@ -89,8 +89,12 @@ airtight — and even then, show the reflect-back and get a yes.
 
 ### 3. Host-authored design — fill the how
 
-Study the repository surfaces needed to resolve the design, then author one concrete
-candidate plan from the locked goal. Include the recommended path, material alternatives,
+Study the repository surfaces needed to resolve the design; if the design depends on
+external facts (library APIs, official docs, version behavior), launch one read-only
+doc-lookup lane in parallel — `<plugin-root>/bin/plx-engine --engine codex --model
+gpt-5.6-terra --effort low --mode ro` with a compact research brief — and fold its
+findings in (lookup research runs at low effort; higher effort buys latency, not
+accuracy). Then author one concrete candidate plan from the locked goal. Include the recommended path, material alternatives,
 load-bearing repository facts, exact files or components involved, and observable
 validation. Save that draft verbatim to `<tmp>/plan-brief.md` for neutral critic input.
 

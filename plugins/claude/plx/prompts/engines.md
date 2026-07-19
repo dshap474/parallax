@@ -38,6 +38,7 @@ open with the section header the rubric expects:
 | model | how to call | default role |
 | --- | --- | --- |
 | gpt-5.6-sol | `--engine codex` (medium effort by default) | Claude-host plan/review judgment and implementation fallback |
+| gpt-5.6-terra | `--engine codex --model gpt-5.6-terra --effort low` | doc-lookup web research lanes |
 | grok-4.5 | `--engine grok` (medium effort by default) | default implementation and targeted fixes |
 | opus-4.8 | `--engine claude` | planning, review, or taste-heavy judgment when selected by the host config |
 | host orchestrator | you — never delegated | plan authoring, synthesis, post-review targeted fixes, and final gate |
@@ -73,6 +74,12 @@ How to apply:
   only for concrete complexity or risk. Reserve Codex `xhigh` for cross-file contracts,
   concurrency, data-integrity or money paths, wide refactors, and standalone plan
   critics. Grok supports only `low|medium|high`.
+- **Doc-lookup research → Terra low.** When the task is finding official documentation
+  and transcribing the facts (API shapes, config keys, version tables), run a read-only
+  Codex lane with `--model gpt-5.6-terra --effort low`. On lookup work, effort buys
+  latency, not accuracy — benchmarked 2026-07: Terra low matched Terra high fact-for-fact
+  while running fastest of six contenders; Luna was slower at every effort tier. Reserve
+  higher effort for research that needs synthesis or judgment, not retrieval.
 - **The host orchestrator is never delegated.** Spend the main session where judgment
   is the product (plan authoring, review synthesis, post-review targeted fixes, the
   final gate), not on bulk reads or bulk implementation.

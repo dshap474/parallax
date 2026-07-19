@@ -1,6 +1,6 @@
 ---
 name: "plx::init"
-description: Prime the session — load the Parallax delegation posture (subagents for research, headless engine lanes for implementation, judgment stays with the orchestrator) and the plx skill map into the orchestrator's context. Injects context only; writes nothing, launches nothing. For AGENTS.md/docs bootstrap use /plx:agents-memory.
+description: Prime the session — load the Parallax delegation posture (research lanes and subagents for lookup, headless engine lanes for implementation, judgment stays with the orchestrator) and the plx skill map into the orchestrator's context. Injects context only; writes nothing, launches nothing. For AGENTS.md/docs bootstrap use /plx:agents-memory.
 argument-hint: ""
 disable-model-invocation: true
 user-invocable: true
@@ -26,11 +26,16 @@ resource in the session — spend it only where judgment is the product: task fr
 plan authoring, synthesis of lane and subagent results, and the final gate. Delegate
 everything else:
 
-- **Research and exploration → host subagents** (the Agent tool). Web research runs on
-  **Sonnet at medium effort**; codebase sweeps use parallel read-only search subagents.
-  Fan out independent questions concurrently and keep only the conclusions in your
-  window — never bulk-read what a subagent can summarize. (The Sonnet/GPT-5.5 ban in
-  the judgment doc applies to `plx-engine` lanes, not host subagents.)
+- **Research and exploration → delegate it.** Doc-lookup web research (find the
+  official docs, transcribe the facts) runs on a read-only **Terra low** Codex lane
+  (`plx-engine --engine codex --model gpt-5.6-terra --effort low`) — benchmarked at
+  reference-grade accuracy, faster and cheaper than host subagents. Use a **Sonnet
+  medium** web subagent (the Agent tool) instead when the result must stay in the
+  Claude harness (structured output, follow-up questions to the researcher). Codebase
+  sweeps use parallel read-only search subagents. Fan out independent questions
+  concurrently and keep only the conclusions in your window — never bulk-read what a
+  lane or subagent can summarize. (The Sonnet/GPT-5.5 ban in the judgment doc applies
+  to writer/review/critic lanes, not research.)
 - **Implementation → headless engine lanes** (`plx-engine`, mode rw) — never subagents,
   and never your own context beyond trivial single-file edits and post-review targeted
   fixes (those are yours). **Grok 4.5 medium** is

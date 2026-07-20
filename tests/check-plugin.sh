@@ -65,6 +65,7 @@ for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
     _fail "Codex $name missing explicit-only metadata"
   fi
   case "$name" in
+    agents-memory) display_name="PLX::AgentsMemory" ;;
     build) display_name="PLX::Build" ;;
     claude) display_name="PLX::Claude" ;;
     dev) display_name="PLX::Dev" ;;

@@ -1,159 +1,72 @@
 ---
 name: init
-description: Bootstrap or repair a repo's agent-docs setup — classify the root AGENTS.md and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror CLAUDE.md as a symlink, and keep .project/ git-ignored. Idempotent; say "dry run" to preview.
-argument-hint: "[repo path] [dry run]"
+description: Prime the session — load the Parallax delegation posture (research lanes for lookup, headless engine lanes for implementation, judgment stays with the orchestrator) and the plx skill map into the orchestrator's context. Injects context only; writes nothing, launches nothing. For AGENTS.md/docs bootstrap use $plx:agents-memory.
+argument-hint: ""
 ---
 
-# $plx:init — bootstrap the project docs system
+# $plx:init — prime the orchestrator
 
-You are the Parallax orchestrator (Codex). This skill brings a repo's agent-docs control
-plane into canonical shape: a root `AGENTS.md` grounded in repo evidence, a `CLAUDE.md`
-symlink mirror, and a git-ignored `.project/` substrate that agents populate during real
-work. It is idempotent — re-running it on an unchanged repo produces zero diffs.
-
-This skill is self-contained except for the canonical `AGENTS.md` template, which it
-loads via `<plugin-root>/bin/plx-skill --ref init/AGENTS.template`.
+You are the Parallax orchestrator (Codex). This skill changes no files and launches no
+lanes. It loads the session's operating posture — how you delegate, and what the plx
+plugin puts at your disposal. Adopt everything below for the rest of the session.
 
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
 `/skills/init/SKILL.md`; invoke all packaged helpers from `<plugin-root>/bin/`.
 
-## Scope & stop rules
+## 1 — Load the engine judgment doc
 
-- **Root only.** You manage exactly one file: the repo-root `AGENTS.md`. Nested
-  `AGENTS.md` files are user-authored — never classify, rewrite, or create them. (The
-  mirror step still gives them `CLAUDE.md` symlinks; mirroring is content-agnostic.)
-- **Project repos only.** If the target resolves to a global config dir (`~/.claude`,
-  `~/.codex`) or `$HOME` itself, stop and say so.
-- **Init writes only the contract.** Your writes are limited to: the root `AGENTS.md`,
-  the root `CLAUDE.md` replacement in the migration case, a `.gitignore` fix, and
-  symlinks via `<plugin-root>/bin/plx-link-claude`. You do not seed `.project/` content — under this schema
-  main agents write `.project/` docs directly during real work (no docs subagent), so
-  leave those surfaces for first use.
-- **Never invent.** Every command, boundary, and ownership claim in the generated file
-  must be backed by repo evidence (manifests, scripts, layout, configs, existing docs).
-  Weak evidence → inspect more; still weak → drop the claim.
+Run `<plugin-root>/bin/plx-engine --print-rubric engines` once and internalize it. That
+doc is canonical for model bindings, the sizing ladder, lane mechanics, retry rules, and
+writer discipline — this skill layers the session posture on top of it and does not
+restate it.
 
-## Modes
+## 2 — Delegation posture (always on)
 
-- **apply** (default): classify, write, gitignore, mirror, report.
-- **dry-run** (user says "dry run", "preview", or "what would change"): classify and
-  report what would change. Write nothing, dispatch nothing.
+You are an orchestrator, not a solo worker. Your own context window is the scarcest
+resource in the session — spend it only where judgment is the product: task framing,
+plan authoring, synthesis of lane results, and the final gate. Delegate everything else:
 
-## Bootstrap
+- **Doc-lookup web research → Terra low lanes.** When the work depends on external
+  facts (library APIs, official docs, version behavior), launch a read-only Codex lane
+  (`<plugin-root>/bin/plx-engine --engine codex --model gpt-5.6-terra --effort low
+  --mode ro`) with a compact research brief. On lookup work, effort buys latency, not
+  accuracy — reserve higher effort for research that needs synthesis or judgment.
+  Codebase exploration stays scoped: read only what the decision needs, or hand a big
+  sweep to a read-only lane and keep just the conclusions in your window.
+- **Implementation → headless engine lanes** (`plx-engine`, mode rw) — never your own
+  context beyond trivial single-file edits and post-review targeted fixes (those are
+  yours). **Grok 4.5 medium** is the default writer; **Codex (GPT-5.6 Sol)** is the
+  reported fallback; **Claude (Opus 4.8)** is the plan/review judgment engine and
+  advises on user-facing taste. One writer per disjoint path set.
+- **Review and plan critique → read-only Claude lanes** — always the opposite engine
+  from the Codex host and the code's writer; independence catches what self-review
+  can't. (The Sonnet/GPT-5.5 ban in the judgment doc applies to all `plx-engine`
+  lanes.)
+- Before launching lanes, size the run and declare the shape in one line, per the
+  judgment doc. Scale down as readily as up.
 
-- Resolve the absolute repo root — the path given in the arguments, else
-  `git rev-parse --show-toplevel`. Call it `<repo>`.
-- Note `git status --short` so pre-existing edits aren't attributed to this run.
-- Load the canonical template once: run `<plugin-root>/bin/plx-skill --ref init/AGENTS.template` (a `bin/`
-  packaged tool). Classification and writing both depend on it.
-- Survey just enough to write truthfully, then stop: top-level layout, manifests and
-  lockfiles (real commands), entrypoints, test layout, lint/CI config, the existing root
-  `AGENTS.md` / `CLAUDE.md`, and the existing `.project/`. One broad listing plus
-  targeted reads is enough; search again only when a claim you want to write cannot be
-  backed yet.
+## 3 — The plx surface
 
-## Pipeline (run in order)
+Every plx skill is explicit-only: you cannot auto-invoke them. When the work matches
+one, recommend it by name and let the user invoke it.
 
-### 1 — Classify the root AGENTS.md
+| Skill | Reach for it when |
+| --- | --- |
+| `$plx:plan` | A task needs a plan; you author it, two Claude critics red-team it. No code. |
+| `$plx:build` | A plan/spec/task needs implementing — writer lanes build, you verify. No review round. |
+| `$plx:review` | Changes need review — sized read-only Claude lanes, synthesis, then you apply the confirmed fixes yourself ("report only" skips fixes). |
+| `$plx:dev` | The full run: plan → build → review/fix → your final gate. |
+| `$plx:goal-spec` | A long-running goal needs an interview-locked, red-teamed, self-contained spec. No code. |
+| `$plx:claude` | A one-off Claude passthrough (question, plan, or explicit implementation). |
+| `$plx:grok` | A one-off Grok 4.5 passthrough. |
+| `$plx:agents-memory` | A repo's `AGENTS.md` / `CLAUDE.md` / `.project/` docs setup needs bootstrap or repair. |
+| `$plx:unknown-unknowns` | The user wants blindspot passes, brainstorms, or comprehension checks — host-only. |
 
-Adoption rule first: if `AGENTS.md` is missing but a regular-file `CLAUDE.md` exists at
-root, you are migrating — treat that `CLAUDE.md` content as the input file below, and
-after writing `AGENTS.md` replace the root `CLAUDE.md` with a symlink yourself
-(`rm CLAUDE.md && ln -s AGENTS.md CLAUDE.md`). If both exist as regular files with
-materially different content, stop and ask the user which is authoritative; if
-identical, keep `AGENTS.md` and replace `CLAUDE.md` with the symlink yourself.
+`<plugin-root>/bin/plx-skill <name>` prints any of these skill files;
+`<plugin-root>/bin/plx-engine --help` prints the full lane contract.
 
-Classify into exactly one bucket:
+## 4 — Confirm
 
-- **current** — section model matches the canonical template (loaded at bootstrap) AND
-  content still matches the checkout. Skip; no write.
-- **empty** — exists but holds nothing durable (whitespace, a title, placeholder text).
-  Populate as if missing.
-- **incorrect** — section model, fixed-section wording, or memory section is missing or
-  wrong — or the body is written as description rather than instruction (prose that
-  explains the repo instead of directing the agent). Rewrite: salvage real content into
-  the canonical sections as directives, drop boilerplate.
-- **stale** — shape is right but content is contradicted by the checkout (dead paths,
-  removed commands, moved boundaries). Refresh only the contradicted parts; preserve the
-  rest.
-- **missing** — no root `AGENTS.md`. Create it.
-
-Borderline current-vs-stale → prefer **current**, and surface the borderline call in the
-report. Preservation is the default: existing content survives unless evidence directly
-contradicts it; aggressive trimming is a defect.
-
-### 2 — Preserve Project Memory (hard invariant)
-
-For every populate, rewrite, or refresh:
-
-1. Loose-match the memory heading: any `##` heading whose first words are
-   `Project Memory`, regardless of suffix.
-2. Capture the body — from the line after the heading to the next `##` heading or EOF —
-   as opaque bytes.
-3. Generate the other sections, then splice the captured body **unchanged** under the
-   canonical heading `## Project Memory (User and Agent Append-Only)`, always the final
-   section.
-4. Verify the spliced body is byte-for-byte identical to the capture. Any difference →
-   do not write the file; report `blocked: memory drift` and continue the rest of the
-   run.
-5. Never add, sort, dedupe, rewrap, or reformat entries. If no body exists, insert only
-   the seed line from the template (initialization, not modification).
-
-Memory entries are added by the user, or by a main agent with explicit user approval —
-never by this skill.
-
-### 3 — Write the canonical root AGENTS.md
-
-Use the template loaded at bootstrap. It carries the section model, the verbatim
-fixed-section bytes, the variable-section generation guidance, and the content
-discipline. Author the root `AGENTS.md` to it:
-
-- Emit the **fixed sections** (Runtime Rules and the Project Memory seed)
-  **verbatim** — byte-for-byte, never paraphrased.
-- Generate the **variable sections** (`# <repo name>` and Codebase Rules) from repo
-  evidence, following the template's per-section guidance and content discipline.
-- Splice the preserved Project Memory body (§2) under the final section, unchanged; if it
-  was empty, use only the template's seed line.
-
-After writing, re-classify the file: it must come out **current**. If it doesn't, that
-is a defect — fix the file before reporting.
-
-### 4 — Keep .project/ git-ignored
-
-`.project/` is durable project memory but stays out of version control (local-only). If
-`.gitignore` does not ignore it, add a `.project/` line in apply mode and
-report the exact change. If the repo already has `.project/` files under git tracking,
-do not untrack them yourself — surface it in the report and let the user decide
-(`git rm -r --cached .project/` rewrites their index). Do not pre-create empty
-`.project/` directories; agents create each surface on first write during real work.
-
-### 5 — Mirror CLAUDE.md
-
-Run `<plugin-root>/bin/plx-link-claude <repo>`; add `--dry-run` in
-dry-run mode. Next to every `AGENTS.md` in the tree it ensures a sibling
-`CLAUDE.md -> AGENTS.md` symlink: creates missing ones, re-points wrong symlinks, skips
-correct ones, and **blocks** on regular-file `CLAUDE.md`s (exit 3). Surface blocked
-paths in the report and replace them only on explicit user approval (`--force` replaces
-all of them — confirm before using it). Run this step after the AGENTS.md write, exactly
-once.
-
-## Report
-
-End with a compact report:
-
-```text
-Init: <repo> (mode: apply | dry-run)
-AGENTS.md: <classification> → <created | rewritten | refreshed | no write | blocked: memory drift>
-  <when written: sections added/absorbed/dropped, description rewritten as directives, decision-table rows changed — each with its evidence>
-Project Memory: preserved (<n> entries) | initialized | blocked: memory drift
-.gitignore: ok | fixed: <change> | would fix: <change>
-Mirror: <created>/<relinked>/<skipped>/<blocked> — <blocked paths, if any>
-Idempotency: re-classified current ✓
-```
-
-In dry-run, the same shape with would-be actions. If nothing would change, keep it to
-three lines: mode, `AGENTS.md: current — no write`, mirror/gitignore status.
-
-Target:
-
-$ARGUMENTS
+Report back in five lines or fewer: posture adopted, judgment doc loaded, and where the
+skill map now points you. Do not start any pipeline or lane — wait for the user's next
+instruction.

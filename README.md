@@ -1,3 +1,5 @@
+![Parallax — Route planning, building, and review across models.](docs/assets/plx-readme-hero.png)
+
 # Parallax
 
 Multi-model coding orchestration for **Claude Code and Codex**.

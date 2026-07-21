@@ -69,6 +69,23 @@ GPT-5.5 and Sonnet are rejected. The wrapper never uses `danger-full-access`,
 outputs use temporary directories and are removed after the run; Parallax creates no
 `.parallax/` state.
 
+### Optional evaluation provenance
+
+When `PLX_EVAL_DIR` is set to an absolute writable directory, `plx-eval` records
+schema-v1 JSON evidence for routing, latency, failure, and drift analysis. Records are
+local and opt-in: hashes and metadata only — never task content, prompts, diffs,
+environment, credentials, or command lines. With the variable unset, behavior and
+filesystem effects are unchanged.
+
+`$plx:dev` / `/plx:dev` opens one grouped run envelope (`plx-eval begin` → marker at
+`<tmp>/.plx-eval-run`) so critic, writer, and reviewer lanes share a single run without
+relying on environment persistence across background shells. `plx-engine` discovers that
+marker next to the prompt file. Other skills still get automatic **implicit
+standalone-lane** records through `plx-engine` when collection is enabled. Recording
+failures never change the engine result. Retention is manual pruning for v1; use
+`plx-eval doctor` to check the destination. Parallax still ships no host hooks, telemetry
+service, MCP, database, or target-repo `.parallax/` state.
+
 As a narrow exception, `/plx:codex` may use `plx-codex-thread` to start or resume a
 Codex app-server session. It is ephemeral by default, keeps no Parallax registry,
 returns the thread ID to the user, and re-derives `inspect` or `edit` access on every

@@ -41,11 +41,11 @@ fi
 # Skill surfaces and polarity
 # --------------------------------------------------------------------------- #
 
-_head "Nine host-native skills per package"
+_head "Ten host-native skills per package"
 claude_count="$(find "$PLX_CLAUDE/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
 codex_count="$(find "$PLX_CODEX/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
-[ "$claude_count" = 9 ] && _pass "Claude skills: 9" || _fail "Claude skills: $claude_count"
-[ "$codex_count" = 9 ] && _pass "Codex skills: 9" || _fail "Codex skills: $codex_count"
+[ "$claude_count" = 10 ] && _pass "Claude skills: 10" || _fail "Claude skills: $claude_count"
+[ "$codex_count" = 10 ] && _pass "Codex skills: 10" || _fail "Codex skills: $codex_count"
 
 for skill in "$PLX_CLAUDE"/skills/*/SKILL.md; do
   grep -qE '^name:[[:space:]]*"?plx::' "$skill" && _pass "Claude $(basename "$(dirname "$skill")")" || _fail "bad Claude name: $skill"
@@ -194,7 +194,7 @@ fi
 
 for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   label="$(basename "$(dirname "$package")")"
-  for tool in plx-engine plx-preflight plx-config plx-skill plx-link-claude; do
+  for tool in plx-engine plx-preflight plx-config plx-skill plx-link-claude plx-eval; do
     [ -x "$package/bin/$tool" ] && _pass "$label bin/$tool" || _fail "$label bin/$tool"
   done
   for rubric in engines planner plan-critic-implementation plan-critic-system worker reviewer-correctness reviewer-cleanup reviewer-structural; do

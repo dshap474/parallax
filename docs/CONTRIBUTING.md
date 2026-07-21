@@ -15,8 +15,9 @@ package as a complete cache-safe unit.
 
 Skills carry their complete pipeline inline. Rubric text shared across runs stays in
 `prompts/` and is injected by bare rubric name. External engine execution belongs only
-in `plx-engine`. Do not add orchestration subagents, plugin-root traversal, repo-local
-runtime state, hooks, or publishing behavior.
+in `plx-engine`. Optional evaluation provenance belongs in `plx-eval` (opt-in via
+`PLX_EVAL_DIR`). Do not add orchestration subagents, plugin-root traversal, repo-local
+runtime state, hooks, telemetry services, or publishing behavior.
 
 Codex skills use plain `plx-*` names and `agents/openai.yaml` with implicit invocation
 disabled. Claude skills use `/plx:*` namespaced commands. Equivalent capability does not

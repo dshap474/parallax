@@ -24,7 +24,7 @@ echo "package: ${PLX_PACKAGE:-claude} ($PLUGIN_ROOT)"
 echo "tmp target repo: $REPO"
 
 _head "bin tools answer --help"
-for t in plx-engine plx-preflight plx-config plx-skill plx-link-claude; do
+for t in plx-engine plx-preflight plx-config plx-skill plx-link-claude plx-eval; do
   out="$WORK/help-$t.txt"
   if "$PLUGIN_ROOT/bin/$t" --help > "$out" 2>&1 && grep -q "Usage:" "$out"; then
     _pass "$t --help"
@@ -37,6 +37,9 @@ _head "bin tools reject unknown flags with exit 2"
 "$PLUGIN_ROOT/bin/plx-engine" --bogus >/dev/null 2>&1
 rc=$?
 if [ "$rc" -eq 2 ]; then _pass "plx-engine --bogus exits 2"; else _fail "expected exit 2, got $rc"; fi
+"$PLUGIN_ROOT/bin/plx-eval" --bogus >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 2 ]; then _pass "plx-eval --bogus exits 2"; else _fail "plx-eval expected exit 2, got $rc"; fi
 
 _head "plx-engine resolves rubrics (--print-rubric, model-free)"
 if "$PLUGIN_ROOT/bin/plx-engine" --print-rubric reviewer-correctness 2>/dev/null | grep -qi "review"; then
@@ -44,6 +47,10 @@ if "$PLUGIN_ROOT/bin/plx-engine" --print-rubric reviewer-correctness 2>/dev/null
 else
   _fail "--print-rubric reviewer-correctness failed"
 fi
+
+# Neutralize ambient collection — enabled cases set an explicit temp destination.
+unset PLX_EVAL_DIR || true
+export -n PLX_EVAL_DIR 2>/dev/null || true
 
 _head "plx-engine pins Grok 4.5 and sizes supported effort"
 fake_bin="$WORK/fake-bin"
@@ -189,6 +196,293 @@ fi
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
 rc=$?
 if [ "$rc" -eq 2 ]; then _pass "Claude rejects Sonnet"; else _fail "Sonnet expected exit 2, got $rc"; fi
+
+# --------------------------------------------------------------------------- #
+# Evaluation provenance recorder (model-free, hermetic)
+# --------------------------------------------------------------------------- #
+
+_head "plx-eval disabled no-op and doctor"
+eval_probe="$WORK/eval-disabled"
+mkdir -p "$eval_probe"
+run_file="$eval_probe/run-marker"
+task_body="SECRET_TASK_BODY_SHOULD_NOT_APPEAR"
+printf '%s\n' "$task_body" > "$eval_probe/task.md"
+shape_body="Sizing: 1 worker (grok, medium)"
+printf '%s\n' "$shape_body" > "$eval_probe/shape.txt"
+# Ambient must stay unset for this case.
+unset PLX_EVAL_DIR || true
+"$PLUGIN_ROOT/bin/plx-eval" begin --repo "$REPO" --pipeline dev --host unknown \
+  --run-file "$run_file" --task-file "$eval_probe/task.md" \
+  --shape-file "$eval_probe/shape.txt" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] && grep -qx disabled "$run_file"; then
+  _pass "disabled begin writes sentinel and exits 0"
+else
+  _fail "disabled begin failed (exit $rc)"
+fi
+if [ ! -d "$eval_probe/records" ] && [ -z "$(find "$eval_probe" -type d -name '20*' 2>/dev/null)" ]; then
+  _pass "disabled begin creates no run directory"
+else
+  _fail "disabled begin wrote unexpected records"
+fi
+doctor_out="$eval_probe/doctor.txt"
+"$PLUGIN_ROOT/bin/plx-eval" doctor > "$doctor_out" 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] && grep -qi 'disabled' "$doctor_out"; then
+  _pass "doctor reports disabled when PLX_EVAL_DIR unset"
+else
+  _fail "doctor disabled path failed (exit $rc)"
+fi
+
+# Engine with collection disabled: snapshot plausible eval artifacts around the
+# prompt/work directory before and after; none may appear.
+count_eval_artifacts() {
+  # Count .plx-eval-run markers, run.json, and lane JSON under given roots.
+  local root n=0
+  for root in "$@"; do
+    [ -d "$root" ] || continue
+    n=$((n + $(find "$root" \( -name '.plx-eval-run' -o -name 'run.json' -o -path '*/lanes/*.json' \) 2>/dev/null | wc -l | tr -d ' ')))
+  done
+  printf '%s' "$n"
+}
+disabled_before="$(count_eval_artifacts "$WORK" "$(dirname "$fake_prompt")")"
+PATH="$fake_bin:$PATH" env -u PLX_EVAL_DIR \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
+rc=$?
+disabled_after="$(count_eval_artifacts "$WORK" "$(dirname "$fake_prompt")")"
+if [ "$rc" -eq 0 ] && [ "$disabled_before" = "$disabled_after" ]; then
+  _pass "disabled engine path leaves no eval files"
+else
+  _fail "disabled engine wrote eval files or failed (exit $rc; before=$disabled_before after=$disabled_after)"
+fi
+
+_head "plx-eval grouped begin + concurrent lanes + finish"
+eval_dir="$WORK/eval-enabled"
+mkdir -p "$eval_dir"
+group_tmp="$WORK/group-tmp"
+mkdir -p "$group_tmp"
+printf '%s\n' "$task_body" > "$group_tmp/task.md"
+printf '%s\n' "$shape_body" > "$group_tmp/shape.txt"
+printf '%s\n' 'lane prompt SECRET_PROMPT_BODY' > "$group_tmp/lane-a.md"
+printf '%s\n' 'lane prompt SECRET_PROMPT_BODY' > "$group_tmp/lane-b.md"
+group_run="$group_tmp/.plx-eval-run"
+
+PLX_EVAL_DIR="$eval_dir" "$PLUGIN_ROOT/bin/plx-eval" begin \
+  --repo "$REPO" --pipeline dev --host claude \
+  --run-file "$group_run" \
+  --task-file "$group_tmp/task.md" \
+  --shape-file "$group_tmp/shape.txt" >/dev/null
+rc=$?
+if [ "$rc" -eq 0 ] && grep -q '^run_dir=' "$group_run"; then
+  _pass "enabled begin writes run marker"
+else
+  _fail "enabled begin failed (exit $rc)"
+fi
+
+# Two concurrent fake-engine lanes (grouped via prompt-dir marker).
+PATH="$fake_bin:$PATH" PLX_EVAL_DIR="$eval_dir" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$group_tmp/lane-a.md" --rubric worker \
+  --out "$group_tmp/out-a.md" --log "$group_tmp/log-a.log" >/dev/null &
+pid_a=$!
+PATH="$fake_bin:$PATH" PLX_EVAL_DIR="$eval_dir" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode ro --repo "$REPO" \
+  --prompt-file "$group_tmp/lane-b.md" --rubric reviewer-correctness \
+  --out "$group_tmp/out-b.md" --log "$group_tmp/log-b.log" >/dev/null &
+pid_b=$!
+wait "$pid_a"
+rc_a=$?
+wait "$pid_b"
+rc_b=$?
+if [ "$rc_a" -eq 0 ] && [ "$rc_b" -eq 0 ]; then
+  _pass "concurrent grouped lanes exit 0"
+else
+  _fail "concurrent grouped lanes failed (a=$rc_a b=$rc_b)"
+fi
+
+PLX_EVAL_DIR="$eval_dir" "$PLUGIN_ROOT/bin/plx-eval" finish \
+  --repo "$REPO" --run-file "$group_run" \
+  --outcome pass --verification pass >/dev/null
+rc=$?
+run_dirs="$(find "$eval_dir" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
+lane_files="$(find "$eval_dir" -path '*/lanes/*.json' | wc -l | tr -d ' ')"
+run_json="$(find "$eval_dir" -name run.json | head -1)"
+if [ "$rc" -eq 0 ] && [ "$run_dirs" = "1" ] && [ "$lane_files" = "2" ] && [ -n "$run_json" ]; then
+  _pass "grouped finish: one envelope, two lane files"
+else
+  _fail "grouped finish shape wrong (rc=$rc runs=$run_dirs lanes=$lane_files)"
+fi
+if python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$run_json" 2>/dev/null; then
+  _pass "run.json parses"
+else
+  _fail "run.json invalid"
+fi
+# Privacy: no known bodies in any record.
+privacy_hit=0
+if grep -RFq "$task_body" "$eval_dir" 2>/dev/null; then privacy_hit=1; fi
+if grep -RFq "SECRET_PROMPT_BODY" "$eval_dir" 2>/dev/null; then privacy_hit=1; fi
+if [ "$privacy_hit" -eq 0 ]; then
+  _pass "records omit task/prompt bodies"
+else
+  _fail "records leaked task or prompt body"
+fi
+# Hashes present
+if python3 -c '
+import json,sys
+r=json.load(open(sys.argv[1]))
+assert r.get("schema_version")==1
+assert r.get("task_sha256")
+assert r.get("status")=="complete"
+assert r.get("lane_count")==2
+assert r.get("pipeline")=="dev"
+' "$run_json" 2>/dev/null; then
+  _pass "run.json has schema v1 hashes and lane_count"
+else
+  _fail "run.json missing required metadata"
+fi
+
+_head "plx-eval implicit standalone + failed lane + unwritable dest"
+# Implicit standalone: no marker next to prompt
+standalone_prompt="$WORK/standalone-prompt.md"
+printf '%s\n' 'standalone SECRET_STANDALONE_PROMPT' > "$standalone_prompt"
+standalone_eval="$WORK/eval-standalone"
+mkdir -p "$standalone_eval"
+PATH="$fake_bin:$PATH" PLX_EVAL_DIR="$standalone_eval" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$standalone_prompt" \
+  --out "$WORK/standalone-out.md" --log "$WORK/standalone.log" >/dev/null
+rc=$?
+s_runs="$(find "$standalone_eval" -name run.json | wc -l | tr -d ' ')"
+s_lanes="$(find "$standalone_eval" -path '*/lanes/*.json' | wc -l | tr -d ' ')"
+s_run="$(find "$standalone_eval" -name run.json | head -1)"
+if [ "$rc" -eq 0 ] && [ "$s_runs" = "1" ] && [ "$s_lanes" = "1" ]; then
+  _pass "ungrouped engine creates one implicit standalone run"
+else
+  _fail "implicit standalone wrong (rc=$rc runs=$s_runs lanes=$s_lanes)"
+fi
+if python3 -c '
+import json,sys
+r=json.load(open(sys.argv[1]))
+assert r.get("pipeline")=="standalone-lane"
+assert r.get("status")=="complete"
+assert r.get("outcome")=="pass"
+' "$s_run" 2>/dev/null; then
+  _pass "implicit run closed with pass"
+else
+  _fail "implicit run not closed correctly"
+fi
+if ! grep -RFq "SECRET_STANDALONE_PROMPT" "$standalone_eval" 2>/dev/null; then
+  _pass "standalone records omit prompt body"
+else
+  _fail "standalone records leaked prompt body"
+fi
+
+# Failed fake engine preserves exit code and still records
+printf '%s\n' '#!/usr/bin/env bash' \
+  'echo fail-noise >&2' \
+  'exit 1' \
+  > "$fake_bin/grok"
+chmod +x "$fake_bin/grok"
+fail_eval="$WORK/eval-fail"
+mkdir -p "$fail_eval"
+fail_prompt="$WORK/fail-prompt.md"
+printf '%s\n' 'fail me SECRET_FAIL_OUTPUT_BODY' > "$fail_prompt"
+PATH="$fake_bin:$PATH" PLX_EVAL_DIR="$fail_eval" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$fail_prompt" \
+  --out "$WORK/fail-out.md" --log "$WORK/fail.log" >/dev/null 2>"$WORK/fail-stderr.txt"
+fail_rc=$?
+if [ "$fail_rc" -eq 1 ]; then
+  _pass "failed engine preserves exit code 1"
+else
+  _fail "failed engine exit was $fail_rc (expected 1)"
+fi
+fail_lane="$(find "$fail_eval" -path '*/lanes/*.json' | head -1)"
+if [ -n "$fail_lane" ] && python3 -c '
+import json,sys
+l=json.load(open(sys.argv[1]))
+assert l.get("exit_code")==1
+' "$fail_lane" 2>/dev/null; then
+  _pass "failed lane recorded with exit_code 1"
+else
+  _fail "failed lane not recorded correctly"
+fi
+
+# Restore successful fake grok for any later tests
+printf '%s\n' '#!/usr/bin/env bash' \
+  'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
+  'printf '\''{"text":"OK","stopReason":"EndTurn","sessionId":""}\n'\''' \
+  > "$fake_bin/grok"
+chmod +x "$fake_bin/grok"
+
+# Unwritable / invalid destination must not change a successful engine exit
+bad_eval="$WORK/eval-bad-dest"
+# Create a file where a directory is required — not a writable dir
+printf 'not-a-dir\n' > "$bad_eval"
+PATH="$fake_bin:$PATH" PLX_EVAL_DIR="$bad_eval" PLX_GROK_ARGS_FILE="$fake_args" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null 2>"$WORK/bad-dest-stderr.txt"
+rc=$?
+if [ "$rc" -eq 0 ]; then
+  _pass "unwritable/invalid eval dest does not change engine exit 0"
+else
+  _fail "bad eval dest altered engine exit to $rc"
+fi
+
+# doctor on valid enabled destination
+doctor_ok="$WORK/doctor-ok.txt"
+PLX_EVAL_DIR="$eval_dir" "$PLUGIN_ROOT/bin/plx-eval" doctor > "$doctor_ok" 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] && grep -qi 'ok' "$doctor_ok"; then
+  _pass "doctor validates writable destination"
+else
+  _fail "doctor enabled path failed (exit $rc)"
+fi
+
+# Forged marker pointing outside PLX_EVAL_DIR must not write anywhere and must
+# preserve the engine exit code.
+_head "plx-eval forged marker outside eval root is ignored"
+forged_eval_root="$WORK/eval-legit-root"
+forged_outside="$WORK/eval-forged-outside"
+forged_prompt_dir="$WORK/forged-prompt-dir"
+mkdir -p "$forged_eval_root" "$forged_prompt_dir"
+forged_run_id="20260101T000000Z-forged0001"
+mkdir -p "$forged_outside/$forged_run_id/lanes"
+python3 -c '
+import json, sys
+repo, path, run_id = sys.argv[1], sys.argv[2], sys.argv[3]
+json.dump({
+  "schema_version": 1,
+  "run_id": run_id,
+  "status": "incomplete",
+  "target_path": repo,
+  "pipeline": "dev",
+  "lane_count": 0,
+}, open(path, "w"), indent=2)
+' "$REPO" "$forged_outside/$forged_run_id/run.json" "$forged_run_id"
+printf 'run_dir=%s\n' "$forged_outside/$forged_run_id" > "$forged_prompt_dir/.plx-eval-run"
+printf '%s\n' 'forged marker prompt' > "$forged_prompt_dir/lane.md"
+forged_out="$forged_prompt_dir/out.md"
+forged_log="$forged_prompt_dir/log.log"
+outside_before="$(find "$forged_outside" -type f 2>/dev/null | wc -l | tr -d ' ')"
+legit_before="$(find "$forged_eval_root" -type f 2>/dev/null | wc -l | tr -d ' ')"
+PATH="$fake_bin:$PATH" PLX_EVAL_DIR="$forged_eval_root" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$forged_prompt_dir/lane.md" \
+  --out "$forged_out" --log "$forged_log" >/dev/null
+rc=$?
+outside_after="$(find "$forged_outside" -type f 2>/dev/null | wc -l | tr -d ' ')"
+legit_after="$(find "$forged_eval_root" -type f 2>/dev/null | wc -l | tr -d ' ')"
+outside_lanes="$(find "$forged_outside" -path '*/lanes/*.json' 2>/dev/null | wc -l | tr -d ' ')"
+if [ "$rc" -eq 0 ] && [ "$outside_before" = "$outside_after" ] \
+  && [ "$legit_before" = "$legit_after" ] && [ "$outside_lanes" = "0" ]; then
+  _pass "forged outside marker writes nowhere and keeps exit 0"
+else
+  _fail "forged marker mishandled (rc=$rc outside $outside_before->$outside_after legit $legit_before->$legit_after lanes=$outside_lanes)"
+fi
+
+# Shared-copy check is covered by check-plugin; both packages smoke via run.sh.
 
 _head "plx-config prints the engine config"
 out="$WORK/config.txt"

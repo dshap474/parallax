@@ -26,6 +26,26 @@ the judgment doc (model rankings, the sizing ladder, writer rules).
   target repo.
 - Snapshot `git status --short` and the current staged/unstaged diff into `<tmp>` so
   pre-existing edits are preserved and never attributed to this run.
+- Write the task text to `<tmp>/task.md` (the user's request verbatim). After the
+  sizing line is declared (next section), open the optional evaluation envelope so
+  every later `plx-engine` call under `<tmp>` shares one grouped run without
+  environment persistence across background shells:
+
+```
+printf '%s\n' "$ARGUMENTS" > <tmp>/task.md
+# after declaring sizing:
+printf '%s\n' '<sizing line>' > <tmp>/shape.txt
+<plugin-root>/bin/plx-eval begin --repo <repo> --pipeline dev --host codex \
+  --host-model <actual host model if known, otherwise unknown> \
+  --run-file <tmp>/.plx-eval-run \
+  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
+  || echo "plx-eval begin failed (non-fatal)" >&2
+```
+
+  When `PLX_EVAL_DIR` is unset, `begin` no-ops and writes a disabled sentinel — keep
+  calling it so the path stays branch-free. Write prompt files directly in `<tmp>`
+  (flat) so `plx-engine` discovers `<tmp>/.plx-eval-run` mechanically; do not prefix
+  every background command with recorder flags. Interruption leaves the run `incomplete`.
 
 ## Size the whole run — then declare it
 
@@ -38,6 +58,9 @@ line before launching anything, e.g.:
 ```
 Sizing: implementation critic (claude, high) · 1 worker (grok, medium) · review 3×1 (claude, high) · fixes: host
 ```
+
+Write that same sizing line to `<tmp>/shape.txt`, then call `<plugin-root>/bin/plx-eval begin`
+as shown in Bootstrap (once, before any lane).
 
 **The smallest rung skips advisory fanout, not the writer**: for a trivial ask (one file,
 obvious change), launch one cheap Grok rw lane, verify, and report. The host never writes
@@ -160,8 +183,19 @@ structural rework is required, write a fresh spec and return to stage 2.
 
 Update `.project/` surfaces per the repo's `AGENTS.md` Runtime Rules if the system
 shape changed — you write them yourself; keep it narrow. This skill does **not**
-commit; version control follows the repo's own agent instructions. Clean up `<tmp>`
-after the docs pass. End with:
+commit; version control follows the repo's own agent instructions.
+
+Close the evaluation envelope **before** cleaning `<tmp>` (best-effort; never fail
+the run over recorder errors). Use the honest outcome and verification status:
+
+```
+<plugin-root>/bin/plx-eval finish --repo <repo> --run-file <tmp>/.plx-eval-run \
+  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
+  || echo "plx-eval finish failed (non-fatal)" >&2
+```
+
+Then clean up `<tmp>`. Interruption before this step leaves the run `incomplete`.
+End with:
 
 ```text
 Built: <what shipped>

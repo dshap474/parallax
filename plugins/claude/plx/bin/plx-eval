@@ -1,0 +1,843 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Parallax evaluation provenance recorder — opt-in, privacy-safe, local JSON.
+# When PLX_EVAL_DIR is an absolute writable directory, begin/lane/finish write
+# schema-v1 evidence. When unset, commands no-op successfully (begin writes a
+# disabled sentinel so callers stay branch-free). Recording failures never
+# change engine results; this tool is best-effort provenance only.
+#
+# Usage:
+#   plx-eval begin --repo <abs> --pipeline <name> --host <claude|codex|unknown> \
+#     --run-file <abs> [--host-model <value>] [--shape-file <abs>] [--task-file <abs>]
+#   plx-eval lane --repo <abs> --run-file <abs> --engine <...> --model <...> \
+#     --effort <...> --mode <ro|rw> --role <...> --started-at <...> \
+#     --started-ns <integer> --exit-code <integer> [--rubric <...>] \
+#     [--out <abs>] [--log <abs>]
+#   plx-eval finish --repo <abs> --run-file <abs> \
+#     --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run>
+#   plx-eval doctor
+
+usage() {
+  cat <<'EOF'
+plx-eval — optional local evaluation provenance for Parallax runs
+
+Usage:
+  plx-eval begin --repo <abs> --pipeline <name> --host <claude|codex|unknown> \
+    --run-file <abs> [--host-model <value>] [--shape-file <abs>] [--task-file <abs>]
+  plx-eval lane --repo <abs> --run-file <abs> --engine <e> --model <m> \
+    --effort <e> --mode <ro|rw> --role <r> --started-at <iso> \
+    --started-ns <integer> --exit-code <n> [--rubric <name>] \
+    [--out <abs>] [--log <abs>]
+  plx-eval finish --repo <abs> --run-file <abs> \
+    --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run>
+  plx-eval doctor
+
+What it does:
+  Opt-in recorder controlled by PLX_EVAL_DIR. When that variable is unset,
+  every command succeeds without filesystem side effects (begin still writes
+  a disabled sentinel to --run-file so callers need no branches). When set to
+  an absolute writable directory, begin creates a versioned run envelope,
+  lane appends one atomic collision-proof lane file, and finish closes the
+  run with outcome and verification status. Records store hashes and metadata
+  only — never task content, prompts, diffs, environment, credentials, or
+  command lines. Retention is manual pruning for v1.
+
+Flags (begin):
+  --repo <abs>           absolute path to the target repo (required)
+  --pipeline <name>      pipeline id, e.g. dev or standalone-lane (required)
+  --host <h>             claude | codex | unknown (required)
+  --run-file <abs>       absolute path for the run marker (required)
+  --host-model <value>   optional host model label
+  --shape-file <abs>     optional declared sizing file (content stored as shape)
+  --task-file <abs>      optional task file (SHA-256 only; body never stored)
+
+Flags (lane):
+  --repo <abs>           absolute path to the target repo (required)
+  --run-file <abs>       absolute path to the run marker (required)
+  --engine <e>           codex | grok | claude (required)
+  --model <m>            model string (required)
+  --effort <e>           effort string (required)
+  --mode <m>             ro | rw (required)
+  --role <r>             role / rubric name or adhoc (required)
+  --started-at <iso>     lane start timestamp (required)
+  --started-ns <int>     lane start monotonic-ish ns (required)
+  --exit-code <n>        integer exit code (required)
+  --rubric <name>        optional rubric name
+  --out <abs>            optional final-message path (hashed only)
+  --log <abs>            optional log path (hashed only)
+
+Flags (finish):
+  --repo <abs>           absolute path to the target repo (required)
+  --run-file <abs>       absolute path to the run marker (required)
+  --outcome <o>          pass | fail | partial | aborted (required)
+  --verification <v>     pass | fail | not-run (required)
+
+Commands:
+  doctor                 report disabled, or validate destination + existing JSON
+
+Environment:
+  PLX_EVAL_DIR           absolute writable directory; unset = disabled (no-op)
+
+Exit codes:
+  0  success (including disabled no-op and best-effort record write)
+  2  usage error — bad flags or invalid enum/path inputs
+EOF
+}
+
+# --------------------------------------------------------------------------- #
+# Path resolution
+# --------------------------------------------------------------------------- #
+
+# Resolve symlinks so package-relative lookups work via a PATH symlink.
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+  d="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$d/$src" ;; esac
+done
+BIN_DIR="$(cd -P "$(dirname "$src")" && pwd)"
+
+need_value() { [[ -n "${2:-}" ]] || { echo "missing value for $1" >&2; exit 2; }; }
+
+is_abs() { case "$1" in /*) return 0 ;; *) return 1 ;; esac; }
+
+# --------------------------------------------------------------------------- #
+# Subcommands
+# --------------------------------------------------------------------------- #
+
+cmd="${1:-}"
+case "$cmd" in
+  ""|--help|-h) usage; [[ -n "$cmd" ]] && exit 0 || exit 2 ;;
+  begin|lane|finish|doctor) shift ;;
+  *) echo "unknown command: $cmd (see --help)" >&2; exit 2 ;;
+esac
+
+# doctor has no required flags beyond the environment check
+if [[ "$cmd" == "doctor" ]]; then
+  if [[ $# -gt 0 ]]; then
+    case "${1:-}" in
+      --help|-h) usage; exit 0 ;;
+      *) echo "unknown arg: $1 (see --help)" >&2; exit 2 ;;
+    esac
+  fi
+  python3 - "$BIN_DIR" <<'PY'
+import json, os, sys
+
+bin_dir = sys.argv[1]
+eval_dir = os.environ.get("PLX_EVAL_DIR")
+if not eval_dir:
+    print("plx-eval doctor: disabled (PLX_EVAL_DIR unset)")
+    sys.exit(0)
+if not os.path.isabs(eval_dir):
+    print(f"plx-eval doctor: invalid — PLX_EVAL_DIR is not absolute: {eval_dir}", file=sys.stderr)
+    sys.exit(2)
+if not os.path.isdir(eval_dir):
+    print(f"plx-eval doctor: invalid — not a directory: {eval_dir}", file=sys.stderr)
+    sys.exit(2)
+if not os.access(eval_dir, os.W_OK | os.X_OK):
+    print(f"plx-eval doctor: invalid — not writable: {eval_dir}", file=sys.stderr)
+    sys.exit(2)
+
+errors = 0
+runs = 0
+lanes = 0
+for root, dirs, files in os.walk(eval_dir):
+    for name in files:
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(root, name)
+        try:
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+            if not isinstance(data, dict):
+                raise ValueError("not an object")
+            if name == "run.json":
+                runs += 1
+            elif "/lanes/" in path.replace("\\", "/") or root.rstrip("/").endswith("/lanes"):
+                lanes += 1
+        except Exception as e:
+            errors += 1
+            print(f"plx-eval doctor: parse error: {path}: {e}", file=sys.stderr)
+
+if errors:
+    print(f"plx-eval doctor: {errors} invalid JSON file(s)", file=sys.stderr)
+    sys.exit(1)
+print(f"plx-eval doctor: ok — destination={eval_dir} runs={runs} lane_files={lanes}")
+sys.exit(0)
+PY
+  exit $?
+fi
+
+# --------------------------------------------------------------------------- #
+# Shared flag parse for begin / lane / finish
+# --------------------------------------------------------------------------- #
+
+REPO=""
+PIPELINE=""
+HOST=""
+HOST_MODEL=""
+RUN_FILE=""
+SHAPE_FILE=""
+TASK_FILE=""
+ENGINE=""
+MODEL=""
+EFFORT=""
+MODE=""
+ROLE=""
+STARTED_AT=""
+STARTED_NS=""
+EXIT_CODE=""
+RUBRIC=""
+OUT=""
+LOG=""
+OUTCOME=""
+VERIFICATION=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --repo) need_value "$1" "${2:-}"; REPO="$2"; shift 2 ;;
+    --pipeline) need_value "$1" "${2:-}"; PIPELINE="$2"; shift 2 ;;
+    --host) need_value "$1" "${2:-}"; HOST="$2"; shift 2 ;;
+    --host-model) need_value "$1" "${2:-}"; HOST_MODEL="$2"; shift 2 ;;
+    --run-file) need_value "$1" "${2:-}"; RUN_FILE="$2"; shift 2 ;;
+    --shape-file) need_value "$1" "${2:-}"; SHAPE_FILE="$2"; shift 2 ;;
+    --task-file) need_value "$1" "${2:-}"; TASK_FILE="$2"; shift 2 ;;
+    --engine) need_value "$1" "${2:-}"; ENGINE="$2"; shift 2 ;;
+    --model) need_value "$1" "${2:-}"; MODEL="$2"; shift 2 ;;
+    --effort) need_value "$1" "${2:-}"; EFFORT="$2"; shift 2 ;;
+    --mode) need_value "$1" "${2:-}"; MODE="$2"; shift 2 ;;
+    --role) need_value "$1" "${2:-}"; ROLE="$2"; shift 2 ;;
+    --started-at) need_value "$1" "${2:-}"; STARTED_AT="$2"; shift 2 ;;
+    --started-ns) need_value "$1" "${2:-}"; STARTED_NS="$2"; shift 2 ;;
+    --exit-code) need_value "$1" "${2:-}"; EXIT_CODE="$2"; shift 2 ;;
+    --rubric) need_value "$1" "${2:-}"; RUBRIC="$2"; shift 2 ;;
+    --out) need_value "$1" "${2:-}"; OUT="$2"; shift 2 ;;
+    --log) need_value "$1" "${2:-}"; LOG="$2"; shift 2 ;;
+    --outcome) need_value "$1" "${2:-}"; OUTCOME="$2"; shift 2 ;;
+    --verification) need_value "$1" "${2:-}"; VERIFICATION="$2"; shift 2 ;;
+    --help|-h) usage; exit 0 ;;
+    *) echo "unknown arg: $1 (see --help)" >&2; exit 2 ;;
+  esac
+done
+
+# --------------------------------------------------------------------------- #
+# Required-flag validation per command (usage errors before no-op)
+# --------------------------------------------------------------------------- #
+
+require_abs() {
+  local name="$1" val="$2"
+  [[ -n "$val" ]] || { echo "--${name} required" >&2; exit 2; }
+  is_abs "$val" || { echo "--${name} must be an absolute path: $val" >&2; exit 2; }
+}
+
+case "$cmd" in
+  begin)
+    require_abs "repo" "$REPO"
+    require_abs "run-file" "$RUN_FILE"
+    [[ -n "$PIPELINE" ]] || { echo "--pipeline required" >&2; exit 2; }
+    case "$HOST" in claude|codex|unknown) ;; *)
+      echo "--host must be claude|codex|unknown" >&2; exit 2 ;;
+    esac
+    [[ -d "$REPO" ]] || { echo "repo not found: $REPO" >&2; exit 2; }
+    if [[ -n "$SHAPE_FILE" ]]; then
+      require_abs "shape-file" "$SHAPE_FILE"
+      [[ -f "$SHAPE_FILE" ]] || { echo "shape file not found: $SHAPE_FILE" >&2; exit 2; }
+    fi
+    if [[ -n "$TASK_FILE" ]]; then
+      require_abs "task-file" "$TASK_FILE"
+      [[ -f "$TASK_FILE" ]] || { echo "task file not found: $TASK_FILE" >&2; exit 2; }
+    fi
+    ;;
+  lane)
+    require_abs "repo" "$REPO"
+    require_abs "run-file" "$RUN_FILE"
+    case "$ENGINE" in codex|grok|claude) ;; *)
+      echo "--engine must be codex|grok|claude" >&2; exit 2 ;;
+    esac
+    case "$MODE" in ro|rw) ;; *)
+      echo "--mode must be ro|rw" >&2; exit 2 ;;
+    esac
+    [[ -n "$MODEL" ]] || { echo "--model required" >&2; exit 2; }
+    [[ -n "$EFFORT" ]] || { echo "--effort required" >&2; exit 2; }
+    [[ -n "$ROLE" ]] || { echo "--role required" >&2; exit 2; }
+    [[ -n "$STARTED_AT" ]] || { echo "--started-at required" >&2; exit 2; }
+    [[ -n "$STARTED_NS" ]] || { echo "--started-ns required" >&2; exit 2; }
+    [[ "$STARTED_NS" =~ ^[0-9]+$ ]] || { echo "--started-ns must be an integer" >&2; exit 2; }
+    [[ -n "$EXIT_CODE" ]] || { echo "--exit-code required" >&2; exit 2; }
+    [[ "$EXIT_CODE" =~ ^-?[0-9]+$ ]] || { echo "--exit-code must be an integer" >&2; exit 2; }
+    [[ -d "$REPO" ]] || { echo "repo not found: $REPO" >&2; exit 2; }
+    if [[ -n "$OUT" ]]; then require_abs "out" "$OUT"; fi
+    if [[ -n "$LOG" ]]; then require_abs "log" "$LOG"; fi
+    ;;
+  finish)
+    require_abs "repo" "$REPO"
+    require_abs "run-file" "$RUN_FILE"
+    case "$OUTCOME" in pass|fail|partial|aborted) ;; *)
+      echo "--outcome must be pass|fail|partial|aborted" >&2; exit 2 ;;
+    esac
+    case "$VERIFICATION" in pass|fail|not-run) ;; *)
+      echo "--verification must be pass|fail|not-run" >&2; exit 2 ;;
+    esac
+    [[ -d "$REPO" ]] || { echo "repo not found: $REPO" >&2; exit 2; }
+    ;;
+esac
+
+# Pipeline / run-id character rules (begin only; run_id generated later)
+if [[ "$cmd" == "begin" ]]; then
+  if ! [[ "$PIPELINE" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]]; then
+    echo "--pipeline must be 1-64 chars: [A-Za-z0-9][A-Za-z0-9._-]*" >&2
+    exit 2
+  fi
+fi
+
+# --------------------------------------------------------------------------- #
+# Collection gate
+# --------------------------------------------------------------------------- #
+# begin requires PLX_EVAL_DIR (absolute). When unset, begin writes a disabled
+# sentinel so callers stay branch-free.
+# lane / finish also require PLX_EVAL_DIR for any enabled marker: the env var is
+# the sole write-destination authority. A disabled/missing marker, unset env,
+# or forged/out-of-root marker is a silent no-op (exit 0, no writes).
+
+if [[ "$cmd" == "begin" ]]; then
+  if [[ -z "${PLX_EVAL_DIR:-}" ]]; then
+    mkdir -p "$(dirname "$RUN_FILE")"
+    printf 'disabled\n' > "$RUN_FILE"
+    exit 0
+  fi
+  if ! is_abs "$PLX_EVAL_DIR"; then
+    echo "plx-eval: PLX_EVAL_DIR must be an absolute path (got: $PLX_EVAL_DIR)" >&2
+    exit 2
+  fi
+fi
+
+# --------------------------------------------------------------------------- #
+# Python backend — atomic schema-v1 records
+# --------------------------------------------------------------------------- #
+
+export PLX_EVAL_CMD="$cmd"
+export PLX_EVAL_BIN_DIR="$BIN_DIR"
+export PLX_EVAL_REPO="$REPO"
+export PLX_EVAL_PIPELINE="$PIPELINE"
+export PLX_EVAL_HOST="$HOST"
+export PLX_EVAL_HOST_MODEL="$HOST_MODEL"
+export PLX_EVAL_RUN_FILE="$RUN_FILE"
+export PLX_EVAL_SHAPE_FILE="$SHAPE_FILE"
+export PLX_EVAL_TASK_FILE="$TASK_FILE"
+export PLX_EVAL_ENGINE="$ENGINE"
+export PLX_EVAL_MODEL="$MODEL"
+export PLX_EVAL_EFFORT="$EFFORT"
+export PLX_EVAL_MODE="$MODE"
+export PLX_EVAL_ROLE="$ROLE"
+export PLX_EVAL_STARTED_AT="$STARTED_AT"
+export PLX_EVAL_STARTED_NS="$STARTED_NS"
+export PLX_EVAL_EXIT_CODE="$EXIT_CODE"
+export PLX_EVAL_RUBRIC="$RUBRIC"
+export PLX_EVAL_OUT="$OUT"
+export PLX_EVAL_LOG="$LOG"
+export PLX_EVAL_OUTCOME="$OUTCOME"
+export PLX_EVAL_VERIFICATION="$VERIFICATION"
+
+python3 <<'PY'
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import time
+import uuid
+from datetime import datetime, timezone
+from glob import glob
+
+SCHEMA_VERSION = 1
+RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
+
+
+def env(name, default=""):
+    return os.environ.get(name, default) or default
+
+
+def die(msg, code=2):
+    print(f"plx-eval: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def now_iso():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def atomic_write_text(path, text):
+    """Atomically replace path with UTF-8 text (JSON records and markers)."""
+    directory = os.path.dirname(path) or "."
+    os.makedirs(directory, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=".plx-eval-", suffix=".tmp", dir=directory)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
+def atomic_write_json(path, data):
+    atomic_write_text(path, json.dumps(data, indent=2, sort_keys=True) + "\n")
+
+
+def parse_iso(s):
+    return datetime.fromisoformat(s.replace("Z", "+00:00"))
+
+
+def duration_ms_between(started_at, ended_at, started_ns=None):
+    """ISO wall-clock duration in ms; optional started_ns fallback."""
+    try:
+        duration_ms = int((parse_iso(ended_at) - parse_iso(started_at)).total_seconds() * 1000)
+        if duration_ms < 0:
+            duration_ms = 0
+        return duration_ms
+    except Exception:
+        if started_ns is None:
+            return None
+        try:
+            now_ns = time.time_ns()
+            if now_ns >= int(started_ns):
+                return int((now_ns - int(started_ns)) / 1_000_000)
+        except Exception:
+            return None
+        return None
+
+
+def sha256_file(path):
+    if not path or not os.path.isfile(path):
+        return None
+    h = hashlib.sha256()
+    size = 0
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(1024 * 1024)
+            if not chunk:
+                break
+            h.update(chunk)
+            size += len(chunk)
+    return {"sha256": h.hexdigest(), "bytes": size}
+
+
+def sha256_text(text):
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def git(repo, *args):
+    try:
+        out = subprocess.check_output(
+            ["git", "-C", repo, *args],
+            stderr=subprocess.DEVNULL,
+        )
+        return out.decode("utf-8", errors="replace")
+    except Exception:
+        return None
+
+
+def git_head(repo):
+    text = git(repo, "rev-parse", "HEAD")
+    return text.strip() if text else None
+
+
+def git_stream_into(hasher, repo, *args):
+    """Stream git stdout into hasher. Returns True on success."""
+    try:
+        proc = subprocess.Popen(
+            ["git", "-C", repo, *args],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        assert proc.stdout is not None
+        while True:
+            chunk = proc.stdout.read(1024 * 1024)
+            if not chunk:
+                break
+            hasher.update(chunk)
+        rc = proc.wait()
+        return rc == 0
+    except Exception:
+        return False
+
+
+def git_diff_hash(repo):
+    # Stream staged + unstaged binary diffs (no full buffer). Untracked *names*
+    # influence only status_hash via `git status --short`; tracked staged/unstaged
+    # diff *bodies* influence only this digest.
+    h = hashlib.sha256()
+    any_ok = False
+    first = True
+    for args in (
+        ["diff", "--binary"],
+        ["diff", "--cached", "--binary"],
+    ):
+        if not first:
+            h.update(b"\0")
+        first = False
+        if git_stream_into(h, repo, *args):
+            any_ok = True
+        else:
+            return None
+    return h.hexdigest() if any_ok else None
+
+
+def parse_changed_paths(status_text):
+    if status_text is None:
+        return []
+    paths = []
+    for line in status_text.splitlines():
+        line = line.rstrip("\n")
+        if not line:
+            continue
+        # status --short: XY PATH or XY ORIG -> PATH
+        body = line[3:] if len(line) > 3 else line
+        if " -> " in body:
+            body = body.split(" -> ", 1)[1]
+        paths.append(body)
+    return paths
+
+
+def git_snapshot(repo, include_paths=False):
+    """One status --short for status_hash (and optional changed_paths)."""
+    status_text = git(repo, "status", "--short")
+    snap = {
+        "head": git_head(repo),
+        "status_hash": sha256_text(status_text) if status_text is not None else None,
+        "diff_hash": git_diff_hash(repo),
+    }
+    if include_paths:
+        snap["changed_paths"] = parse_changed_paths(status_text)
+    return snap
+
+
+def plugin_version(bin_dir):
+    for rel in ("../.claude-plugin/plugin.json", "../.codex-plugin/plugin.json"):
+        path = os.path.normpath(os.path.join(bin_dir, rel))
+        if os.path.isfile(path):
+            try:
+                with open(path, encoding="utf-8") as f:
+                    data = json.load(f)
+                ver = data.get("version")
+                return ver if isinstance(ver, str) else None
+            except Exception:
+                return None
+    return None  # canonical shared/bin has no package manifest
+
+
+def runtime_fingerprint(bin_dir):
+    """Stable content identity of the routed package — names + bytes only."""
+    pkg_root = os.path.normpath(os.path.join(bin_dir, ".."))
+    rels = []
+    for rel in (
+        ".claude-plugin/plugin.json",
+        ".codex-plugin/plugin.json",
+        "bin/plx-engine",
+        "bin/plx-eval",
+        "config/parallax.yaml",
+    ):
+        path = os.path.join(pkg_root, rel)
+        if os.path.isfile(path):
+            rels.append(rel)
+    for path in sorted(glob(os.path.join(pkg_root, "prompts", "*.md"))):
+        rels.append(os.path.relpath(path, pkg_root).replace(os.sep, "/"))
+    for path in sorted(glob(os.path.join(pkg_root, "skills", "*", "SKILL.md"))):
+        rels.append(os.path.relpath(path, pkg_root).replace(os.sep, "/"))
+
+    h = hashlib.sha256()
+    for rel in rels:
+        path = os.path.join(pkg_root, rel)
+        h.update(rel.encode("utf-8"))
+        h.update(b"\0")
+        with open(path, "rb") as f:
+            while True:
+                chunk = f.read(1024 * 1024)
+                if not chunk:
+                    break
+                h.update(chunk)
+        h.update(b"\0")
+    return h.hexdigest()
+
+
+def source_commit(bin_dir):
+    # Resolve a source git commit only when the install lives inside a checkout.
+    root = os.path.normpath(os.path.join(bin_dir, "..", ".."))
+    text = git(root, "rev-parse", "HEAD")
+    if text:
+        return text.strip()
+    # Package root may be plugins/<host>/plx — try repo root two levels higher.
+    root2 = os.path.normpath(os.path.join(bin_dir, "..", "..", "..", ".."))
+    text = git(root2, "rev-parse", "HEAD")
+    return text.strip() if text else None
+
+
+def read_marker(run_file):
+    """Accept only `disabled` or `run_dir=<absolute>`. Other formats are invalid."""
+    if not os.path.isfile(run_file):
+        return None
+    with open(run_file, encoding="utf-8") as f:
+        first = f.readline().strip()
+    if first == "disabled":
+        return {"enabled": False}
+    if first.startswith("run_dir="):
+        run_dir = first.split("=", 1)[1]
+        if not run_dir or not os.path.isabs(run_dir):
+            return None
+        return {"enabled": True, "run_dir": run_dir}
+    return None
+
+
+def write_marker(run_file, run_dir):
+    atomic_write_text(run_file, f"run_dir={run_dir}\n")
+
+
+def resolve_enabled_run(repo, run_file):
+    """
+    Validate marker authority against PLX_EVAL_DIR.
+    Returns (run_dir_real, run_dict) or None for silent no-op.
+    """
+    eval_dir = env("PLX_EVAL_DIR")
+    if not eval_dir or not os.path.isabs(eval_dir):
+        return None
+    marker = read_marker(run_file)
+    if marker is None or not marker.get("enabled"):
+        return None
+    run_dir = marker.get("run_dir")
+    if not run_dir or not os.path.isabs(run_dir):
+        return None
+    try:
+        eval_root = os.path.realpath(eval_dir)
+        run_dir_real = os.path.realpath(run_dir)
+        repo_real = os.path.realpath(repo)
+    except OSError:
+        return None
+    # Direct child of the configured eval root only.
+    if os.path.dirname(run_dir_real) != eval_root:
+        return None
+    if not os.path.isdir(run_dir_real):
+        return None
+    run_json = os.path.join(run_dir_real, "run.json")
+    if not os.path.isfile(run_json):
+        return None
+    try:
+        with open(run_json, encoding="utf-8") as f:
+            run = json.load(f)
+    except Exception:
+        return None
+    if not isinstance(run, dict):
+        return None
+    run_id = run.get("run_id")
+    if not isinstance(run_id, str) or not RUN_ID_RE.match(run_id):
+        return None
+    if os.path.basename(run_dir_real) != run_id:
+        return None
+    recorded = run.get("target_path")
+    if not isinstance(recorded, str):
+        return None
+    try:
+        if os.path.realpath(recorded) != repo_real:
+            return None
+    except OSError:
+        return None
+    return run_dir_real, run
+
+
+def safe_role_slug(role):
+    s = re.sub(r"[^A-Za-z0-9._-]+", "-", role).strip("-")
+    return (s or "lane")[:48]
+
+
+def do_begin():
+    eval_dir = env("PLX_EVAL_DIR")
+    repo = os.path.realpath(env("PLX_EVAL_REPO"))
+    pipeline = env("PLX_EVAL_PIPELINE")
+    host = env("PLX_EVAL_HOST")
+    host_model = env("PLX_EVAL_HOST_MODEL") or None
+    run_file = env("PLX_EVAL_RUN_FILE")
+    shape_file = env("PLX_EVAL_SHAPE_FILE") or None
+    task_file = env("PLX_EVAL_TASK_FILE") or None
+    bin_dir = env("PLX_EVAL_BIN_DIR")
+
+    try:
+        os.makedirs(eval_dir, exist_ok=True)
+    except OSError as e:
+        die(f"cannot create PLX_EVAL_DIR: {e}", 2)
+    if not os.access(eval_dir, os.W_OK | os.X_OK):
+        die(f"PLX_EVAL_DIR not writable: {eval_dir}", 2)
+
+    # Collision-proof run id: UTC stamp + short uuid
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    run_id = f"{stamp}-{uuid.uuid4().hex[:10]}"
+    if not RUN_ID_RE.match(run_id):
+        die(f"generated invalid run id: {run_id}")
+
+    shape = None
+    if shape_file:
+        with open(shape_file, encoding="utf-8") as f:
+            shape = f.read()
+        # Cap shape size — declared sizing is short text.
+        if len(shape) > 8192:
+            shape = shape[:8192]
+
+    task_sha = None
+    if task_file:
+        meta = sha256_file(task_file)
+        if meta:
+            task_sha = meta["sha256"]
+
+    started = now_iso()
+    record = {
+        "schema_version": SCHEMA_VERSION,
+        "run_id": run_id,
+        "status": "incomplete",
+        "started_at": started,
+        "plugin_version": plugin_version(bin_dir),
+        "runtime_fingerprint": runtime_fingerprint(bin_dir),
+        "source_commit": source_commit(bin_dir),
+        "host": host,
+        "host_model": host_model,
+        "pipeline": pipeline,
+        "shape": shape,
+        "task_sha256": task_sha,
+        "target_path": repo,
+        "starting": git_snapshot(repo, include_paths=False),
+        "ended_at": None,
+        "duration_ms": None,
+        "outcome": None,
+        "verification": None,
+        "ending": None,
+        "lane_count": 0,
+        "lanes_summary": None,
+    }
+
+    eval_root = os.path.realpath(eval_dir)
+    run_dir = os.path.join(eval_root, run_id)
+    os.makedirs(os.path.join(run_dir, "lanes"), exist_ok=True)
+    atomic_write_json(os.path.join(run_dir, "run.json"), record)
+    write_marker(run_file, run_dir)
+
+
+def do_lane():
+    repo = os.path.realpath(env("PLX_EVAL_REPO"))
+    run_file = env("PLX_EVAL_RUN_FILE")
+    resolved = resolve_enabled_run(repo, run_file)
+    if resolved is None:
+        return
+    run_dir, run = resolved
+    run_id = run["run_id"]
+
+    role = env("PLX_EVAL_ROLE")
+    started_at = env("PLX_EVAL_STARTED_AT")
+    started_ns = int(env("PLX_EVAL_STARTED_NS"))
+    ended_at = now_iso()
+    duration_ms = duration_ms_between(started_at, ended_at, started_ns)
+
+    out_meta = sha256_file(env("PLX_EVAL_OUT")) if env("PLX_EVAL_OUT") else None
+    log_meta = sha256_file(env("PLX_EVAL_LOG")) if env("PLX_EVAL_LOG") else None
+    rubric = env("PLX_EVAL_RUBRIC") or None
+
+    lane = {
+        "schema_version": SCHEMA_VERSION,
+        "run_id": run_id,
+        "role": role,
+        "rubric": rubric,
+        "engine": env("PLX_EVAL_ENGINE"),
+        "model": env("PLX_EVAL_MODEL"),
+        "effort": env("PLX_EVAL_EFFORT"),
+        "mode": env("PLX_EVAL_MODE"),
+        "started_at": started_at,
+        "started_ns": started_ns,
+        "ended_at": ended_at,
+        "duration_ms": duration_ms,
+        "exit_code": int(env("PLX_EVAL_EXIT_CODE")),
+        "ending": git_snapshot(repo, include_paths=True),
+        "out": out_meta,
+        "log": log_meta,
+    }
+
+    slug = safe_role_slug(role)
+    fname = f"{started_ns}-{slug}-{os.getpid()}-{uuid.uuid4().hex[:8]}.json"
+    atomic_write_json(os.path.join(run_dir, "lanes", fname), lane)
+
+
+def do_finish():
+    repo = os.path.realpath(env("PLX_EVAL_REPO"))
+    run_file = env("PLX_EVAL_RUN_FILE")
+    resolved = resolve_enabled_run(repo, run_file)
+    if resolved is None:
+        return
+    run_dir, run = resolved
+
+    lanes_dir = os.path.join(run_dir, "lanes")
+    recorded = []
+    if os.path.isdir(lanes_dir):
+        for name in sorted(os.listdir(lanes_dir)):
+            if not name.endswith(".json"):
+                continue
+            path = os.path.join(lanes_dir, name)
+            try:
+                with open(path, encoding="utf-8") as f:
+                    lane = json.load(f)
+                recorded.append({
+                    "file": name,
+                    "role": lane.get("role"),
+                    "engine": lane.get("engine"),
+                    "mode": lane.get("mode"),
+                    "exit_code": lane.get("exit_code"),
+                    "started_ns": lane.get("started_ns"),
+                })
+            except Exception:
+                recorded.append({"file": name, "parse_error": True})
+
+    # Declared shape is free text; summary is recorded roles vs count.
+    roles = [r.get("role") for r in recorded if r.get("role")]
+    ended_at = now_iso()
+    duration_ms = duration_ms_between(run.get("started_at") or "", ended_at)
+
+    run["status"] = "complete"
+    run["outcome"] = env("PLX_EVAL_OUTCOME")
+    run["verification"] = env("PLX_EVAL_VERIFICATION")
+    run["ended_at"] = ended_at
+    run["duration_ms"] = duration_ms
+    run["ending"] = git_snapshot(repo, include_paths=False)
+    run["lane_count"] = len(recorded)
+    run["lanes_summary"] = {
+        "recorded": len(recorded),
+        "roles": roles,
+        "lanes": recorded,
+        "shape": run.get("shape"),
+    }
+    atomic_write_json(os.path.join(run_dir, "run.json"), run)
+
+
+cmd = env("PLX_EVAL_CMD")
+try:
+    if cmd == "begin":
+        do_begin()
+    elif cmd == "lane":
+        do_lane()
+    elif cmd == "finish":
+        do_finish()
+    else:
+        die(f"unknown command: {cmd}")
+except SystemExit:
+    raise
+except Exception as e:
+    # Best-effort: never mask the caller with an unexpected crash for lane/finish.
+    # begin still surfaces hard destination problems as exit 2 above; other
+    # unexpected errors print a breadcrumb and exit 0 so engine results stay clean
+    # when the skill invokes us under a guarded path. Direct CLI gets exit 1.
+    print(f"plx-eval: recording failed: {e}", file=sys.stderr)
+    if cmd == "begin":
+        sys.exit(1)
+    sys.exit(0)
+PY

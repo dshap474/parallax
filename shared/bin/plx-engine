@@ -87,9 +87,59 @@ OUT=""
 LOG=""
 STDOUT=0
 TMP_DIR=""
+# Evaluation provenance (opt-in via PLX_EVAL_DIR). Armed only after args resolve.
+EVAL_ARMED=0
+EVAL_IMPLICIT=0
+EVAL_RUN_FILE=""
+EVAL_STARTED_AT=""
+EVAL_STARTED_NS=""
+EVAL_ROLE=""
 
-cleanup() { if [[ -n "$TMP_DIR" ]]; then rm -rf "$TMP_DIR"; fi; }
-trap cleanup EXIT
+# Exit handler: capture the original engine code, best-effort record the lane,
+# finish an implicit standalone run if we created one, then clean temp files and
+# re-exit with the original code. Recording failures never mask the engine result.
+plx_engine_exit() {
+  local rc=$?
+  # Always restore errexit off for cleanup/recording so set -e cannot alter rc.
+  set +e
+  if [[ "$EVAL_ARMED" -eq 1 && -n "$EVAL_RUN_FILE" ]]; then
+    local out_arg=() log_arg=() rubric_arg=()
+    # Hash stdout-mode artifacts before the temp dir is removed.
+    if [[ -n "$OUT" && -e "$OUT" ]]; then out_arg=(--out "$OUT"); fi
+    if [[ -n "$LOG" && -e "$LOG" ]]; then log_arg=(--log "$LOG"); fi
+    if [[ -n "$RUBRIC" ]]; then rubric_arg=(--rubric "$RUBRIC"); fi
+    if ! "$BIN_DIR/plx-eval" lane \
+      --repo "$REPO" \
+      --run-file "$EVAL_RUN_FILE" \
+      --engine "$ENGINE" \
+      --model "$MODEL" \
+      --effort "$EFFORT" \
+      --mode "$MODE" \
+      --role "$EVAL_ROLE" \
+      --started-at "$EVAL_STARTED_AT" \
+      --started-ns "$EVAL_STARTED_NS" \
+      --exit-code "$rc" \
+      ${rubric_arg[@]+"${rubric_arg[@]}"} \
+      ${out_arg[@]+"${out_arg[@]}"} \
+      ${log_arg[@]+"${log_arg[@]}"} 2>/dev/null; then
+      echo "plx-engine: eval lane record failed (non-fatal)" >&2
+    fi
+    if [[ "$EVAL_IMPLICIT" -eq 1 ]]; then
+      local outcome="fail"
+      [[ "$rc" -eq 0 ]] && outcome="pass"
+      if ! "$BIN_DIR/plx-eval" finish \
+        --repo "$REPO" \
+        --run-file "$EVAL_RUN_FILE" \
+        --outcome "$outcome" \
+        --verification not-run 2>/dev/null; then
+        echo "plx-engine: eval finish failed (non-fatal)" >&2
+      fi
+    fi
+  fi
+  if [[ -n "$TMP_DIR" ]]; then rm -rf "$TMP_DIR"; fi
+  exit "$rc"
+}
+trap plx_engine_exit EXIT
 
 need_value() { [[ -n "${2:-}" ]] || { echo "missing value for $1" >&2; exit 2; }; }
 
@@ -121,8 +171,10 @@ case "$MODE" in ro|rw) ;; *) echo "--mode must be ro|rw" >&2; exit 2 ;; esac
 [[ -s "$PROMPT" ]] || { echo "prompt file missing/empty: $PROMPT" >&2; exit 2; }
 
 # The claude engine runs inside a `cd $REPO` subshell — caller-relative paths
-# must be absolutized before that.
+# must be absolutized before that. REPO is also absolutized so eval provenance
+# always receives an absolute target path.
 abspath() { case "$1" in /*) printf '%s' "$1" ;; *) printf '%s' "$PWD/$1" ;; esac; }
+REPO="$(cd "$REPO" && pwd)"
 PROMPT="$(abspath "$PROMPT")"
 [[ -n "$OUT" ]] && OUT="$(abspath "$OUT")"
 [[ -n "$LOG" ]] && LOG="$(abspath "$LOG")"
@@ -167,6 +219,38 @@ else
   [[ -n "$LOG" ]] || { echo "--log required (or use --stdout)" >&2; exit 2; }
 fi
 mkdir -p "$(dirname "$OUT")" "$(dirname "$LOG")"
+
+# Arm evaluation provenance only after required args and resolved model/effort.
+# Grouped runs: marker lives next to the caller's prompt file (dev writes prompt
+# files directly in <tmp> (flat) plus <tmp>/.plx-eval-run). Implicit standalone:
+# begin under this wrapper's temp dir when collection is enabled and no marker
+# was discovered.
+EVAL_ROLE="${RUBRIC:-adhoc}"
+PROMPT_DIR="$(cd -P "$(dirname "$PROMPT")" && pwd)"
+GROUPED_MARKER="$PROMPT_DIR/.plx-eval-run"
+if [[ -f "$GROUPED_MARKER" ]]; then
+  EVAL_RUN_FILE="$GROUPED_MARKER"
+elif [[ -n "${PLX_EVAL_DIR:-}" ]]; then
+  EVAL_RUN_FILE="$TMP_DIR/.plx-eval-run"
+  if ! "$BIN_DIR/plx-eval" begin \
+    --repo "$REPO" \
+    --pipeline standalone-lane \
+    --host unknown \
+    --run-file "$EVAL_RUN_FILE" 2>/dev/null; then
+    echo "plx-engine: eval begin failed (non-fatal)" >&2
+    EVAL_RUN_FILE=""
+  else
+    EVAL_IMPLICIT=1
+  fi
+fi
+if [[ -n "$EVAL_RUN_FILE" ]]; then
+  EVAL_STARTED_AT="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z" 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  # Prefer python time_ns for integer ns; fall back to epoch seconds * 1e9.
+  EVAL_STARTED_NS="$(python3 -c 'import time; print(time.time_ns())' 2>/dev/null \
+    || python3 -c 'import time; print(int(time.time()*1e9))' 2>/dev/null \
+    || echo "0")"
+  EVAL_ARMED=1
+fi
 
 # codex/grok take one prompt stream: rubric (if any) prepended to the brief.
 # claude keeps them separate: rubric -> system prompt, brief -> user prompt.

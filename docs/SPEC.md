@@ -16,7 +16,7 @@ scripts/sync-shared.sh
 ```
 
 Both manifests use plugin name `plx` and version `0.5.3`. Both marketplaces use
-`parallax-marketplace` and point to their platform package. Each package contains nine
+`parallax-marketplace` and point to their platform package. Each package contains ten
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
 ## Package contracts
@@ -48,9 +48,15 @@ permission flags. Temporary artifacts are cleaned up. Skills never commit or pub
 Persistent Codex access is passthrough-only and derives read or write scope for each
 turn; every pipeline lane remains isolated and ephemeral.
 
+Optional `PLX_EVAL_DIR` collection writes local schema-v1 provenance via `plx-eval`
+(hashes/metadata only). Grouped `dev` runs and implicit standalone-lane fallback are
+supported; recording failures never change engine results. No host hooks, telemetry
+service, MCP, database, or target-repo `.parallax/` state.
+
 ## Acceptance
 
 `bash tests/run.sh` must validate both manifests and marketplaces, version agreement,
-nine-skill inventories, platform frontmatter, engine polarity, executable wrappers,
-rubric resolution, shared-copy agreement, fake-engine safety flags, and isolated
-`plx-link-claude` behavior. Official Claude and Codex validators must also pass.
+ten-skill inventories, platform frontmatter, engine polarity, executable wrappers,
+rubric resolution, shared-copy agreement, fake-engine safety flags, optional eval
+recorder contracts, and isolated `plx-link-claude` behavior. Official Claude and Codex
+validators must also pass.

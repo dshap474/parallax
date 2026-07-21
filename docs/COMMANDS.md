@@ -25,3 +25,18 @@ resume requires a known thread ID, and every turn derives read or write access a
 Every pipeline reads its package-local `config/parallax.yaml`. Config is the floor shape,
 not a limit: the host may scale lanes down or up and must declare the chosen shape before
 launching. Skills never commit or publish; target-repository instructions govern Git.
+
+## Runtime tools (package-local `bin/`)
+
+| Tool | Role |
+| --- | --- |
+| `plx-engine` | Headless engine wrapper (safety pinned) |
+| `plx-preflight` | Real probe of required/optional engines |
+| `plx-config` | Print `config/parallax.yaml` |
+| `plx-skill` | Print a pipeline skill or reference |
+| `plx-link-claude` | Mirror `AGENTS.md` → `CLAUDE.md` symlinks |
+| `plx-eval` | Optional local evaluation provenance (`PLX_EVAL_DIR`) |
+
+`plx-eval` commands: `begin`, `lane`, `finish`, `doctor`. See `plx-eval --help` and
+[Architecture](ARCHITECTURE.md) for schema, privacy limits, `$plx:dev` grouping, and
+implicit standalone-lane fallback.

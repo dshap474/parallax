@@ -20,6 +20,8 @@ esac
 REPO="$(make_tmp_repo)"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/plx-smoke.XXXXXX")"
 trap 'rm -rf "$REPO" "$WORK"' EXIT
+export XDG_CONFIG_HOME="$WORK/xdg-config"
+mkdir -p "$XDG_CONFIG_HOME"
 echo "package: ${PLX_PACKAGE:-claude} ($PLUGIN_ROOT)"
 echo "tmp target repo: $REPO"
 
@@ -51,6 +53,33 @@ fi
 # Neutralize ambient collection — enabled cases set an explicit temp destination.
 unset PLX_EVAL_DIR || true
 export -n PLX_EVAL_DIR 2>/dev/null || true
+
+_head "plx-eval loads deterministic local config"
+autoload_eval="$WORK/eval-autoload"
+explicit_eval="$WORK/eval-explicit"
+mkdir -p "$XDG_CONFIG_HOME/parallax" "$autoload_eval" "$explicit_eval"
+printf '%s\n' \
+  "UNRELATED=\$(touch $WORK/config-must-not-execute)" \
+  "PLX_EVAL_DIR=$autoload_eval" \
+  > "$XDG_CONFIG_HOME/parallax/env"
+autoload_out="$WORK/autoload-doctor.txt"
+env -u PLX_EVAL_DIR "$PLUGIN_ROOT/bin/plx-eval" doctor > "$autoload_out" 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] && grep -Fq "destination=$autoload_eval" "$autoload_out" &&
+   [ ! -e "$WORK/config-must-not-execute" ]; then
+  _pass "local config enables collection without executing shell syntax"
+else
+  _fail "local config autoload failed (exit $rc)"
+fi
+explicit_out="$WORK/explicit-doctor.txt"
+PLX_EVAL_DIR="$explicit_eval" "$PLUGIN_ROOT/bin/plx-eval" doctor > "$explicit_out" 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] && grep -Fq "destination=$explicit_eval" "$explicit_out"; then
+  _pass "explicit PLX_EVAL_DIR overrides local config"
+else
+  _fail "explicit PLX_EVAL_DIR precedence failed (exit $rc)"
+fi
+rm "$XDG_CONFIG_HOME/parallax/env"
 
 _head "plx-engine pins Grok 4.5 and sizes supported effort"
 fake_bin="$WORK/fake-bin"
@@ -256,6 +285,24 @@ if [ "$rc" -eq 0 ] && [ "$disabled_before" = "$disabled_after" ]; then
 else
   _fail "disabled engine wrote eval files or failed (exit $rc; before=$disabled_before after=$disabled_after)"
 fi
+
+# The wrapper must defer enablement to plx-eval so file configuration also
+# activates implicit standalone envelopes.
+config_eval="$WORK/eval-config-implicit"
+mkdir -p "$config_eval" "$XDG_CONFIG_HOME/parallax"
+printf '%s\n' "PLX_EVAL_DIR=$config_eval" > "$XDG_CONFIG_HOME/parallax/env"
+PATH="$fake_bin:$PATH" env -u PLX_EVAL_DIR \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
+rc=$?
+config_runs="$(find "$config_eval" -name run.json | wc -l | tr -d ' ')"
+config_lanes="$(find "$config_eval" -path '*/lanes/*.json' | wc -l | tr -d ' ')"
+if [ "$rc" -eq 0 ] && [ "$config_runs" = 1 ] && [ "$config_lanes" = 1 ]; then
+  _pass "local config activates implicit standalone recording"
+else
+  _fail "local config implicit recording failed (exit $rc runs=$config_runs lanes=$config_lanes)"
+fi
+rm "$XDG_CONFIG_HOME/parallax/env"
 
 _head "plx-eval grouped begin + concurrent lanes + finish"
 eval_dir="$WORK/eval-enabled"

@@ -5,6 +5,7 @@
 # Developer
 _disabled/
 .dev/
+.env
 zz_plugin-commands
 
 # .project/ is durable project memory — local-only, never committed.

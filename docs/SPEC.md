@@ -51,7 +51,9 @@ turn; every pipeline lane remains isolated and ephemeral.
 Optional `PLX_EVAL_DIR` collection writes local schema-v1 provenance via `plx-eval`
 (hashes/metadata only). Grouped `plan`, `build`, `dev`, and `review` runs plus implicit
 standalone-lane fallback are supported; recording failures never change engine results.
-No host hooks, telemetry service, MCP, database, or target-repo `.parallax/` state.
+When the process variable is unset, a deterministic non-executing parser reads the same
+literal assignment from the standard per-user Parallax config file. No host hooks,
+telemetry service, MCP, database, or target-repo `.parallax/` state.
 
 ## Acceptance
 

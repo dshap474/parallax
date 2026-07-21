@@ -221,16 +221,15 @@ fi
 mkdir -p "$(dirname "$OUT")" "$(dirname "$LOG")"
 
 # Arm evaluation provenance only after required args and resolved model/effort.
-# Grouped runs: marker lives next to the caller's prompt file (dev writes prompt
-# files directly in <tmp> (flat) plus <tmp>/.plx-eval-run). Implicit standalone:
-# begin under this wrapper's temp dir when collection is enabled and no marker
-# was discovered.
+# Grouped runs: marker lives next to the caller's flat prompt file. Implicit
+# standalone: call begin under this wrapper's temp dir when no marker exists;
+# plx-eval owns environment/config resolution and no-ops when disabled.
 EVAL_ROLE="${RUBRIC:-adhoc}"
 PROMPT_DIR="$(cd -P "$(dirname "$PROMPT")" && pwd)"
 GROUPED_MARKER="$PROMPT_DIR/.plx-eval-run"
 if [[ -f "$GROUPED_MARKER" ]]; then
   EVAL_RUN_FILE="$GROUPED_MARKER"
-elif [[ -n "${PLX_EVAL_DIR:-}" ]]; then
+else
   EVAL_RUN_FILE="$TMP_DIR/.plx-eval-run"
   if ! "$BIN_DIR/plx-eval" begin \
     --repo "$REPO" \

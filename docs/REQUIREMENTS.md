@@ -33,11 +33,14 @@ remains the file-confinement boundary.
 Set `PLX_EVAL_DIR` to an absolute writable directory to collect local schema-v1 run and
 lane JSON via `plx-eval` (invoked by `plan`, `build`, `dev`, and `review` for grouped
 envelopes and by `plx-engine` for each lane, including implicit standalone-lane runs).
-Unset means fully disabled. Records store hashes and metadata only; they are not quality
-grades. Prune the directory manually when needed. `plx-eval doctor` reports disabled or
-validates the destination. Recording is best-effort and never alters engine exit codes.
-Parallax does not add hooks, telemetry services, MCP servers, databases, or `.parallax/`
-state in target repos.
+An explicit process value wins. When it is unset, `plx-eval` reads the literal assignment
+from `~/.config/parallax/env` (or `$XDG_CONFIG_HOME/parallax/env`); that file may symlink
+to a git-ignored checkout `.env`. The loader does not execute shell syntax. When neither
+source defines the variable, collection is fully disabled. Records store hashes and
+metadata only; they are not quality grades. Prune the directory manually when needed.
+`plx-eval doctor` reports disabled or validates the destination. Recording is best-effort
+and never alters engine exit codes. Parallax does not add hooks, telemetry services, MCP
+servers, databases, or `.parallax/` state in target repos.
 
 ## Local development install
 

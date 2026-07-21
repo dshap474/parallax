@@ -39,4 +39,6 @@ launching. Skills never commit or publish; target-repository instructions govern
 
 `plx-eval` commands: `begin`, `lane`, `finish`, `doctor`. See `plx-eval --help` and
 [Architecture](ARCHITECTURE.md) for schema, privacy limits, core-pipeline grouping, and
-implicit standalone-lane fallback.
+implicit standalone-lane fallback. If exporting `PLX_EVAL_DIR` globally is undesirable,
+put the literal assignment in `~/.config/parallax/env`; it may symlink to a git-ignored
+checkout `.env`.

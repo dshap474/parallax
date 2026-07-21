@@ -75,7 +75,9 @@ When `PLX_EVAL_DIR` is set to an absolute writable directory, `plx-eval` records
 schema-v1 JSON evidence for routing, latency, failure, and drift analysis. Records are
 local and opt-in: hashes and metadata only — never task content, prompts, diffs,
 environment, credentials, or command lines. With the variable unset, behavior and
-filesystem effects are unchanged.
+filesystem effects are unchanged unless `~/.config/parallax/env` (or the XDG equivalent)
+contains a literal `PLX_EVAL_DIR=` assignment. That deterministic fallback is parsed, not
+shell-sourced; an explicit process environment value takes precedence.
 
 The four core pipelines — `plan`, `build`, `dev`, and `review` on either host — each open
 one grouped run envelope (`plx-eval begin` → marker at `<tmp>/.plx-eval-run`). Their lanes

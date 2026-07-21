@@ -77,14 +77,14 @@ local and opt-in: hashes and metadata only — never task content, prompts, diff
 environment, credentials, or command lines. With the variable unset, behavior and
 filesystem effects are unchanged.
 
-`$plx:dev` / `/plx:dev` opens one grouped run envelope (`plx-eval begin` → marker at
-`<tmp>/.plx-eval-run`) so critic, writer, and reviewer lanes share a single run without
-relying on environment persistence across background shells. `plx-engine` discovers that
-marker next to the prompt file. Other skills still get automatic **implicit
-standalone-lane** records through `plx-engine` when collection is enabled. Recording
-failures never change the engine result. Retention is manual pruning for v1; use
-`plx-eval doctor` to check the destination. Parallax still ships no host hooks, telemetry
-service, MCP, database, or target-repo `.parallax/` state.
+The four core pipelines — `plan`, `build`, `dev`, and `review` on either host — each open
+one grouped run envelope (`plx-eval begin` → marker at `<tmp>/.plx-eval-run`). Their lanes
+share a single run without relying on environment persistence across background shells;
+`plx-engine` discovers the marker next to each flat prompt file. Other skills still get
+automatic **implicit standalone-lane** records through `plx-engine` when collection is
+enabled. Recording failures never change the engine result. Retention is manual pruning
+for v1; use `plx-eval doctor` to check the destination. Parallax still ships no host
+hooks, telemetry service, MCP, database, or target-repo `.parallax/` state.
 
 As a narrow exception, `/plx:codex` may use `plx-codex-thread` to start or resume a
 Codex app-server session. It is ephemeral by default, keeps no Parallax registry,

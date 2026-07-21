@@ -49,9 +49,9 @@ Persistent Codex access is passthrough-only and derives read or write scope for 
 turn; every pipeline lane remains isolated and ephemeral.
 
 Optional `PLX_EVAL_DIR` collection writes local schema-v1 provenance via `plx-eval`
-(hashes/metadata only). Grouped `dev` runs and implicit standalone-lane fallback are
-supported; recording failures never change engine results. No host hooks, telemetry
-service, MCP, database, or target-repo `.parallax/` state.
+(hashes/metadata only). Grouped `plan`, `build`, `dev`, and `review` runs plus implicit
+standalone-lane fallback are supported; recording failures never change engine results.
+No host hooks, telemetry service, MCP, database, or target-repo `.parallax/` state.
 
 ## Acceptance
 

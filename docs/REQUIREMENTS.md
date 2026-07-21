@@ -31,12 +31,13 @@ remains the file-confinement boundary.
 ## Optional evaluation provenance
 
 Set `PLX_EVAL_DIR` to an absolute writable directory to collect local schema-v1 run and
-lane JSON via `plx-eval` (invoked by `dev` for grouped envelopes and by `plx-engine` for
-each lane, including implicit standalone-lane runs). Unset means fully disabled. Records
-store hashes and metadata only; they are not quality grades. Prune the directory manually
-when needed. `plx-eval doctor` reports disabled or validates the destination. Recording
-is best-effort and never alters engine exit codes. Parallax does not add hooks,
-telemetry services, MCP servers, databases, or `.parallax/` state in target repos.
+lane JSON via `plx-eval` (invoked by `plan`, `build`, `dev`, and `review` for grouped
+envelopes and by `plx-engine` for each lane, including implicit standalone-lane runs).
+Unset means fully disabled. Records store hashes and metadata only; they are not quality
+grades. Prune the directory manually when needed. `plx-eval doctor` reports disabled or
+validates the destination. Recording is best-effort and never alters engine exit codes.
+Parallax does not add hooks, telemetry services, MCP servers, databases, or `.parallax/`
+state in target repos.
 
 ## Local development install
 

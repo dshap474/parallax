@@ -38,5 +38,5 @@ launching. Skills never commit or publish; target-repository instructions govern
 | `plx-eval` | Optional local evaluation provenance (`PLX_EVAL_DIR`) |
 
 `plx-eval` commands: `begin`, `lane`, `finish`, `doctor`. See `plx-eval --help` and
-[Architecture](ARCHITECTURE.md) for schema, privacy limits, `$plx:dev` grouping, and
+[Architecture](ARCHITECTURE.md) for schema, privacy limits, core-pipeline grouping, and
 implicit standalone-lane fallback.

@@ -17,6 +17,8 @@ red-team it. There are no subagents. Run every lane through `plx-engine`.
 - Note any pre-existing changes from `git status --short`.
 - Create `<tmp>` with `mktemp -d` for briefs, outputs, and logs. Remove it before every
   return, including error and incomplete paths.
+- Write the user's request verbatim to `<tmp>/task.md`; evaluation records store only
+  its hash, never its contents.
 
 ## Resolve the run
 
@@ -37,9 +39,27 @@ Plan in chat by default. For large or risky work—cross-file contracts, concurr
 data-integrity or money paths, public/trust boundaries, wide refactors, or multi-session
 effort—persist it to the build thread using `plx-skill --ref plan/spec-template`.
 
-Declare the resolved shape before launching. Run `plx-preflight --repo <repo>
---require-<engine>` once per **distinct** resolved engine; this checks CLI availability and
-authentication. The critic call itself proves the selected model.
+Declare the resolved shape before launching. The critic call itself proves the selected
+model.
+
+Write the declared sizing line to `<tmp>/shape.txt`, then open the optional grouped
+evaluation envelope once, before any lane:
+
+```
+plx-eval begin --repo <repo> --pipeline plan --host claude \
+  --host-model <actual host model if known, otherwise unknown> \
+  --run-file <tmp>/.plx-eval-run \
+  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
+  || echo "plx-eval begin failed (non-fatal)" >&2
+```
+
+When `PLX_EVAL_DIR` is unset, `begin` no-ops and writes a disabled sentinel. Keep all
+lane prompt files directly in `<tmp>` so `plx-engine` discovers the marker mechanically.
+Recorder failures never fail planning; interruption leaves the envelope `incomplete`.
+After opening it, call `plx-eval finish` before every handled return, including preflight,
+authentication, and lane failures. Then run `plx-preflight --repo <repo>
+--require-<engine>` once per distinct resolved engine; this checks CLI availability and
+authentication.
 
 ## Pipeline
 
@@ -98,8 +118,21 @@ authentication. The critic call itself proves the selected model.
    invalidates the design, revise once and rerun all required critics once. If that final
    pass fails or leaves an unresolved Critical finding, return `[RED-TEAM INCOMPLETE]`.
 
-6. **Deliver and stop.** Present the final plan and any persisted spec path. Briefly note
-   material divergences from the critiques and suggest `/plx:build`. Do not build.
+6. **Deliver and stop.** Before cleaning `<tmp>`, close the evaluation envelope with the
+   honest outcome. Use `pass` only for a final, fully red-teamed plan; use `partial` or
+   `fail` for incomplete or unresolved work. Verification is `pass` only when every
+   required critic completed and the plan includes a concrete `Done means:` condition,
+   otherwise `fail` or `not-run`:
+
+   ```
+   plx-eval finish --repo <repo> --run-file <tmp>/.plx-eval-run \
+     --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
+     || echo "plx-eval finish failed (non-fatal)" >&2
+   ```
+
+   Present the final plan and any persisted spec path. Briefly note material divergences
+   from the critiques and suggest `/plx:build`. Do not build. Close the envelope on every
+   normal or handled-error return after it is opened; interruption remains `incomplete`.
 
 ## Hard constraints
 

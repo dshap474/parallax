@@ -140,6 +140,25 @@ else
   _fail "Codex review examples contradict configured polarity"
 fi
 
+eval_contract_ok=1
+for package_host in "$PLX_CLAUDE:claude" "$PLX_CODEX:codex"; do
+  package="${package_host%:*}"
+  host="${package_host##*:}"
+  for pipeline in plan build dev review; do
+    skill="$package/skills/$pipeline/SKILL.md"
+    grep -Fq "plx-eval begin --repo <repo> --pipeline $pipeline --host $host" "$skill" || eval_contract_ok=0
+    grep -Fq 'plx-eval finish --repo <repo> --run-file <tmp>/.plx-eval-run' "$skill" || eval_contract_ok=0
+    grep -Fq -- '--host-model <actual host model if known, otherwise unknown>' "$skill" || eval_contract_ok=0
+    grep -Fq '<tmp>/.plx-eval-run' "$skill" || eval_contract_ok=0
+    grep -Fq 'prompt files directly in `<tmp>`' "$skill" || eval_contract_ok=0
+  done
+done
+if [ "$eval_contract_ok" -eq 1 ]; then
+  _pass "plan/build/dev/review use grouped evaluation envelopes on both hosts"
+else
+  _fail "core pipeline evaluation envelope contract drift"
+fi
+
 if ! grep -RqiE 'make the edit yourself|fix nits inline|one-liner you can.*edit|edit it yourself' \
      "$PLX_CLAUDE/skills/build" "$PLX_CODEX/skills/build" &&
    [ -z "$(grep -L 'Fix directly' "$PLX_CLAUDE/skills/review/SKILL.md" "$PLX_CODEX/skills/review/SKILL.md" \

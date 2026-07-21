@@ -27,6 +27,8 @@ surgically, guided by the findings.
   commit range. Snapshot the status — pre-existing edits may be exactly what you're
   asked to review.
 - `mktemp -d` for the brief and lane outputs; call it `<tmp>`.
+- Write the review request and resolved scope to `<tmp>/task.md`; evaluation records
+  store only its hash, never its contents.
 
 ## Size the round — then declare it
 
@@ -42,8 +44,25 @@ the floor shape — size per the judgment doc:
   engine only when another independent perspective is proportionate.
 
 Declare the sizing in one line before launching (e.g. `Sizing: review 3×1
-(claude high) · fixes: host`). Run `<plugin-root>/bin/plx-preflight --repo <repo>
---require-<engine>` for each engine the round will use.
+(claude high) · fixes: host`).
+
+Write the same sizing line to `<tmp>/shape.txt`, then open the optional grouped evaluation
+envelope once, before any lane:
+
+```
+<plugin-root>/bin/plx-eval begin --repo <repo> --pipeline review --host codex \
+  --host-model <actual host model if known, otherwise unknown> \
+  --run-file <tmp>/.plx-eval-run \
+  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
+  || echo "plx-eval begin failed (non-fatal)" >&2
+```
+
+When `PLX_EVAL_DIR` is unset, `begin` no-ops and writes a disabled sentinel. Keep all
+lane prompt files directly in `<tmp>` so `plx-engine` discovers the marker mechanically.
+Recorder failures never fail review; interruption leaves the envelope `incomplete`.
+After opening it, call `plx-eval finish` before every handled return, including preflight,
+authentication, lane, and report-only exits. Then run `<plugin-root>/bin/plx-preflight
+--repo <repo> --require-<engine>` for each engine the round will use.
 
 ## Pipeline (run in order)
 
@@ -126,7 +145,17 @@ Declare the sizing in one line before launching (e.g. `Sizing: review 3×1
 
 6. **Verify and deliver.** Re-read your own diff — did each fix land, and nothing
    else? Run the repo's own checks (toolchain binaries; never
-   `uv run` in a sandbox). Report:
+   `uv run` in a sandbox). Close the evaluation envelope before cleaning `<tmp>`, using
+   the honest review outcome and verification result (report-only review may use
+   `verification pass` when all required lanes and finding checks completed):
+
+   ```
+   <plugin-root>/bin/plx-eval finish --repo <repo> --run-file <tmp>/.plx-eval-run \
+     --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
+     || echo "plx-eval finish failed (non-fatal)" >&2
+   ```
+
+   Report:
 
    ```text
    Reviewed: <scope> — sizing <lanes × engines, effort>
@@ -139,6 +168,8 @@ Declare the sizing in one line before launching (e.g. `Sizing: review 3×1
 
    This skill does not commit; version control follows the repo's own agent
    instructions. Clean up `<tmp>`.
+   Close the envelope on every normal or handled-error return after it is opened;
+   interruption remains `incomplete`.
 
 ## Hard constraints
 

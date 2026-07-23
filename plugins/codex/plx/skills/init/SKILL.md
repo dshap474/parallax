@@ -40,8 +40,7 @@ plan authoring, synthesis of lane results, and the final gate. Delegate everythi
   advises on user-facing taste. One writer per disjoint path set.
 - **Review and plan critique → read-only Claude lanes** — always the opposite engine
   from the Codex host and the code's writer; independence catches what self-review
-  can't. (The Sonnet/GPT-5.5 ban in the judgment doc applies to all `plx-engine`
-  lanes.)
+  can't. Explicit user model and effort requests override the lane defaults.
 - Before launching lanes, size the run and declare the shape in one line, per the
   judgment doc. Scale down as readily as up.
 

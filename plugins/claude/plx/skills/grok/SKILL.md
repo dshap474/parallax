@@ -1,14 +1,30 @@
 ---
 name: "plx::grok"
-description: Single-engine passthrough — the orchestrator runs Grok 4.5 headless at medium effort by default, read-only for questions/plans and write-capable only for explicit implementation requests. No multi-model review pipeline.
+description: Single-engine Grok passthrough with overridable model and effort defaults, read-only for questions/plans and write-capable only for explicit implementation requests. No multi-model review pipeline.
 argument-hint: "<question, coding task, or plan request>"
 disable-model-invocation: true
 user-invocable: true
 ---
 
-# /plx:grok — single-engine passthrough (Grok 4.5)
+# /plx:grok — single-engine passthrough (Grok)
 
 Run the user's request through **Grok only** — no Parallax review pipeline, no other engines, no subagent. You (the orchestrator) drive the engine wrapper yourself and return its output. Do not re-do or review the work.
+
+## Resolve launch settings
+
+Resolve the model and effort from the user's request before writing the brief:
+
+- Defaults: `model=grok-4.5`, `effort=medium`.
+- An explicit user model or effort always replaces that setting's default. Natural
+  wording is enough: `ask grok-composer-2.5-fast low for <task>`, `use grok-4.5 at
+  high`, and `model=grok-4.5 effort=medium` all set real launch flags.
+- Treat `reasoning`, `reasoning level`, and `effort` as names for the same launch
+  setting.
+- Do not infer an override from model names discussed only as task content. Do not
+  normalize, forbid, or silently replace an explicit value. If Grok rejects it,
+  surface that error.
+
+Always pass both resolved values as `--model <model> --effort <effort>`.
 
 ## Execute
 
@@ -20,10 +36,10 @@ Three tool calls — no subagent.
 3. **One Bash call** to run, check, and clean up in a single `;`-chained command (so status/cleanup run even on engine failure):
 
    ```
-   plx-engine --engine grok --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --stdout; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
+   plx-engine --engine grok --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
    ```
 
-   `plx-engine` is on your PATH (shipped in the plugin's `bin/`); it runs one headless Grok 4.5 turn at `medium` effort by default with safety pinned (kernel-enforced `read-only` or repo-scoped `workspace` sandbox + bypassPermissions) and emits only the model's final text.
+   `plx-engine` is on your PATH (shipped in the plugin's `bin/`); it runs one headless Grok turn with safety pinned (kernel-enforced `read-only` or repo-scoped `workspace` sandbox + bypassPermissions) and emits only the model's final text.
 
    Two caller rules from the wrapper's own help text:
    - **Disable the Claude Bash sandbox for this call** (`dangerouslyDisableSandbox: true` on the Bash invocation) — grok needs the network/keychain access the sandbox blocks. The kernel workspace sandbox still confines grok's writes.

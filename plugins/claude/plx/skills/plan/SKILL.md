@@ -31,8 +31,8 @@ explicit model/effort settings replace the shipped settings below.
 
 - **codex** → `--model gpt-5.6-sol --effort xhigh`, unless explicitly overridden.
 - **claude** → configured/default model with `--effort xhigh`, unless explicitly overridden.
-- **grok** → model fixed to `grok-4.5`; effort defaults to `medium` and may be explicitly
-  set to `low` or `high`, never `xhigh`. Disable the Bash sandbox for the call as required
+- **grok** → `--model grok-4.5 --effort medium` by default; explicit model and effort
+  settings replace those defaults. Disable the Bash sandbox for the call as required
   by the engine guide (Grok's own kernel sandbox remains the safety boundary).
 
 Plan in chat by default. For large or risky work—cross-file contracts, concurrency,

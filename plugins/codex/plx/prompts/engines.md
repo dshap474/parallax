@@ -43,9 +43,11 @@ open with the section header the rubric expects:
 | opus-4.8 | `--engine claude` | planning, review, or taste-heavy judgment when selected by the host config |
 | host orchestrator | you — never delegated | plan authoring, synthesis, post-review targeted fixes, and final gate |
 
-GPT-5.5 and Sonnet are forbidden. Do not select them even when explicitly requested as
-an engine substitution; `plx-engine` rejects both. Standalone plan critics resolve from
-the host package config; the loaded skill defines the selected engine's model and effort.
+Models in the host package config are defaults, not restrictions. When the user
+explicitly requests a model or effort, pass that exact value to the selected engine;
+never silently substitute a configured default. Standalone plan critics otherwise
+resolve from the host package config, and the loaded skill defines their model and
+effort.
 
 How to apply:
 
@@ -55,7 +57,7 @@ How to apply:
   work on a smarter engine or higher effort without asking. Judge the output, not the
   price tag — escalating costs less than shipping mediocre work. This permission changes
   only model or effort; it never expands task scope, target resources, credentials,
-  permissions, allowed side effects, or the forbidden-model rule.
+  permissions, or allowed side effects.
 - **Implementation starts with Grok 4.5 medium.** It is the shipped writer and fixer for
   both host packages. Substitute Codex only when Grok is unavailable or its verified
   output does not meet the bar, and report the substitution.
@@ -122,8 +124,8 @@ consume it later. A spec doc for a one-shot task is overhead, not rigor.
   synthesize after completion. Results live on disk — read the out-files selectively;
   don't pull bulk content into your own window.
 - **Grok may require narrowly scoped host approval** for network or keychain access;
-  Grok's own kernel sandbox still confines it. The wrapper fixes the model to `grok-4.5`,
-  defaults effort to `medium`, and accepts explicit `low|medium|high`.
+  Grok's own kernel sandbox still confines it. The wrapper defaults the model to
+  `grok-4.5` and effort to `medium`; explicit values pass through to Grok.
 - **Pipeline-specific retry and completion rules override this general playbook.** If a lane
   fails (exit 1), read its log, then retry once — same engine, or a
   smarter one if the failure looks like capability. If a review lane fails and others

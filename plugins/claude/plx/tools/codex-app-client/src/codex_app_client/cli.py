@@ -67,6 +67,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--cwd", type=Path, default=Path("."))
     run.add_argument("--thread", dest="thread_id", default=None)
     run.add_argument("--model", default=None)
+    run.add_argument("--effort", default=None)
     run.add_argument(
         "--mode",
         choices=[m.value for m in CliMode],
@@ -260,7 +261,11 @@ def cmd_run(args: argparse.Namespace) -> int:
                         "omit --stream for timed runs"
                     )
                 events = []
-                for event in session.stream(prompt, output_schema=schema):
+                for event in session.stream(
+                    prompt,
+                    output_schema=schema,
+                    effort=args.effort,
+                ):
                     _emit(event.model_dump(mode="json"))
                     events.append(event)
                 return _exit_from_stream_events(events, thread_id=session.thread_id)
@@ -269,6 +274,7 @@ def cmd_run(args: argparse.Namespace) -> int:
                 prompt,
                 output_schema=schema,
                 timeout_seconds=args.timeout,
+                effort=args.effort,
             )
             _emit(result.model_dump(mode="json"))
             return _exit_from_status(result.status)

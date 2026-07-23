@@ -1,6 +1,6 @@
 interface:
   display_name: "PLX::Grok"
-  short_description: "Run one isolated Grok 4.5 passthrough"
-  default_prompt: "Use $plx:grok to get Grok 4.5's independent take on this request."
+  short_description: "Run one isolated Grok passthrough"
+  default_prompt: "Use $plx:grok to get Grok's independent take on this request."
 policy:
   allow_implicit_invocation: false

@@ -97,6 +97,26 @@ else
   _fail "opposite-host passthrough contract is wrong"
 fi
 
+passthrough_overrides_ok=1
+for skill in \
+  "$PLX_CLAUDE/skills/codex/SKILL.md" \
+  "$PLX_CLAUDE/skills/grok/SKILL.md" \
+  "$PLX_CODEX/skills/claude/SKILL.md" \
+  "$PLX_CODEX/skills/grok/SKILL.md"; do
+  grep -Fq "An explicit user model or effort always replaces" "$skill" ||
+    passthrough_overrides_ok=0
+  grep -Fq -- "--model <model> --effort <effort>" "$skill" ||
+    passthrough_overrides_ok=0
+  grep -Fq "Do not" "$skill" || passthrough_overrides_ok=0
+  grep -Fq "silently replace an explicit value" "$skill" ||
+    passthrough_overrides_ok=0
+done
+if [ "$passthrough_overrides_ok" -eq 1 ]; then
+  _pass "single-engine passthroughs preserve explicit model and effort overrides"
+else
+  _fail "single-engine passthrough override contract drift"
+fi
+
 if grep -q 'Default to the existing \*\*ephemeral\*\*' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
    grep -q 'plx-codex-thread start' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
    grep -q 'plx-codex-thread resume' "$PLX_CLAUDE/skills/codex/SKILL.md" &&

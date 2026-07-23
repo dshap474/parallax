@@ -64,7 +64,9 @@ Pipeline lanes and default passthroughs use `plx-engine`. It pins:
 - Grok: `grok-4.5`, no planning/subagent/memory features, kernel read-only or workspace
   sandbox.
 
-GPT-5.5 and Sonnet are rejected. The wrapper never uses `danger-full-access`,
+These models are defaults, not restrictions. Explicit user-requested model and effort
+values pass through to the selected engine, which remains responsible for validating
+them. The wrapper never uses `danger-full-access`,
 `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`. Runtime briefs, logs, and
 outputs use temporary directories and are removed after the run; Parallax creates no
 `.parallax/` state.

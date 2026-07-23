@@ -10,6 +10,24 @@ user-invocable: true
 
 Run the user's request through **Codex only** — no Parallax review pipeline, no other engines. You (the orchestrator) drive the engine wrapper yourself and return its output. Do not re-do or review the work.
 
+## Resolve launch settings
+
+Resolve the model and effort from the user's request before writing the brief:
+
+- Defaults: `model=gpt-5.6-sol`, `effort=medium`. Use `high` or `xhigh` instead
+  only when concrete complexity or risk warrants it.
+- An explicit user model or effort always replaces that setting's default. Natural
+  wording is enough: `ask gpt-5.6-terra low for <task>`, `use gpt-5.6-sol at
+  xhigh`, and `model=gpt-5.6-sol effort=medium` all set real launch flags.
+- Treat `reasoning`, `reasoning level`, and `effort` as names for the same launch
+  setting.
+- Do not infer an override from model names discussed only as task content. Do not
+  normalize, forbid, or silently replace an explicit value. If Codex rejects it,
+  surface that error.
+
+Always pass both resolved values as `--model <model> --effort <effort>`, including
+on the persistent path.
+
 ## Choose the thread mode
 
 Default to the existing **ephemeral** `plx-engine` path below. Choose a persistent
@@ -35,14 +53,11 @@ Three tool calls — no subagent.
    **Ephemeral default:**
 
    ```
-   plx-engine --engine codex --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --effort <medium|high|xhigh> --stdout; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
+   plx-engine --engine codex --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
    ```
 
    `plx-engine` is on your PATH (shipped in the plugin's `bin/`); it runs one headless `codex exec` turn with safety pinned (`read-only` or repo-scoped `workspace-write`, `--ignore-user-config`, `--ephemeral`) and prints only Codex's final message.
 
-   - Effort: `--effort medium` by default. Use `high` or `xhigh` only when concrete
-     complexity or risk warrants it: cross-file contracts, concurrency, data integrity,
-     money paths, or a wide refactor. Pick one — always pass the flag.
    - If the call may run long, use the Bash tool's `run_in_background` option rather than blocking (the post-run status/diff then happens after the completion notification).
    - Exit codes: **0** ok · **1** Codex failure (surface the stderr/log excerpt to the user) · **2** usage error (your invocation is wrong — fix it) · **3** not signed in → tell the user to run `codex login` and stop.
 
@@ -51,13 +66,13 @@ Three tool calls — no subagent.
    **Persistent start:**
 
    ```
-   plx-codex-thread start --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
+   plx-codex-thread start --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort>; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
    ```
 
    **Persistent resume:**
 
    ```
-   plx-codex-thread resume --thread <thread-id> --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
+   plx-codex-thread resume --thread <thread-id> --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort>; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
    ```
 
    `plx-codex-thread` is packaged with this plugin. It runs the pinned app client through

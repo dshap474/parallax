@@ -81,7 +81,7 @@ else
 fi
 rm "$XDG_CONFIG_HOME/parallax/env"
 
-_head "plx-engine pins Grok 4.5 and sizes supported effort"
+_head "plx-engine defaults Grok settings and passes explicit overrides"
 fake_bin="$WORK/fake-bin"
 fake_args="$WORK/grok-args.txt"
 fake_prompt="$WORK/grok-prompt.md"
@@ -124,17 +124,16 @@ assert_contains "workspace" "$fake_args" "Grok rw uses workspace sandbox"
 
 PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
-  --prompt-file "$fake_prompt" --model grok-composer-2.5-fast \
+  --prompt-file "$fake_prompt" --model grok-composer-2.5-fast --effort xhigh \
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
 rc=$?
-if [ "$rc" -eq 2 ]; then _pass "Grok rejects Composer"; else _fail "Grok Composer expected exit 2, got $rc"; fi
-
-PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
-  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
-  --prompt-file "$fake_prompt" --effort xhigh \
-  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
-rc=$?
-if [ "$rc" -eq 2 ]; then _pass "Grok rejects xhigh"; else _fail "Grok xhigh expected exit 2, got $rc"; fi
+if [ "$rc" -eq 0 ] &&
+   grep -qx "grok-composer-2.5-fast" "$fake_args" &&
+   grep -qx "xhigh" "$fake_args"; then
+  _pass "Grok model and effort overrides pass through"
+else
+  _fail "Grok overrides did not pass through (exit $rc)"
+fi
 if "$PLUGIN_ROOT/bin/plx-engine" --print-rubric no-such-rubric >/dev/null 2>&1; then
   _fail "should reject unknown rubric"
 else
@@ -165,10 +164,16 @@ assert_contains "workspace-write" "$fake_codex_args" "Codex rw uses workspace-wr
 
 PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode ro --repo "$REPO" \
-  --prompt-file "$fake_prompt" --model gpt-5.5 \
+  --prompt-file "$fake_prompt" --model gpt-5.5 --effort xhigh \
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
 rc=$?
-if [ "$rc" -eq 2 ]; then _pass "Codex rejects GPT-5.5"; else _fail "GPT-5.5 expected exit 2, got $rc"; fi
+if [ "$rc" -eq 0 ] &&
+   grep -qx "gpt-5.5" "$fake_codex_args" &&
+   grep -qx "model_reasoning_effort=xhigh" "$fake_codex_args"; then
+  _pass "Codex model and effort overrides pass through"
+else
+  _fail "Codex overrides did not pass through (exit $rc)"
+fi
 
 if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
   _head "plx-codex-thread starts and resumes app-server threads"
@@ -195,7 +200,8 @@ if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
   if [ "$rc" -eq 0 ]; then _pass "persistent start exits 0"; else _fail "persistent start exits $rc"; fi
   assert_contains "--persistent" "$cxa_args" "start requests a persistent thread"
   assert_contains "inspect" "$cxa_args" "ro maps to inspect"
-  assert_contains "gpt-5.6-sol" "$cxa_args" "persistent Codex model is pinned"
+  assert_contains "gpt-5.6-sol" "$cxa_args" "persistent Codex model defaults to GPT-5.6 Sol"
+  assert_contains "medium" "$cxa_args" "persistent Codex effort defaults to medium"
   assert_contains "$PLUGIN_ROOT/bin/../tools/codex-app-client" "$cxa_args" "uses the packaged app client"
   assert_contains "$WORK/cache/parallax/codex-app-client" "$cxa_env" "uv environment stays outside the plugin"
   assert_contains "reply OK" "$cxa_prompt" "prompt is sent over stdin"
@@ -204,11 +210,14 @@ if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
     PLX_CXA_PROMPT_FILE="$cxa_prompt" PLX_CXA_ENV_FILE="$cxa_env" \
     XDG_CACHE_HOME="$WORK/cache" \
     "$PLUGIN_ROOT/bin/plx-codex-thread" resume --thread thread-123 \
-    --repo "$REPO" --mode rw --prompt-file "$fake_prompt" > "$WORK/cxa-resume.json"
+    --repo "$REPO" --mode rw --prompt-file "$fake_prompt" \
+    --model gpt-5.6-terra --effort low > "$WORK/cxa-resume.json"
   rc=$?
   if [ "$rc" -eq 0 ]; then _pass "persistent resume exits 0"; else _fail "persistent resume exits $rc"; fi
   assert_contains "thread-123" "$cxa_args" "resume passes the thread ID"
   assert_contains "edit" "$cxa_args" "rw maps to edit"
+  assert_contains "gpt-5.6-terra" "$cxa_args" "persistent model override passes through"
+  assert_contains "low" "$cxa_args" "persistent effort override passes through"
   if grep -qx -- '--persistent' "$cxa_args"; then
     _fail "resume unexpectedly requests a new persistent thread"
   else
@@ -220,11 +229,26 @@ if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
   if [ "$rc" -eq 2 ]; then _pass "resume requires a thread ID"; else _fail "missing thread ID expected exit 2, got $rc"; fi
 fi
 
-"$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode ro --repo "$REPO" \
-  --prompt-file "$fake_prompt" --model sonnet \
+fake_claude_args="$WORK/claude-args.txt"
+printf '%s\n' '#!/usr/bin/env bash' \
+  '# Fake Claude CLI — records argv and returns one successful response.' \
+  'printf '\''%s\n'\'' "$@" > "$PLX_CLAUDE_ARGS_FILE"' \
+  'printf '\''OK\n'\''' \
+  > "$fake_bin/claude"
+chmod +x "$fake_bin/claude"
+
+PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --model sonnet --effort max \
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
 rc=$?
-if [ "$rc" -eq 2 ]; then _pass "Claude rejects Sonnet"; else _fail "Sonnet expected exit 2, got $rc"; fi
+if [ "$rc" -eq 0 ] &&
+   grep -qx "sonnet" "$fake_claude_args" &&
+   grep -qx "max" "$fake_claude_args"; then
+  _pass "Claude model and effort overrides pass through"
+else
+  _fail "Claude overrides did not pass through (exit $rc)"
+fi
 
 # --------------------------------------------------------------------------- #
 # Evaluation provenance recorder (model-free, hermetic)

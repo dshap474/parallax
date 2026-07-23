@@ -32,8 +32,8 @@ explicit model/effort settings replace the shipped settings below.
 
 - **codex** → `--model gpt-5.6-sol --effort xhigh`, unless explicitly overridden.
 - **claude** → configured/default model with `--effort xhigh`, unless explicitly overridden.
-- **grok** → model fixed to `grok-4.5`; effort defaults to `medium` and may be explicitly
-  set to `low` or `high`, never `xhigh`. Request narrowly scoped host approval if network
+- **grok** → `--model grok-4.5 --effort medium` by default; explicit model and effort
+  settings replace those defaults. Request narrowly scoped host approval if network
   or keychain access is blocked; Grok's kernel sandbox remains the safety boundary.
 
 Plan in chat by default. For large or risky work—cross-file contracts, concurrency,

@@ -31,6 +31,22 @@ def test_ephemeral_flag_remains_supported() -> None:
     assert args.ephemeral is True
 
 
+def test_run_accepts_explicit_model_and_effort() -> None:
+    args = build_parser().parse_args(
+        [
+            "run",
+            "--model",
+            "gpt-5.6-terra",
+            "--effort",
+            "low",
+            "--prompt",
+            "hello",
+        ]
+    )
+    assert args.model == "gpt-5.6-terra"
+    assert args.effort == "low"
+
+
 def test_exit_from_status() -> None:
     assert _exit_from_status("completed") == EXIT_OK
     assert _exit_from_status("interrupted") == EXIT_TIMEOUT

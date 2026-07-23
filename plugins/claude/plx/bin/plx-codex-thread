@@ -2,8 +2,10 @@
 # Start or resume one persistent Codex app-server thread for /plx:codex.
 #
 # Usage:
-#   plx-codex-thread start --repo /abs/repo --mode ro|rw --prompt-file /abs/prompt.md
-#   plx-codex-thread resume --thread ID --repo /abs/repo --mode ro|rw --prompt-file /abs/prompt.md
+#   plx-codex-thread start --repo /abs/repo --mode ro|rw --prompt-file /abs/prompt.md \
+#     --model gpt-5.6-sol --effort medium
+#   plx-codex-thread resume --thread ID --repo /abs/repo --mode ro|rw \
+#     --prompt-file /abs/prompt.md --model gpt-5.6-sol --effort medium
 set -euo pipefail
 
 # --------------------------------------------------------------------------- #
@@ -15,12 +17,15 @@ usage() {
 plx-codex-thread — persistent Codex app-server turns for /plx:codex
 
 Usage:
-  plx-codex-thread start --repo <absolute-path> --mode ro|rw --prompt-file <file>
+  plx-codex-thread start --repo <absolute-path> --mode ro|rw --prompt-file <file> \
+    [--model <model>] [--effort <effort>]
   plx-codex-thread resume --thread <id> --repo <absolute-path> --mode ro|rw \
-    --prompt-file <file>
+    --prompt-file <file> [--model <model>] [--effort <effort>]
 
 The command emits the codex-app-client JSON result on stdout. It stores resumable
 Codex transcripts in the normal Codex session store and no Parallax thread registry.
+Model defaults to gpt-5.6-sol and effort defaults to medium. Explicit values pass
+through to Codex.
 EOF
 }
 
@@ -49,6 +54,8 @@ THREAD=""
 REPO=""
 MODE=""
 PROMPT=""
+MODEL="gpt-5.6-sol"
+EFFORT="medium"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -56,6 +63,8 @@ while [[ $# -gt 0 ]]; do
     --repo) need_value "$1" "${2:-}"; REPO="$2"; shift 2 ;;
     --mode) need_value "$1" "${2:-}"; MODE="$2"; shift 2 ;;
     --prompt-file) need_value "$1" "${2:-}"; PROMPT="$2"; shift 2 ;;
+    --model) need_value "$1" "${2:-}"; MODEL="$2"; shift 2 ;;
+    --effort) need_value "$1" "${2:-}"; EFFORT="$2"; shift 2 ;;
     --help|-h) usage; exit 0 ;;
     *) fail_usage "unknown argument: $1" ;;
   esac
@@ -111,7 +120,8 @@ ARGS=(
   --cwd "$REPO"
   --mode "$CXA_MODE"
   --instructions headless
-  --model gpt-5.6-sol
+  --model "$MODEL"
+  --effort "$EFFORT"
 )
 
 if [[ "$ACTION" == "start" ]]; then

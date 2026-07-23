@@ -100,8 +100,8 @@ authentication, and lane failures. Then run `plx-preflight --repo <repo>
    - **One writer per disjoint path set** — never two lanes on overlapping paths, and
      never edit the files yourself while a lane owns them.
    - Grok lanes need the Bash sandbox disabled (`dangerouslyDisableSandbox: true`). The
-     wrapper fixes their model to `grok-4.5`; size effort as `low|medium|high` (default
-     `medium`) and never pass `xhigh`.
+     wrapper defaults their model to `grok-4.5` and effort to `medium`; pass explicit
+     user-requested model or effort values through unchanged.
    - Exit codes: 0 ok · 1 engine failure (read the log; retry once, or escalate to a
      smarter engine per the judgment doc) · 2 your usage error · 3 not signed in → tell
      the user and stop.

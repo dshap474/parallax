@@ -5,7 +5,7 @@ set -euo pipefail
 # Safety flags are pinned here per engine, not decided by callers:
 #   codex  : gpt-5.6-sol, effort medium by default, --ignore-user-config,
 #            --ephemeral, sandbox read-only | workspace-write
-#   grok   : grok-4.5, effort medium by default (low|high may be explicit),
+#   grok   : grok-4.5, effort medium by default,
 #            kernel sandbox read-only | workspace (Seatbelt/Landlock),
 #            bypassPermissions (required for headless completion; the kernel
 #            sandbox — not the permission mode — is the safety boundary)
@@ -40,10 +40,10 @@ Flags:
   --prompt-file <file>  file containing the brief/spec (required)
   --rubric <name>       lane rubric to inject (a file name under prompts/, no .md)
   --model <m>           codex: default gpt-5.6-sol · claude: default opus ·
-                        grok: fixed grok-4.5 (any other value is rejected)
-  --effort <e>          codex: low|medium|high|xhigh (default medium) ·
-                        claude: per `claude --help` ·
-                        grok: low|medium|high (default medium)
+                        grok: default grok-4.5
+  --effort <e>          codex: default medium · claude: default high ·
+                        grok: default medium
+                        Explicit values pass through to the selected engine.
   --stdout              print the final message to stdout; temp files auto-cleaned
   --out <f> --log <f>   instead of --stdout: write final message / full log to files
   --print-rubric <n>    print the named rubric (e.g. reviewer-correctness, engines)
@@ -179,23 +179,9 @@ PROMPT="$(abspath "$PROMPT")"
 [[ -n "$OUT" ]] && OUT="$(abspath "$OUT")"
 [[ -n "$LOG" ]] && LOG="$(abspath "$LOG")"
 
-model_lower="$(printf '%s' "$MODEL" | tr '[:upper:]' '[:lower:]')"
-case "$model_lower" in
-  gpt-5.5|gpt-5.5-*|*sonnet*)
-    echo "model is forbidden by Parallax policy: $MODEL" >&2
-    exit 2 ;;
-esac
-
 if [[ "$ENGINE" == "grok" ]]; then
   [[ -n "$MODEL" ]] || MODEL="grok-4.5"
-  [[ "$MODEL" == "grok-4.5" ]] || {
-    echo "grok model is fixed to grok-4.5 (got: $MODEL)" >&2; exit 2
-  }
   [[ -n "$EFFORT" ]] || EFFORT="medium"
-  case "$EFFORT" in
-    low|medium|high) ;;
-    *) echo "grok effort must be low|medium|high (got: $EFFORT)" >&2; exit 2 ;;
-  esac
 elif [[ "$ENGINE" == "codex" ]]; then
   [[ -n "$MODEL" ]] || MODEL="gpt-5.6-sol"
   [[ -n "$EFFORT" ]] || EFFORT="medium"

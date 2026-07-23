@@ -34,8 +34,8 @@ everything else:
   Claude harness (structured output, follow-up questions to the researcher). Codebase
   sweeps use parallel read-only search subagents. Fan out independent questions
   concurrently and keep only the conclusions in your window — never bulk-read what a
-  lane or subagent can summarize. (The Sonnet/GPT-5.5 ban in the judgment doc applies
-  to writer/review/critic lanes, not research.)
+  lane or subagent can summarize. Explicit user model and effort requests override
+  the lane defaults.
 - **Implementation → headless engine lanes** (`plx-engine`, mode rw) — never subagents,
   and never your own context beyond trivial single-file edits and post-review targeted
   fixes (those are yours). **Grok 4.5 medium** is

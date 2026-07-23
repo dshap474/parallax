@@ -10,6 +10,23 @@ Run the user's request through **Claude only** — no Parallax review pipeline, 
 
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing `/skills/claude/SKILL.md`; invoke the packaged wrapper at `<plugin-root>/bin/plx-engine`.
 
+## Resolve launch settings
+
+Resolve the model and effort from the user's request before writing the brief:
+
+- Defaults: `model=opus`, `effort=high`. Use `xhigh` instead only for concrete
+  cross-file or high-risk work.
+- An explicit user model or effort always replaces that setting's default. Natural
+  wording is enough: `ask fable medium for <task>`, `use opus at max`, and
+  `model=fable effort=low` all set real launch flags.
+- Treat `reasoning`, `reasoning level`, and `effort` as names for the same launch
+  setting.
+- Do not infer an override from model names discussed only as task content. Do not
+  normalize, forbid, or silently replace an explicit value. If Claude rejects it,
+  surface that error.
+
+Always pass both resolved values as `--model <model> --effort <effort>`.
+
 ## Execute
 
 Three tool calls — no subagent.
@@ -20,12 +37,11 @@ Three tool calls — no subagent.
 3. **One shell call** to run, check, and clean up in a single `;`-chained command (so status/cleanup run even on engine failure):
 
    ```
-   <plugin-root>/bin/plx-engine --engine claude --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --effort <high|xhigh> --stdout; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
+   <plugin-root>/bin/plx-engine --engine claude --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
    ```
 
    The wrapper runs one headless `claude -p` turn with scoped tools, project-only settings, and read-only or edit-accepting permission mode. It prints only Claude's final message.
 
-   - Effort: use `high` by default and `xhigh` only for concrete cross-file or high-risk work.
    - If the call may run long, use a retained execution session and poll it; run status
      and cleanup after completion.
    - Exit codes: **0** ok · **1** Claude failure · **2** wrapper usage error · **3** not signed in; for 3, ask the user to authenticate the Claude CLI and stop.

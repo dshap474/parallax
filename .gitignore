@@ -6,7 +6,9 @@
 _disabled/
 .dev/
 .env
-zz_plugin-commands
+
+# Repo-local release automation; intentionally personal and unpublished.
+/.agents/skills/parallax-release-main/
 
 # .project/ is durable project memory — local-only, never committed.
 .project/

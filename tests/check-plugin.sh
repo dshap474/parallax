@@ -89,6 +89,20 @@ for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
   fi
 done
 
+agents_memory_template="$PLX_CODEX/skills/agents-memory/references/AGENTS.template.md"
+if grep -Fq 'Use `.project/` only when it will prevent meaningful rediscovery' "$agents_memory_template" &&
+   grep -Fq '`builds/` — optional working records' "$agents_memory_template" &&
+   grep -Fq '`adr/` — decisions that durably change system boundaries' "$agents_memory_template" &&
+   grep -Fq '`architecture/` — current-state explanations of larger systems' "$agents_memory_template" &&
+   grep -Fq '`VISION.md` — user-owned and read-only' "$agents_memory_template" &&
+   ! grep -Fq 'one thread per session' "$agents_memory_template" &&
+   ! grep -Fq 'keep a `README.md` index' "$agents_memory_template" &&
+   ! grep -Fq 'security/threat-model.md' "$agents_memory_template"; then
+  _pass "Codex agents-memory uses the selective project-docs contract"
+else
+  _fail "Codex agents-memory project-docs contract drift"
+fi
+
 if [ -f "$PLX_CLAUDE/skills/codex/SKILL.md" ] &&
    [ -f "$PLX_CODEX/skills/claude/SKILL.md" ] &&
    [ ! -e "$PLX_CODEX/skills/codex" ]; then

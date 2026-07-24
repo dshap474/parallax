@@ -28,7 +28,7 @@ version_of() {
 claude_version="$(version_of "$PLX_CLAUDE/.claude-plugin/plugin.json")"
 codex_version="$(version_of "$PLX_CODEX/.codex-plugin/plugin.json")"
 market_version="$(version_of "$PLX_ROOT/.claude-plugin/marketplace.json")"
-if [ "$claude_version" = "0.5.4" ] && [ "$claude_version" = "$codex_version" ] &&
+if [ "$claude_version" = "0.5.5" ] && [ "$claude_version" = "$codex_version" ] &&
    [ "$claude_version" = "$market_version" ] &&
    grep -qx "v$claude_version" "$PLX_ROOT/README.md" &&
    grep -qx "Status: v$claude_version" "$PLX_ROOT/docs/SPEC.md"; then
@@ -48,7 +48,13 @@ codex_count="$(find "$PLX_CODEX/skills" -mindepth 2 -maxdepth 2 -name SKILL.md |
 [ "$codex_count" = 10 ] && _pass "Codex skills: 10" || _fail "Codex skills: $codex_count"
 
 for skill in "$PLX_CLAUDE"/skills/*/SKILL.md; do
-  grep -qE '^name:[[:space:]]*"?plx::' "$skill" && _pass "Claude $(basename "$(dirname "$skill")")" || _fail "bad Claude name: $skill"
+  name="$(basename "$(dirname "$skill")")"
+  declared_name="$(sed -n 's/^name:[[:space:]]*//p' "$skill" | head -1)"
+  if [ "$declared_name" = "$name" ]; then
+    _pass "Claude $name invocation: /plx:$name"
+  else
+    _fail "Claude $name repeats or changes the plugin namespace: $declared_name"
+  fi
 done
 for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
   name="$(basename "$(dirname "$skill")")"

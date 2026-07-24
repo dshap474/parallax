@@ -1,5 +1,5 @@
 ---
-name: "plx::agents-memory"
+name: agents-memory
 description: Bootstrap or repair a repo's agent-docs setup — classify the root AGENTS.md and create/rewrite/refresh it from repo evidence (Project Memory preserved byte-for-byte), mirror CLAUDE.md as a symlink, and keep .project/ git-ignored. Idempotent; say "dry run" to preview.
 argument-hint: "[repo path] [dry run]"
 disable-model-invocation: true

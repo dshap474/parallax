@@ -1,5 +1,5 @@
 ---
-name: "plx::unknown-unknowns"
+name: unknown-unknowns
 description: Surface the user's unknowns — blindspot passes, brainstorms and throwaway prototypes, reference extraction, implementation notes, pitch/explainer docs, and comprehension quizzes — picking the technique(s) that fit where the user is in the work. Pure orchestrator work with no engine lanes; full interviews and implementation plans hand off to /plx:goal-spec and /plx:plan.
 argument-hint: "<what you're working on, and where you are with it>"
 disable-model-invocation: true

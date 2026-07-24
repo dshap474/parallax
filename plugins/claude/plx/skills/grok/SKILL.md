@@ -1,5 +1,5 @@
 ---
-name: "plx::grok"
+name: grok
 description: Single-engine Grok passthrough with overridable model and effort defaults, read-only for questions/plans and write-capable only for explicit implementation requests. No multi-model review pipeline.
 argument-hint: "<question, coding task, or plan request>"
 disable-model-invocation: true

@@ -1,5 +1,5 @@
 ---
-name: "plx::dev"
+name: dev
 description: The full Parallax dev run — plan, Grok implementation, opposite-engine review, host-applied targeted fixes, and a host final gate. The orchestrator sizes every stage while preserving that role separation. No subagents, no commits.
 argument-hint: "<coding task>"
 disable-model-invocation: true

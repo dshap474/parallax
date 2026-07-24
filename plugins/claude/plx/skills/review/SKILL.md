@@ -1,5 +1,5 @@
 ---
-name: "plx::review"
+name: review
 description: Multi-lane code review with automatic fixes. The orchestrator sizes the round (1 lane for small changes up to 3 dimensions × 2 engines for risky ones), runs read-only review lanes headless in parallel, synthesizes, then applies the confirmed fixes itself as small targeted edits — asking the user only about genuinely uncertain calls. Say "report only" to skip the fixes.
 argument-hint: "<what to review / audit>"
 disable-model-invocation: true

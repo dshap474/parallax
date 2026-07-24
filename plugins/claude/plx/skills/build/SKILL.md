@@ -1,5 +1,5 @@
 ---
-name: "plx::build"
+name: build
 description: The Parallax build stage, standalone — one or more headless writer lanes (plx-engine, rw) implement a plan. Takes a spec doc path, a plan from this conversation, or a raw task. The orchestrator sizes the run — one worker by default, parallel file-disjoint workers for large separable work — verifies, and reports. No review round; run /plx:review after.
 argument-hint: "<spec path, or the task — omit to build the plan from this conversation>"
 disable-model-invocation: true

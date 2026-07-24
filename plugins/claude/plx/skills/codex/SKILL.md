@@ -1,5 +1,5 @@
 ---
-name: "plx::codex"
+name: codex
 description: Single-engine passthrough — the orchestrator runs Codex headless with read-only access for questions/plans and write access only for explicit implementation requests. No multi-model review pipeline.
 argument-hint: "<question, coding task, or plan request>"
 disable-model-invocation: true

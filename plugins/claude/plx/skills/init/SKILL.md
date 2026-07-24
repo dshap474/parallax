@@ -1,5 +1,5 @@
 ---
-name: "plx::init"
+name: init
 description: Prime the session — load the Parallax delegation posture (research lanes and subagents for lookup, headless engine lanes for implementation, judgment stays with the orchestrator) and the plx skill map into the orchestrator's context. Injects context only; writes nothing, launches nothing. For AGENTS.md/docs bootstrap use /plx:agents-memory.
 argument-hint: ""
 disable-model-invocation: true

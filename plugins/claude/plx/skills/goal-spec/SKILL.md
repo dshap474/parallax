@@ -1,5 +1,5 @@
 ---
-name: "plx::goal-spec"
+name: goal-spec
 description: Interview-locked goal planning for long-running efforts. A Socratic interview (AskUserQuestion) locks the goal — intent, binary success criteria, invariants, non-goals — then the Claude host designs the how, parallel Codex system and implementation critics red-team it, and the host synthesizes ONE self-contained spec to the shared template. No code is written.
 argument-hint: "<the goal to plan>"
 disable-model-invocation: true

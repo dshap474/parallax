@@ -1,5 +1,5 @@
 ---
-name: "plx::plan"
+name: plan
 description: "Fable authors a plan, then parallel implementation and system critics red-team it against the task contract. Defaults: two GPT-5.6 Sol xhigh critics. No code is written."
 argument-hint: "<task to plan>"
 disable-model-invocation: true

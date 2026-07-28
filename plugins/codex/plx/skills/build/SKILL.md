@@ -37,7 +37,8 @@ re-run at integration.
 ## Bootstrap
 
 - Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
-- `mktemp -d` for briefs and lane outputs; call it `<tmp>`.
+- Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-build.XXXXXX"` for briefs
+  and lane outputs.
 - Snapshot `git status --short` and the current staged/unstaged diff into `<tmp>` —
   pre-existing edits must be preserved and must not be attributed to this build.
 - Write the resolved spec verbatim to `<tmp>/task.md`; evaluation records store only
@@ -45,11 +46,15 @@ re-run at integration.
 
 ## Size the run — then declare it
 
-Read the engine config (`<plugin-root>/bin/plx-config`) → key `build`. Shipped default: `code: grok` —
-one Grok 4.5 writer at medium effort. Use Codex only as a reported fallback when Grok
-is unavailable or its verified output does not meet the bar. Size per the judgment doc:
+Read the engine config (`<plugin-root>/bin/plx-config`) → key `build`. Shipped defaults:
+`code: grok` and `code-fallback: codex`. If the user explicitly selected an engine, use
+only that engine and require it in preflight. Otherwise probe Grok with `--optional-grok`;
+when it passes, select Grok. When it fails, require Codex and select the fallback. Declare
+the selected engine, model, effort, and any fallback before mutation. Never fall back
+after a writer starts or after the worktree becomes dirty; stop and report partial state.
+Size per the judgment doc:
 
-- **trivial** → a single rw lane on Grok 4.5 low or medium; the host still verifies.
+- **trivial** → a single rw lane on the selected writer at low or medium; the host verifies.
 - **default** → one writer lane, the `code` engine, `--effort medium`.
 - **large and separable** → split the spec into **file-disjoint work packages** —
   only along genuinely independent seams (shared files, barrel exports, lockfiles,
@@ -74,8 +79,8 @@ When `PLX_EVAL_DIR` is unset, `begin` no-ops and writes a disabled sentinel. Kee
 lane prompt files directly in `<tmp>` so `plx-engine` discovers the marker mechanically.
 Recorder failures never fail the build; interruption leaves the envelope `incomplete`.
 After opening it, call `plx-eval finish` before every handled return, including preflight,
-authentication, and lane failures. Then run `<plugin-root>/bin/plx-preflight --repo <repo>
---require-<engine>` for each engine the run will use.
+authentication, and lane failures. Complete the writer selection and preflight above
+before launching any rw lane.
 
 ## Pipeline (run in order)
 
@@ -137,7 +142,7 @@ authentication, and lane failures. Then run `<plugin-root>/bin/plx-preflight --r
    Cross-check "files touched" against `git status --short` vs the Bootstrap snapshot —
    ground truth over the worker's testimony. No review round here — that's
    `$plx:review`. This skill does not commit; version control follows the repo's own
-   agent instructions. Clean up `<tmp>`.
+   agent instructions. Clean up with `<plugin-root>/bin/plx-clean-temp <tmp>`.
    Close the envelope on every normal or handled-error return after it is opened;
    interruption remains `incomplete`.
 

@@ -64,8 +64,15 @@ done
 [[ -d "$REPO" ]] || { echo "repo not found: $REPO" >&2; exit 2; }
 REPO="$(cd "$REPO" && pwd)"
 BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/parallax-preflight.XXXXXX")"
-trap 'rm -rf "$TMP_DIR"' EXIT
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/plx-preflight.XXXXXX")"
+plx_preflight_exit() {
+  local rc=$?
+  set +e
+  "$BIN_DIR/plx-clean-temp" "$TMP_DIR"
+  trap - EXIT
+  exit "$rc"
+}
+trap plx_preflight_exit EXIT
 mkdir -p "$TMP_DIR"/{prompts,outputs,logs}
 
 STATUS=0

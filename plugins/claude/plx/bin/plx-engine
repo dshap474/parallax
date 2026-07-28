@@ -10,8 +10,8 @@ set -euo pipefail
 #            bypassPermissions (required for headless completion; the kernel
 #            sandbox — not the permission mode — is the safety boundary)
 #   claude : non-bare `claude -p` (bare mode breaks subscription auth),
-#            ro = dontAsk + read-only tools, rw = acceptEdits + explicit tools,
-#            --setting-sources project (user-level config/plugins never load)
+#            safe mode + no session persistence + no project customization,
+#            ro = read-only tools, rw = sandboxed Bash without direct write tools
 # Never danger-full-access, never --dangerously-*, never --yolo.
 
 usage() {
@@ -136,7 +136,7 @@ plx_engine_exit() {
       fi
     fi
   fi
-  if [[ -n "$TMP_DIR" ]]; then rm -rf "$TMP_DIR"; fi
+  if [[ -n "$TMP_DIR" ]]; then "$BIN_DIR/plx-clean-temp" "$TMP_DIR"; fi
   exit "$rc"
 }
 trap plx_engine_exit EXIT
@@ -196,7 +196,7 @@ if [[ -n "$RUBRIC" ]]; then
   [[ -s "$RUBRIC_FILE" ]] || { echo "no such rubric: $RUBRIC (looked at $RUBRIC_FILE)" >&2; exit 2; }
 fi
 
-TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/parallax-engine.XXXXXX")"
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/plx-engine.XXXXXX")"
 if [[ "$STDOUT" -eq 1 ]]; then
   OUT="$TMP_DIR/output.md"
   LOG="$TMP_DIR/engine.log"
@@ -265,15 +265,53 @@ run_codex() {
 }
 
 run_claude() {
-  local -a flags
-  flags=(--model "$MODEL" --effort "$EFFORT" --setting-sources project)
+  local -a flags guidance_paths
+  local claude_prompt claude_settings path
+  claude_prompt="$TMP_DIR/claude-prompt.md"
+  claude_settings='{"sandbox":{"enabled":true,"failIfUnavailable":true,"autoAllowBashIfSandboxed":true,"allowUnsandboxedCommands":false,"network":{"allowedDomains":[],"strictAllowlist":true}}}'
+  flags=(
+    --model "$MODEL"
+    --effort "$EFFORT"
+    --safe-mode
+    --no-session-persistence
+    --strict-mcp-config
+    --mcp-config '{"mcpServers":{}}'
+    --settings "$claude_settings"
+  )
   if [[ "$MODE" == "ro" ]]; then
-    flags+=(--permission-mode dontAsk --allowedTools "Read,Grep,Glob")
+    flags+=(--permission-mode dontAsk --tools "Read,Grep,Glob" --allowedTools "Read,Grep,Glob")
   else
-    flags+=(--permission-mode acceptEdits --allowedTools "Read,Grep,Glob,Edit,Write,Bash")
+    flags+=(--permission-mode acceptEdits --tools "Read,Grep,Glob,Bash" --allowedTools "Read,Grep,Glob,Bash")
   fi
   [[ -n "$RUBRIC_FILE" ]] && flags+=(--append-system-prompt-file "$RUBRIC_FILE")
-  if ! (cd "$REPO" && claude -p "${flags[@]}" < "$EXEC_PROMPT" > "$OUT" 2> "$LOG"); then
+
+  cat "$EXEC_PROMPT" > "$claude_prompt"
+  printf '\n\n## Parallax runtime boundary\n' >> "$claude_prompt"
+  printf '%s\n' \
+    'Safe mode disables automatic project customization. Read every applicable repository guidance file listed below before acting; deeper files govern their subtree.' \
+    >> "$claude_prompt"
+  guidance_paths=()
+  for path in AGENTS.md CLAUDE.md; do
+    [[ -f "$REPO/$path" ]] && guidance_paths+=("$path")
+  done
+  while IFS= read -r path; do
+    [[ "$path" == "AGENTS.md" || "$path" == "CLAUDE.md" ]] && continue
+    [[ -f "$REPO/$path" ]] && guidance_paths+=("$path")
+  done < <(git -C "$REPO" ls-files -- '*AGENTS.md' '*CLAUDE.md' 2>/dev/null || true)
+  if [[ "${#guidance_paths[@]}" -eq 0 ]]; then
+    printf '%s\n' '- No repository guidance files found.' >> "$claude_prompt"
+  else
+    for path in "${guidance_paths[@]}"; do
+      printf -- '- %s\n' "$path" >> "$claude_prompt"
+    done
+  fi
+  if [[ "$MODE" == "rw" ]]; then
+    printf '%s\n' \
+      'For mutations, use sandboxed Bash commands confined to the repository. Direct Edit and Write tools are unavailable.' \
+      >> "$claude_prompt"
+  fi
+
+  if ! (cd "$REPO" && claude -p "${flags[@]}" < "$claude_prompt" > "$OUT" 2> "$LOG"); then
     if grep -qiE "not logged in|please run /login" "$OUT" "$LOG"; then
       echo "plx-engine: claude not authenticated — run \`claude /login\`, then retry." >&2
       exit 3

@@ -45,7 +45,7 @@ nothing qualifies; never invent findings to look thorough.
 
 ## Scope & false positives
 
-Flag only quality costs a **changed line** introduces. Do **not** return: pre-existing issues; untouched-code findings; pure naming/formatting/style nits; broad architectural objections without an introduced problem and a proportionate remedy; micro-optimizations without evidence; intentional design choices that merely differ from before; security findings (one-line note only); praise or filler. Prefer a few high-conviction findings over a long weak list.
+Flag only quality costs a **changed line** introduces. Do **not** return: pre-existing issues; untouched-code findings; pure naming/formatting/style nits; broad architectural objections without an introduced problem and a proportionate remedy; micro-optimizations without evidence; intentional design choices that merely differ from before; praise or filler. If you encounter a concrete security risk, label it `security escalation` so the orchestrator can reconcile it with the security lane. Prefer a few high-conviction findings over a long weak list.
 
 ## Hard rules
 

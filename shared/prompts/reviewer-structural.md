@@ -47,7 +47,7 @@ or plausible with one open question · **Low** = suspicious pattern only (report
 
 ## Scope & false positives
 
-Flag only structural costs a **changed line** introduces. Do **not** return: pre-existing structure not touched by the change; untouched-code findings; pure style/naming nits; broad architectural objections with no introduced problem or no proportionate remedy; preferences dressed as blockers; security findings (one-line note only); praise or filler.
+Flag only structural costs a **changed line** introduces. Do **not** return: pre-existing structure not touched by the change; untouched-code findings; pure style/naming nits; broad architectural objections with no introduced problem or no proportionate remedy; preferences dressed as blockers; praise or filler. If you encounter a concrete security risk, label it `security escalation` so the orchestrator can reconcile it with the security lane.
 
 ## Hard rules
 

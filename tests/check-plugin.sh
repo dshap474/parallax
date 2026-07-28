@@ -28,7 +28,7 @@ version_of() {
 claude_version="$(version_of "$PLX_CLAUDE/.claude-plugin/plugin.json")"
 codex_version="$(version_of "$PLX_CODEX/.codex-plugin/plugin.json")"
 market_version="$(version_of "$PLX_ROOT/.claude-plugin/marketplace.json")"
-if [ "$claude_version" = "0.5.5" ] && [ "$claude_version" = "$codex_version" ] &&
+if [ "$claude_version" = "0.5.6" ] && [ "$claude_version" = "$codex_version" ] &&
    [ "$claude_version" = "$market_version" ] &&
    grep -qx "v$claude_version" "$PLX_ROOT/README.md" &&
    grep -qx "Status: v$claude_version" "$PLX_ROOT/docs/SPEC.md"; then
@@ -96,6 +96,7 @@ for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
 done
 
 agents_memory_template="$PLX_CODEX/skills/agents-memory/references/AGENTS.template.md"
+claude_agents_memory_template="$PLX_CLAUDE/skills/agents-memory/references/AGENTS.template.md"
 if grep -Fq 'Use `.project/` only when it will prevent meaningful rediscovery' "$agents_memory_template" &&
    grep -Fq '`builds/` — optional working records' "$agents_memory_template" &&
    grep -Fq '`adr/` — decisions that durably change system boundaries' "$agents_memory_template" &&
@@ -107,6 +108,13 @@ if grep -Fq 'Use `.project/` only when it will prevent meaningful rediscovery' "
   _pass "Codex agents-memory uses the selective project-docs contract"
 else
   _fail "Codex agents-memory project-docs contract drift"
+fi
+if cmp -s "$agents_memory_template" "$claude_agents_memory_template" &&
+   grep -Fq 'Never create `.project/` directories or documents' \
+     "$PLX_CLAUDE/skills/agents-memory/SKILL.md"; then
+  _pass "Claude and Codex agents-memory governance is identical"
+else
+  _fail "Claude and Codex agents-memory governance drift"
 fi
 
 if [ -f "$PLX_CLAUDE/skills/codex/SKILL.md" ] &&
@@ -152,13 +160,17 @@ fi
 
 if [ "$(grep -c '^    code: grok$' "$PLX_CODEX/config/parallax.yaml")" -eq 2 ] &&
    [ "$(grep -c '^    code: grok$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 2 ] &&
+   [ "$(grep -c '^    code-fallback: codex$' "$PLX_CODEX/config/parallax.yaml")" -eq 2 ] &&
+   [ "$(grep -c '^    code-fallback: codex$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 2 ] &&
+   [ "$(grep -c '^    review-security: \[claude\]$' "$PLX_CODEX/config/parallax.yaml")" -eq 2 ] &&
+   [ "$(grep -c '^    review-security: \[codex\]$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 2 ] &&
    ! grep -q '^    fix:' "$PLX_CODEX/config/parallax.yaml" &&
    ! grep -q '^    fix:' "$PLX_CLAUDE/config/parallax.yaml" &&
-   [ "$(grep -c '\[claude\]' "$PLX_CODEX/config/parallax.yaml")" -eq 12 ] &&
-   [ "$(grep -c '\[codex\]' "$PLX_CLAUDE/config/parallax.yaml")" -eq 12 ] &&
+   [ "$(grep -c '\[claude\]' "$PLX_CODEX/config/parallax.yaml")" -eq 14 ] &&
+   [ "$(grep -c '\[codex\]' "$PLX_CLAUDE/config/parallax.yaml")" -eq 14 ] &&
    ! grep -q '^    plan:' "$PLX_CODEX/config/parallax.yaml" &&
    ! grep -q '^    plan:' "$PLX_CLAUDE/config/parallax.yaml"; then
-  _pass "host plans, opposite engine reviews, Grok writes, host fixes"
+  _pass "host plans, opposite engine reviews, optional Grok writes, host fixes"
 else
   _fail "engine polarity drift"
 fi
@@ -197,6 +209,22 @@ if [ "$eval_contract_ok" -eq 1 ]; then
   _pass "plan/build/dev/review use grouped evaluation envelopes on both hosts"
 else
   _fail "core pipeline evaluation envelope contract drift"
+fi
+
+parity_contract_ok=1
+for host in claude codex; do
+  package="$PLX_ROOT/plugins/$host/plx"
+  grep -Fq 'code-fallback' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'worktree becomes dirty' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'reviewer-security' "$package/skills/review/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'Security: not run' "$package/skills/review/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'up to **3 questions per round**' "$package/skills/goal-spec/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'tool is not' "$package/skills/goal-spec/SKILL.md" || parity_contract_ok=0
+done
+if [ "$parity_contract_ok" -eq 1 ]; then
+  _pass "Claude and Codex behavioral governance contracts are parallel"
+else
+  _fail "Claude and Codex behavioral governance contract drift"
 fi
 
 if ! grep -RqiE 'make the edit yourself|fix nits inline|one-liner you can.*edit|edit it yourself' \
@@ -253,10 +281,10 @@ fi
 
 for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   label="$(basename "$(dirname "$package")")"
-  for tool in plx-engine plx-preflight plx-config plx-skill plx-link-claude plx-eval; do
+  for tool in plx-engine plx-preflight plx-config plx-skill plx-link-claude plx-eval plx-clean-temp; do
     [ -x "$package/bin/$tool" ] && _pass "$label bin/$tool" || _fail "$label bin/$tool"
   done
-  for rubric in engines planner plan-critic-implementation plan-critic-system worker reviewer-correctness reviewer-cleanup reviewer-structural; do
+  for rubric in engines planner plan-critic-implementation plan-critic-system worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security; do
     [ -s "$package/prompts/$rubric.md" ] || _fail "$label missing rubric $rubric"
   done
 done
@@ -285,6 +313,26 @@ if grep -RE '^[[:space:]]*[^#].*(danger-full-access|dangerously-bypass-approvals
   _fail "forbidden broad-permission flag in shared runtime"
 else
   _pass "shared runtime rejects broad-permission patterns"
+fi
+if grep -RE '^[[:space:]]*[^#].*rm[[:space:]]+-rf' \
+     "$PLX_ROOT/shared/bin" "$PLX_ROOT/plugins/claude/plx/bin" \
+     "$PLX_ROOT/plugins/claude/plx/skills" "$PLX_ROOT/plugins/codex/plx/bin" \
+     "$PLX_ROOT/plugins/codex/plx/skills" >/dev/null; then
+  _fail "shipped runtime or skills contain policy-blocked recursive cleanup"
+else
+  _pass "shipped cleanup avoids recursive rm"
+fi
+if grep -RE 'mktemp[[:space:]]+-d([^[:alnum:]]|$)' \
+     "$PLX_ROOT/plugins" | grep -v 'plx-[[:alnum:]-]*\.XXXXXX' >/dev/null; then
+  _fail "a skill creates an unconfined temporary directory"
+else
+  _pass "skill temporary directories use explicit plx prefixes"
+fi
+if grep -RqiE 'security finding \(hand off|drop.*security|security.*one line' \
+     "$PLX_ROOT/plugins" "$PLX_ROOT/shared/prompts"; then
+  _fail "review policy still drops security findings"
+else
+  _pass "security findings have an explicit review contract"
 fi
 
 # --------------------------------------------------------------------------- #

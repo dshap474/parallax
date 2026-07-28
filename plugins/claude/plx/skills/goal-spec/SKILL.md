@@ -50,9 +50,10 @@ unavailable, report `[RED-TEAM INCOMPLETE]` and stop; never silently drop a conf
 
 ### 1. Socratic interview — lock the goal
 
-Before any planning, interview the user with the **`AskUserQuestion` tool** until material
-ambiguities are resolved or the bounded interview ends. An autonomous `/goal` run cannot
-ask questions later, so record any remaining material gap explicitly.
+Before any planning, interview the user with the **`AskUserQuestion` tool when available**
+until material ambiguities are resolved or the bounded interview ends. If the tool is not
+available, ask one concise plain-chat round and wait for the answer. An autonomous `/goal`
+run cannot ask questions later, so record any remaining material gap explicitly.
 
 Ask in a funnel — broad to narrow — and **defer every "how" question** until the
 host-authored design step:
@@ -65,7 +66,7 @@ host-authored design step:
 
 Rules:
 
-- **Batch, don't drip:** up to **4 questions per round** (the tool's max), at most ~2–3
+- **Batch, don't drip:** up to **3 questions per round**, at most ~2–3
   rounds. Make each a multiple-choice with a recommended first option where you have a view.
 - **Cover the five gaps**, skipping any with nothing to ask: *ambiguity* (multiple
   readings), *conflict* (incompatible asks), *completeness* (unspecified behavior),
@@ -182,8 +183,8 @@ Note where the final spec diverges from the candidate plan and the critiques, an
         Success Criterion in it is satisfied with evidence and its Validation commands pass.
   ```
 
-- Then **stop**. Do not build. Clean up any temp dir from the planning steps once the
-  spec is written to the thread.
+- Then **stop**. Do not build. Clean up the planning temp directory with
+  `plx-clean-temp <tmp>` once the spec is written to the thread.
 
 ## Output discipline
 
@@ -208,8 +209,8 @@ Open:     <assumptions / [NEEDS CLARIFICATION] / residual risk, or "none">
 - Never hand-construct raw `codex` / `grok` / `claude -p` commands — `plx-engine` is the
   only sanctioned path. Rubrics are injected by `--rubric` name; never paste rubric text
   into briefs.
-- Do not write Parallax state into the target repo — no `.parallax/` dirs; temp files live
-  in `mktemp -d` dirs.
+- Do not write Parallax state into the target repo — no `.parallax/` dirs; create temp
+  files under `mktemp -d "${TMPDIR:-/tmp}/plx-goal-spec.XXXXXX"`.
 - Never `uv run` inside a sandbox.
 
 Goal to plan:

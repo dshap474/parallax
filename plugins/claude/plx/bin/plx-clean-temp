@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Remove one Parallax-owned temporary tree without using recursive rm.
+# Usage:
+#   plx-clean-temp /absolute/path/to/plx-purpose.XXXXXX
+#   plx-clean-temp --help
+set -euo pipefail
+
+# --------------------------------------------------------------------------- #
+# Help
+# --------------------------------------------------------------------------- #
+
+usage() {
+  cat <<'EOF'
+Usage: plx-clean-temp <absolute-plx-temp-directory>
+
+Remove one directory whose physical parent is the current temp root and whose
+name begins with "plx-". Missing targets are accepted for idempotent cleanup.
+Symlinks, relative paths, broad paths, and paths outside the temp root are
+refused.
+EOF
+}
+
+# --------------------------------------------------------------------------- #
+# Validation
+# --------------------------------------------------------------------------- #
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  usage
+  exit 0
+fi
+if [[ "$#" -ne 1 ]]; then
+  usage >&2
+  exit 2
+fi
+
+target="$1"
+case "$target" in
+  /*) ;;
+  *) echo "plx-clean-temp: target must be absolute" >&2; exit 2 ;;
+esac
+
+if [[ ! -e "$target" && ! -L "$target" ]]; then
+  exit 0
+fi
+if [[ -L "$target" || ! -d "$target" ]]; then
+  echo "plx-clean-temp: target must be a real directory" >&2
+  exit 2
+fi
+
+temp_root="$(cd -P "${TMPDIR:-/tmp}" && pwd)"
+target_parent="$(cd -P "$(dirname "$target")" && pwd)"
+target_name="$(basename "$target")"
+if [[ "$target_parent" != "$temp_root" || "$target_name" != plx-* ]]; then
+  echo "plx-clean-temp: refusing non-Parallax temp target: $target" >&2
+  exit 2
+fi
+
+# --------------------------------------------------------------------------- #
+# Cleanup
+# --------------------------------------------------------------------------- #
+
+find "$target" -xdev -depth ! -type d -exec unlink {} \;
+find "$target" -xdev -depth -type d -exec rmdir {} \;

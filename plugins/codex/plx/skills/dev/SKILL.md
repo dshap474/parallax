@@ -22,7 +22,8 @@ the judgment doc (model rankings, the sizing ladder, writer rules).
 ## Bootstrap
 
 - Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
-- `mktemp -d` for stage artifacts; call it `<tmp>`. Never write Parallax state into the
+- Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-dev.XXXXXX"` for stage
+  artifacts. Never write Parallax state into the
   target repo.
 - Snapshot `git status --short` and the current staged/unstaged diff into `<tmp>` so
   pre-existing edits are preserved and never attributed to this run.
@@ -63,12 +64,19 @@ Write that same sizing line to `<tmp>/shape.txt`, then call `<plugin-root>/bin/p
 as shown in Bootstrap (once, before any lane).
 
 **The smallest rung skips advisory fanout, not the writer**: for a trivial ask (one file,
-obvious change), launch one cheap Grok rw lane, verify, and report. The host never writes
+obvious change), launch one cheap configured rw lane, verify, and report. The host never writes
 initial implementation code in this pipeline — its only edits are the post-review
 targeted fixes. The default runs both plan-critic dimensions and
-all three review dimensions on Claude. For large/risky work, use file-disjoint workers
-and add a second non-writer review engine only when proportionate. Run `<plugin-root>/bin/plx-preflight --repo <repo> --require-<engine>` for each engine the
-run will use.
+all three core review dimensions on Claude. For large/risky work, use file-disjoint
+workers and add a second non-writer review engine only when proportionate.
+
+For the writer, resolve `code` and `code-fallback` from config. An explicit user engine
+selection disables fallback and must pass required preflight. Otherwise probe Grok with
+`<plugin-root>/bin/plx-preflight --repo <repo> --optional-grok`; select it on success,
+or run the same command with `--require-codex` and select Codex on failure. Declare
+the selected writer, model, effort, and fallback before mutation. Never fall back after a
+writer starts or the worktree becomes dirty. Require every selected critic/reviewer
+engine before launching its lanes.
 
 ## Lane mechanics (every stage)
 
@@ -158,8 +166,12 @@ Launch the sized review lanes in one message (`--mode ro`, rubrics
 that didn't write the code. Then **synthesize as the integrating reviewer**: dedup
 across lanes; correctness governs; verify each material finding against the cited code
 (kill false positives, say why); drop pre-existing issues, untouched-code findings,
-linter-catchable style, generic test wishes, speculative no-path edges, micro-opts,
-security findings (one-line handoff).
+linter-catchable style, generic test wishes, speculative no-path edges, and micro-opts.
+Add `reviewer-security` when requested or when the scope touches auth, permissions,
+secrets/config, shell or subprocess execution, sandboxing, network clients,
+dependencies/lockfiles, CI workflows, deserialization, or another trust boundary.
+Otherwise record `Security: not run`. If another lane finds a concrete security risk,
+run the security lane if possible or report it as a named residual; never drop it.
 
 **Fix directly.** You apply the confirmed fixes yourself — small targeted edits at the
 cited sites, exactly the confirmed findings, nothing else; you already hold the
@@ -194,7 +206,8 @@ the run over recorder errors). Use the honest outcome and verification status:
   || echo "plx-eval finish failed (non-fatal)" >&2
 ```
 
-Then clean up `<tmp>`. Interruption before this step leaves the run `incomplete`.
+Then clean up with `<plugin-root>/bin/plx-clean-temp <tmp>`. Interruption before this
+step leaves the run `incomplete`.
 End with:
 
 ```text

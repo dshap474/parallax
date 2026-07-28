@@ -19,8 +19,9 @@ no orchestration subagents: every lane is one `plx-engine` process.
 
 The Claude package keeps Claude as host and defaults plan/review lanes to Codex. The
 Codex package flips that judgment polarity: Codex remains host while Claude supplies
-the default plan critics and review lanes. Both packages default implementation and
-targeted fixes to Grok 4.5.
+the default plan critics and review lanes. Both packages prefer Grok 4.5 for initial
+implementation, deterministically fall back to Codex only when Grok fails preflight,
+and keep targeted review fixes with the host.
 
 ## Package boundaries
 
@@ -45,22 +46,24 @@ The three stage atoms are `plan`, `build`, and `review`; `dev` composes them and
 final gate. `goal-spec` prepares a self-contained autonomous goal. The host declares
 task sizing before launching anything:
 
-- trivial: one Grok writer lane and direct host verification;
+- trivial: one configured writer lane and direct host verification;
 - small: one writer and one correctness reviewer;
-- default: two plan critics, one Grok writer, three opposite-engine review dimensions;
-- large/risky: two critics, file-disjoint writers, and up to two engines per review
-  dimension.
+- default: two plan critics, one configured writer, three opposite-engine core review
+  dimensions;
+- large/risky: two critics, file-disjoint writers, the risk-triggered security dimension,
+  and up to two engines per review dimension.
 
 Critic and review lanes are always read-only. Write lanes use one writer per
-disjoint path set. Confirmed review findings are fixed once through targeted Grok write
-lanes; behavior-changing or ambiguous findings go back to the user.
+disjoint path set. Confirmed review findings are fixed once by the host; behavior-changing
+or ambiguous findings go back to the user.
 
 ## Runtime and safety
 
 Pipeline lanes and default passthroughs use `plx-engine`. It pins:
 
 - Codex: `gpt-5.6-sol`, isolated config, ephemeral session, read-only or workspace-write;
-- Claude: Opus, project-only settings, scoped read or edit tool allowlists;
+- Claude: Opus, safe mode, no session persistence, strict MCP/network isolation,
+  read-only tools or repo-confined sandboxed Bash;
 - Grok: `grok-4.5`, no planning/subagent/memory features, kernel read-only or workspace
   sandbox.
 
@@ -68,8 +71,8 @@ These models are defaults, not restrictions. Explicit user-requested model and e
 values pass through to the selected engine, which remains responsible for validating
 them. The wrapper never uses `danger-full-access`,
 `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`. Runtime briefs, logs, and
-outputs use temporary directories and are removed after the run; Parallax creates no
-`.parallax/` state.
+outputs use `plx-`-prefixed temporary directories and the confined `plx-clean-temp`
+helper; Parallax creates no `.parallax/` state.
 
 ### Optional evaluation provenance
 

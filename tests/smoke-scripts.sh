@@ -26,7 +26,7 @@ echo "package: ${PLX_PACKAGE:-claude} ($PLUGIN_ROOT)"
 echo "tmp target repo: $REPO"
 
 _head "bin tools answer --help"
-for t in plx-engine plx-preflight plx-config plx-skill plx-link-claude plx-eval; do
+for t in plx-engine plx-preflight plx-config plx-skill plx-link-claude plx-eval plx-clean-temp; do
   out="$WORK/help-$t.txt"
   if "$PLUGIN_ROOT/bin/$t" --help > "$out" 2>&1 && grep -q "Usage:" "$out"; then
     _pass "$t --help"
@@ -230,14 +230,17 @@ if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
 fi
 
 fake_claude_args="$WORK/claude-args.txt"
+fake_claude_prompt="$WORK/claude-prompt.md"
 printf '%s\n' '#!/usr/bin/env bash' \
   '# Fake Claude CLI — records argv and returns one successful response.' \
   'printf '\''%s\n'\'' "$@" > "$PLX_CLAUDE_ARGS_FILE"' \
+  'cat > "$PLX_CLAUDE_PROMPT_FILE"' \
   'printf '\''OK\n'\''' \
   > "$fake_bin/claude"
 chmod +x "$fake_bin/claude"
 
 PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
+  PLX_CLAUDE_PROMPT_FILE="$fake_claude_prompt" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode ro --repo "$REPO" \
   --prompt-file "$fake_prompt" --model sonnet --effort max \
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
@@ -248,6 +251,56 @@ if [ "$rc" -eq 0 ] &&
   _pass "Claude model and effort overrides pass through"
 else
   _fail "Claude overrides did not pass through (exit $rc)"
+fi
+for flag in --safe-mode --no-session-persistence --strict-mcp-config --mcp-config; do
+  assert_contains "$flag" "$fake_claude_args" "Claude ro receives $flag"
+done
+assert_contains "dontAsk" "$fake_claude_args" "Claude ro cannot prompt for broader permissions"
+assert_contains "Read,Grep,Glob" "$fake_claude_args" "Claude ro exposes only read tools"
+assert_contains '"failIfUnavailable":true' "$fake_claude_args" "Claude sandbox fails closed"
+assert_contains '"strictAllowlist":true' "$fake_claude_args" "Claude network allowlist is strict"
+assert_contains '{"mcpServers":{}}' "$fake_claude_args" "Claude receives an empty MCP configuration"
+if grep -qx -- '--setting-sources' "$fake_claude_args"; then
+  _fail "Claude loads ambient setting sources"
+else
+  _pass "Claude loads no ambient setting sources"
+fi
+if grep -qx "Bash" "$fake_claude_args" || grep -q "Edit\\|Write" "$fake_claude_args"; then
+  _fail "Claude ro exposes a mutation tool"
+else
+  _pass "Claude ro exposes no mutation tool"
+fi
+
+PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
+  PLX_CLAUDE_PROMPT_FILE="$fake_claude_prompt" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode rw --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 0 ]; then _pass "Claude rw invocation exits 0"; else _fail "Claude rw invocation exits $rc"; fi
+assert_contains "Bash" "$fake_claude_args" "Claude rw exposes sandboxed Bash"
+assert_contains "acceptEdits" "$fake_claude_args" "Claude rw accepts sandboxed operations"
+assert_contains "use sandboxed Bash" "$fake_claude_prompt" "Claude rw prompt explains its write path"
+if grep -qxE 'Edit|Write|[^,]*Edit,[^,]*|[^,]*Write,[^,]*' "$fake_claude_args"; then
+  _fail "Claude rw exposes direct Edit or Write"
+else
+  _pass "Claude rw excludes direct Edit and Write"
+fi
+
+_head "plx-clean-temp confines recursive cleanup"
+clean_target="$(mktemp -d "${TMPDIR:-/tmp}/plx-clean-smoke.XXXXXX")"
+mkdir -p "$clean_target/a/b"
+printf '%s\n' x > "$clean_target/a/b/file"
+if "$PLUGIN_ROOT/bin/plx-clean-temp" "$clean_target" && [ ! -e "$clean_target" ]; then
+  _pass "plx-clean-temp removes a prefixed temp tree"
+else
+  _fail "plx-clean-temp failed to remove a valid tree"
+fi
+outside_target="$WORK/not-a-plx-temp"
+mkdir -p "$outside_target"
+if "$PLUGIN_ROOT/bin/plx-clean-temp" "$outside_target" >/dev/null 2>&1; then
+  _fail "plx-clean-temp accepted a non-temp target"
+else
+  _pass "plx-clean-temp refuses targets outside the temp root"
 fi
 
 # --------------------------------------------------------------------------- #

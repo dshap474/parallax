@@ -26,7 +26,8 @@ surgically, guided by the findings.
   or the changed files from `git status --short` / `git diff --name-only` / a named
   commit range. Snapshot the status — pre-existing edits may be exactly what you're
   asked to review.
-- `mktemp -d` for the brief and lane outputs; call it `<tmp>`.
+- Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-review.XXXXXX"` for the
+  brief and lane outputs.
 - Write the review request and resolved scope to `<tmp>/task.md`; evaluation records
   store only its hash, never its contents.
 
@@ -42,6 +43,10 @@ the floor shape — size per the judgment doc:
 - **large / risky** (cross-file contracts, concurrency, data-integrity or money paths,
   wide refactors) → keep all three Claude dimensions at `high`; add a second non-writer
   engine only when another independent perspective is proportionate.
+- **security-triggered** → also run `reviewer-security` when the user requests security
+  review or scope touches auth, permissions, secrets/config, shell or subprocess
+  execution, sandboxing, network clients, dependencies/lockfiles, CI workflows,
+  deserialization, or another trust boundary. Otherwise report `Security: not run`.
 
 Declare the sizing in one line before launching (e.g. `Sizing: review 3×1
 (claude high) · fixes: host`).
@@ -115,8 +120,10 @@ authentication, lane, and report-only exits. Then run `<plugin-root>/bin/plx-pre
      code; pure style a linter catches; a generic missing-tests/docs wish; a
      speculative no-path edge case; a micro-opt without material-cost evidence; an
      intentional, well-scoped change that misses no consequence; a broad architectural
-     objection with no introduced problem; a **security** finding (hand off in one
-     line); or praise/filler.
+     objection with no introduced problem; or praise/filler.
+   - **Security escalates.** If any core lane returns a concrete security risk and the
+     security lane was not already run, run it when possible. Otherwise preserve the
+     risk as a named residual; never drop it.
    - **Smell what's missing.** Use the reports as pointers to the places no lane
      looked; read those spots. A targeted intelligence pass, not a re-review.
 
@@ -160,6 +167,7 @@ authentication, lane, and report-only exits. Then run `<plugin-root>/bin/plx-pre
    ```text
    Reviewed: <scope> — sizing <lanes × engines, effort>
    Findings: <n confirmed / n false-positive killed / n filtered>
+   Security: <reviewed with n findings | not run | residual: reason>
    Fixed: <n, by you — one line each>
    Asked: <items awaiting/answered user confirmation, or "none">
    Won't fix: <items + one-line reasons, or "none">
@@ -167,7 +175,7 @@ authentication, lane, and report-only exits. Then run `<plugin-root>/bin/plx-pre
    ```
 
    This skill does not commit; version control follows the repo's own agent
-   instructions. Clean up `<tmp>`.
+   instructions. Clean up with `<plugin-root>/bin/plx-clean-temp <tmp>`.
    Close the envelope on every normal or handled-error return after it is opened;
    interruption remains `incomplete`.
 

@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.5
+Status: v0.5.6
 
 ## Required tree
 
@@ -15,7 +15,7 @@ shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.5`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.6`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains ten
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
@@ -31,10 +31,13 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 - Claude `/plx:codex` is ephemeral by default and may start or resume a persistent
   app-server thread only for explicit continuation or material multi-turn reuse. It
   returns the thread ID and keeps no Parallax thread registry.
-- Claude-host defaults: Claude plans and synthesizes; Codex supplies plan critics and
-  all three review dimensions; Grok writes and fixes.
-- Codex-host defaults: Codex plans and synthesizes; Claude supplies plan critics and
-  all three review dimensions; Grok writes and fixes.
+- Claude-host defaults: Claude plans, synthesizes, and applies targeted fixes; Codex
+  supplies plan critics and three core review dimensions plus risk-triggered security.
+- Codex-host defaults: Codex plans, synthesizes, and applies targeted fixes; Claude
+  supplies plan critics and three core review dimensions plus risk-triggered security.
+- Both hosts prefer Grok for initial implementation and use configured Codex fallback
+  only when Grok fails optional preflight before mutation. Explicit engine selection
+  disables fallback; a started or dirty writer never falls through to another engine.
 - Shared runtime copies must exactly match `shared/`.
 
 ## Runtime contracts
@@ -45,7 +48,9 @@ the target repository and one disjoint path set. Plans carry original request, c
 decisions, candidate plan, and an observable done condition.
 
 No skill constructs a raw external-engine command. No wrapper uses forbidden broad
-permission flags. Temporary artifacts are cleaned up. Skills never commit or publish.
+permission flags. Claude lanes ignore untrusted customization, do not persist sessions,
+and fail closed if their sandbox is unavailable. Temporary artifacts are removed only
+through the confined cleanup helper. Skills never commit or publish.
 Persistent Codex access is passthrough-only and derives read or write scope for each
 turn; every pipeline lane remains isolated and ephemeral.
 
@@ -59,7 +64,8 @@ telemetry service, MCP, database, or target-repo `.parallax/` state.
 ## Acceptance
 
 `bash tests/run.sh` must validate both manifests and marketplaces, version agreement,
-ten-skill inventories, platform frontmatter, engine polarity, executable wrappers,
-rubric resolution, shared-copy agreement, fake-engine safety flags, optional eval
+ten-skill inventories, platform frontmatter, engine polarity, fallback and security
+bindings, executable wrappers, rubric resolution, shared-copy agreement, fake-engine
+safety flags, cleanup confinement, optional eval
 recorder contracts, and isolated `plx-link-claude` behavior. Official Claude and Codex
 validators must also pass.

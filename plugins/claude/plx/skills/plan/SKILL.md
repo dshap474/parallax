@@ -15,8 +15,9 @@ red-team it. There are no subagents. Run every lane through `plx-engine`.
 
 - Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
 - Note any pre-existing changes from `git status --short`.
-- Create `<tmp>` with `mktemp -d` for briefs, outputs, and logs. Remove it before every
-  return, including error and incomplete paths.
+- Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-plan.XXXXXX"` for briefs,
+  outputs, and logs. Remove it with `plx-clean-temp <tmp>` before every return,
+  including error and incomplete paths.
 - Write the user's request verbatim to `<tmp>/task.md`; evaluation records store only
   its hash, never its contents.
 

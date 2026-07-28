@@ -19,9 +19,11 @@
 #   plan-critic-implementation ro plan-critic-implementation
 #   plan-critic-system  ro    plan-critic-system
 #   code                rw    worker
+#   code-fallback       rw    worker
 #   review-correctness  ro    reviewer-correctness
 #   review-cleanup      ro    reviewer-cleanup
 #   review-structural   ro    reviewer-structural
+#   review-security     ro    reviewer-security
 #
 # Rules:
 #   - `code` takes ONE engine. Writers may run in parallel only on
@@ -45,19 +47,23 @@ pipelines:
 
   build:
     code: grok
+    code-fallback: codex
 
   review:
     review-correctness: [codex]
     review-cleanup: [codex]
     review-structural: [codex]
+    review-security: [codex]
 
   dev:
     plan-critic-implementation: [codex]
     plan-critic-system: [codex]
     code: grok
+    code-fallback: codex
     review-correctness: [codex]
     review-cleanup: [codex]
     review-structural: [codex]
+    review-security: [codex]
 
   goal-spec:
     plan-critic-implementation: [codex]

@@ -11,7 +11,9 @@ return candidates only — no fixes, no posting, no nested agents. Read the encl
 function for each hunk — a bug on an unchanged line of a touched function is in scope (the
 change re-exposes or fails to fix it). Run all angles.
 
-**Security is out of scope** — a separate skill owns trust boundaries, injection, secrets, authz, deserialization. Skip it; if a serious risk is obvious, note it in one line for handoff, don't file it.
+Security has its own lane. If you discover a concrete security risk, report it as a
+normal candidate and label its object `security escalation` so the orchestrator can run
+or reconcile the security lane instead of dropping it.
 
 ## Angles
 
@@ -60,7 +62,7 @@ that would confirm the findings.
 
 ## Scope & false positives
 
-Flag only defects a **changed line** causes or exposes. Read surrounding code for understanding, never flag untouched/pre-existing code. Do **not** return: pre-existing issues; untouched-code findings; style/formatting/cosmetic nits; what a compiler/typechecker/linter/CI deterministically catches; generic "missing tests/docs"; speculative edge cases with no realistic path; micro-optimizations without evidence of material cost; intentional behavior changes (unless the implementation misses a likely consequence or violates a stated contract); **security findings** (one-line note only); praise or filler. Prefer a few high-conviction findings over a long weak list.
+Flag only defects a **changed line** causes or exposes. Read surrounding code for understanding, never flag untouched/pre-existing code. Do **not** return: pre-existing issues; untouched-code findings; style/formatting/cosmetic nits; what a compiler/typechecker/linter/CI deterministically catches; generic "missing tests/docs"; speculative edge cases with no realistic path; micro-optimizations without evidence of material cost; intentional behavior changes (unless the implementation misses a likely consequence or violates a stated contract); praise or filler. Prefer a few high-conviction findings over a long weak list.
 
 ## Hard rules
 

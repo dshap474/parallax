@@ -28,6 +28,7 @@ open with the section header the rubric expects:
 | `reviewer-correctness`| behavioral-defect review      | `## Review brief`   |
 | `reviewer-cleanup`    | reuse/simplification review   | `## Review brief`   |
 | `reviewer-structural` | maintainability review        | `## Review brief`   |
+| `reviewer-security`   | risk-triggered security review| `## Review brief`   |
 | `planner`             | architecture consulting       | `## Task brief`     |
 | `plan-critic-implementation` | checkout/execution red-team | `## Draft plan` |
 | `plan-critic-system`  | system/design red-team        | `## Draft plan`     |
@@ -39,7 +40,7 @@ open with the section header the rubric expects:
 | --- | --- | --- |
 | gpt-5.6-sol | `--engine codex` (medium effort by default) | Claude-host plan/review judgment and implementation fallback |
 | gpt-5.6-terra | `--engine codex --model gpt-5.6-terra --effort low` | doc-lookup web research lanes |
-| grok-4.5 | `--engine grok` (medium effort by default) | default implementation and targeted fixes |
+| grok-4.5 | `--engine grok` (medium effort by default) | optional default implementation |
 | opus-4.8 | `--engine claude` | planning, review, or taste-heavy judgment when selected by the host config |
 | host orchestrator | you — never delegated | plan authoring, synthesis, post-review targeted fixes, and final gate |
 
@@ -58,15 +59,20 @@ How to apply:
   price tag — escalating costs less than shipping mediocre work. This permission changes
   only model or effort; it never expands task scope, target resources, credentials,
   permissions, or allowed side effects.
-- **Implementation starts with Grok 4.5 medium.** It is the shipped writer and fixer for
-  both host packages. Substitute Codex only when Grok is unavailable or its verified
-  output does not meet the bar, and report the substitution.
+- **Implementation prefers Grok 4.5 medium when available.** Probe it as optional before
+  mutation. If that probe fails, require the configured `code-fallback` engine (Codex by
+  default), declare the substitution, and use it for the whole writer turn. An explicit
+  user engine override disables automatic fallback. Never fall back after a writer has
+  started or after the worktree becomes dirty; stop and report the partial state.
 - **Anything user-facing** (UI, copy, API design) may use Opus for a taste-focused
   advisory pass, while implementation remains on the configured Grok writer unless
   the reported fallback rule is triggered.
 - **Reviews** → a capable model, plus optionally an independent perspective. Always prefer
   a *different* engine than the one that wrote the code — independence catches what
-  self-review can't.
+  self-review can't. Add `reviewer-security` when the user requests security review or
+  the scope touches auth, permissions, secrets/config, shell or subprocess execution,
+  sandboxing, network clients, dependencies/lockfiles, CI workflows, deserialization, or
+  another trust boundary. Otherwise report `Security: not run`.
 - **Targeted fixes from a review** → the host orchestrator applies them itself, as
   small scoped edits at the cited sites. It already holds the findings and the code
   context; a fix lane plus a verification pass of that lane's diff is wasted steps and
@@ -98,8 +104,8 @@ gives the user a veto point before tokens burn. Scale down as readily as up.
 | --- | --- | --- | --- |
 | **trivial** — one file, obvious change | none — decide and go | one Grok rw lane | read the diff yourself |
 | **small** — clear task, low blast radius | plan in-context, no critic | 1 worker | 1 lane (correctness only) |
-| **default** | plan in-context + implementation and system critics | 1 Grok worker | 3 dims × 1 opposite engine |
-| **large / risky** | spec doc + both critics | parallel file-disjoint Grok workers | 3 dims × 1 opposite engine; add a second non-writer engine when proportionate |
+| **default** | plan in-context + implementation and system critics | 1 configured worker | 3 dims × 1 opposite engine |
+| **large / risky** | spec doc + both critics | parallel file-disjoint configured workers | 3 dims plus risk-triggered security × 1 opposite engine; add a second non-writer engine when proportionate |
 
 The standalone plan skill preserves the full default plan rung: it resolves exactly one
 engine for each critic dimension from the host package and runs both in
@@ -111,7 +117,7 @@ Scale-up signals: cross-file contracts, concurrency, data-integrity or money pat
 wide refactors, high ambiguity, code you can't easily verify. Scale-down signals: one
 file, an obvious mechanism, strong existing tests, a change you can read in one sitting.
 The smallest rung skips advisory fanout, not implementation delegation: even a trivial
-code change uses one Grok rw lane, followed by host verification.
+code change uses one configured rw lane, followed by host verification.
 
 Plan artifacts follow the same logic: a plan is a chat message by default; write it to
 `.project/builds/<thread>/` only when the effort is multi-session or another agent must

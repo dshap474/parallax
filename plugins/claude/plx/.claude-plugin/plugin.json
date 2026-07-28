@@ -1,6 +1,6 @@
 {
   "name": "plx",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "Parallax for Claude Code: ten multi-model planning, implementation, review, goal-preparation, passthrough, session-priming, docs-bootstrap, and blindspot workflows driven through one safety-pinned headless engine wrapper.",
   "author": { "name": "Daniel Shapiro", "url": "https://github.com/dshap474" },
   "homepage": "https://github.com/dshap474/parallax",

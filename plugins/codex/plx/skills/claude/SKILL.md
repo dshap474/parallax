@@ -31,16 +31,18 @@ Always pass both resolved values as `--model <model> --effort <effort>`.
 
 Three tool calls — no subagent.
 
-1. **One shell call** to set up: `git rev-parse --show-toplevel && git status --short && mktemp -d`. The first line is `<repo>` (the wrapper needs an absolute `--repo`, and that path is the write boundary); the status snapshot is so pre-existing edits are not later attributed to Claude; the last line is `<tmp>`.
+1. **One shell call** to set up: `git rev-parse --show-toplevel && git status --short && mktemp -d "${TMPDIR:-/tmp}/plx-claude.XXXXXX"`. The first line is `<repo>` (the wrapper needs an absolute `--repo`, and that path is the write boundary); the status snapshot is so pre-existing edits are not later attributed to Claude; the last line is `<tmp>`.
 2. **One file edit** to write `<tmp>/prompt.md` as a self-contained brief — Claude runs headless and fresh, seeing only this file plus the repo it reads itself, never your conversation. Lead with the user's request verbatim. Add a short `## Context` heading only when the ask depends on prior conversation decisions. Carry facts and constraints, not your analysis; the passthrough's point is Claude's take.
    Choose `<mode>` from the request: questions, audits, investigations, reviews, and plans use `ro`; only an explicit implementation or edit request uses `rw`. When context says "don't code yet" or equivalent, use `ro`.
 3. **One shell call** to run, check, and clean up in a single `;`-chained command (so status/cleanup run even on engine failure):
 
    ```
-   <plugin-root>/bin/plx-engine --engine claude --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; echo ---; git -C <repo> status --short; rm -rf <tmp>; (exit $rc)
+   <plugin-root>/bin/plx-engine --engine claude --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; echo ---; git -C <repo> status --short; <plugin-root>/bin/plx-clean-temp <tmp>; (exit $rc)
    ```
 
-   The wrapper runs one headless `claude -p` turn with scoped tools, project-only settings, and read-only or edit-accepting permission mode. It prints only Claude's final message.
+   The wrapper runs one headless `claude -p` turn with safe mode, no session persistence,
+   explicit repository-guidance discovery, and read-only tools or repo-confined sandboxed
+   Bash. It prints only Claude's final message.
 
    - If the call may run long, use a retained execution session and poll it; run status
      and cleanup after completion.

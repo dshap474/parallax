@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.6
+Status: v0.5.7
 
 ## Required tree
 
@@ -15,7 +15,7 @@ shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.6`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.7`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains ten
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 

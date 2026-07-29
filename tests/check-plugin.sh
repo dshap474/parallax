@@ -144,6 +144,12 @@ if [ "$passthrough_overrides_ok" -eq 1 ]; then
 else
   _fail "single-engine passthrough override contract drift"
 fi
+if grep -Fq 'Defaults: `model=opus`, `effort=medium`.' \
+     "$PLX_CODEX/skills/claude/SKILL.md"; then
+  _pass "Codex-hosted Claude passthrough defaults Opus effort to medium"
+else
+  _fail "Codex-hosted Claude passthrough default effort drift"
+fi
 
 if grep -q 'Default to the existing \*\*ephemeral\*\*' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
    grep -q 'plx-codex-thread start' "$PLX_CLAUDE/skills/codex/SKILL.md" &&

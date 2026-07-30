@@ -198,6 +198,19 @@ else
   _fail "Codex review examples contradict configured polarity"
 fi
 
+if grep -Fq 'current change directly makes it obsolete' \
+     "$PLX_ROOT/shared/prompts/reviewer-cleanup.md" &&
+   grep -Fq 'small, behavior-preserving remedy is concrete' \
+     "$PLX_ROOT/shared/prompts/reviewer-cleanup.md" &&
+   grep -Fq 'unrelated pre-existing issues' \
+     "$PLX_ROOT/shared/prompts/reviewer-cleanup.md" &&
+   grep -Fq 'untouched-code findings with no causal link to the change' \
+     "$PLX_ROOT/shared/prompts/reviewer-cleanup.md"; then
+  _pass "cleanup review retires only debt made obsolete by the current change"
+else
+  _fail "cleanup debt-retirement boundary drift"
+fi
+
 eval_contract_ok=1
 for package_host in "$PLX_CLAUDE:claude" "$PLX_CODEX:codex"; do
   package="${package_host%:*}"

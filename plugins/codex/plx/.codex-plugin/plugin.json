@@ -1,6 +1,6 @@
 {
   "name": "plx",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "description": "Parallax for Codex: ten multi-model planning, implementation, review, goal-preparation, passthrough, initialization, and blindspot workflows.",
   "author": {
     "name": "Daniel Shapiro",

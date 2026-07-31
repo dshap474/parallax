@@ -246,6 +246,21 @@ else
   _fail "Claude and Codex behavioral governance contract drift"
 fi
 
+grok_sandbox_contract_ok=1
+for host in claude codex; do
+  package="$PLX_ROOT/plugins/$host/plx"
+  grep -Fq -- '--optional-grok --grok-mode rw' "$package/skills/build/SKILL.md" || grok_sandbox_contract_ok=0
+  grep -Fq -- '--require-grok --grok-mode rw' "$package/skills/build/SKILL.md" || grok_sandbox_contract_ok=0
+  grep -Fq -- '--optional-grok --grok-mode rw' "$package/skills/dev/SKILL.md" || grok_sandbox_contract_ok=0
+  grep -Fq '[PLX:GROK FAILED]' "$package/skills/grok/SKILL.md" || grok_sandbox_contract_ok=0
+  grep -Fq 'Do not perform the task in the host session' "$package/skills/grok/SKILL.md" || grok_sandbox_contract_ok=0
+done
+if [ "$grok_sandbox_contract_ok" -eq 1 ]; then
+  _pass "Grok writers probe workspace mode and passthroughs fail closed"
+else
+  _fail "Grok workspace preflight or fail-closed contract drift"
+fi
+
 if ! grep -RqiE 'make the edit yourself|fix nits inline|one-liner you can.*edit|edit it yourself' \
      "$PLX_CLAUDE/skills/build" "$PLX_CODEX/skills/build" &&
    [ -z "$(grep -L 'Fix directly' "$PLX_CLAUDE/skills/review/SKILL.md" "$PLX_CODEX/skills/review/SKILL.md" \

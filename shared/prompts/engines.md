@@ -131,13 +131,18 @@ consume it later. A spec doc for a one-shot task is overhead, not rigor.
   don't pull bulk content into your own window.
 - **Grok may require narrowly scoped host approval** for network or keychain access;
   Grok's own kernel sandbox still confines it. The wrapper defaults the model to
-  `grok-4.5` and effort to `medium`; explicit values pass through to Grok.
+  `grok-4.5` and effort to `medium`; explicit values pass through to Grok. A Grok writer
+  must pass `plx-preflight --optional-grok --grok-mode rw` (or `--require-grok` for an
+  explicit selection) before mutation; the workspace probe runs against a disposable
+  directory rather than the target repository.
 - **Pipeline-specific retry and completion rules override this general playbook.** If a lane
   fails (exit 1), read its log, then retry once — same engine, or a
   smarter one if the failure looks like capability. If a review lane fails and others
   succeeded, proceed with the survivors and say so; this survivor rule does not apply to
   required plan critics. **If a lane hangs** well past its
   expected runtime, check the log, kill it, and relaunch rather than waiting forever.
+  The explicit single-engine passthrough skills are fail-closed exceptions: never redo
+  their failed task in the host session or substitute another engine.
 - Exit codes are uniform: 0 ok · 1 engine failure · 2 usage error · 3 not signed in
   (tell the user to log in to that engine).
 

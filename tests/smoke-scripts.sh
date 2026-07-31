@@ -533,6 +533,26 @@ else
   _fail "failed lane not recorded correctly"
 fi
 
+# Seatbelt startup failures receive a stable marker while preserving exit 1.
+printf '%s\n' '#!/usr/bin/env bash' \
+  'echo "Failed to initialize Seatbelt workspace sandbox: Operation not permitted" >&2' \
+  'exit 1' \
+  > "$fake_bin/grok"
+chmod +x "$fake_bin/grok"
+PATH="$fake_bin:$PATH" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode rw --repo "$REPO" \
+  --prompt-file "$fail_prompt" \
+  --out "$WORK/seatbelt-out.md" --log "$WORK/seatbelt.log" \
+  >/dev/null 2>"$WORK/seatbelt-stderr.txt"
+seatbelt_rc=$?
+if [ "$seatbelt_rc" -eq 1 ] &&
+   grep -Fq "PLX_GROK_SANDBOX_UNAVAILABLE" "$WORK/seatbelt-stderr.txt" &&
+   grep -Fq "Failed to initialize Seatbelt workspace sandbox" "$WORK/seatbelt.log"; then
+  _pass "Grok Seatbelt startup failure is classified and preserves exit 1"
+else
+  _fail "Grok Seatbelt startup failure classification drift"
+fi
+
 # Restore successful fake grok for any later tests
 printf '%s\n' '#!/usr/bin/env bash' \
   'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
@@ -639,6 +659,49 @@ rc=$?
 if [ "$rc" -eq 0 ]; then _pass "exits 0 with no required engines"; else _fail "exit $rc"; fi
 assert_contains "preflight_ok: yes" "$out" "reports preflight_ok: yes"
 
+_head "plx-preflight probes the requested Grok sandbox mode"
+if "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --grok-mode rw >/dev/null 2>&1; then
+  _fail "--grok-mode without a Grok selector should exit 2"
+else
+  rc=$?
+  if [ "$rc" -eq 2 ]; then _pass "--grok-mode requires a Grok selector"; else _fail "expected exit 2, got $rc"; fi
+fi
+if "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --require-grok --grok-mode invalid >/dev/null 2>&1; then
+  _fail "invalid --grok-mode should exit 2"
+else
+  rc=$?
+  if [ "$rc" -eq 2 ]; then _pass "invalid --grok-mode exits 2"; else _fail "expected exit 2, got $rc"; fi
+fi
+printf '%s\n' '#!/usr/bin/env bash' \
+  '# Fake Grok CLI — records argv and returns one successful headless envelope.' \
+  'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
+  'printf '\''{"text":"OK","stopReason":"EndTurn","sessionId":""}\n'\''' \
+  > "$fake_bin/grok"
+chmod +x "$fake_bin/grok"
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
+  "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --require-grok > "$out" 2>&1
+rc=$?
+ro_probe_repo="$(awk 'previous == "--cwd" { print; exit } { previous=$0 }' "$fake_args")"
+if [ "$rc" -eq 0 ] && [ "$ro_probe_repo" = "$REPO" ] &&
+   grep -qx "read-only" "$fake_args" &&
+   grep -Fq -- "- grok: ok (mode=ro)" "$out"; then
+  _pass "Grok read-only preflight keeps the requested repository"
+else
+  _fail "Grok read-only preflight mode drift"
+fi
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
+  "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --require-grok --grok-mode rw > "$out" 2>&1
+rc=$?
+rw_probe_repo="$(awk 'previous == "--cwd" { print; exit } { previous=$0 }' "$fake_args")"
+if [ "$rc" -eq 0 ] && [ "$rw_probe_repo" != "$REPO" ] &&
+   printf '%s\n' "$rw_probe_repo" | grep -q '/plx-preflight\.[^/]*/grok-workspace-probe$' &&
+   grep -qx "workspace" "$fake_args" &&
+   grep -Fq -- "- grok: ok (mode=rw)" "$out"; then
+  _pass "Grok workspace preflight uses a disposable repository"
+else
+  _fail "Grok workspace preflight did not isolate the target (repo=$rw_probe_repo)"
+fi
+
 _head "plx-preflight rejects a bad repo path"
 if "$PLUGIN_ROOT/bin/plx-preflight" --repo /no/such/repo >/dev/null 2>&1; then
   _fail "should reject missing repo"
@@ -689,11 +752,14 @@ if [ "$WITH_ENGINES" -eq 1 ]; then
     _skip "codex not installed — skipped"
   fi
   if command -v grok >/dev/null 2>&1; then
-    if "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --require-grok >/dev/null 2>&1; then
-      _pass "grok preflight ok"
-    else
-      _skip "grok present but probe failed (known env-dependent)"
-    fi
+    for grok_mode in ro rw; do
+      if "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" \
+        --require-grok --grok-mode "$grok_mode" >/dev/null 2>&1; then
+        _pass "grok preflight $grok_mode ok"
+      else
+        _fail "grok present but $grok_mode preflight failed"
+      fi
+    done
   else
     _skip "grok not installed — skipped"
   fi

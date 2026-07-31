@@ -350,6 +350,15 @@ run_grok() {
   fi
 
   if [[ $rc -ne 0 ]]; then
+    if grep -qiE \
+      '(seatbelt.*(fail|denied|operation not permitted)|(fail|denied|operation not permitted).*seatbelt|sandbox(_init| initialization| setup).*(fail|denied|operation not permitted)|(fail|denied|operation not permitted).*(sandbox_init|sandbox initialization|sandbox setup))' \
+      "$LOG"; then
+      echo "PLX_GROK_SANDBOX_UNAVAILABLE" >&2
+      echo "Grok $sandbox sandbox could not initialize under the host sandbox." >&2
+      echo "The Grok lane did not start. Do not perform or attribute the task to this lane." >&2
+      [[ -s "$LOG" ]] && sed -n '1,40p' "$LOG" >&2
+      exit 1
+    fi
     echo "grok invocation failed (exit $rc)" >&2
     [[ -s "$LOG" ]] && sed -n '1,40p' "$LOG" >&2
     exit 1

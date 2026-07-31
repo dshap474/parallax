@@ -71,9 +71,12 @@ all three core review dimensions on Claude. For large/risky work, use file-disjo
 workers and add a second non-writer review engine only when proportionate.
 
 For the writer, resolve `code` and `code-fallback` from config. An explicit user engine
-selection disables fallback and must pass required preflight. Otherwise probe Grok with
-`<plugin-root>/bin/plx-preflight --repo <repo> --optional-grok`; select it on success,
-or run the same command with `--require-codex` and select Codex on failure. Declare
+selection disables fallback and must pass required preflight; explicit Grok uses
+`<plugin-root>/bin/plx-preflight --repo <repo> --require-grok --grok-mode rw`. Otherwise
+probe Grok with `<plugin-root>/bin/plx-preflight --repo <repo> --optional-grok --grok-mode rw`;
+select it on success, or run the same command with `--require-codex` and select Codex on
+failure. Run Grok's workspace probe with the same narrowly approved host boundary
+required by its writer lane. Declare
 the selected writer, model, effort, and fallback before mutation. Never fall back after a
 writer starts or the worktree becomes dirty. Require every selected critic/reviewer
 engine before launching its lanes.

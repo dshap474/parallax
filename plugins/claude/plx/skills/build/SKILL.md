@@ -47,12 +47,15 @@ re-run at integration.
 ## Size the run — then declare it
 
 Read the engine config (`plx-config`) → key `build`. Shipped defaults: `code: grok` and
-`code-fallback: codex`. If the user explicitly selected an engine, use only that engine
-and require it in preflight. Otherwise probe Grok with `--optional-grok`; when it passes,
-select Grok. When it fails, require Codex and select the fallback. Declare the selected
-engine, model, effort, and any fallback before mutation. Never fall back after a writer
-starts or after the worktree becomes dirty; stop and report partial state. Size per the
-judgment doc:
+`code-fallback: codex`. If the user explicitly selected Grok, require it with
+`plx-preflight --repo <repo> --require-grok --grok-mode rw`; another explicit engine
+uses its normal required preflight. Otherwise probe Grok with
+`plx-preflight --repo <repo> --optional-grok --grok-mode rw`; when it passes, select
+Grok. When it fails, require Codex and select the fallback. Run Grok's workspace probe
+with the same disabled Claude Bash sandbox required by its writer lane. Declare the
+selected engine, model, effort, and any fallback before mutation. Never fall back after
+a writer starts or after the worktree becomes dirty; stop and report partial state.
+Size per the judgment doc:
 
 - **trivial** → a single rw lane on the selected writer at low or medium; the host verifies.
 - **default** → one writer lane, the `code` engine, `--effort medium`.

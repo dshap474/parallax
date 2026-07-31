@@ -12,24 +12,27 @@ plx-preflight — probe external engine availability before a Parallax pipeline 
 Usage:
   plx-preflight --repo <abs-path> [--require-codex] [--require-grok] [--require-claude]
                 [--optional-codex] [--optional-grok] [--optional-claude]
+                [--grok-mode ro|rw]
 
 What it does:
   For each requested engine, sends a tiny "reply OK" prompt through
-  `plx-engine --mode ro`. A passing probe proves the CLI is installed,
-  authenticated, and the model responds. The same CLI/auth backs ro and rw, so
-  this also validates a writer. All probe artifacts live in a temp dir and are
-  deleted on exit.
+  `plx-engine`. A passing probe proves the CLI is installed, authenticated, the
+  model responds, and the selected sandbox profile starts. Grok defaults to a
+  read-only probe; `--grok-mode rw` validates its workspace writer sandbox
+  against a disposable directory. All probe artifacts live in a temp dir and
+  are deleted on exit.
 
 Flags:
   --repo <dir>         absolute path to the target repo (required)
   --require-<engine>   probe the engine; fail preflight if it doesn't pass
   --optional-<engine>  probe the engine; report but don't fail
+  --grok-mode <mode>   ro (default) | rw; requires a Grok selector
   --help               this text
 
 Output (stdout):
   ### Parallax preflight
   - repo: <path>
-  - <engine>: ok | missing | probe failed   (one line per probed engine)
+  - <engine>: ok | missing | probe failed   (Grok also reports mode)
   - preflight_ok: yes | no
 
 Exit codes:
@@ -43,6 +46,7 @@ REPO=""
 REQUIRE_CODEX=0; OPTIONAL_CODEX=0
 REQUIRE_GROK=0;  OPTIONAL_GROK=0
 REQUIRE_CLAUDE=0; OPTIONAL_CLAUDE=0
+GROK_MODE="ro"; GROK_MODE_SET=0
 
 need_value() { [[ -n "${2:-}" ]] || { echo "missing value for $1" >&2; exit 2; }; }
 
@@ -53,6 +57,7 @@ while [[ $# -gt 0 ]]; do
     --optional-codex) OPTIONAL_CODEX=1; shift ;;
     --require-grok) REQUIRE_GROK=1; shift ;;
     --optional-grok) OPTIONAL_GROK=1; shift ;;
+    --grok-mode) need_value "$1" "${2:-}"; GROK_MODE="$2"; GROK_MODE_SET=1; shift 2 ;;
     --require-claude) REQUIRE_CLAUDE=1; shift ;;
     --optional-claude) OPTIONAL_CLAUDE=1; shift ;;
     --help|-h) usage; exit 0 ;;
@@ -62,6 +67,11 @@ done
 
 [[ -n "$REPO" ]] || { echo "--repo required" >&2; exit 2; }
 [[ -d "$REPO" ]] || { echo "repo not found: $REPO" >&2; exit 2; }
+case "$GROK_MODE" in ro|rw) ;; *) echo "--grok-mode must be ro|rw" >&2; exit 2 ;; esac
+if [[ "$GROK_MODE_SET" -eq 1 && "$REQUIRE_GROK" -eq 0 && "$OPTIONAL_GROK" -eq 0 ]]; then
+  echo "--grok-mode requires --require-grok or --optional-grok" >&2
+  exit 2
+fi
 REPO="$(cd "$REPO" && pwd)"
 BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/plx-preflight.XXXXXX")"
@@ -88,24 +98,42 @@ print_log_tail() {
 }
 
 probe() {
-  local engine="$1"
+  local engine="$1" mode="ro" probe_repo="$REPO"
   if ! command -v "$engine" >/dev/null 2>&1; then
-    echo "- $engine: missing"
+    if [[ "$engine" == "grok" ]]; then
+      echo "- $engine: missing (mode=$GROK_MODE)"
+    else
+      echo "- $engine: missing"
+    fi
     return 1
   fi
 
   printf '%s\n' "reply OK" > "$TMP_DIR/prompts/$engine-probe.md"
+  if [[ "$engine" == "grok" ]]; then
+    mode="$GROK_MODE"
+    if [[ "$mode" == "rw" ]]; then
+      probe_repo="$TMP_DIR/grok-workspace-probe"
+      mkdir -p "$probe_repo"
+      printf '%s\n' \
+        'Reply with exactly OK. Do not call tools or modify files.' \
+        > "$TMP_DIR/prompts/$engine-probe.md"
+    fi
+  fi
   # Keep non-Grok probes cheap. Grok omits the flag so preflight validates its
   # pinned grok-4.5 / medium default. Bash 3.2 + set -u needs the guard idiom.
   local -a extra
   [[ "$engine" != "grok" ]] && extra=(--effort low)
-  if "$BIN_DIR/plx-engine" --engine "$engine" --mode ro \
-    --repo "$REPO" \
+  if "$BIN_DIR/plx-engine" --engine "$engine" --mode "$mode" \
+    --repo "$probe_repo" \
     --prompt-file "$TMP_DIR/prompts/$engine-probe.md" \
     --out "$TMP_DIR/outputs/$engine-probe.md" \
     --log "$TMP_DIR/logs/$engine-probe.log" \
     ${extra[@]+"${extra[@]}"} >/dev/null && [[ -s "$TMP_DIR/outputs/$engine-probe.md" ]]; then
-    echo "- $engine: ok"
+    if [[ "$engine" == "grok" ]]; then
+      echo "- $engine: ok (mode=$mode)"
+    else
+      echo "- $engine: ok"
+    fi
     case "$engine" in
       codex) CODEX_OK=1 ;;
       grok) GROK_OK=1 ;;
@@ -114,7 +142,11 @@ probe() {
     return 0
   fi
 
-  echo "- $engine: probe failed"
+  if [[ "$engine" == "grok" ]]; then
+    echo "- $engine: probe failed (mode=$mode)"
+  else
+    echo "- $engine: probe failed"
+  fi
   print_log_tail "$TMP_DIR/logs/$engine-probe.log"
   return 1
 }

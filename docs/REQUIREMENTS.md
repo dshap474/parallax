@@ -22,11 +22,14 @@ plx-engine --engine codex|claude|grok --mode ro|rw --repo <absolute-path> \
 
 Exit codes are `0` success, `1` engine failure, `2` usage error, and `3` authentication
 required. `plx-preflight` sends a minimal real prompt to prove install, authentication,
-and model availability.
+model availability, and the selected sandbox profile. Grok writer selection uses
+`--grok-mode rw`, which probes its workspace sandbox against a disposable directory
+rather than the target repository.
 
 Long engine calls should run in a retained/background shell session. Grok may require
 narrowly scoped host approval for network or keychain access; its own kernel sandbox
-remains the file-confinement boundary.
+remains the file-confinement boundary. A sandbox-initialization failure is named
+`PLX_GROK_SANDBOX_UNAVAILABLE` and never authorizes host-session substitution.
 
 ## Optional evaluation provenance
 

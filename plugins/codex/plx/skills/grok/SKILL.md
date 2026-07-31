@@ -52,6 +52,21 @@ Three tool calls — no subagent.
      and cleanup after completion.
    - Exit codes: **0** ok · **1** grok failure — a cancelled turn means no edits applied (surface the stderr/log excerpt to the user) · **2** usage error (your invocation is wrong — fix it) · **3** not signed in → tell the user to run `grok login` and stop.
 
+   Any nonzero exit ends this skill. Do not perform the task in the host session, retry
+   it through another engine, synthesize a substitute answer, or claim `$plx:grok`
+   completed. Return:
+
+   ```
+   [PLX:GROK FAILED]
+   The headless Grok lane did not start or complete.
+   <the wrapper diagnostic and raw log excerpt>
+   No substitute task work was performed by this skill.
+   ```
+
+   This fail-closed rule overrides the general engine guide's retry and escalation advice
+   for this explicit single-engine passthrough. If Git status differs from the initial
+   snapshot, report that possible partial state instead of claiming no changes.
+
    Then emit grok's output verbatim — no review pass of your own. Only if the status shows new changes vs the step-1 snapshot, add a summary (`git -C <repo> diff --stat`).
 
 Request:

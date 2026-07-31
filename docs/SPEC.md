@@ -36,8 +36,10 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 - Codex-host defaults: Codex plans, synthesizes, and applies targeted fixes; Claude
   supplies plan critics and three core review dimensions plus risk-triggered security.
 - Both hosts prefer Grok for initial implementation and use configured Codex fallback
-  only when Grok fails optional preflight before mutation. Explicit engine selection
-  disables fallback; a started or dirty writer never falls through to another engine.
+  only when Grok fails an optional workspace-sandbox preflight before mutation. The
+  workspace probe is confined to a disposable directory. Explicit engine selection
+  disables fallback; a started or dirty writer never falls through to another engine,
+  and an explicit Grok passthrough failure never falls through to host-session work.
 - Shared runtime copies must exactly match `shared/`.
 
 ## Runtime contracts
@@ -49,8 +51,10 @@ decisions, candidate plan, and an observable done condition.
 
 No skill constructs a raw external-engine command. No wrapper uses forbidden broad
 permission flags. Claude lanes ignore untrusted customization, do not persist sessions,
-and fail closed if their sandbox is unavailable. Temporary artifacts are removed only
-through the confined cleanup helper. Skills never commit or publish.
+and fail closed if their sandbox is unavailable. Grok sandbox startup failures receive a
+stable error marker and remain confined by the selected kernel profile. Temporary
+artifacts are removed only through the confined cleanup helper. Skills never commit or
+publish.
 Persistent Codex access is passthrough-only and derives read or write scope for each
 turn; every pipeline lane remains isolated and ephemeral.
 

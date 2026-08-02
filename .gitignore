@@ -15,6 +15,9 @@ _disabled/
 .reference/
 .evals/
 
+# Local PLX trace database; keep its AGENTS.md schema guide trackable.
+/.plx/*.db*
+
 # Repo-local agent instructions — local-only (mirror/dev notes live here).
 /AGENTS.md
 /CLAUDE.md

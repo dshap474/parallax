@@ -11,8 +11,9 @@ It is evaluation data, not runtime state to copy into repositories PLX operates 
   mode, routing reason and candidates, timing, exit code, prompt, raw trace,
   final output, evaluation, and trace SHA-256.
 
-`runs.id` is a stable generated run ID. `lanes.trace_sha256` identifies trace
-content; it is not the run ID. JSON columns must contain valid JSON when present.
+Grouped `runs.id` values come from the `plx-<skill>.<suffix>` temp-directory basename;
+host-only and standalone runs receive generated IDs. `lanes.trace_sha256` identifies
+trace content; it is not the run ID. JSON columns must contain valid JSON when present.
 
 ## Operating rules
 
@@ -21,4 +22,5 @@ content; it is not the run ID. JSON columns must contain valid JSON when present
   publish, or print them wholesale without explicit user authorization.
 - Preserve recorded runs. Schema changes require a migration and an increment to
   SQLite `user_version`; do not silently reinterpret existing columns.
-- Capture remains owned by `plx-engine` and `plx-eval`. No hooks are configured yet.
+- Capture is owned by `plx-engine` lane finalization and each skill's terminal
+  `plx-eval finish` call. No hooks are configured.

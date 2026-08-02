@@ -41,8 +41,7 @@ re-run at integration.
   and lane outputs.
 - Snapshot `git status --short` and the current staged/unstaged diff into `<tmp>` —
   pre-existing edits must be preserved and must not be attributed to this build.
-- Write the resolved spec verbatim to `<tmp>/task.md`; evaluation records store only
-  its hash, never its contents.
+- Write the resolved spec verbatim to `<tmp>/task.md` for the run record.
 
 ## Size the run — then declare it
 
@@ -67,23 +66,12 @@ report partial state. Size per the judgment doc:
 Declare the sizing in one line before launching (e.g. `Sizing: 2 workers (grok ×
 grok, medium) — packages: api/, cli/`).
 
-Write the same sizing line to `<tmp>/shape.txt`, then open the optional grouped evaluation
-envelope once, before any lane:
-
-```
-<plugin-root>/bin/plx-eval begin --repo <repo> --pipeline build --host codex \
-  --host-model <actual host model if known, otherwise unknown> \
-  --run-file <tmp>/.plx-eval-run \
-  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
-  || echo "plx-eval begin failed (non-fatal)" >&2
-```
-
-When `PLX_EVAL_DIR` is unset, `begin` no-ops and writes a disabled sentinel. Keep all
-lane prompt files directly in `<tmp>` so `plx-engine` discovers the marker mechanically.
-Recorder failures never fail the build; interruption leaves the envelope `incomplete`.
-After opening it, call `plx-eval finish` before every handled return, including preflight,
-authentication, and lane failures. Complete the writer selection and preflight above
-before launching any rw lane.
+Write the same sizing line to `<tmp>/shape.txt`. Keep all lane prompt files directly in
+`<tmp>`; its `plx-build.<suffix>` basename mechanically groups their captured lanes.
+Call `<plugin-root>/bin/plx-eval finish` before every handled return, including preflight,
+authentication, and lane failures. Recorder failures never fail the build; interruption
+leaves the run incomplete. Complete the writer selection and preflight above before
+launching any rw lane.
 
 ## Pipeline (run in order)
 
@@ -122,11 +110,13 @@ before launching any rw lane.
    test runs against half-built code are noise). Use the repo's toolchain binaries
    (e.g. `.venv/bin/pytest -q`, `npm test`); never `uv run` inside a sandbox.
 
-4. **Report and stop.** Close the evaluation envelope before cleaning `<tmp>`, using the
+4. **Report and stop.** Close the run before cleaning `<tmp>`, using the
    honest build outcome and the result of the host's integration verification:
 
    ```
-   <plugin-root>/bin/plx-eval finish --repo <repo> --run-file <tmp>/.plx-eval-run \
+   <plugin-root>/bin/plx-eval finish --skill build --host codex --repo <repo> --run-dir <tmp> \
+     --host-model <actual host model if known, otherwise unknown> \
+     --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
      --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
      || echo "plx-eval finish failed (non-fatal)" >&2
    ```
@@ -146,8 +136,8 @@ before launching any rw lane.
    ground truth over the worker's testimony. No review round here — that's
    `$plx:review`. This skill does not commit; version control follows the repo's own
    agent instructions. Clean up with `<plugin-root>/bin/plx-clean-temp <tmp>`.
-   Close the envelope on every normal or handled-error return after it is opened;
-   interruption remains `incomplete`.
+   Close the run on every normal or handled-error return; an interruption before
+   `finish` leaves it incomplete.
 
 ## Hard constraints
 

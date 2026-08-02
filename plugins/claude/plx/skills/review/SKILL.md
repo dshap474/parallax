@@ -30,8 +30,7 @@ surgically, guided by the findings.
   asked to review.
 - Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-review.XXXXXX"` for the
   brief and lane outputs.
-- Write the review request and resolved scope to `<tmp>/task.md`; evaluation records
-  store only its hash, never its contents.
+- Write the review request and resolved scope to `<tmp>/task.md` for the run record.
 
 ## Size the round — then declare it
 
@@ -51,22 +50,11 @@ Read the engine config (`plx-config`) → key `review`. Shipped default: every d
 Declare the sizing in one line before launching (e.g. `Sizing: review 3×1
 (codex xhigh) · fixes: host`).
 
-Write the same sizing line to `<tmp>/shape.txt`, then open the optional grouped evaluation
-envelope once, before any lane:
-
-```
-plx-eval begin --repo <repo> --pipeline review --host claude \
-  --host-model <actual host model if known, otherwise unknown> \
-  --run-file <tmp>/.plx-eval-run \
-  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
-  || echo "plx-eval begin failed (non-fatal)" >&2
-```
-
-When `PLX_EVAL_DIR` is unset, `begin` no-ops and writes a disabled sentinel. Keep all
-lane prompt files directly in `<tmp>` so `plx-engine` discovers the marker mechanically.
-Recorder failures never fail review; interruption leaves the envelope `incomplete`.
-After opening it, call `plx-eval finish` before every handled return, including preflight,
-authentication, lane, and report-only exits. Then run `plx-preflight --repo <repo>
+Write the same sizing line to `<tmp>/shape.txt`. Keep all lane prompt files directly in
+`<tmp>`; its `plx-review.<suffix>` basename mechanically groups their captured lanes.
+Call `plx-eval finish` before every handled return, including preflight, authentication,
+lane, and report-only exits. Recorder failures never fail review; interruption leaves the
+run incomplete. Then run `plx-preflight --repo <repo>
 --require-<engine>` for each engine the round will use.
 
 ## Pipeline (run in order)
@@ -153,12 +141,14 @@ authentication, lane, and report-only exits. Then run `plx-preflight --repo <rep
 
 6. **Verify and deliver.** Re-read your own diff — did each fix land, and nothing
    else? Run the repo's own checks (toolchain binaries; never
-   `uv run` in a sandbox). Close the evaluation envelope before cleaning `<tmp>`, using
+   `uv run` in a sandbox). Close the run before cleaning `<tmp>`, using
    the honest review outcome and verification result (report-only review may use
    `verification pass` when all required lanes and finding checks completed):
 
    ```
-   plx-eval finish --repo <repo> --run-file <tmp>/.plx-eval-run \
+   plx-eval finish --skill review --host claude --repo <repo> --run-dir <tmp> \
+     --host-model <actual host model if known, otherwise unknown> \
+     --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
      --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
      || echo "plx-eval finish failed (non-fatal)" >&2
    ```
@@ -177,8 +167,8 @@ authentication, lane, and report-only exits. Then run `plx-preflight --repo <rep
 
    This skill does not commit; version control follows the repo's own agent
    instructions. Clean up with `plx-clean-temp <tmp>`.
-   Close the envelope on every normal or handled-error return after it is opened;
-   interruption remains `incomplete`.
+   Close the run on every normal or handled-error return; an interruption before
+   `finish` leaves it incomplete.
 
 ## Hard constraints
 

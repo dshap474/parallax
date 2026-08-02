@@ -27,6 +27,8 @@ plan, then keep the external lanes focused on independent criticism.
 Establish ground truth with your own tools — nothing is injected for you:
 
 - Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
+- Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-goal-spec.XXXXXX"` and write
+  the original request to `<tmp>/task.md` for the run record.
 - If the worktree is dirty, note `git status --short`.
 - Get today's date (`date +%F`) for the thread directory prefix.
 - Read `.project/VISION.md` if it exists — it is the project **constitution**. Its hard
@@ -44,6 +46,9 @@ Shipped defaults: `plan-critic-implementation: [claude]` ·
 `plan-critic-system: [claude]`. You are the planner. Declare the resolved shape, then run `<plugin-root>/bin/plx-preflight --repo
 <repo> --require-<engine>` once per **distinct** resolved engine. If a required engine is
 unavailable, report `[RED-TEAM INCOMPLETE]` and stop; never silently drop a configured lane.
+Write the declaration to `<tmp>/shape.txt`. Keep every lane prompt directly under `<tmp>`
+so its `plx-goal-spec.<suffix>` basename groups captured lanes. Before every handled return,
+call the `<plugin-root>/bin/plx-eval finish` command in step 6 with the honest outcome.
 
 ## Pipeline (run in order)
 
@@ -182,8 +187,19 @@ Note where the final spec diverges from the candidate plan and the critiques, an
         Success Criterion in it is satisfied with evidence and its Validation commands pass.
   ```
 
-- Then **stop**. Do not build. Clean up the planning temp directory with
-  `<plugin-root>/bin/plx-clean-temp <tmp>` once the spec is written to the thread.
+- Close the run, then **stop**. Do not build:
+
+  ```
+  <plugin-root>/bin/plx-eval finish --skill goal-spec --host codex --repo <repo> --run-dir <tmp> \
+    --host-model <actual host model if known, otherwise unknown> \
+    --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
+    --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
+    || echo "plx-eval finish failed (non-fatal)" >&2
+  ```
+
+  Clean up the planning temp directory with `<plugin-root>/bin/plx-clean-temp <tmp>`
+  once the spec is written to the thread. Recorder failures never fail the skill; an
+  interruption before `finish` leaves the grouped run incomplete.
 
 ## Output discipline
 

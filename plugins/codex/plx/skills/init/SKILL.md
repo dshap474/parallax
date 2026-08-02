@@ -6,8 +6,8 @@ argument-hint: ""
 
 # $plx:init — prime the orchestrator
 
-You are the Parallax orchestrator (Codex). This skill changes no files and launches no
-lanes. It loads the session's operating posture — how you delegate, and what the plx
+You are the Parallax orchestrator (Codex). This skill changes no repository files and
+launches no lanes. It loads the session's operating posture — how you delegate, and what the plx
 plugin puts at your disposal. Adopt everything below for the rest of the session.
 
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
@@ -65,6 +65,15 @@ one, recommend it by name and let the user invoke it.
 `<plugin-root>/bin/plx-engine --help` prints the full lane contract.
 
 ## 4 — Confirm
+
+Resolve `<repo>` with `git rev-parse --show-toplevel` (fall back to the absolute current
+directory when outside Git), then record the host-only run:
+
+```
+<plugin-root>/bin/plx-eval finish --skill init --host codex --repo <repo> \
+  --outcome pass --verification not-run \
+  || echo "plx-eval finish failed (non-fatal)" >&2
+```
 
 Report back in five lines or fewer: posture adopted, judgment doc loaded, and where the
 skill map now points you. Do not start any pipeline or lane — wait for the user's next

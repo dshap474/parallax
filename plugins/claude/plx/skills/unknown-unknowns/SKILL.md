@@ -141,3 +141,13 @@ Close every run with: which quadrants you targeted, the unknowns surfaced (now k
 any artifacts written to the build thread, and — always — the improved next prompt or
 skill invocation the user should run, paste-ready. Results in chat; never create
 repo-local runtime state outside `.project/`.
+
+Before every handled return, record the host-only run with the honest status:
+
+```
+plx-eval finish --skill unknown-unknowns --host claude --repo <repo> \
+  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
+  || echo "plx-eval finish failed (non-fatal)" >&2
+```
+
+Trace recording is best-effort and never changes the skill result.

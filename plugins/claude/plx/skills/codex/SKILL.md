@@ -53,7 +53,7 @@ Three tool calls — no subagent.
    **Ephemeral default:**
 
    ```
-   plx-engine --engine codex --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; echo ---; git -C <repo> status --short; plx-clean-temp <tmp>; (exit $rc)
+   plx-engine --engine codex --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; outcome=fail; [[ "$rc" -eq 0 ]] && outcome=pass; plx-eval finish --skill codex --host claude --repo <repo> --run-dir <tmp> --task-file <tmp>/prompt.md --outcome "$outcome" --verification not-run || echo "plx-eval finish failed (non-fatal)" >&2; echo ---; git -C <repo> status --short; plx-clean-temp <tmp>; (exit $rc)
    ```
 
    `plx-engine` is on your PATH (shipped in the plugin's `bin/`); it runs one headless `codex exec` turn with safety pinned (`read-only` or repo-scoped `workspace-write`, `--ignore-user-config`, `--ephemeral`) and prints only Codex's final message.
@@ -66,13 +66,13 @@ Three tool calls — no subagent.
    **Persistent start:**
 
    ```
-   plx-codex-thread start --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort>; rc=$?; echo ---; git -C <repo> status --short; plx-clean-temp <tmp>; (exit $rc)
+   plx-codex-thread start --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort>; rc=$?; outcome=fail; [[ "$rc" -eq 0 ]] && outcome=pass; plx-eval finish --skill codex --host claude --repo <repo> --run-dir <tmp> --task-file <tmp>/prompt.md --outcome "$outcome" --verification not-run || echo "plx-eval finish failed (non-fatal)" >&2; echo ---; git -C <repo> status --short; plx-clean-temp <tmp>; (exit $rc)
    ```
 
    **Persistent resume:**
 
    ```
-   plx-codex-thread resume --thread <thread-id> --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort>; rc=$?; echo ---; git -C <repo> status --short; plx-clean-temp <tmp>; (exit $rc)
+   plx-codex-thread resume --thread <thread-id> --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort>; rc=$?; outcome=fail; [[ "$rc" -eq 0 ]] && outcome=pass; plx-eval finish --skill codex --host claude --repo <repo> --run-dir <tmp> --task-file <tmp>/prompt.md --outcome "$outcome" --verification not-run || echo "plx-eval finish failed (non-fatal)" >&2; echo ---; git -C <repo> status --short; plx-clean-temp <tmp>; (exit $rc)
    ```
 
    `plx-codex-thread` is packaged with this plugin. It runs the pinned app client through

@@ -11,7 +11,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Goal spec | `/plx:goal-spec` | `$plx:goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Claude may persist Codex context |
 | Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; defaults to Grok 4.5 at medium effort |
-| Init | `/plx:init` | `$plx:init` | Prime the orchestrator: delegation posture + plx skill map; writes nothing |
+| Init | `/plx:init` | `$plx:init` | Prime the orchestrator: delegation posture + plx skill map; no repository writes |
 | Agents memory | `/plx:agents-memory` | `$plx:agents-memory` | Bootstrap root `AGENTS.md`, `CLAUDE.md`, and `.project/` policy |
 | Unknowns | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` | Host-only blindspot and comprehension work |
 
@@ -38,10 +38,9 @@ launching. Skills never commit or publish; target-repository instructions govern
 | `plx-config` | Print `config/parallax.yaml` |
 | `plx-skill` | Print a pipeline skill or reference |
 | `plx-link-claude` | Mirror `AGENTS.md` → `CLAUDE.md` symlinks |
-| `plx-eval` | Optional local evaluation provenance (`PLX_EVAL_DIR`) |
+| `plx-eval` | Optional local SQLite trace capture (`PLX_TRACE_DB`) |
 
-`plx-eval` commands: `begin`, `lane`, `finish`, `doctor`. See `plx-eval --help` and
-[Architecture](ARCHITECTURE.md) for schema, privacy limits, core-pipeline grouping, and
-implicit standalone-lane fallback. If exporting `PLX_EVAL_DIR` globally is undesirable,
-put the literal assignment in `~/.config/parallax/env`; it may symlink to a git-ignored
-checkout `.env`.
+`plx-eval` commands: `lane`, `finish`, `doctor`. See `plx-eval --help` and
+[Architecture](ARCHITECTURE.md) for schema, privacy limits, grouped runs, and standalone
+fallback. If exporting `PLX_TRACE_DB` globally is undesirable, put the literal assignment
+in `~/.config/parallax/env`; it may symlink to a git-ignored checkout `.env`.

@@ -36,7 +36,7 @@ Three tool calls — no subagent.
 3. **One Bash call** to run, check, and clean up in a single `;`-chained command (so status/cleanup run even on engine failure):
 
    ```
-   plx-engine --engine grok --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; echo ---; git -C <repo> status --short; plx-clean-temp <tmp>; (exit $rc)
+   plx-engine --engine grok --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; outcome=fail; [[ "$rc" -eq 0 ]] && outcome=pass; plx-eval finish --skill grok --host claude --repo <repo> --run-dir <tmp> --task-file <tmp>/prompt.md --outcome "$outcome" --verification not-run || echo "plx-eval finish failed (non-fatal)" >&2; echo ---; git -C <repo> status --short; plx-clean-temp <tmp>; (exit $rc)
    ```
 
    `plx-engine` is on your PATH (shipped in the plugin's `bin/`); it runs one headless Grok turn with safety pinned (kernel-enforced `read-only` or repo-scoped `workspace` sandbox + bypassPermissions) and emits only the model's final text.

@@ -27,26 +27,18 @@ the judgment doc (model rankings, the sizing ladder, writer rules).
   target repo.
 - Snapshot `git status --short` and the current staged/unstaged diff into `<tmp>` so
   pre-existing edits are preserved and never attributed to this run.
-- Write the task text to `<tmp>/task.md` (the user's request verbatim). After the
-  sizing line is declared (next section), open the optional evaluation envelope so
-  every later `plx-engine` call under `<tmp>` shares one grouped run without
-  environment persistence across background shells:
+- Write the task text to `<tmp>/task.md` (the user's request verbatim). Every later
+  `plx-engine` call whose prompt is directly under `<tmp>` shares one grouped run
+  because the directory basename is `plx-dev.<suffix>`:
 
 ```
 printf '%s\n' "$ARGUMENTS" > <tmp>/task.md
 # after declaring sizing:
 printf '%s\n' '<sizing line>' > <tmp>/shape.txt
-plx-eval begin --repo <repo> --pipeline dev --host claude \
-  --host-model <actual host model if known, otherwise unknown> \
-  --run-file <tmp>/.plx-eval-run \
-  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
-  || echo "plx-eval begin failed (non-fatal)" >&2
 ```
 
-  When `PLX_EVAL_DIR` is unset, `begin` no-ops and writes a disabled sentinel — keep
-  calling it so the path stays branch-free. Write prompt files directly in `<tmp>`
-  (flat) so `plx-engine` discovers `<tmp>/.plx-eval-run` mechanically; do not prefix
-  every background command with recorder flags. Interruption leaves the run `incomplete`.
+  Do not prefix background commands with recorder flags. Interruption before the final
+  `plx-eval finish` leaves the run incomplete.
 
 ## Size the whole run — then declare it
 
@@ -60,8 +52,7 @@ line before launching anything, e.g.:
 Sizing: implementation critic (codex, xhigh) · 1 worker (grok, medium) · review 3×1 (codex, xhigh) · fixes: host
 ```
 
-Write that same sizing line to `<tmp>/shape.txt`, then call `plx-eval begin` as shown
-in Bootstrap (once, before any lane).
+Write that same sizing line to `<tmp>/shape.txt` before any lane.
 
 **The smallest rung skips advisory fanout, not the writer**: for a trivial ask (one file,
 obvious change), launch one cheap configured rw lane, verify, and report. The host never writes
@@ -200,11 +191,13 @@ Update `.project/` surfaces per the repo's `AGENTS.md` Runtime Rules if the syst
 shape changed — you write them yourself; keep it narrow. This skill does **not**
 commit; version control follows the repo's own agent instructions.
 
-Close the evaluation envelope **before** cleaning `<tmp>` (best-effort; never fail
+Close the run **before** cleaning `<tmp>` (best-effort; never fail
 the run over recorder errors). Use the honest outcome and verification status:
 
 ```
-plx-eval finish --repo <repo> --run-file <tmp>/.plx-eval-run \
+plx-eval finish --skill dev --host claude --repo <repo> --run-dir <tmp> \
+  --host-model <actual host model if known, otherwise unknown> \
+  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
   --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
   || echo "plx-eval finish failed (non-fatal)" >&2
 ```

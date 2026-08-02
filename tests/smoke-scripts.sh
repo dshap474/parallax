@@ -51,19 +51,19 @@ else
 fi
 
 # Neutralize ambient collection — enabled cases set an explicit temp destination.
-unset PLX_EVAL_DIR || true
-export -n PLX_EVAL_DIR 2>/dev/null || true
+unset PLX_TRACE_DB || true
+export -n PLX_TRACE_DB 2>/dev/null || true
 
 _head "plx-eval loads deterministic local config"
-autoload_eval="$WORK/eval-autoload"
-explicit_eval="$WORK/eval-explicit"
-mkdir -p "$XDG_CONFIG_HOME/parallax" "$autoload_eval" "$explicit_eval"
+autoload_eval="$WORK/eval-autoload/traces.db"
+explicit_eval="$WORK/eval-explicit/traces.db"
+mkdir -p "$XDG_CONFIG_HOME/parallax" "$(dirname "$autoload_eval")" "$(dirname "$explicit_eval")"
 printf '%s\n' \
   "UNRELATED=\$(touch $WORK/config-must-not-execute)" \
-  "PLX_EVAL_DIR=$autoload_eval" \
+  "PLX_TRACE_DB=$autoload_eval" \
   > "$XDG_CONFIG_HOME/parallax/env"
 autoload_out="$WORK/autoload-doctor.txt"
-env -u PLX_EVAL_DIR "$PLUGIN_ROOT/bin/plx-eval" doctor > "$autoload_out" 2>&1
+env -u PLX_TRACE_DB "$PLUGIN_ROOT/bin/plx-eval" doctor > "$autoload_out" 2>&1
 rc=$?
 if [ "$rc" -eq 0 ] && grep -Fq "destination=$autoload_eval" "$autoload_out" &&
    [ ! -e "$WORK/config-must-not-execute" ]; then
@@ -72,12 +72,12 @@ else
   _fail "local config autoload failed (exit $rc)"
 fi
 explicit_out="$WORK/explicit-doctor.txt"
-PLX_EVAL_DIR="$explicit_eval" "$PLUGIN_ROOT/bin/plx-eval" doctor > "$explicit_out" 2>&1
+PLX_TRACE_DB="$explicit_eval" "$PLUGIN_ROOT/bin/plx-eval" doctor > "$explicit_out" 2>&1
 rc=$?
 if [ "$rc" -eq 0 ] && grep -Fq "destination=$explicit_eval" "$explicit_out"; then
-  _pass "explicit PLX_EVAL_DIR overrides local config"
+  _pass "explicit PLX_TRACE_DB overrides local config"
 else
-  _fail "explicit PLX_EVAL_DIR precedence failed (exit $rc)"
+  _fail "explicit PLX_TRACE_DB precedence failed (exit $rc)"
 fi
 rm "$XDG_CONFIG_HOME/parallax/env"
 
@@ -304,326 +304,287 @@ else
 fi
 
 # --------------------------------------------------------------------------- #
-# Evaluation provenance recorder (model-free, hermetic)
+# SQLite trace recorder (model-free, hermetic)
 # --------------------------------------------------------------------------- #
 
 _head "plx-eval disabled no-op and doctor"
-eval_probe="$WORK/eval-disabled"
-mkdir -p "$eval_probe"
-run_file="$eval_probe/run-marker"
-task_body="SECRET_TASK_BODY_SHOULD_NOT_APPEAR"
-printf '%s\n' "$task_body" > "$eval_probe/task.md"
-shape_body="Sizing: 1 worker (grok, medium)"
-printf '%s\n' "$shape_body" > "$eval_probe/shape.txt"
-# Ambient must stay unset for this case.
-unset PLX_EVAL_DIR || true
-"$PLUGIN_ROOT/bin/plx-eval" begin --repo "$REPO" --pipeline dev --host unknown \
-  --run-file "$run_file" --task-file "$eval_probe/task.md" \
-  --shape-file "$eval_probe/shape.txt" >/dev/null 2>&1
+disabled_config="$WORK/disabled-config"
+mkdir -p "$disabled_config"
+env -u PLX_TRACE_DB XDG_CONFIG_HOME="$disabled_config" \
+  "$PLUGIN_ROOT/bin/plx-eval" doctor > "$WORK/disabled-doctor.txt" 2>&1
 rc=$?
-if [ "$rc" -eq 0 ] && grep -qx disabled "$run_file"; then
-  _pass "disabled begin writes sentinel and exits 0"
-else
-  _fail "disabled begin failed (exit $rc)"
-fi
-if [ ! -d "$eval_probe/records" ] && [ -z "$(find "$eval_probe" -type d -name '20*' 2>/dev/null)" ]; then
-  _pass "disabled begin creates no run directory"
-else
-  _fail "disabled begin wrote unexpected records"
-fi
-doctor_out="$eval_probe/doctor.txt"
-"$PLUGIN_ROOT/bin/plx-eval" doctor > "$doctor_out" 2>&1
-rc=$?
-if [ "$rc" -eq 0 ] && grep -qi 'disabled' "$doctor_out"; then
-  _pass "doctor reports disabled when PLX_EVAL_DIR unset"
+if [ "$rc" -eq 0 ] && grep -qi disabled "$WORK/disabled-doctor.txt"; then
+  _pass "doctor reports disabled when PLX_TRACE_DB is unset"
 else
   _fail "doctor disabled path failed (exit $rc)"
 fi
-
-# Engine with collection disabled: snapshot plausible eval artifacts around the
-# prompt/work directory before and after; none may appear.
-count_eval_artifacts() {
-  # Count .plx-eval-run markers, run.json, and lane JSON under given roots.
-  local root n=0
-  for root in "$@"; do
-    [ -d "$root" ] || continue
-    n=$((n + $(find "$root" \( -name '.plx-eval-run' -o -name 'run.json' -o -path '*/lanes/*.json' \) 2>/dev/null | wc -l | tr -d ' ')))
-  done
-  printf '%s' "$n"
-}
-disabled_before="$(count_eval_artifacts "$WORK" "$(dirname "$fake_prompt")")"
-PATH="$fake_bin:$PATH" env -u PLX_EVAL_DIR \
+db_before="$(find "$WORK" -name '*.db' | wc -l | tr -d ' ')"
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
+  env -u PLX_TRACE_DB XDG_CONFIG_HOME="$disabled_config" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
   --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
 rc=$?
-disabled_after="$(count_eval_artifacts "$WORK" "$(dirname "$fake_prompt")")"
-if [ "$rc" -eq 0 ] && [ "$disabled_before" = "$disabled_after" ]; then
-  _pass "disabled engine path leaves no eval files"
+db_after="$(find "$WORK" -name '*.db' | wc -l | tr -d ' ')"
+if [ "$rc" -eq 0 ] && [ "$db_before" = "$db_after" ]; then
+  _pass "disabled engine path creates no trace database"
 else
-  _fail "disabled engine wrote eval files or failed (exit $rc; before=$disabled_before after=$disabled_after)"
+  _fail "disabled engine path wrote a database or failed"
 fi
 
-# The wrapper must defer enablement to plx-eval so file configuration also
-# activates implicit standalone envelopes.
-config_eval="$WORK/eval-config-implicit"
-mkdir -p "$config_eval" "$XDG_CONFIG_HOME/parallax"
-printf '%s\n' "PLX_EVAL_DIR=$config_eval" > "$XDG_CONFIG_HOME/parallax/env"
-PATH="$fake_bin:$PATH" env -u PLX_EVAL_DIR \
+_head "plx-eval config, grouped lanes, and full trace bodies"
+printf '%s\n' '#!/usr/bin/env bash' \
+  'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
+  'echo TRACE_BODY >&2' \
+  'printf '\''{"text":"OK","stopReason":"EndTurn","sessionId":""}\n'\''' \
+  > "$fake_bin/grok"
+chmod +x "$fake_bin/grok"
+
+config_db="$WORK/config-traces/traces.db"
+plain_prompt_dir="$WORK/plain-engine-prompts"
+mkdir -p "$(dirname "$config_db")" "$XDG_CONFIG_HOME/parallax" "$plain_prompt_dir"
+config_prompt="$plain_prompt_dir/config.md"
+printf '%s\n' 'config standalone prompt' > "$config_prompt"
+printf '%s\n' "PLX_TRACE_DB=$config_db" > "$XDG_CONFIG_HOME/parallax/env"
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" env -u PLX_TRACE_DB \
   "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
-  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
+  --prompt-file "$config_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
 rc=$?
-config_runs="$(find "$config_eval" -name run.json | wc -l | tr -d ' ')"
-config_lanes="$(find "$config_eval" -path '*/lanes/*.json' | wc -l | tr -d ' ')"
-if [ "$rc" -eq 0 ] && [ "$config_runs" = 1 ] && [ "$config_lanes" = 1 ]; then
-  _pass "local config activates implicit standalone recording"
+if [ "$rc" -eq 0 ] && python3 - "$config_db" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+assert con.execute("select count(*) from runs").fetchone()[0] == 1
+assert con.execute("select count(*) from lanes").fetchone()[0] == 1
+assert con.execute("select ended_at is not null from runs").fetchone()[0] == 1
+PY
+then
+  _pass "literal local config activates standalone SQLite capture"
 else
-  _fail "local config implicit recording failed (exit $rc runs=$config_runs lanes=$config_lanes)"
+  _fail "local config standalone capture failed"
 fi
 rm "$XDG_CONFIG_HOME/parallax/env"
 
-_head "plx-eval grouped begin + concurrent lanes + finish"
-eval_dir="$WORK/eval-enabled"
-mkdir -p "$eval_dir"
-group_tmp="$WORK/group-tmp"
-mkdir -p "$group_tmp"
+trace_db="$WORK/grouped-traces/traces.db"
+mkdir -p "$(dirname "$trace_db")"
+group_tmp="$(mktemp -d "$WORK/plx-dev.XXXXXX")"
+task_body="SECRET_TASK_BODY_IS_STORED"
+shape_body="Sizing: 2 workers (grok, medium)"
 printf '%s\n' "$task_body" > "$group_tmp/task.md"
 printf '%s\n' "$shape_body" > "$group_tmp/shape.txt"
-printf '%s\n' 'lane prompt SECRET_PROMPT_BODY' > "$group_tmp/lane-a.md"
-printf '%s\n' 'lane prompt SECRET_PROMPT_BODY' > "$group_tmp/lane-b.md"
-group_run="$group_tmp/.plx-eval-run"
+printf '%s\n' 'lane A SECRET_PROMPT_BODY' > "$group_tmp/lane-a.md"
+printf '%s\n' 'lane B SECRET_PROMPT_BODY' > "$group_tmp/lane-b.md"
 
-PLX_EVAL_DIR="$eval_dir" "$PLUGIN_ROOT/bin/plx-eval" begin \
-  --repo "$REPO" --pipeline dev --host claude \
-  --run-file "$group_run" \
-  --task-file "$group_tmp/task.md" \
-  --shape-file "$group_tmp/shape.txt" >/dev/null
-rc=$?
-if [ "$rc" -eq 0 ] && grep -q '^run_dir=' "$group_run"; then
-  _pass "enabled begin writes run marker"
-else
-  _fail "enabled begin failed (exit $rc)"
-fi
-
-# Two concurrent fake-engine lanes (grouped via prompt-dir marker).
-PATH="$fake_bin:$PATH" PLX_EVAL_DIR="$eval_dir" \
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" PLX_TRACE_DB="$trace_db" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
   --prompt-file "$group_tmp/lane-a.md" --rubric worker \
   --out "$group_tmp/out-a.md" --log "$group_tmp/log-a.log" >/dev/null &
 pid_a=$!
-PATH="$fake_bin:$PATH" PLX_EVAL_DIR="$eval_dir" \
-  "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode ro --repo "$REPO" \
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" PLX_TRACE_DB="$trace_db" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
   --prompt-file "$group_tmp/lane-b.md" --rubric reviewer-correctness \
   --out "$group_tmp/out-b.md" --log "$group_tmp/log-b.log" >/dev/null &
 pid_b=$!
-wait "$pid_a"
-rc_a=$?
-wait "$pid_b"
-rc_b=$?
-if [ "$rc_a" -eq 0 ] && [ "$rc_b" -eq 0 ]; then
-  _pass "concurrent grouped lanes exit 0"
-else
-  _fail "concurrent grouped lanes failed (a=$rc_a b=$rc_b)"
-fi
-
-PLX_EVAL_DIR="$eval_dir" "$PLUGIN_ROOT/bin/plx-eval" finish \
-  --repo "$REPO" --run-file "$group_run" \
+wait "$pid_a"; rc_a=$?
+wait "$pid_b"; rc_b=$?
+PLX_TRACE_DB="$trace_db" "$PLUGIN_ROOT/bin/plx-eval" finish \
+  --skill dev --host "${PLX_PACKAGE:-claude}" --repo "$REPO" --run-dir "$group_tmp" \
+  --task-file "$group_tmp/task.md" --shape-file "$group_tmp/shape.txt" \
   --outcome pass --verification pass >/dev/null
-rc=$?
-run_dirs="$(find "$eval_dir" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
-lane_files="$(find "$eval_dir" -path '*/lanes/*.json' | wc -l | tr -d ' ')"
-run_json="$(find "$eval_dir" -name run.json | head -1)"
-if [ "$rc" -eq 0 ] && [ "$run_dirs" = "1" ] && [ "$lane_files" = "2" ] && [ -n "$run_json" ]; then
-  _pass "grouped finish: one envelope, two lane files"
+finish_rc=$?
+if [ "$rc_a" -eq 0 ] && [ "$rc_b" -eq 0 ] && [ "$finish_rc" -eq 0 ]; then
+  _pass "concurrent grouped lanes and finish exit 0"
 else
-  _fail "grouped finish shape wrong (rc=$rc runs=$run_dirs lanes=$lane_files)"
+  _fail "grouped capture failed (a=$rc_a b=$rc_b finish=$finish_rc)"
 fi
-if python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$run_json" 2>/dev/null; then
-  _pass "run.json parses"
+if python3 - "$trace_db" "$(basename "$group_tmp")" "$task_body" "$shape_body" <<'PY'
+import hashlib, sqlite3, sys
+db, run_id, task, shape = sys.argv[1:]
+con = sqlite3.connect(db)
+con.execute("pragma foreign_keys=on")
+run = con.execute(
+    "select skill, host, task, routing_summary, outcome, verification, ended_at from runs where id=?",
+    (run_id,),
+).fetchone()
+assert run[0] == "dev"
+assert run[1] in {"claude", "codex"}
+assert run[2:6] == (task + "\n", shape + "\n", "pass", "pass")
+assert run[6]
+lanes = con.execute(
+    "select prompt, trace, final_output, trace_sha256, exit_code from lanes where run_id=? order by role",
+    (run_id,),
+).fetchall()
+assert len(lanes) == 2
+for prompt, trace, output, digest, exit_code in lanes:
+    assert "SECRET_PROMPT_BODY" in prompt
+    assert trace == "TRACE_BODY\n"
+    assert output == "OK\n"
+    assert digest == hashlib.sha256(trace.encode()).hexdigest()
+    assert exit_code == 0
+assert con.execute("pragma user_version").fetchone()[0] == 1
+assert con.execute("pragma integrity_check").fetchone()[0] == "ok"
+PY
+then
+  _pass "schema v1 stores complete task, prompt, trace, output, and digest"
 else
-  _fail "run.json invalid"
-fi
-# Privacy: no known bodies in any record.
-privacy_hit=0
-if grep -RFq "$task_body" "$eval_dir" 2>/dev/null; then privacy_hit=1; fi
-if grep -RFq "SECRET_PROMPT_BODY" "$eval_dir" 2>/dev/null; then privacy_hit=1; fi
-if [ "$privacy_hit" -eq 0 ]; then
-  _pass "records omit task/prompt bodies"
-else
-  _fail "records leaked task or prompt body"
-fi
-# Hashes present
-if python3 -c '
-import json,sys
-r=json.load(open(sys.argv[1]))
-assert r.get("schema_version")==1
-assert r.get("task_sha256")
-assert r.get("status")=="complete"
-assert r.get("lane_count")==2
-assert r.get("pipeline")=="dev"
-' "$run_json" 2>/dev/null; then
-  _pass "run.json has schema v1 hashes and lane_count"
-else
-  _fail "run.json missing required metadata"
+  _fail "grouped database content is incorrect"
 fi
 
-_head "plx-eval implicit standalone + failed lane + unwritable dest"
-# Implicit standalone: no marker next to prompt
-standalone_prompt="$WORK/standalone-prompt.md"
+_head "plx-eval standalone, failure, incomplete, and schema guards"
+standalone_db="$WORK/standalone-traces/traces.db"
+mkdir -p "$(dirname "$standalone_db")"
+standalone_prompt="$plain_prompt_dir/standalone.md"
 printf '%s\n' 'standalone SECRET_STANDALONE_PROMPT' > "$standalone_prompt"
-standalone_eval="$WORK/eval-standalone"
-mkdir -p "$standalone_eval"
-PATH="$fake_bin:$PATH" PLX_EVAL_DIR="$standalone_eval" \
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" PLX_TRACE_DB="$standalone_db" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
   --prompt-file "$standalone_prompt" \
   --out "$WORK/standalone-out.md" --log "$WORK/standalone.log" >/dev/null
 rc=$?
-s_runs="$(find "$standalone_eval" -name run.json | wc -l | tr -d ' ')"
-s_lanes="$(find "$standalone_eval" -path '*/lanes/*.json' | wc -l | tr -d ' ')"
-s_run="$(find "$standalone_eval" -name run.json | head -1)"
-if [ "$rc" -eq 0 ] && [ "$s_runs" = "1" ] && [ "$s_lanes" = "1" ]; then
-  _pass "ungrouped engine creates one implicit standalone run"
+if [ "$rc" -eq 0 ] && python3 - "$standalone_db" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+run = con.execute("select skill, outcome, verification, ended_at from runs").fetchone()
+lane = con.execute("select prompt, trace, final_output from lanes").fetchone()
+assert run[0:3] == ("standalone-lane", "pass", "not-run") and run[3]
+assert "SECRET_STANDALONE_PROMPT" in lane[0]
+assert lane[1:] == ("TRACE_BODY\n", "OK\n")
+PY
+then
+  _pass "ungrouped engine creates and closes one standalone run"
 else
-  _fail "implicit standalone wrong (rc=$rc runs=$s_runs lanes=$s_lanes)"
-fi
-if python3 -c '
-import json,sys
-r=json.load(open(sys.argv[1]))
-assert r.get("pipeline")=="standalone-lane"
-assert r.get("status")=="complete"
-assert r.get("outcome")=="pass"
-' "$s_run" 2>/dev/null; then
-  _pass "implicit run closed with pass"
-else
-  _fail "implicit run not closed correctly"
-fi
-if ! grep -RFq "SECRET_STANDALONE_PROMPT" "$standalone_eval" 2>/dev/null; then
-  _pass "standalone records omit prompt body"
-else
-  _fail "standalone records leaked prompt body"
+  _fail "standalone capture is incorrect"
 fi
 
-# Failed fake engine preserves exit code and still records
-printf '%s\n' '#!/usr/bin/env bash' \
-  'echo fail-noise >&2' \
-  'exit 1' \
-  > "$fake_bin/grok"
+printf '%s\n' '#!/usr/bin/env bash' 'echo fail-noise >&2' 'exit 1' > "$fake_bin/grok"
 chmod +x "$fake_bin/grok"
-fail_eval="$WORK/eval-fail"
-mkdir -p "$fail_eval"
-fail_prompt="$WORK/fail-prompt.md"
-printf '%s\n' 'fail me SECRET_FAIL_OUTPUT_BODY' > "$fail_prompt"
-PATH="$fake_bin:$PATH" PLX_EVAL_DIR="$fail_eval" \
+fail_db="$WORK/fail-traces/traces.db"
+mkdir -p "$(dirname "$fail_db")"
+fail_prompt="$plain_prompt_dir/fail.md"
+printf '%s\n' 'fail prompt' > "$fail_prompt"
+PATH="$fake_bin:$PATH" PLX_TRACE_DB="$fail_db" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
-  --prompt-file "$fail_prompt" \
-  --out "$WORK/fail-out.md" --log "$WORK/fail.log" >/dev/null 2>"$WORK/fail-stderr.txt"
+  --prompt-file "$fail_prompt" --out "$WORK/fail-out.md" --log "$WORK/fail.log" \
+  >/dev/null 2>"$WORK/fail-stderr.txt"
 fail_rc=$?
-if [ "$fail_rc" -eq 1 ]; then
-  _pass "failed engine preserves exit code 1"
+if [ "$fail_rc" -eq 1 ] && python3 - "$fail_db" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+assert con.execute("select outcome from runs").fetchone()[0] == "fail"
+assert con.execute("select exit_code, trace from lanes").fetchone() == (1, "fail-noise\n")
+PY
+then
+  _pass "failed engine preserves exit 1 and records the failed lane"
 else
-  _fail "failed engine exit was $fail_rc (expected 1)"
-fi
-fail_lane="$(find "$fail_eval" -path '*/lanes/*.json' | head -1)"
-if [ -n "$fail_lane" ] && python3 -c '
-import json,sys
-l=json.load(open(sys.argv[1]))
-assert l.get("exit_code")==1
-' "$fail_lane" 2>/dev/null; then
-  _pass "failed lane recorded with exit_code 1"
-else
-  _fail "failed lane not recorded correctly"
+  _fail "failed lane recording drift"
 fi
 
-# Seatbelt startup failures receive a stable marker while preserving exit 1.
 printf '%s\n' '#!/usr/bin/env bash' \
   'echo "Failed to initialize Seatbelt workspace sandbox: Operation not permitted" >&2' \
-  'exit 1' \
-  > "$fake_bin/grok"
+  'exit 1' > "$fake_bin/grok"
 chmod +x "$fake_bin/grok"
-PATH="$fake_bin:$PATH" \
+PATH="$fake_bin:$PATH" env -u PLX_TRACE_DB XDG_CONFIG_HOME="$disabled_config" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode rw --repo "$REPO" \
-  --prompt-file "$fail_prompt" \
-  --out "$WORK/seatbelt-out.md" --log "$WORK/seatbelt.log" \
+  --prompt-file "$fail_prompt" --out "$WORK/seatbelt-out.md" --log "$WORK/seatbelt.log" \
   >/dev/null 2>"$WORK/seatbelt-stderr.txt"
 seatbelt_rc=$?
-if [ "$seatbelt_rc" -eq 1 ] &&
-   grep -Fq "PLX_GROK_SANDBOX_UNAVAILABLE" "$WORK/seatbelt-stderr.txt" &&
-   grep -Fq "Failed to initialize Seatbelt workspace sandbox" "$WORK/seatbelt.log"; then
-  _pass "Grok Seatbelt startup failure is classified and preserves exit 1"
+if [ "$seatbelt_rc" -eq 1 ] && grep -Fq "PLX_GROK_SANDBOX_UNAVAILABLE" "$WORK/seatbelt-stderr.txt"; then
+  _pass "Grok Seatbelt startup failure remains classified"
 else
   _fail "Grok Seatbelt startup failure classification drift"
 fi
 
-# Restore successful fake grok for any later tests
 printf '%s\n' '#!/usr/bin/env bash' \
   'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
   'printf '\''{"text":"OK","stopReason":"EndTurn","sessionId":""}\n'\''' \
   > "$fake_bin/grok"
 chmod +x "$fake_bin/grok"
-
-# Unwritable / invalid destination must not change a successful engine exit
-bad_eval="$WORK/eval-bad-dest"
-# Create a file where a directory is required — not a writable dir
-printf 'not-a-dir\n' > "$bad_eval"
-PATH="$fake_bin:$PATH" PLX_EVAL_DIR="$bad_eval" PLX_GROK_ARGS_FILE="$fake_args" \
+bad_db="$WORK/missing-parent/traces.db"
+PATH="$fake_bin:$PATH" PLX_TRACE_DB="$bad_db" PLX_GROK_ARGS_FILE="$fake_args" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
-  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null 2>"$WORK/bad-dest-stderr.txt"
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" \
+  >/dev/null 2>"$WORK/bad-db-stderr.txt"
 rc=$?
-if [ "$rc" -eq 0 ]; then
-  _pass "unwritable/invalid eval dest does not change engine exit 0"
+if [ "$rc" -eq 0 ] && [ ! -e "$bad_db" ]; then
+  _pass "trace write failure does not change engine exit 0"
 else
-  _fail "bad eval dest altered engine exit to $rc"
+  _fail "trace write failure altered engine behavior"
 fi
 
-# doctor on valid enabled destination
+zero_db="$WORK/zero-lane/traces.db"
+mkdir -p "$(dirname "$zero_db")"
+PLX_TRACE_DB="$zero_db" "$PLUGIN_ROOT/bin/plx-eval" finish \
+  --skill init --host "${PLX_PACKAGE:-claude}" --repo "$REPO" \
+  --outcome pass --verification not-run >/dev/null
+if python3 - "$zero_db" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+assert con.execute("select skill, outcome, ended_at is not null from runs").fetchone() == ("init", "pass", 1)
+assert con.execute("select count(*) from lanes").fetchone()[0] == 0
+PY
+then
+  _pass "host-only finish creates a closed zero-lane run"
+else
+  _fail "zero-lane run capture failed"
+fi
+
+incomplete_tmp="$(mktemp -d "$WORK/plx-plan.XXXXXX")"
+printf '%s\n' incomplete > "$incomplete_tmp/prompt.md"
+PATH="$fake_bin:$PATH" PLX_TRACE_DB="$trace_db" PLX_GROK_ARGS_FILE="$fake_args" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$incomplete_tmp/prompt.md" \
+  --out "$incomplete_tmp/out.md" --log "$incomplete_tmp/log.md" >/dev/null
+if python3 - "$trace_db" "$(basename "$incomplete_tmp")" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+assert con.execute("select skill, ended_at, outcome from runs where id=?", (sys.argv[2],)).fetchone() == ("plan", None, None)
+PY
+then
+  _pass "grouped lane remains incomplete until skill finish"
+else
+  _fail "incomplete grouped run state is incorrect"
+fi
+
 doctor_ok="$WORK/doctor-ok.txt"
-PLX_EVAL_DIR="$eval_dir" "$PLUGIN_ROOT/bin/plx-eval" doctor > "$doctor_ok" 2>&1
-rc=$?
-if [ "$rc" -eq 0 ] && grep -qi 'ok' "$doctor_ok"; then
-  _pass "doctor validates writable destination"
+PLX_TRACE_DB="$trace_db" "$PLUGIN_ROOT/bin/plx-eval" doctor > "$doctor_ok" 2>&1
+if [ "$?" -eq 0 ] && grep -Fq 'runs=' "$doctor_ok" && grep -Fq 'lanes=' "$doctor_ok"; then
+  _pass "doctor validates schema and reports counts"
 else
-  _fail "doctor enabled path failed (exit $rc)"
+  _fail "doctor failed on a valid database"
 fi
 
-# Forged marker pointing outside PLX_EVAL_DIR must not write anywhere and must
-# preserve the engine exit code.
-_head "plx-eval forged marker outside eval root is ignored"
-forged_eval_root="$WORK/eval-legit-root"
-forged_outside="$WORK/eval-forged-outside"
-forged_prompt_dir="$WORK/forged-prompt-dir"
-mkdir -p "$forged_eval_root" "$forged_prompt_dir"
-forged_run_id="20260101T000000Z-forged0001"
-mkdir -p "$forged_outside/$forged_run_id/lanes"
-python3 -c '
-import json, sys
-repo, path, run_id = sys.argv[1], sys.argv[2], sys.argv[3]
-json.dump({
-  "schema_version": 1,
-  "run_id": run_id,
-  "status": "incomplete",
-  "target_path": repo,
-  "pipeline": "dev",
-  "lane_count": 0,
-}, open(path, "w"), indent=2)
-' "$REPO" "$forged_outside/$forged_run_id/run.json" "$forged_run_id"
-printf 'run_dir=%s\n' "$forged_outside/$forged_run_id" > "$forged_prompt_dir/.plx-eval-run"
-printf '%s\n' 'forged marker prompt' > "$forged_prompt_dir/lane.md"
-forged_out="$forged_prompt_dir/out.md"
-forged_log="$forged_prompt_dir/log.log"
-outside_before="$(find "$forged_outside" -type f 2>/dev/null | wc -l | tr -d ' ')"
-legit_before="$(find "$forged_eval_root" -type f 2>/dev/null | wc -l | tr -d ' ')"
-PATH="$fake_bin:$PATH" PLX_EVAL_DIR="$forged_eval_root" \
-  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
-  --prompt-file "$forged_prompt_dir/lane.md" \
-  --out "$forged_out" --log "$forged_log" >/dev/null
-rc=$?
-outside_after="$(find "$forged_outside" -type f 2>/dev/null | wc -l | tr -d ' ')"
-legit_after="$(find "$forged_eval_root" -type f 2>/dev/null | wc -l | tr -d ' ')"
-outside_lanes="$(find "$forged_outside" -path '*/lanes/*.json' 2>/dev/null | wc -l | tr -d ' ')"
-if [ "$rc" -eq 0 ] && [ "$outside_before" = "$outside_after" ] \
-  && [ "$legit_before" = "$legit_after" ] && [ "$outside_lanes" = "0" ]; then
-  _pass "forged outside marker writes nowhere and keeps exit 0"
+future_db="$WORK/future-schema.db"
+python3 - "$future_db" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+con.execute("pragma user_version=2")
+con.commit()
+PY
+PLX_TRACE_DB="$future_db" "$PLUGIN_ROOT/bin/plx-eval" doctor >/dev/null 2>&1
+if [ "$?" -eq 1 ]; then
+  _pass "unknown schema version fails closed"
 else
-  _fail "forged marker mishandled (rc=$rc outside $outside_before->$outside_after legit $legit_before->$legit_after lanes=$outside_lanes)"
+  _fail "unknown schema version was accepted"
+fi
+
+if python3 - "$trace_db" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+con.execute("pragma foreign_keys=on")
+try:
+    con.execute("insert into lanes(id,run_id,role,engine,model,effort,mode,started_at) values('bad-fk','missing','r','grok','m','e','ro','now')")
+except sqlite3.IntegrityError:
+    pass
+else:
+    raise AssertionError("foreign key accepted")
+try:
+    con.execute("insert into lanes(id,run_id,role,engine,model,effort,mode,candidates_json,started_at) values('bad-json',(select id from runs limit 1),'r','grok','m','e','ro','nope','now')")
+except sqlite3.IntegrityError:
+    pass
+else:
+    raise AssertionError("invalid JSON accepted")
+PY
+then
+  _pass "foreign-key and JSON constraints are active"
+else
+  _fail "schema constraints drifted"
 fi
 
 # Shared-copy check is covered by check-plugin; both packages smoke via run.sh.

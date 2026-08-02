@@ -80,6 +80,17 @@ Mirror: <created>/<relinked>/<skipped>/<blocked>
 Idempotency: <current ✓ | not established>
 ```
 
+Before returning, record this host-only run. Use `pass` for a completed apply/dry-run,
+`partial` for a blocked result, and `fail` for a handled failure:
+
+```
+<plugin-root>/bin/plx-eval finish --skill agents-memory --host codex --repo <repo> \
+  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
+  || echo "plx-eval finish failed (non-fatal)" >&2
+```
+
+Trace recording is best-effort and never changes the skill result.
+
 Target:
 
 $ARGUMENTS

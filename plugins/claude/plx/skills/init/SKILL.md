@@ -8,8 +8,8 @@ user-invocable: true
 
 # /plx:init — prime the orchestrator
 
-You are the Parallax orchestrator (Fable). This skill changes no files and launches no
-lanes. It loads the session's operating posture — how you delegate, and what the plx
+You are the Parallax orchestrator (Fable). This skill changes no repository files and
+launches no lanes. It loads the session's operating posture — how you delegate, and what the plx
 plugin puts at your disposal. Adopt everything below for the rest of the session.
 
 ## 1 — Load the engine judgment doc
@@ -67,6 +67,15 @@ one, recommend it by name and let the user invoke it.
 lane contract.
 
 ## 4 — Confirm
+
+Resolve `<repo>` with `git rev-parse --show-toplevel` (fall back to the absolute current
+directory when outside Git), then record the host-only run:
+
+```
+plx-eval finish --skill init --host claude --repo <repo> \
+  --outcome pass --verification not-run \
+  || echo "plx-eval finish failed (non-fatal)" >&2
+```
 
 Report back in five lines or fewer: posture adopted, judgment doc loaded, and where the
 skill map now points you. Do not start any pipeline or lane — wait for the user's next

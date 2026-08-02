@@ -37,7 +37,7 @@ Three tool calls — no subagent.
 3. **One shell call** to run, check, and clean up in a single `;`-chained command (so status/cleanup run even on engine failure):
 
    ```
-   <plugin-root>/bin/plx-engine --engine claude --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; echo ---; git -C <repo> status --short; <plugin-root>/bin/plx-clean-temp <tmp>; (exit $rc)
+   <plugin-root>/bin/plx-engine --engine claude --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; outcome=fail; [[ "$rc" -eq 0 ]] && outcome=pass; <plugin-root>/bin/plx-eval finish --skill claude --host codex --repo <repo> --run-dir <tmp> --task-file <tmp>/prompt.md --outcome "$outcome" --verification not-run || echo "plx-eval finish failed (non-fatal)" >&2; echo ---; git -C <repo> status --short; <plugin-root>/bin/plx-clean-temp <tmp>; (exit $rc)
    ```
 
    The wrapper runs one headless `claude -p` turn with safe mode, no session persistence,

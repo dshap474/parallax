@@ -2,6 +2,10 @@
 .DS_Store
 *.swp
 
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+
 # Developer
 _disabled/
 .dev/

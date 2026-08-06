@@ -35,6 +35,7 @@ Start a new Codex session, then use `$plx:dev`.
 | Plan | `/plx:plan` | `$plx:plan` |
 | Build | `/plx:build` | `$plx:build` |
 | Review and fix | `/plx:review` | `$plx:review` |
+| Simplify and fix | `/plx:simplify` | `$plx:simplify` |
 | Full pipeline | `/plx:dev` | `$plx:dev` |
 | Autonomous goal spec | `/plx:goal-spec` | `$plx:goal-spec` |
 | Opposite-engine passthrough | `/plx:codex` | `$plx:claude` |
@@ -45,8 +46,8 @@ Start a new Codex session, then use `$plx:dev`.
 
 Claude is the host orchestrator in the Claude package. Codex is the host orchestrator
 in the Codex package. Both use isolated Grok 4.5 writers by default. The
-opposite host engine supplies the plan critics and three code-review lanes; the host
-applies confirmed review fixes itself.
+opposite host engine supplies the plan critics, three code-review lanes, and four focused
+simplification lanes; the host applies confirmed fixes itself.
 
 Claude's `/plx:codex` remains one-shot by default, but it may start or explicitly
 resume a persistent Codex app-server thread when later continuation will materially

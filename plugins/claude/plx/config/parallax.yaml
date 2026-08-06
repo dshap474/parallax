@@ -1,10 +1,10 @@
 # Parallax engine configuration
 #
 # Binds pipeline ROLES to ENGINES, keyed by pipeline. Each skill names the key it
-# reads (plan -> `plan`, build -> `build`, review -> `review`, dev -> `dev`,
-# goal-spec -> `goal-spec`). Each skill's SKILL.md is fully self-contained — it
-# documents its own pipeline steps — and resolves each role to its engine from this
-# file before running.
+# reads (plan -> `plan`, build -> `build`, review -> `review`, simplify ->
+# `simplify`, dev -> `dev`, goal-spec -> `goal-spec`). Each skill's SKILL.md is fully
+# self-contained — it documents its own pipeline steps — and resolves each role to its
+# engine from this file before running.
 #
 # The values below are the shipped DEFAULTS — the floor shape, not a mandate. The
 # orchestrator sizes every run per the judgment doc (`plx-engine --print-rubric
@@ -24,6 +24,10 @@
 #   review-cleanup      ro    reviewer-cleanup
 #   review-structural   ro    reviewer-structural
 #   review-security     ro    reviewer-security
+#   simplify-reuse      ro    simplifier-reuse
+#   simplify-simplification ro simplifier-simplification
+#   simplify-efficiency ro    simplifier-efficiency
+#   simplify-altitude   ro    simplifier-altitude
 #
 # Rules:
 #   - `code` takes ONE engine. Writers may run in parallel only on
@@ -35,6 +39,8 @@
 #   - Standalone plan runs both critic roles by default. Its shipped Codex bindings use
 #     gpt-5.6-sol at xhigh; an explicit current-message substitution overrides the configured
 #     engine, and the plan skill applies that engine's supported model/effort flags.
+#   - Standalone simplify always runs its four configured read-only dimensions. An explicit
+#     current-message "all <engine> lanes" substitution replaces all four bindings.
 #   - Plan authoring, review synthesis, and the final gate are always the
 #     orchestrator. Never delegated, not configurable.
 #   - Cross-engine review is the default posture: prefer review engines that
@@ -54,6 +60,12 @@ pipelines:
     review-cleanup: [codex]
     review-structural: [codex]
     review-security: [codex]
+
+  simplify:
+    simplify-reuse: [codex]
+    simplify-simplification: [codex]
+    simplify-efficiency: [codex]
+    simplify-altitude: [codex]
 
   dev:
     plan-critic-implementation: [codex]

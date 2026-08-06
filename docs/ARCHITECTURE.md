@@ -43,8 +43,9 @@ one Claude-only wrapper.
 ## Pipeline
 
 The three stage atoms are `plan`, `build`, and `review`; `dev` composes them and adds a
-final gate. `goal-spec` prepares a self-contained autonomous goal. The host declares
-task sizing before launching anything:
+final gate. `simplify` is a standalone post-implementation quality pipeline, and
+`goal-spec` prepares a self-contained autonomous goal. The host declares task sizing
+before launching anything:
 
 - trivial: one configured writer lane and direct host verification;
 - small: one writer and one correctness reviewer;
@@ -56,6 +57,12 @@ task sizing before launching anything:
 Critic and review lanes are always read-only. Write lanes use one writer per
 disjoint path set. Confirmed review findings are fixed once by the host; behavior-changing
 or ambiguous findings go back to the user.
+
+Simplify is deliberately fixed at four independent read-only dimensions: reuse,
+simplification, efficiency, and altitude. It defaults to the opposite host engine, while
+an explicit whole-round engine request replaces all four bindings. The host deduplicates,
+validates, and applies only small behavior-preserving fixes. Simplify does not run inside
+`dev` and does not replace correctness review.
 
 ## Runtime and safety
 
@@ -98,4 +105,4 @@ their enclosing passthrough skill run is recorded.
 As a narrow exception, `/plx:codex` may use `plx-codex-thread` to start or resume a
 Codex app-server session. It is ephemeral by default, keeps no Parallax registry,
 returns the thread ID to the user, and re-derives `inspect` or `edit` access on every
-turn. Plan, build, goal-spec, dev, and review lanes never use this path.
+turn. Plan, build, goal-spec, dev, review, and simplify lanes never use this path.

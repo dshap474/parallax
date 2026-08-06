@@ -7,6 +7,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Plan | `/plx:plan` | `$plx:plan` | Host authors; implementation and system critics red-team; no code |
 | Build | `/plx:build` | `$plx:build` | One or more file-disjoint writer lanes implement and verify |
 | Review | `/plx:review` | `$plx:review` | Sized read-only review, synthesis, and one host-applied fix round |
+| Simplify | `/plx:simplify` | `$plx:simplify` | Four fixed read-only quality lanes, synthesis, and behavior-preserving host fixes |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
 | Goal spec | `/plx:goal-spec` | `$plx:goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Claude may persist Codex context |
@@ -27,7 +28,10 @@ those settings into engine launch flags; omitted settings retain their defaults.
 
 Every pipeline reads its package-local `config/parallax.yaml`. Config is the floor shape,
 not a limit: the host may scale lanes down or up and must declare the chosen shape before
-launching. Skills never commit or publish; target-repository instructions govern Git.
+launching. The standalone simplify skill is the fixed-shape exception: it always runs
+reuse, simplification, efficiency, and altitude once each. A current-message instruction
+such as `with all Grok lanes` replaces all four configured engines for that run. Skills
+never commit or publish; target-repository instructions govern Git.
 
 ## Runtime tools (package-local `bin/`)
 

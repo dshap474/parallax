@@ -29,6 +29,10 @@ open with the section header the rubric expects:
 | `reviewer-cleanup`    | reuse/simplification review   | `## Review brief`   |
 | `reviewer-structural` | maintainability review        | `## Review brief`   |
 | `reviewer-security`   | risk-triggered security review| `## Review brief`   |
+| `simplifier-reuse`    | existing-mechanism reuse      | `## Simplify brief` |
+| `simplifier-simplification` | complexity reduction   | `## Simplify brief` |
+| `simplifier-efficiency` | material wasted-work review | `## Simplify brief` |
+| `simplifier-altitude` | implementation-depth review   | `## Simplify brief` |
 | `planner`             | architecture consulting       | `## Task brief`     |
 | `plan-critic-implementation` | checkout/execution red-team | `## Draft plan` |
 | `plan-critic-system`  | system/design red-team        | `## Draft plan`     |
@@ -82,6 +86,11 @@ How to apply:
   only for concrete complexity or risk. Reserve Codex `xhigh` for cross-file contracts,
   concurrency, data-integrity or money paths, wide refactors, and standalone plan
   critics. Grok supports only `low|medium|high`.
+- **Standalone simplify** → exactly four read-only dimensions: reuse, simplification,
+  efficiency, and altitude. Use the opposite-host config bindings unless the current
+  request explicitly replaces all lanes with one engine. Simplify defaults are Claude
+  `high`, Codex `xhigh`, and Grok `high`; the host synthesizes and applies only small
+  behavior-preserving fixes.
 - **Doc-lookup research → Terra low.** When the task is finding official documentation
   and transcribing the facts (API shapes, config keys, version tables), run a read-only
   Codex lane with `--model gpt-5.6-terra --effort low`. On lookup work, effort buys
@@ -112,6 +121,11 @@ engine for each critic dimension from the host package and runs both in
 parallel. Explicit current-message substitutions win. Both required dimensions must
 return before the plan is final. The full dev skill uses the same two-critic default as
 part of the larger end-to-end run.
+
+The standalone simplify skill is a separate fixed-shape quality pipeline, not a `dev`
+stage. It always runs one lane for each of its four dimensions. An explicit current-message
+`all <engine> lanes` substitution applies to all four; mixed per-dimension routing is not
+part of v1.
 
 Scale-up signals: cross-file contracts, concurrency, data-integrity or money paths,
 wide refactors, high ambiguity, code you can't easily verify. Scale-down signals: one

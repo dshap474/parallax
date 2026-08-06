@@ -49,6 +49,14 @@ if "$PLUGIN_ROOT/bin/plx-engine" --print-rubric reviewer-correctness 2>/dev/null
 else
   _fail "--print-rubric reviewer-correctness failed"
 fi
+for rubric in simplifier-reuse simplifier-simplification simplifier-efficiency simplifier-altitude; do
+  if "$PLUGIN_ROOT/bin/plx-engine" --print-rubric "$rubric" 2>/dev/null |
+     grep -Fq '## Finding format'; then
+    _pass "--print-rubric $rubric emits the rubric"
+  else
+    _fail "--print-rubric $rubric failed"
+  fi
+done
 
 # Neutralize ambient collection — enabled cases set an explicit temp destination.
 unset PLX_TRACE_DB || true
@@ -602,6 +610,11 @@ out="$WORK/skill.txt"
 rc=$?
 if [ "$rc" -eq 0 ]; then _pass "exits 0"; else _fail "exit $rc"; fi
 assert_contains "## Pipeline" "$out" "emits the pipeline section"
+out="$WORK/simplify-skill.txt"
+"$PLUGIN_ROOT/bin/plx-skill" simplify > "$out" 2>&1
+rc=$?
+if [ "$rc" -eq 0 ]; then _pass "simplify exits 0"; else _fail "simplify exit $rc"; fi
+assert_contains "## Run the lanes" "$out" "emits the simplify pipeline"
 if "$PLUGIN_ROOT/bin/plx-skill" no-such-skill >/dev/null 2>&1; then
   _fail "should reject unknown skill"
 else

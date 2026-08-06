@@ -16,6 +16,12 @@ pipelines:
     review-structural: [claude]
     review-security: [claude]
 
+  simplify:
+    simplify-reuse: [claude]
+    simplify-simplification: [claude]
+    simplify-efficiency: [claude]
+    simplify-altitude: [claude]
+
   dev:
     plan-critic-implementation: [claude]
     plan-critic-system: [claude]

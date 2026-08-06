@@ -1,7 +1,7 @@
 {
   "name": "plx",
   "version": "0.5.9",
-  "description": "Parallax for Codex: ten multi-model planning, implementation, review, goal-preparation, passthrough, initialization, and blindspot workflows.",
+  "description": "Parallax for Codex: eleven multi-model planning, implementation, review, simplification, goal-preparation, passthrough, initialization, and blindspot workflows.",
   "author": {
     "name": "Daniel Shapiro",
     "url": "https://github.com/dshap474"
@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Parallax",
     "shortDescription": "Multi-model planning, building, and review for Codex",
-    "longDescription": "Parallax lets Codex author plans, use Claude critics and reviewers, prefer isolated Grok 4.5 implementation with Codex fallback, and apply targeted fixes itself through safety-pinned headless lanes.",
+    "longDescription": "Parallax lets Codex author plans, use focused review and simplification lanes, prefer isolated Grok 4.5 implementation with Codex fallback, and apply targeted fixes itself through safety-pinned headless engines.",
     "developerName": "Daniel Shapiro",
     "category": "Developer Tools",
     "capabilities": [
@@ -33,7 +33,8 @@
     "websiteURL": "https://github.com/dshap474/parallax",
     "defaultPrompt": [
       "Use Parallax to plan, build, review, and verify this coding task.",
-      "Use Parallax to review my current changes and fix confirmed findings."
+      "Use Parallax to review my current changes and fix confirmed findings.",
+      "Use Parallax to simplify my changed code without changing behavior."
     ]
   }
 }

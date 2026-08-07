@@ -1,7 +1,7 @@
 ---
 name: review
-description: Explicit Parallax review for Codex. Run Claude-led correctness, cleanup, and structural review lanes, synthesize their findings, and apply the confirmed fixes yourself as small targeted edits unless the user asks for report-only output.
-argument-hint: "<what to review / audit>"
+description: Explicit standalone Parallax review for Codex. Run Grok correctness, cleanup, and structural lanes in parallel by default, add a Grok security lane when triggered, synthesize their findings, and apply confirmed fixes as small targeted edits. Explicit whole-round engine overrides win; report-only requests skip fixes.
+argument-hint: "<scope> [with all Codex|Claude|Grok lanes] [at <effort> effort] [report only]"
 ---
 
 # $plx:review — review, then fix
@@ -30,25 +30,32 @@ surgically, guided by the findings.
   brief and lane outputs.
 - Write the review request and resolved scope to `<tmp>/task.md` for the run record.
 
-## Size the round — then declare it
+## Resolve the standalone round — then declare it
 
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
-`/skills/review/SKILL.md`. Read `<plugin-root>/bin/plx-config` → key `review`.
-Shipped default: every review dimension `[claude]`; confirmed fixes are yours. That is
-the floor shape — size per the judgment doc:
+`/skills/review/SKILL.md`. Direct invocation always runs exactly these three core
+read-only roles: `reviewer-correctness`, `reviewer-cleanup`, and
+`reviewer-structural`. Grok is the default engine for all three; do not scale a direct
+review down to one lane. The opposite-host bindings in `<plugin-root>/bin/plx-config`
+remain the default for the composed `$plx:dev` review stage and do not apply here.
 
-- **small change, low blast radius** → 1 lane: `reviewer-correctness` only, one engine.
-- **default** → 3 dimensions × 1 engine.
-- **large / risky** (cross-file contracts, concurrency, data-integrity or money paths,
-  wide refactors) → keep all three Claude dimensions at `high`; add a second non-writer
-  engine only when another independent perspective is proportionate.
-- **security-triggered** → also run `reviewer-security` when the user requests security
-  review or scope touches auth, permissions, secrets/config, shell or subprocess
-  execution, sandboxing, network clients, dependencies/lockfiles, CI workflows,
-  deserialization, or another trust boundary. Otherwise report `Security: not run`.
+Honor an explicit whole-round engine substitution in the current request:
 
-Declare the sizing in one line before launching (e.g. `Sizing: review 3×1
-(claude high) · fixes: host`).
+- `with all Grok lanes` → all selected roles use Grok;
+- `with all Claude lanes` → all selected roles use Claude;
+- `with all Codex lanes` → all selected roles use Codex.
+
+Mixed per-role routing is not part of this skill. Apply an explicit model or effort
+override to every selected lane. Otherwise use Grok `medium`, Claude `high`, or Codex
+`xhigh`; raise Grok to `high` for large or risky scope.
+
+Also run `reviewer-security` on the selected engine when the user requests security
+review or scope touches auth, permissions, secrets/config, shell or subprocess
+execution, sandboxing, network clients, dependencies/lockfiles, CI workflows,
+deserialization, or another trust boundary. Otherwise report `Security: not run`.
+
+Declare the shape in one line before launching (e.g. `Sizing: review 3×1
+(grok medium) · fixes: host`).
 
 Write the same sizing line to `<tmp>/shape.txt`. Keep all lane prompt files directly in
 `<tmp>`; its `plx-review.<suffix>` basename mechanically groups their captured lanes.
@@ -81,7 +88,7 @@ interruption leaves the run incomplete. Then run `<plugin-root>/bin/plx-prefligh
 
    ```
    <plugin-root>/bin/plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/brief.md \
-     --rubric reviewer-<dimension> --effort <high|xhigh> \
+     --rubric reviewer-<dimension> [--model <model>] [--effort <effort>] \
      --out <tmp>/<e>-<dimension>.md --log <tmp>/<e>-<dimension>.log
    ```
 

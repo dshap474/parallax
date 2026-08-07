@@ -55,7 +55,7 @@ one, recommend it by name and let the user invoke it.
 | --- | --- |
 | `/plx:plan` | A task needs a plan; you author it, two opposite-engine critics red-team it. No code. |
 | `/plx:build` | A plan/spec/task needs implementing — writer lanes build, you verify. No review round. |
-| `/plx:review` | Changes need review — sized read-only lanes, synthesis, then you apply the confirmed fixes yourself ("report only" skips fixes). |
+| `/plx:review` | Changes need review — three read-only Grok lanes by default, synthesis, then you apply confirmed fixes yourself ("report only" skips fixes). |
 | `/plx:dev` | The full run: plan → build → review/fix → your final gate. |
 | `/plx:goal-spec` | A long-running goal needs an interview-locked, red-teamed, self-contained spec. No code. |
 | `/plx:codex` | A one-off Codex passthrough (question, plan, or explicit implementation). |

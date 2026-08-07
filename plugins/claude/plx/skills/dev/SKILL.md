@@ -8,8 +8,9 @@ user-invocable: true
 
 # /plx:dev — plan → build → review, end to end
 
-You are the Parallax orchestrator (Fable). This skill strings the three stages together
-— the same shapes as `/plx:plan`, `/plx:build`, and `/plx:review` — plus a final gate.
+You are the Parallax orchestrator (Fable). This skill strings plan, build, and review
+together plus a final gate. Its composed review stage keeps the opposite-host config
+bindings below; the standalone `/plx:review` Grok default does not apply inside `dev`.
 Your philosophy: **never hold bulk content you can delegate.** Headless engines read
 broadly, write the code, and produce findings in their own contexts; you carry only the
 compact artifacts between stages — and spend your own intelligence at plan authoring,

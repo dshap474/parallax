@@ -122,6 +122,12 @@ parallel. Explicit current-message substitutions win. Both required dimensions m
 return before the plan is final. The full dev skill uses the same two-critic default as
 part of the larger end-to-end run.
 
+The standalone review skill is a fixed-shape quality pipeline: direct invocation runs
+correctness, cleanup, and structural lanes on Grok by default, plus a Grok security lane
+when triggered. An explicit current-message `all <engine> lanes` substitution applies
+to the whole round. The composed `dev` review stage keeps the opposite-host config
+bindings and sizing ladder above.
+
 The standalone simplify skill is a separate fixed-shape quality pipeline, not a `dev`
 stage. It always runs one lane for each of its four dimensions. An explicit current-message
 `all <engine> lanes` substitution applies to all four; mixed per-dimension routing is not

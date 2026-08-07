@@ -6,7 +6,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | --- | --- | --- | --- |
 | Plan | `/plx:plan` | `$plx:plan` | Host authors; implementation and system critics red-team; no code |
 | Build | `/plx:build` | `$plx:build` | One or more file-disjoint writer lanes implement and verify |
-| Review | `/plx:review` | `$plx:review` | Sized read-only review, synthesis, and one host-applied fix round |
+| Review | `/plx:review` | `$plx:review` | Three Grok review lanes by default, synthesis, and one host-applied fix round |
 | Simplify | `/plx:simplify` | `$plx:simplify` | Four fixed read-only quality lanes, synthesis, and behavior-preserving host fixes |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
 | Goal spec | `/plx:goal-spec` | `$plx:goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |

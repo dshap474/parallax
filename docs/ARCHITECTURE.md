@@ -17,11 +17,12 @@ The current host authors plans, synthesizes review findings, and performs the fi
 gate. Headless lanes read broadly, implement, or return independent judgment. There are
 no orchestration subagents: every lane is one `plx-engine` process.
 
-The Claude package keeps Claude as host and defaults plan/review lanes to Codex. The
-Codex package flips that judgment polarity: Codex remains host while Claude supplies
-the default plan critics and review lanes. Both packages prefer Grok 4.5 for initial
-implementation, deterministically fall back to Codex only when Grok fails preflight,
-and keep targeted review fixes with the host.
+The Claude package keeps Claude as host and defaults plan critics and composed `dev`
+review lanes to Codex. The Codex package flips that judgment polarity: Codex remains
+host while Claude supplies those lanes. Direct `review` instead runs all three core
+lanes on Grok by default. Both packages prefer Grok 4.5 for initial implementation,
+deterministically fall back to Codex only when Grok fails preflight, and keep targeted
+review fixes with the host.
 
 ## Package boundaries
 

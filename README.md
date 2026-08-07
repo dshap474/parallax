@@ -46,8 +46,9 @@ Start a new Codex session, then use `$plx:dev`.
 
 Claude is the host orchestrator in the Claude package. Codex is the host orchestrator
 in the Codex package. Both use isolated Grok 4.5 writers by default. The
-opposite host engine supplies the plan critics, three code-review lanes, and four focused
-simplification lanes; the host applies confirmed fixes itself.
+opposite host engine supplies plan critics, composed `dev` review lanes, and four
+focused simplification lanes. Direct `review` runs three Grok lanes by default; the
+host applies confirmed fixes itself.
 
 Claude's `/plx:codex` remains one-shot by default, but it may start or explicitly
 resume a persistent Codex app-server thread when later continuation will materially

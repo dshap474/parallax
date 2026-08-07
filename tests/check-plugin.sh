@@ -215,14 +215,31 @@ else
   _pass "shared engine guidance is host-neutral"
 fi
 
-if grep -q '(claude high) · fixes: host' "$PLX_CODEX/skills/review/SKILL.md" &&
-   grep -q '(codex xhigh) · fixes: host' "$PLX_CLAUDE/skills/review/SKILL.md" &&
+review_contract_ok=1
+for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
+  skill="$package/skills/review/SKILL.md"
+  grep -Fq 'Direct invocation always runs exactly these three core' "$skill" || review_contract_ok=0
+  grep -Fq 'do not scale a direct' "$skill" || review_contract_ok=0
+  grep -Fq 'with all Grok lanes' "$skill" || review_contract_ok=0
+  grep -Fq 'default engine for all three' "$skill" || review_contract_ok=0
+  grep -Fq '(grok medium) · fixes: host' "$skill" || review_contract_ok=0
+  grep -Fq -- '[--model <model>] [--effort <effort>]' "$skill" || review_contract_ok=0
+  grep -Fq 'reviewer-correctness' "$skill" || review_contract_ok=0
+  grep -Fq 'reviewer-cleanup' "$skill" || review_contract_ok=0
+  grep -Fq 'reviewer-structural' "$skill" || review_contract_ok=0
+  grep -Fq 'reviewer-security' "$skill" || review_contract_ok=0
+  ! grep -Fq 'small change, low blast radius' "$skill" || review_contract_ok=0
+done
+if [ "$review_contract_ok" -eq 1 ] &&
+   grep -q '(claude, high) · fixes: host' "$PLX_CODEX/skills/dev/SKILL.md" &&
+   grep -q '(codex, xhigh) · fixes: host' "$PLX_CLAUDE/skills/dev/SKILL.md" &&
+   grep -Fq 'standalone `$plx:review` Grok default does not apply inside `dev`' "$PLX_CODEX/skills/dev/SKILL.md" &&
+   grep -Fq 'standalone `/plx:review` Grok default does not apply inside `dev`' "$PLX_CLAUDE/skills/dev/SKILL.md" &&
    ! grep -qiE 'fix lanes? on|fix-engine|fixes: grok' "$PLX_CODEX/skills/review/SKILL.md" "$PLX_CLAUDE/skills/review/SKILL.md" \
-     "$PLX_CODEX/skills/dev/SKILL.md" "$PLX_CLAUDE/skills/dev/SKILL.md" &&
-   ! grep -qE '(claude|codex) \+ grok' "$PLX_CODEX/skills/review/SKILL.md" "$PLX_CLAUDE/skills/review/SKILL.md"; then
-  _pass "review examples preserve opposite-engine review and host-applied fixes"
+     "$PLX_CODEX/skills/dev/SKILL.md" "$PLX_CLAUDE/skills/dev/SKILL.md"; then
+  _pass "standalone review defaults all core lanes to Grok while dev keeps opposite-engine review"
 else
-  _fail "Codex review examples contradict configured polarity"
+  _fail "standalone or composed review routing contract drift"
 fi
 
 if grep -Fq 'current change directly makes it obsolete' \
@@ -266,6 +283,7 @@ for host in claude codex; do
   grep -Fq 'worktree becomes dirty' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq 'reviewer-security' "$package/skills/review/SKILL.md" || parity_contract_ok=0
   grep -Fq 'Security: not run' "$package/skills/review/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'with all Grok lanes' "$package/skills/review/SKILL.md" || parity_contract_ok=0
   grep -Fq 'with all Grok lanes' "$package/skills/simplify/SKILL.md" || parity_contract_ok=0
   grep -Fq 'one bounded round' "$package/skills/simplify/SKILL.md" || parity_contract_ok=0
   grep -Fq 'up to **3 questions per round**' "$package/skills/goal-spec/SKILL.md" || parity_contract_ok=0

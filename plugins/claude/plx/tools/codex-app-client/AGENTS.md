@@ -29,7 +29,7 @@ If `cxa` is installed as a tool, invoke it directly from anywhere:
 cxa doctor --cwd /absolute/path/to/the/target/project
 ```
 
-Otherwise, run it through this package's environment:
+Otherwise, run it from the repository root through this package's environment:
 
 ```bash
 cd plugins/claude/plx/tools/codex-app-client

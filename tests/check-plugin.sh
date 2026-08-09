@@ -173,10 +173,10 @@ for role in reuse simplification efficiency altitude; do
     simplify_polarity_ok=0
 done
 
-if [ "$(grep -c '^    code: grok$' "$PLX_CODEX/config/parallax.yaml")" -eq 2 ] &&
-   [ "$(grep -c '^    code: grok$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 2 ] &&
-   [ "$(grep -c '^    code-fallback: codex$' "$PLX_CODEX/config/parallax.yaml")" -eq 2 ] &&
-   [ "$(grep -c '^    code-fallback: codex$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 2 ] &&
+if [ "$(grep -c '^    code: grok$' "$PLX_CODEX/config/parallax.yaml")" -eq 1 ] &&
+   [ "$(grep -c '^    code: grok$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 1 ] &&
+   [ "$(grep -c '^    code-fallback: codex$' "$PLX_CODEX/config/parallax.yaml")" -eq 1 ] &&
+   [ "$(grep -c '^    code-fallback: codex$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 1 ] &&
    [ "$(grep -c '^    review-security: \[claude\]$' "$PLX_CODEX/config/parallax.yaml")" -eq 2 ] &&
    [ "$(grep -c '^    review-security: \[codex\]$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 2 ] &&
    ! grep -q '^    fix:' "$PLX_CODEX/config/parallax.yaml" &&
@@ -279,8 +279,16 @@ fi
 parity_contract_ok=1
 for host in claude codex; do
   package="$PLX_ROOT/plugins/$host/plx"
-  grep -Fq 'code-fallback' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'worktree becomes dirty' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'An accepted spec is required' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'active host is the only' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'reviewer-correctness' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'reviewer-cleanup' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'reviewer-structural' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'reviewer-security' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'complete relevant repository verification suite' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq -- '--report-file <tmp>/report.md' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  ! grep -Fq -- '--rubric worker' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  ! grep -Fq -- '--mode rw' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq 'reviewer-security' "$package/skills/review/SKILL.md" || parity_contract_ok=0
   grep -Fq 'Security: not run' "$package/skills/review/SKILL.md" || parity_contract_ok=0
   grep -Fq 'with all Grok lanes' "$package/skills/review/SKILL.md" || parity_contract_ok=0
@@ -298,8 +306,7 @@ fi
 grok_sandbox_contract_ok=1
 for host in claude codex; do
   package="$PLX_ROOT/plugins/$host/plx"
-  grep -Fq -- '--optional-grok --grok-mode rw' "$package/skills/build/SKILL.md" || grok_sandbox_contract_ok=0
-  grep -Fq -- '--require-grok --grok-mode rw' "$package/skills/build/SKILL.md" || grok_sandbox_contract_ok=0
+  grep -Fq -- '--require-grok' "$package/skills/build/SKILL.md" || grok_sandbox_contract_ok=0
   grep -Fq -- '--optional-grok --grok-mode rw' "$package/skills/dev/SKILL.md" || grok_sandbox_contract_ok=0
   grep -Fq '[PLX:GROK FAILED]' "$package/skills/grok/SKILL.md" || grok_sandbox_contract_ok=0
   grep -Fq 'Do not perform the task in the host session' "$package/skills/grok/SKILL.md" || grok_sandbox_contract_ok=0
@@ -310,15 +317,19 @@ else
   _fail "Grok workspace preflight or fail-closed contract drift"
 fi
 
-if ! grep -RqiE 'make the edit yourself|fix nits inline|one-liner you can.*edit|edit it yourself' \
-     "$PLX_CLAUDE/skills/build" "$PLX_CODEX/skills/build" &&
+if grep -Fq 'active host is the only' "$PLX_CLAUDE/skills/build/SKILL.md" &&
+   grep -Fq 'active host is the only' "$PLX_CODEX/skills/build/SKILL.md" &&
+   ! grep -Fq -- '--rubric worker' "$PLX_CLAUDE/skills/build/SKILL.md" &&
+   ! grep -Fq -- '--rubric worker' "$PLX_CODEX/skills/build/SKILL.md" &&
+   grep -Fq 'does not invoke the standalone `/plx:build`' "$PLX_CLAUDE/skills/dev/SKILL.md" &&
+   grep -Fq 'does not invoke the standalone `$plx:build`' "$PLX_CODEX/skills/dev/SKILL.md" &&
    [ -z "$(grep -L 'Fix directly' "$PLX_CLAUDE/skills/review/SKILL.md" "$PLX_CODEX/skills/review/SKILL.md" \
      "$PLX_CLAUDE/skills/dev/SKILL.md" "$PLX_CODEX/skills/dev/SKILL.md")" ] &&
    ! grep -q -- '--rubric planner' "$PLX_CLAUDE/skills/goal-spec/SKILL.md" \
      "$PLX_CODEX/skills/goal-spec/SKILL.md"; then
-  _pass "hosts delegate implementation, apply post-review fixes themselves, and author goal specs"
+  _pass "standalone Build is host-written while dev delegation and host-owned fixes remain intact"
 else
-  _fail "host implementation or delegated goal-spec planning drift"
+  _fail "standalone Build ownership, dev delegation, or goal-spec planning drift"
 fi
 
 # --------------------------------------------------------------------------- #

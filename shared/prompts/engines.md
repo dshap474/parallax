@@ -42,11 +42,11 @@ open with the section header the rubric expects:
 
 | model | how to call | default role |
 | --- | --- | --- |
-| gpt-5.6-sol | `--engine codex` (medium effort by default) | Claude-host plan/review judgment and implementation fallback |
+| gpt-5.6-sol | `--engine codex` (medium effort by default) | Claude-host plan/review judgment and `dev` implementation fallback |
 | gpt-5.6-terra | `--engine codex --model gpt-5.6-terra --effort low` | doc-lookup web research lanes |
-| grok-4.5 | `--engine grok` (medium effort by default) | optional default implementation |
+| grok-4.5 | `--engine grok` (medium effort by default) | `dev` implementation and standalone Build review |
 | opus-4.8 | `--engine claude` | planning, review, or taste-heavy judgment when selected by the host config |
-| host orchestrator | you — never delegated | plan authoring, synthesis, post-review targeted fixes, and final gate |
+| host orchestrator | you — never delegated | plan authoring, standalone Build implementation, synthesis, targeted fixes, and final gate |
 
 Models in the host package config are defaults, not restrictions. When the user
 explicitly requests a model or effort, pass that exact value to the selected engine;
@@ -63,7 +63,7 @@ How to apply:
   price tag — escalating costs less than shipping mediocre work. This permission changes
   only model or effort; it never expands task scope, target resources, credentials,
   permissions, or allowed side effects.
-- **Implementation prefers Grok 4.5 medium when available.** Probe it as optional before
+- **Composed `dev` implementation prefers Grok 4.5 medium when available.** Probe it as optional before
   mutation. If that probe fails, require the configured `code-fallback` engine (Codex by
   default), declare the substitution, and use it for the whole writer turn. An explicit
   user engine override disables automatic fallback. Never fall back after a writer has
@@ -97,19 +97,23 @@ How to apply:
   latency, not accuracy — benchmarked 2026-07: Terra low matched Terra high fact-for-fact
   while running fastest of six contenders; Luna was slower at every effort tier. Reserve
   higher effort for research that needs synthesis or judgment, not retrieval.
-- **The host orchestrator is never delegated.** Spend the main session where judgment
-  is the product (plan authoring, review synthesis, post-review targeted fixes, the
-  final gate), not on bulk reads or bulk implementation.
+- **Standalone Build is host-owned.** Given an accepted spec, the active host implements
+  it directly, runs the three core Grok review dimensions, fixes confirmed findings,
+  and executes the complete relevant verification suite. It has no writer lane and no
+  fallback writer configuration.
+- **The host orchestrator is never delegated.** Spend the main session where the loaded
+  skill assigns ownership: plan authoring, standalone Build implementation, review
+  synthesis, targeted fixes, and the final gate.
 
 ## Sizing the run (the escalation ladder)
 
-Config bindings are the **floor shape**, not the ceiling or the mandate. Before
+For the composed `dev` pipeline, config bindings are the **floor shape**, not the ceiling or the mandate. Before
 launching lanes, size the task and **declare the shape you chose in one line** (e.g.
 `Sizing: implementation critic (<critic-engine>, high) · 1 worker (<writer-engine>, medium) · review 3×1
 (<review-engine>, high)`) — it
 gives the user a veto point before tokens burn. Scale down as readily as up.
 
-| scale | plan | build | review |
+| `dev` scale | plan | implementation | review |
 | --- | --- | --- | --- |
 | **trivial** — one file, obvious change | none — decide and go | one Grok rw lane | read the diff yourself |
 | **small** — clear task, low blast radius | plan in-context, no critic | 1 worker | 1 lane (correctness only) |
@@ -121,6 +125,11 @@ engine for each critic dimension from the host package and runs both in
 parallel. Explicit current-message substitutions win. Both required dimensions must
 return before the plan is final. The full dev skill uses the same two-critic default as
 part of the larger end-to-end run.
+
+The standalone Build skill does not use this sizing ladder. Its ownership shape is
+fixed: an accepted spec, direct host implementation, three read-only Grok review lanes
+(plus security when triggered), host-applied confirmed fixes, and the complete relevant
+verification suite. `dev` remains self-contained and does not invoke standalone Build.
 
 The standalone review skill is a fixed-shape quality pipeline: direct invocation runs
 correctness, cleanup, and structural lanes on Grok by default, plus a Grok security lane
@@ -136,8 +145,8 @@ part of v1.
 Scale-up signals: cross-file contracts, concurrency, data-integrity or money paths,
 wide refactors, high ambiguity, code you can't easily verify. Scale-down signals: one
 file, an obvious mechanism, strong existing tests, a change you can read in one sitting.
-The smallest rung skips advisory fanout, not implementation delegation: even a trivial
-code change uses one configured rw lane, followed by host verification.
+Inside `dev`, the smallest rung skips advisory fanout, not implementation delegation:
+even a trivial code change uses one configured rw lane, followed by host verification.
 
 Plan artifacts follow the same logic: a plan is a chat message by default; write it to
 `.project/builds/<thread>/` only when the effort is multi-session or another agent must
@@ -168,7 +177,7 @@ consume it later. A spec doc for a one-shot task is overhead, not rigor.
 
 ## Writers
 
-- **One writer per disjoint path set.** Any number of parallel read-only lanes; rw lanes
+- **Within `dev`, one writer per disjoint path set.** Any number of parallel read-only lanes; rw lanes
   may run in parallel **only** when their file sets don't overlap — each writer's brief
   must name the paths it owns and state that other paths are being edited in parallel.
   Never edit a file yourself while a lane owns it. When in doubt, one writer.

@@ -45,10 +45,12 @@ Start a new Codex session, then use `$plx:dev`.
 | Blindspot work | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` |
 
 Claude is the host orchestrator in the Claude package. Codex is the host orchestrator
-in the Codex package. Both use isolated Grok 4.5 writers by default. The
-opposite host engine supplies plan critics, composed `dev` review lanes, and four
-focused simplification lanes. Direct `review` runs three Grok lanes by default; the
-host applies confirmed fixes itself.
+in the Codex package. In standalone `build`, the host implements an accepted spec,
+three Grok lanes review it, the host fixes confirmed findings, and the full relevant
+verification suite runs. The separate `dev` pipeline uses isolated Grok 4.5 writers by
+default; the opposite host engine supplies its plan critics and review lanes. Direct
+`review` runs three Grok lanes by default, and `simplify` runs four focused quality
+lanes; the host applies confirmed fixes itself.
 
 Claude's `/plx:codex` remains one-shot by default, but it may start or explicitly
 resume a persistent Codex app-server thread when later continuation will materially

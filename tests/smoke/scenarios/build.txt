@@ -1,6 +1,8 @@
-# /plx:build — one writer lane implements a bounded raw task (no review round)
-NEEDS: claude
+# /plx:build — host implements an accepted spec, Grok reviews, host fixes, final gate runs
+NEEDS: claude grok
 FIXTURE: calc
-TASK: Add an empty-list guard to average() in calc.py so average([]) returns 0.0 instead of raising ZeroDivisionError. Edit calc.py only; keep it minimal.
+TASK: Accepted spec: update only calc.py so average([]) returns 0.0, preserve existing behavior for non-empty lists, and verify both cases with Python assertions.
 EXPECT_DIFF: average
+EXPECT_OUTPUT_ALL: grok-correctness.md grok-cleanup.md grok-structural.md
+EXPECT_ABSENT_OUTPUT: --rubric worker
 EXPECT_CHECK: python3 -c "from calc import average; assert average([])==0.0 and average([1,2,3])==2"

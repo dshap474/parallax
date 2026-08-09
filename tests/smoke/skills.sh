@@ -9,7 +9,8 @@
 #   skills.sh [--skill <name>] [--with-grok] [--dry-run]
 #
 # Each scenarios/<skill>.txt declares: NEEDS (engine auth gate), FIXTURE, TASK, and any of
-# EXPECT_DIFF / EXPECT_EMPTY_DIFF / EXPECT_FILE / EXPECT_OUTPUT / EXPECT_CHECK.
+# EXPECT_DIFF / EXPECT_EMPTY_DIFF / EXPECT_FILE / EXPECT_OUTPUT / EXPECT_OUTPUT_ALL /
+# EXPECT_ABSENT_OUTPUT / EXPECT_CHECK.
 set -uo pipefail
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib-smoke.sh"
 
@@ -46,9 +47,13 @@ run_skill() {
   needs="$(field "$scn" NEEDS)"; fix="$(field "$scn" FIXTURE)"; task="$(field "$scn" TASK)"
   d="$RUNDIR/skills/$skill"; mkdir -p "$d"
 
-  if [ "$DRY" -eq 0 ] && [ -n "$needs" ] && ! preflight_ok "$needs"; then
-    _skip "needs $needs (not installed/authed) — skipped"
-    smoke_summary_row "$RUNDIR" L2 "$skill" SKIP "no $needs auth"; return
+  if [ "$DRY" -eq 0 ] && [ -n "$needs" ]; then
+    for need in $needs; do
+      if ! preflight_ok "$need"; then
+        _skip "needs $need (not installed/authed) — skipped"
+        smoke_summary_row "$RUNDIR" L2 "$skill" SKIP "no $need auth"; return
+      fi
+    done
   fi
 
   repo="$(make_tmp_repo "$(fixture_dir "$fix")")"
@@ -92,6 +97,24 @@ run_skill() {
   v="$(field "$scn" EXPECT_OUTPUT)"
   if [ -n "$v" ]; then
     if grep -Eiq -- "$v" "$d/transcript.jsonl"; then _pass "transcript matches /$v/"; else _fail "transcript missing /$v/"; ok=0; notes="$notes,output"; fi
+  fi
+  v="$(field "$scn" EXPECT_OUTPUT_ALL)"
+  if [ -n "$v" ]; then
+    for expected in $v; do
+      if grep -Fiq -- "$expected" "$d/transcript.jsonl"; then
+        _pass "transcript contains $expected"
+      else
+        _fail "transcript missing $expected"; ok=0; notes="$notes,output-$expected"
+      fi
+    done
+  fi
+  v="$(field "$scn" EXPECT_ABSENT_OUTPUT)"
+  if [ -n "$v" ]; then
+    if grep -Fiq -- "$v" "$d/transcript.jsonl"; then
+      _fail "transcript unexpectedly contains $v"; ok=0; notes="$notes,unexpected-output"
+    else
+      _pass "transcript omits $v"
+    fi
   fi
   v="$(field "$scn" EXPECT_CHECK)"
   if [ -n "$v" ]; then

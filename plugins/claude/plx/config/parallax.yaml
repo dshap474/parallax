@@ -1,7 +1,7 @@
 # Parallax engine configuration
 #
 # Binds pipeline ROLES to ENGINES, keyed by pipeline. Each skill names the key it
-# reads (plan -> `plan`, build -> `build`, review -> `review`, simplify ->
+# reads (plan -> `plan`, review -> `review`, simplify ->
 # `simplify`, dev -> `dev`, goal-spec -> `goal-spec`). Each skill's SKILL.md is fully
 # self-contained — it documents its own pipeline steps — and resolves each role to its
 # engine from this file before running.
@@ -12,8 +12,9 @@
 # ones, and swap engines when the output doesn't meet the bar. It declares the
 # chosen sizing before launching.
 #
-# Every role runs as one headless `plx-engine` call made by the orchestrator —
-# no subagents. The role determines the rubric and mode:
+# Every configured role runs as one headless `plx-engine` call made by the
+# orchestrator — no subagents. Standalone build is host-implemented and therefore has
+# no configured writer role. The listed role determines the rubric and mode:
 #
 #   role                mode  rubric
 #   plan-critic-implementation ro plan-critic-implementation
@@ -50,10 +51,6 @@ pipelines:
   plan:
     plan-critic-implementation: [codex]
     plan-critic-system: [codex]
-
-  build:
-    code: grok
-    code-fallback: codex
 
   review:
     review-correctness: [codex]

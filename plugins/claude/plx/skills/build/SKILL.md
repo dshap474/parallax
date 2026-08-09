@@ -1,151 +1,159 @@
 ---
 name: build
-description: The Parallax build stage, standalone — one or more headless writer lanes (plx-engine, rw) implement a plan. Takes a spec doc path, a plan from this conversation, or a raw task. The orchestrator sizes the run — one worker by default, parallel file-disjoint workers for large separable work — verifies, and reports. No review round; run /plx:review after.
-argument-hint: "<spec path, or the task — omit to build the plan from this conversation>"
+description: Implement an accepted spec directly in the Claude host, review the result with three read-only Grok lanes, fix confirmed findings, run the complete relevant verification suite, and report.
+argument-hint: "<accepted spec path, or omit when an accepted spec is already in this conversation>"
 disable-model-invocation: true
 user-invocable: true
 ---
 
-# /plx:build — delegate a build to writer lanes
+# /plx:build — implement, review, fix, verify
 
-You are the Parallax orchestrator (Fable). This skill turns a plan into a verified
-implementation through headless writer lanes. Your context discipline: the writer reads
-the repo and writes the code in its own context; you carry the spec out and the Buildout
-report back.
+You are the Parallax orchestrator (Claude). Use this skill only after the user has an
+accepted implementation spec. You implement that spec directly in this session, run an
+independent Grok review, fix confirmed findings yourself, run the complete relevant
+verification suite, and report the result.
 
-There are no subagents. Every lane is one `plx-engine` call you make yourself — see
-`plx-engine --help` for the tool contract and `plx-engine --print-rubric engines` for
-the judgment doc (model rankings, sizing ladder, writer rules).
+This standalone workflow is separate from `/plx:dev`. It does not launch a writer lane
+or subagent. Engine execution is allowed only through packaged `plx-*` tools.
 
-## Resolve the plan
+## Require an accepted spec
 
-The build input, in order of precedence:
+Accept either:
 
-1. **A spec doc path** in the arguments (e.g. from `/plx:plan` or `/plx:goal-spec`) —
-   read it; that file is the spec.
-2. **A plan already in this conversation** (from `/plx:plan` or discussion) — use it
-   verbatim; don't re-plan.
-3. **A raw task** — no plan exists. For a clear, bounded task, write a brief spec
-   inline yourself (intent, success criteria, constraints) and proceed; for anything
-   ambiguous or wide, tell the user to run `/plx:plan` first and stop.
+1. a spec document path supplied in the arguments; or
+2. an explicitly accepted spec already present in this conversation.
 
-Whatever the source, the spec must end with a **`Done means:` line** — the concrete
-command(s) or observable(s) that prove the work. If the plan lacks one, add it yourself
-before briefing the lane: it is what the worker self-verifies against, and what you
-re-run at integration.
+Do not turn a raw task into a spec and do not re-plan. If no accepted spec exists, stop
+and direct the user to `/plx:plan` or `/plx:goal-spec`. If the named spec is missing or
+ambiguous about the intended behavior, stop and ask for the missing decision.
+
+Read the spec and extract its requirements, constraints, and observable acceptance
+criteria. Identify the repository's relevant test, typecheck, lint, build, and smoke
+commands. Do not weaken or silently rewrite the spec.
 
 ## Bootstrap
 
-- Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
-- Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-build.XXXXXX"` for briefs
-  and lane outputs.
-- Snapshot `git status --short` and the current staged/unstaged diff into `<tmp>` —
-  pre-existing edits must be preserved and must not be attributed to this build.
-- Write the resolved spec verbatim to `<tmp>/task.md` for the run record.
+- Resolve the absolute repository root (`git rev-parse --show-toplevel`); call it
+  `<repo>`.
+- Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-build.XXXXXX"`.
+- Snapshot `git status --short` and the staged and unstaged diffs into `<tmp>`.
+  Preserve all pre-existing work and never attribute it to this build.
+- Write the accepted spec verbatim to `<tmp>/task.md`.
+- Write `Implementation: host · review: 3×1 (grok medium) · fixes: host · verification: full relevant suite`
+  to `<tmp>/shape.txt` and declare that shape before mutation.
+- Run `plx-preflight --repo <repo> --require-grok` before mutation. If Grok is
+  unavailable, record an aborted run and stop without implementing.
 
-## Size the run — then declare it
+Keep all run files directly in `<tmp>` so its `plx-build.<suffix>` basename groups the
+captured review lanes. Call `plx-eval finish` before every handled return. Recorder
+failure is non-fatal; interruption may leave the run incomplete.
 
-Read the engine config (`plx-config`) → key `build`. Shipped defaults: `code: grok` and
-`code-fallback: codex`. If the user explicitly selected Grok, require it with
-`plx-preflight --repo <repo> --require-grok --grok-mode rw`; another explicit engine
-uses its normal required preflight. Otherwise probe Grok with
-`plx-preflight --repo <repo> --optional-grok --grok-mode rw`; when it passes, select
-Grok. When it fails, require Codex and select the fallback. Run Grok's workspace probe
-with the same disabled Claude Bash sandbox required by its writer lane. Declare the
-selected engine, model, effort, and any fallback before mutation. Never fall back after
-a writer starts or after the worktree becomes dirty; stop and report partial state.
-Size per the judgment doc:
+## Pipeline
 
-- **trivial** → a single rw lane on the selected writer at low or medium; the host verifies.
-- **default** → one writer lane, the `code` engine, `--effort medium`.
-- **large and separable** → split the spec into **file-disjoint work packages** —
-  only along genuinely independent seams (shared files, barrel exports, lockfiles,
-  shared configs mean it's one package) — and run one writer lane per package in
-  parallel. When in doubt, one writer.
+### 1. Implement the accepted spec
 
-Declare the sizing in one line before launching (e.g. `Sizing: 2 workers (grok ×
-grok, medium) — packages: api/, cli/`).
+Read the relevant repository code and implement every requirement directly with your
+native editing tools. Keep the change narrow, follow the repository's instructions,
+and preserve pre-existing edits. Run targeted checks while working when they shorten
+the feedback loop.
 
-Write the same sizing line to `<tmp>/shape.txt`. Keep all lane prompt files directly in
-`<tmp>`; its `plx-build.<suffix>` basename mechanically groups their captured lanes.
-Call `plx-eval finish` before every handled return, including preflight, authentication,
-and lane failures. Recorder failures never fail the build; interruption leaves the run
-incomplete. Complete the writer selection and preflight above before launching any rw lane.
+Do not launch a write-mode engine or a worker rubric. The active host is the only
+writer for the entire Build run.
 
-## Pipeline (run in order)
+### 2. Review with Grok
 
-1. **Write the spec brief(s).** `<tmp>/spec.md` (or `<tmp>/spec-<package>.md` each):
-   a `## Spec` header, then the full plan verbatim — the lane runs headless and fresh;
-   the brief is everything it knows beyond the repo itself. Each brief carries a
-   `### Pre-existing worktree state` section listing dirty paths (or
-   `clean`) and instructing the worker to preserve them. If a target path is already dirty,
-   include the relevant baseline-diff context. For parallel packages, each brief carries
-   the shared intent plus its own scope and an explicit boundary: **"You
-   own only these paths: <list>. Other paths are being edited in parallel — do not
-   touch them."**
+After implementation is complete, determine the changed-file scope relative to the
+Bootstrap snapshot. Write one neutral brief to `<tmp>/review-brief.md`:
 
-2. **Launch the writer lane(s)** — background Bash (`run_in_background`; build turns
-   can outrun the 10-min foreground cap), parallel lanes in one message:
+```
+## Review brief
+- Repo: <repo>
+- Files touched: <changed files from this build>
+- What was implemented: <short summary grounded in the accepted spec>
+- Diff basis: <working tree relative to the Bootstrap snapshot>
+- Spec source: <path or accepted conversation spec>
+```
 
-   ```
-   plx-engine --engine <e> --mode rw --repo <repo> --prompt-file <tmp>/spec.md \
-     --rubric worker --effort <medium|high|xhigh> --out <tmp>/build.md --log <tmp>/build.log
-   ```
+Launch these three read-only Grok lanes in parallel:
 
-   - **One writer per disjoint path set** — never two lanes on overlapping paths, and
-     never edit the files yourself while a lane owns them.
-   - Grok lanes need the Bash sandbox disabled (`dangerouslyDisableSandbox: true`). The
-     wrapper defaults their model to `grok-4.5` and effort to `medium`; pass explicit
-     user-requested model or effort values through unchanged.
-   - Exit codes: 0 ok · 1 engine failure (read the log; retry once, or escalate to a
-     smarter engine per the judgment doc) · 2 your usage error · 3 not signed in → tell
-     the user and stop.
-   - While lanes run, prepare only the integration commands and pass signals already
-     required by this task.
+```
+plx-engine --engine grok --mode ro --repo <repo> \
+  --prompt-file <tmp>/review-brief.md --rubric reviewer-correctness --effort medium \
+  --out <tmp>/grok-correctness.md --log <tmp>/grok-correctness.log
 
-3. **Read the Buildout report(s)** from the out-files — summaries only; don't pull code
-   bodies into your window. Each worker self-verifies; with parallel packages, run the
-   repo's own checks once yourself **after all writers land** (integration — parallel
-   test runs against half-built code are noise). Use the repo's toolchain binaries
-   (e.g. `.venv/bin/pytest -q`, `npm test`); never `uv run` inside a sandbox.
+plx-engine --engine grok --mode ro --repo <repo> \
+  --prompt-file <tmp>/review-brief.md --rubric reviewer-cleanup --effort medium \
+  --out <tmp>/grok-cleanup.md --log <tmp>/grok-cleanup.log
 
-4. **Report and stop.** Close the run before cleaning `<tmp>`, using the
-   honest build outcome and the result of the host's integration verification:
+plx-engine --engine grok --mode ro --repo <repo> \
+  --prompt-file <tmp>/review-brief.md --rubric reviewer-structural --effort medium \
+  --out <tmp>/grok-structural.md --log <tmp>/grok-structural.log
+```
 
-   ```
-   plx-eval finish --skill build --host claude --repo <repo> --run-dir <tmp> \
-     --host-model <actual host model if known, otherwise unknown> \
-     --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
-     --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-     || echo "plx-eval finish failed (non-fatal)" >&2
-   ```
+Honor an explicit whole-round model or effort override. Raise Grok to `high` for large
+or risky scope. Also run `reviewer-security` when requested or when the change touches
+auth, permissions, secrets/config, shell or subprocess execution, sandboxing, network
+clients, dependencies/lockfiles, CI workflows, deserialization, or another trust
+boundary. Otherwise report `Security: not run`.
 
-   Then give the compact report:
+### 3. Validate findings and fix
 
-   ```text
-   Built: <what shipped>
-   Sizing: <workers × engines, effort>
-   Files: <from the reports — cross-checked against git status vs the Bootstrap snapshot>
-   Verification: <commands + results>
-   Assumptions/blockers: <from the reports, or "none">
-   Next: /plx:review [scope]
-   ```
+Wait for every review lane. Deduplicate findings by root cause, verify each material
+claim against the code, and discard false positives, pre-existing issues outside scope,
+and unsupported suggestions. Fix every confirmed finding whose remedy is unambiguous,
+directly in the host session. Ask before a fix that would change accepted behavior,
+scope, or a public interface.
 
-   Cross-check "files touched" against `git status --short` vs the Bootstrap snapshot —
-   ground truth over the worker's testimony. No review round here — that's
-   `/plx:review`. This skill does not commit; version control follows the repo's own
-   agent instructions. Clean up with `plx-clean-temp <tmp>`.
-   Close the run on every normal or handled-error return; an interruption before
-   `finish` leaves it incomplete.
+Use one bounded review/fix round. Do not launch a fix lane. If a confirmed remedy would
+require a new build-sized design decision, report it as a residual instead of expanding
+the accepted spec.
+
+### 4. Run the final gate
+
+After all fixes, run:
+
+- every acceptance command required by the spec; and
+- the complete relevant repository verification suite: tests, typechecks, lint, build,
+  and smoke checks that cover the changed system.
+
+Run the final suite against the settled implementation, not an intermediate diff. If a
+required check cannot run, report the exact blocker and mark the result partial. Never
+claim certainty beyond the checks actually completed.
+
+### 5. Record and report
+
+Write the final report to `<tmp>/report.md`, then close the trace before cleaning up:
+
+```
+plx-eval finish --skill build --host claude --repo <repo> --run-dir <tmp> \
+  --host-model <actual host model if known, otherwise unknown> \
+  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt --report-file <tmp>/report.md \
+  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
+  || echo "plx-eval finish failed (non-fatal)" >&2
+```
+
+Report:
+
+```text
+Built: <what changed>
+Spec coverage: <requirements satisfied; anything missing>
+Review: <lanes completed; confirmed, rejected, and residual findings>
+Fixed: <confirmed findings fixed by the host, or "none">
+Files: <files attributable to this build>
+Verification: <commands and results>
+Residuals: <blockers or uncertainty, or "none">
+```
+
+Clean up with `plx-clean-temp <tmp>`. This skill does not commit or publish.
 
 ## Hard constraints
 
-- Never hand-construct raw `codex` / `grok` / `claude -p` commands — `plx-engine` is
-  the only sanctioned path; safety is pinned inside it.
-- Rubrics are injected by `--rubric` name; never paste rubric text into briefs.
-- One writer per disjoint path set, always. Do not write Parallax state into the target
-  repo — no `.parallax/` dirs; temp files live in `<tmp>`, cleaned up before returning.
-- This skill does not commit or publish.
+- An accepted spec is required. Do not plan inside Build.
+- The host directly implements and fixes. Never launch a writer or fix lane.
+- Review lanes are read-only and run only after implementation.
+- Never hand-construct raw `codex`, `grok`, or `claude -p` commands.
+- Inject rubrics by name; never paste rubric text into prompts.
+- Never create `.parallax/` or leave runtime output in the target repository.
 - Never `uv run` inside a sandbox.
 
 Build input:

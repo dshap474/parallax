@@ -38,9 +38,12 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 - Standalone simplify always runs four read-only dimensions. It defaults to the opposite
   host engine; an explicit current-message whole-round engine request replaces all four
   bindings. The host applies only confirmed behavior-preserving fixes.
-- Both hosts prefer Grok for initial implementation and use configured Codex fallback
-  only when Grok fails an optional workspace-sandbox preflight before mutation. The
-  workspace probe is confined to a disposable directory. Explicit engine selection
+- Standalone Build requires an accepted spec. The active host implements it directly,
+  three read-only Grok lanes review the result, the host fixes confirmed findings, and
+  the complete relevant verification suite runs. It has no writer binding.
+- The separate `dev` pipeline prefers Grok for implementation and uses configured Codex
+  fallback only when Grok fails an optional workspace-sandbox preflight before mutation.
+  The workspace probe is confined to a disposable directory. Explicit engine selection
   disables fallback; a started or dirty writer never falls through to another engine,
   and an explicit Grok passthrough failure never falls through to host-session work.
 - Shared runtime copies must exactly match `shared/`.
@@ -49,7 +52,7 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 
 Brief headers are `## Draft plan`, `## Task brief`, `## Review brief`,
 `## Simplify brief`, or `## Spec`, matching the injected rubric. Advisory lanes are
-read-only; writer lanes are scoped to the target repository and one disjoint path set.
+read-only; `dev` writer lanes are scoped to the target repository and one disjoint path set.
 Plans carry original request, confirmed decisions, candidate plan, and an observable
 done condition.
 

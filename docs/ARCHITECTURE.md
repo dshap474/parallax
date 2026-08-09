@@ -13,16 +13,19 @@ Claude Code host                         Codex host
 
 ## Host responsibilities
 
-The current host authors plans, synthesizes review findings, and performs the final
-gate. Headless lanes read broadly, implement, or return independent judgment. There are
-no orchestration subagents: every lane is one `plx-engine` process.
+The current host authors plans, directly implements accepted specs in standalone Build,
+synthesizes review findings, applies confirmed fixes, and performs the final gate.
+Headless lanes read broadly, implement only inside the separate `dev` pipeline, or
+return independent judgment. There are no orchestration subagents: every lane is one
+`plx-engine` process.
 
 The Claude package keeps Claude as host and defaults plan critics and composed `dev`
 review lanes to Codex. The Codex package flips that judgment polarity: Codex remains
 host while Claude supplies those lanes. Direct `review` instead runs all three core
-lanes on Grok by default. Both packages prefer Grok 4.5 for initial implementation,
-deterministically fall back to Codex only when Grok fails preflight, and keep targeted
-review fixes with the host.
+lanes on Grok by default. Standalone Build also uses Grok for its three review lanes,
+while the host owns implementation and fixes. The separate `dev` pipeline prefers Grok
+4.5 for implementation, deterministically falls back to Codex only when Grok fails
+preflight, and keeps targeted review fixes with the host.
 
 ## Package boundaries
 
@@ -43,10 +46,14 @@ one Claude-only wrapper.
 
 ## Pipeline
 
-The three stage atoms are `plan`, `build`, and `review`; `dev` composes them and adds a
-final gate. `simplify` is a standalone post-implementation quality pipeline, and
-`goal-spec` prepares a self-contained autonomous goal. The host declares task sizing
-before launching anything:
+`plan`, `build`, `review`, and `dev` are separate workflows. `dev` is self-contained; it
+does not invoke the standalone Build or Review skills. Standalone Build requires an
+accepted spec, has the host implement it, runs three Grok review lanes, has the host fix
+confirmed findings, and finishes with the complete relevant verification suite.
+`simplify` is a standalone post-implementation quality pipeline, and `goal-spec`
+prepares a self-contained autonomous goal.
+
+Inside `dev`, the host declares task sizing before launching anything:
 
 - trivial: one configured writer lane and direct host verification;
 - small: one writer and one correctness reviewer;
@@ -55,9 +62,10 @@ before launching anything:
 - large/risky: two critics, file-disjoint writers, the risk-triggered security dimension,
   and up to two engines per review dimension.
 
-Critic and review lanes are always read-only. Write lanes use one writer per
-disjoint path set. Confirmed review findings are fixed once by the host; behavior-changing
-or ambiguous findings go back to the user.
+Critic and review lanes are always read-only. `dev` write lanes use one writer per
+disjoint path set. Standalone Build has no write lane: the host is its only writer.
+Confirmed review findings are fixed once by the host; behavior-changing or ambiguous
+findings go back to the user.
 
 Simplify is deliberately fixed at four independent read-only dimensions: reuse,
 simplification, efficiency, and altitude. It defaults to the opposite host engine, while

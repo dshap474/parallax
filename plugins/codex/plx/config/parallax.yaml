@@ -1,14 +1,10 @@
 # Parallax engine defaults for the Codex-hosted plugin.
 # Codex is the orchestrator, Claude is the opposite-engine critic, and Grok is the
-# preferred optional writer with deterministic Codex fallback before mutation.
+# preferred optional writer for the self-contained dev pipeline.
 pipelines:
   plan:
     plan-critic-implementation: [claude]
     plan-critic-system: [claude]
-
-  build:
-    code: grok
-    code-fallback: codex
 
   review:
     review-correctness: [claude]

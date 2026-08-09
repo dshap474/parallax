@@ -1,6 +1,6 @@
 interface:
   display_name: "PLX::Build"
-  short_description: "Implement a plan through isolated writer lanes"
-  default_prompt: "Use $plx:build to implement and verify this accepted plan."
+  short_description: "Implement, review, fix, and verify an accepted spec"
+  default_prompt: "Use $plx:build to implement this accepted spec, review it with Grok, fix confirmed findings, and run the full relevant verification suite."
 policy:
   allow_implicit_invocation: false

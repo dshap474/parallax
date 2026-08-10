@@ -80,7 +80,7 @@ for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
     init) display_name="PLX::Init" ;;
     plan) display_name="PLX::Plan" ;;
     review) display_name="PLX::Review" ;;
-    simplify) display_name="PLX::Simplify" ;;
+    kiss) display_name="PLX::KISS" ;;
     unknown-unknowns) display_name="PLX::UnknownUnknowns" ;;
     *) display_name="" ;;
   esac
@@ -159,18 +159,18 @@ if grep -q 'Default to the existing \*\*ephemeral\*\*' "$PLX_CLAUDE/skills/codex
    ! grep -Rqi 'plx-codex-thread' \
      "$PLX_CLAUDE/skills/build" "$PLX_CLAUDE/skills/dev" \
      "$PLX_CLAUDE/skills/goal-spec" "$PLX_CLAUDE/skills/plan" \
-     "$PLX_CLAUDE/skills/review" "$PLX_CLAUDE/skills/simplify"; then
+     "$PLX_CLAUDE/skills/review" "$PLX_CLAUDE/skills/kiss"; then
   _pass "persistent Codex is explicit, resumable, and passthrough-only"
 else
   _fail "persistent Codex skill contract drift"
 fi
 
-simplify_polarity_ok=1
+kiss_defaults_ok=1
 for role in reuse simplification efficiency altitude; do
-  grep -qx "    simplify-$role: \[claude\]" "$PLX_CODEX/config/parallax.yaml" ||
-    simplify_polarity_ok=0
-  grep -qx "    simplify-$role: \[codex\]" "$PLX_CLAUDE/config/parallax.yaml" ||
-    simplify_polarity_ok=0
+  grep -qx "    kiss-$role: \[grok\]" "$PLX_CODEX/config/parallax.yaml" ||
+    kiss_defaults_ok=0
+  grep -qx "    kiss-$role: \[grok\]" "$PLX_CLAUDE/config/parallax.yaml" ||
+    kiss_defaults_ok=0
 done
 
 if [ "$(grep -c '^    code: grok$' "$PLX_CODEX/config/parallax.yaml")" -eq 1 ] &&
@@ -181,9 +181,9 @@ if [ "$(grep -c '^    code: grok$' "$PLX_CODEX/config/parallax.yaml")" -eq 1 ] &
    [ "$(grep -c '^    review-security: \[codex\]$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 2 ] &&
    ! grep -q '^    fix:' "$PLX_CODEX/config/parallax.yaml" &&
    ! grep -q '^    fix:' "$PLX_CLAUDE/config/parallax.yaml" &&
-   [ "$(grep -c '\[claude\]' "$PLX_CODEX/config/parallax.yaml")" -eq 18 ] &&
-   [ "$(grep -c '\[codex\]' "$PLX_CLAUDE/config/parallax.yaml")" -eq 18 ] &&
-   [ "$simplify_polarity_ok" -eq 1 ] &&
+   [ "$(grep -c '\[claude\]' "$PLX_CODEX/config/parallax.yaml")" -eq 14 ] &&
+   [ "$(grep -c '\[codex\]' "$PLX_CLAUDE/config/parallax.yaml")" -eq 14 ] &&
+   [ "$kiss_defaults_ok" -eq 1 ] &&
    ! grep -q '^    plan:' "$PLX_CODEX/config/parallax.yaml" &&
    ! grep -q '^    plan:' "$PLX_CLAUDE/config/parallax.yaml"; then
   _pass "host plans, opposite engine reviews, optional Grok writes, host fixes"
@@ -191,21 +191,22 @@ else
   _fail "engine polarity drift"
 fi
 
-simplify_contract_ok=1
+kiss_contract_ok=1
 for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
-  skill="$package/skills/simplify/SKILL.md"
-  grep -Fq 'with all Grok lanes' "$skill" || simplify_contract_ok=0
-  grep -Fq 'Always run exactly these four read-only roles' "$skill" || simplify_contract_ok=0
-  grep -Fq 'launch a writer or fix lane' "$skill" || simplify_contract_ok=0
-  grep -Fq -- '[--model <model>]' "$skill" || simplify_contract_ok=0
+  skill="$package/skills/kiss/SKILL.md"
+  grep -Fq 'default is four Grok lanes at `medium`' "$skill" || kiss_contract_ok=0
+  grep -Fq 'Run exactly these read-only roles' "$skill" || kiss_contract_ok=0
+  grep -Fq 'Do not create repository runtime state' "$skill" || kiss_contract_ok=0
+  grep -Fq -- '[--model <model>]' "$skill" || kiss_contract_ok=0
+  grep -Fq 'Never weaken requirements' "$skill" || kiss_contract_ok=0
   for rubric in reuse simplification efficiency altitude; do
-    grep -Fq "simplifier-$rubric" "$skill" || simplify_contract_ok=0
+    grep -Fq "kiss-$rubric" "$skill" || kiss_contract_ok=0
   done
 done
-if [ "$simplify_contract_ok" -eq 1 ]; then
-  _pass "simplify keeps four read-only dimensions, whole-round overrides, and host fixes"
+if [ "$kiss_contract_ok" -eq 1 ]; then
+  _pass "KISS keeps four Grok Medium dimensions and host synthesis"
 else
-  _fail "simplify fixed-shape contract drift"
+  _fail "KISS fixed-shape contract drift"
 fi
 
 if grep -qE 'fable-5|Codex review lanes|Standalone Codex plan critics|implementation critic \(codex' \
@@ -265,7 +266,7 @@ for package_host in "$PLX_CLAUDE:claude" "$PLX_CODEX:codex"; do
     ! grep -Fq 'plx-eval begin' "$skill" || eval_contract_ok=0
     ! grep -Fq '.plx-eval-run' "$skill" || eval_contract_ok=0
   done
-  for pipeline in plan build dev review simplify goal-spec; do
+  for pipeline in plan build dev review kiss goal-spec; do
     skill="$package/skills/$pipeline/SKILL.md"
     grep -Fq -- '--run-dir <tmp>' "$skill" || eval_contract_ok=0
   done
@@ -292,8 +293,8 @@ for host in claude codex; do
   grep -Fq 'reviewer-security' "$package/skills/review/SKILL.md" || parity_contract_ok=0
   grep -Fq 'Security: not run' "$package/skills/review/SKILL.md" || parity_contract_ok=0
   grep -Fq 'with all Grok lanes' "$package/skills/review/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'with all Grok lanes' "$package/skills/simplify/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'one bounded round' "$package/skills/simplify/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'default is four Grok lanes at `medium`' "$package/skills/kiss/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'Understand the work first' "$package/skills/kiss/SKILL.md" || parity_contract_ok=0
   grep -Fq 'up to **3 questions per round**' "$package/skills/goal-spec/SKILL.md" || parity_contract_ok=0
   grep -Fq 'tool is not' "$package/skills/goal-spec/SKILL.md" || parity_contract_ok=0
 done
@@ -378,7 +379,7 @@ for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   for tool in plx-engine plx-preflight plx-config plx-skill plx-link-claude plx-eval plx-clean-temp; do
     [ -x "$package/bin/$tool" ] && _pass "$label bin/$tool" || _fail "$label bin/$tool"
   done
-  for rubric in engines planner plan-critic-implementation plan-critic-system worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security simplifier-reuse simplifier-simplification simplifier-efficiency simplifier-altitude; do
+  for rubric in engines planner plan-critic-implementation plan-critic-system worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security kiss-reuse kiss-simplification kiss-efficiency kiss-altitude; do
     [ -s "$package/prompts/$rubric.md" ] || _fail "$label missing rubric $rubric"
   done
 done

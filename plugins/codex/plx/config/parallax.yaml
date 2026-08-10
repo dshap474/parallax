@@ -12,11 +12,11 @@ pipelines:
     review-structural: [claude]
     review-security: [claude]
 
-  simplify:
-    simplify-reuse: [claude]
-    simplify-simplification: [claude]
-    simplify-efficiency: [claude]
-    simplify-altitude: [claude]
+  kiss:
+    kiss-reuse: [grok]
+    kiss-simplification: [grok]
+    kiss-efficiency: [grok]
+    kiss-altitude: [grok]
 
   dev:
     plan-critic-implementation: [claude]

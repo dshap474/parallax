@@ -49,9 +49,9 @@ if "$PLUGIN_ROOT/bin/plx-engine" --print-rubric reviewer-correctness 2>/dev/null
 else
   _fail "--print-rubric reviewer-correctness failed"
 fi
-for rubric in simplifier-reuse simplifier-simplification simplifier-efficiency simplifier-altitude; do
+for rubric in kiss-reuse kiss-simplification kiss-efficiency kiss-altitude; do
   if "$PLUGIN_ROOT/bin/plx-engine" --print-rubric "$rubric" 2>/dev/null |
-     grep -Fq '## Finding format'; then
+     grep -Fq 'Parallax KISS rubric'; then
     _pass "--print-rubric $rubric emits the rubric"
   else
     _fail "--print-rubric $rubric failed"
@@ -610,15 +610,20 @@ out="$WORK/skill.txt"
 rc=$?
 if [ "$rc" -eq 0 ]; then _pass "exits 0"; else _fail "exit $rc"; fi
 assert_contains "## Pipeline" "$out" "emits the pipeline section"
-out="$WORK/simplify-skill.txt"
-"$PLUGIN_ROOT/bin/plx-skill" simplify > "$out" 2>&1
+out="$WORK/kiss-skill.txt"
+"$PLUGIN_ROOT/bin/plx-skill" kiss > "$out" 2>&1
 rc=$?
-if [ "$rc" -eq 0 ]; then _pass "simplify exits 0"; else _fail "simplify exit $rc"; fi
-assert_contains "## Run the lanes" "$out" "emits the simplify pipeline"
+if [ "$rc" -eq 0 ]; then _pass "kiss exits 0"; else _fail "kiss exit $rc"; fi
+assert_contains "## KISS" "$out" "emits the KISS pipeline"
 if "$PLUGIN_ROOT/bin/plx-skill" no-such-skill >/dev/null 2>&1; then
   _fail "should reject unknown skill"
 else
   _pass "non-zero exit on unknown skill"
+fi
+if "$PLUGIN_ROOT/bin/plx-skill" simplify >/dev/null 2>&1; then
+  _fail "should reject retired simplify skill"
+else
+  _pass "non-zero exit on retired simplify skill"
 fi
 if "$PLUGIN_ROOT/bin/plx-skill" team-dev >/dev/null 2>&1; then
   _fail "should reject a retired skill name (team-dev shipped in no release)"

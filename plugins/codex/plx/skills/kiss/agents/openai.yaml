@@ -1,0 +1,6 @@
+interface:
+  display_name: "PLX::KISS"
+  short_description: "Keep plans and code simple with four focused lanes"
+  default_prompt: "Use $plx:kiss to find and apply the smallest safe simplifications."
+policy:
+  allow_implicit_invocation: false

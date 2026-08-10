@@ -35,9 +35,9 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
   supplies plan critics and three core review dimensions plus risk-triggered security.
 - Codex-host defaults: Codex plans, synthesizes, and applies targeted fixes; Claude
   supplies plan critics and three core review dimensions plus risk-triggered security.
-- Standalone simplify always runs four read-only dimensions. It defaults to the opposite
-  host engine; an explicit current-message whole-round engine request replaces all four
-  bindings. The host applies only confirmed behavior-preserving fixes.
+- KISS runs four read-only Grok Medium dimensions over a plan or code. An explicit
+  whole-round engine request replaces all four. The host applies only confirmed safe
+  improvements.
 - Standalone Build requires an accepted spec. The active host implements it directly,
   three read-only Grok lanes review the result, the host fixes confirmed findings, and
   the complete relevant verification suite runs. It has no writer binding.
@@ -50,8 +50,8 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 
 ## Runtime contracts
 
-Brief headers are `## Draft plan`, `## Task brief`, `## Review brief`,
-`## Simplify brief`, or `## Spec`, matching the injected rubric. Advisory lanes are
+Brief headers are `## Draft plan`, `## Task brief`, `## Review brief`, `## KISS brief`,
+or `## Spec`, matching the injected rubric. Advisory lanes are
 read-only; `dev` writer lanes are scoped to the target repository and one disjoint path set.
 Plans carry original request, confirmed decisions, candidate plan, and an observable
 done condition.
@@ -76,7 +76,7 @@ state.
 ## Acceptance
 
 `bash tests/run.sh` must validate both manifests and marketplaces, version agreement,
-eleven-skill inventories, platform frontmatter, engine polarity, simplify shape, fallback and security
+eleven-skill inventories, platform frontmatter, engine polarity, KISS shape, fallback and security
 bindings, executable wrappers, rubric resolution, shared-copy agreement, fake-engine
 safety flags, cleanup confinement, optional eval
 recorder contracts, and isolated `plx-link-claude` behavior. Official Claude and Codex

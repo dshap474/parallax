@@ -7,7 +7,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Plan | `/plx:plan` | `$plx:plan` | Host authors; implementation and system critics red-team; no code |
 | Build | `/plx:build` | `$plx:build` | Host implements an accepted spec → Grok reviews → host fixes → full relevant verification |
 | Review | `/plx:review` | `$plx:review` | Three Grok review lanes by default, synthesis, and one host-applied fix round |
-| Simplify | `/plx:simplify` | `$plx:simplify` | Four fixed read-only quality lanes, synthesis, and behavior-preserving host fixes |
+| KISS | `/plx:kiss` | `$plx:kiss` | Four Grok Medium lanes simplify a plan or code; the host applies safe improvements |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
 | Goal spec | `/plx:goal-spec` | `$plx:goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Claude may persist Codex context |
@@ -29,10 +29,9 @@ those settings into engine launch flags; omitted settings retain their defaults.
 Configured pipelines read their package-local `config/parallax.yaml`. Config is the
 floor shape, not a limit: the host may scale lanes down or up and must declare the
 chosen shape before launching. Standalone Build is host-implemented and has no writer
-binding. The standalone simplify skill is fixed-shape: it always runs
-reuse, simplification, efficiency, and altitude once each. A current-message instruction
-such as `with all Grok lanes` replaces all four configured engines for that run. Skills
-never commit or publish; target-repository instructions govern Git.
+binding. KISS always runs reuse, simplification, efficiency, and altitude once each on
+Grok Medium. A current-message instruction may replace the engine for the whole round.
+Skills never commit or publish; target-repository instructions govern Git.
 
 ## Runtime tools (package-local `bin/`)
 

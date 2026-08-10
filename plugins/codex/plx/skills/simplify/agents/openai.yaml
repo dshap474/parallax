@@ -1,6 +1,0 @@
-interface:
-  display_name: "PLX::Simplify"
-  short_description: "Simplify changed code with four focused lanes"
-  default_prompt: "Use $plx:simplify to improve my changed code through reuse, simplification, efficiency, and altitude review."
-policy:
-  allow_implicit_invocation: false

@@ -31,7 +31,9 @@ A current-message engine substitution replaces the configured engine for that di
 explicit model/effort settings replace the shipped settings below.
 
 - **codex** → `--model gpt-5.6-sol --effort xhigh`, unless explicitly overridden.
-- **claude** → configured/default model with `--effort xhigh`, unless explicitly overridden.
+- **claude** → configured/default model with `--effort xhigh`, unless explicitly
+  overridden. Always request narrowly scoped host approval for its preflight and lanes;
+  Codex's host sandbox can hide Claude's OAuth/keychain while Claude safe mode remains active.
 - **grok** → `--model grok-4.5 --effort medium` by default; explicit model and effort
   settings replace those defaults. Request narrowly scoped host approval if network
   or keychain access is blocked; Grok's kernel sandbox remains the safety boundary.

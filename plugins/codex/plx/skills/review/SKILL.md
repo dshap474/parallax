@@ -92,6 +92,8 @@ interruption leaves the run incomplete. Then run `<plugin-root>/bin/plx-prefligh
      --out <tmp>/<e>-<dimension>.md --log <tmp>/<e>-<dimension>.log
    ```
 
+   Always request narrowly scoped host approval for Claude preflight and lanes; Codex's
+   host sandbox can hide Claude's OAuth/keychain while Claude safe mode remains active.
    Grok lanes may need narrowly scoped host approval when network or keychain access is blocked. The wrapper fixes `grok-4.5`; use `high` for a
    risky Grok review or omit effort for its `medium` default, never `xhigh`. Exit codes:
    0 ok · 1 engine failure (read

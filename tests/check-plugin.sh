@@ -152,6 +152,18 @@ else
   _fail "Codex-hosted Claude passthrough default effort drift"
 fi
 
+claude_host_boundary_ok=1
+for skill in claude dev goal-spec kiss plan review; do
+  grep -Fq 'narrowly scoped host approval' \
+    "$PLX_CODEX/skills/$skill/SKILL.md" || claude_host_boundary_ok=0
+done
+if [ "$claude_host_boundary_ok" -eq 1 ] &&
+   grep -Fq 'if Claude works in a local terminal' "$PLX_ROOT/shared/bin/plx-engine"; then
+  _pass "Codex-hosted Claude calls preserve OAuth/keychain access"
+else
+  _fail "Codex-hosted Claude approval boundary drift"
+fi
+
 if grep -q 'Default to the existing \*\*ephemeral\*\*' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
    grep -q 'plx-codex-thread start' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
    grep -q 'plx-codex-thread resume' "$PLX_CLAUDE/skills/codex/SKILL.md" &&

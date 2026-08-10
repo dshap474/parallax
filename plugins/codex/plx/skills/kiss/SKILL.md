@@ -43,8 +43,10 @@ correctness, security, validation, data safety, accessibility, error handling, o
 
 The default is four Grok lanes at `medium`. `with all Codex|Claude|Grok lanes` replaces
 the engine for all four. Honor an explicit model or effort; otherwise use Grok `medium`,
-Claude `high`, or Codex `xhigh`. Preflight each selected engine once. Write the chosen
-shape to `<tmp>/shape.txt` before launch.
+Claude `high`, or Codex `xhigh`. Preflight each selected engine once. For Claude,
+always request narrowly scoped host approval for preflight and lanes; Codex's host
+sandbox can hide Claude's OAuth/keychain while Claude safe mode remains active. Write
+the chosen shape to `<tmp>/shape.txt` before launch.
 
 Write one neutral `<tmp>/brief.md` beginning with `## KISS brief`, followed by the target
 and requested outcome. Launch each lane:

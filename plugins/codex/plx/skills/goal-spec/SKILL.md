@@ -46,6 +46,8 @@ Shipped defaults: `plan-critic-implementation: [claude]` ·
 `plan-critic-system: [claude]`. You are the planner. Declare the resolved shape, then run `<plugin-root>/bin/plx-preflight --repo
 <repo> --require-<engine>` once per **distinct** resolved engine. If a required engine is
 unavailable, report `[RED-TEAM INCOMPLETE]` and stop; never silently drop a configured lane.
+Always request narrowly scoped host approval for Claude preflight and lanes; Codex's
+host sandbox can hide Claude's OAuth/keychain while Claude safe mode remains active.
 Write the declaration to `<tmp>/shape.txt`. Keep every lane prompt directly under `<tmp>`
 so its `plx-goal-spec.<suffix>` basename groups captured lanes. Before every handled return,
 call the `<plugin-root>/bin/plx-eval finish` command in step 6 with the honest outcome.

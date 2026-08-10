@@ -52,8 +52,8 @@ Flags:
 Caller notes:
   * Engine turns can be LONG (10-40+ min). Use a retained/background shell
     session with --out/--log rather than relying on a foreground timeout.
-  * grok only: the host may require narrowly scoped approval for network/keychain
-    access. Grok's own kernel sandbox remains the confinement boundary.
+  * claude/grok: the host may require narrowly scoped approval for network/keychain
+    access. The engine's own sandbox remains the confinement boundary.
   * grok only: TRUST THE EXIT CODE, not stderr — grok prints non-fatal
     `worker quit ... AuthorizationRequired` lines to stderr even on success.
   * rw mode: inspect what changed with `git -C <repo> status --short` / `diff`.
@@ -293,7 +293,7 @@ run_claude() {
 
   if ! (cd "$REPO" && claude -p "${flags[@]}" < "$claude_prompt" > "$OUT" 2> "$LOG"); then
     if grep -qiE "not logged in|please run /login" "$OUT" "$LOG"; then
-      echo "plx-engine: claude not authenticated — run \`claude /login\`, then retry." >&2
+      echo "plx-engine: Claude credentials unavailable — if Claude works in a local terminal, retry this wrapper with narrowly scoped host approval; otherwise run \`claude /login\`." >&2
       exit 3
     fi
     echo "claude invocation failed" >&2
@@ -301,7 +301,7 @@ run_claude() {
     exit 1
   fi
   if grep -qiE "not logged in|please run /login" "$OUT"; then
-    echo "plx-engine: claude not authenticated — run \`claude /login\`, then retry." >&2
+    echo "plx-engine: Claude credentials unavailable — if Claude works in a local terminal, retry this wrapper with narrowly scoped host approval; otherwise run \`claude /login\`." >&2
     exit 3
   fi
   [[ -s "$OUT" ]] || { echo "claude produced empty output: $OUT" >&2; exit 1; }

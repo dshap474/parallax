@@ -253,6 +253,7 @@ import os
 import re
 import sqlite3
 import sys
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -366,7 +367,15 @@ def connect():
     connection = sqlite3.connect(database, timeout=5.0)
     connection.execute("PRAGMA busy_timeout = 5000")
     connection.execute("PRAGMA foreign_keys = ON")
-    connection.execute("PRAGMA journal_mode = WAL")
+    deadline = time.monotonic() + 5.0
+    while True:
+        try:
+            connection.execute("PRAGMA journal_mode = WAL")
+            break
+        except sqlite3.OperationalError as error:
+            if "locked" not in str(error).lower() or time.monotonic() >= deadline:
+                raise
+            time.sleep(0.05)
 
     version = connection.execute("PRAGMA user_version").fetchone()[0]
     if version == 0:

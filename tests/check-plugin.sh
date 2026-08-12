@@ -28,7 +28,7 @@ version_of() {
 claude_version="$(version_of "$PLX_CLAUDE/.claude-plugin/plugin.json")"
 codex_version="$(version_of "$PLX_CODEX/.codex-plugin/plugin.json")"
 market_version="$(version_of "$PLX_ROOT/.claude-plugin/marketplace.json")"
-if [ "$claude_version" = "0.5.16" ] && [ "$claude_version" = "$codex_version" ] &&
+if [ "$claude_version" = "0.5.17" ] && [ "$claude_version" = "$codex_version" ] &&
    [ "$claude_version" = "$market_version" ] &&
    grep -qx "v$claude_version" "$PLX_ROOT/README.md" &&
    grep -qx "Status: v$claude_version" "$PLX_ROOT/docs/SPEC.md"; then
@@ -298,7 +298,7 @@ for host in claude codex; do
   grep -Fq 'reviewer-cleanup' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq 'reviewer-structural' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq 'reviewer-security' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  [ "$(grep -Fc -- '--model grok-4.6 --effort medium' "$package/skills/build/SKILL.md")" -eq 3 ] || parity_contract_ok=0
+  [ "$(grep -Fc -- '--model grok-4.6 --effort xhigh' "$package/skills/build/SKILL.md")" -eq 3 ] || parity_contract_ok=0
   grep -Fq 'complete relevant repository verification suite' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq -- '--report-file <tmp>/report.md' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   ! grep -Fq -- '--rubric worker' "$package/skills/build/SKILL.md" || parity_contract_ok=0

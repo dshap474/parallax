@@ -44,7 +44,7 @@ open with the section header the rubric expects:
 | --- | --- | --- |
 | gpt-5.6-sol | `--engine codex` (medium effort by default) | Claude-host plan/review judgment and `dev` implementation fallback |
 | gpt-5.6-terra | `--engine codex --model gpt-5.6-terra --effort low` | doc-lookup web research lanes |
-| grok-4.6 | `--engine grok` (medium effort by default) | `dev` implementation and standalone Build review |
+| grok-4.6 | `--engine grok` (medium effort by default) | `dev` implementation; standalone Build review uses `xhigh` |
 | opus-4.8 | `--engine claude` | planning, review, or taste-heavy judgment when selected by the host config |
 | host orchestrator | you — never delegated | plan authoring, standalone Build implementation, synthesis, targeted fixes, and final gate |
 
@@ -88,6 +88,8 @@ How to apply:
   critics. Grok 4.6 supports `low|medium|high|xhigh`.
 - **Standalone Review** → exactly three read-only Grok `xhigh` dimensions by default,
   plus security when triggered.
+- **Standalone Build review** → exactly three read-only Grok `xhigh` dimensions by
+  default, plus security when triggered.
 - **KISS** → exactly four read-only Grok `high` dimensions: reuse, simplification,
   efficiency, and altitude. The current request may replace all lanes with one engine.
   The host synthesizes and applies the smallest safe improvements to a draft or code.
@@ -127,7 +129,7 @@ return before the plan is final. The full dev skill uses the same two-critic def
 part of the larger end-to-end run.
 
 The standalone Build skill does not use this sizing ladder. Its ownership shape is
-fixed: an accepted spec, direct host implementation, three read-only Grok review lanes
+fixed: an accepted spec, direct host implementation, three read-only Grok `xhigh` review lanes
 (plus security when triggered), host-applied confirmed fixes, and the complete relevant
 verification suite. `dev` remains self-contained and does not invoke standalone Build.
 

@@ -22,9 +22,9 @@ return independent judgment. There are no orchestration subagents: every lane is
 The Claude package keeps Claude as host and defaults plan critics and composed `dev`
 review lanes to Codex. The Codex package flips that judgment polarity: Codex remains
 host while Claude supplies those lanes. Direct `review` instead runs all three core
-lanes on Grok by default. Standalone Build also uses Grok for its three review lanes,
+lanes on Grok by default. Standalone Build uses Grok 4.6 XHigh for its three review lanes,
 while the host owns implementation and fixes. The separate `dev` pipeline prefers Grok
-4.5 for implementation, deterministically falls back to Codex only when Grok fails
+4.6 for implementation, deterministically falls back to Codex only when Grok fails
 preflight, and keeps targeted review fixes with the host.
 
 ## Package boundaries

@@ -5,7 +5,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Capability | Claude Code | Codex | Behavior |
 | --- | --- | --- | --- |
 | Plan | `/plx:plan` | `$plx:plan` | Host authors; implementation and system critics red-team; no code |
-| Build | `/plx:build` | `$plx:build` | Host implements an accepted spec → Grok reviews → host fixes → full relevant verification |
+| Build | `/plx:build` | `$plx:build` | Host implements an accepted spec → Grok 4.6 XHigh reviews → host fixes → full relevant verification |
 | Review | `/plx:review` | `$plx:review` | Three Grok 4.6 XHigh review lanes by default, synthesis, and one host-applied fix round |
 | KISS | `/plx:kiss` | `$plx:kiss` | Four Grok 4.6 High lanes simplify a plan or code; the host applies safe improvements |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |

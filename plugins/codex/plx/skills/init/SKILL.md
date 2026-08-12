@@ -52,7 +52,7 @@ one, recommend it by name and let the user invoke it.
 | Skill | Reach for it when |
 | --- | --- |
 | `$plx:plan` | A task needs a plan; you author it, two Claude critics red-team it. No code. |
-| `$plx:build` | An accepted spec is ready — you implement, Grok reviews, you fix, then run the full relevant verification suite. |
+| `$plx:build` | An accepted spec is ready — you implement, Grok 4.6 XHigh reviews, you fix, then run the full relevant verification suite. |
 | `$plx:review` | Changes need review — three read-only Grok lanes by default, synthesis, then you apply confirmed fixes yourself ("report only" skips fixes). |
 | `$plx:dev` | The full run: plan → build → review/fix → your final gate. |
 | `$plx:goal-spec` | A long-running goal needs an interview-locked, red-teamed, self-contained spec. No code. |

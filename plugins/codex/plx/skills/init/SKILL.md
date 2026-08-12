@@ -35,7 +35,7 @@ plan authoring, synthesis of lane results, and the final gate. Delegate everythi
   sweep to a read-only lane and keep just the conclusions in your window.
 - **Implementation → headless engine lanes** (`plx-engine`, mode rw) — never your own
   context beyond trivial single-file edits and post-review targeted fixes (those are
-  yours). **Grok 4.5 medium** is the default writer; **Codex (GPT-5.6 Sol)** is the
+  yours). **Grok 4.6 medium** is the default writer; **Codex (GPT-5.6 Sol)** is the
   reported fallback; **Claude (Opus 4.8)** is the plan/review judgment engine and
   advises on user-facing taste. One writer per disjoint path set.
 - **Review and plan critique → read-only Claude lanes** — always the opposite engine
@@ -57,7 +57,7 @@ one, recommend it by name and let the user invoke it.
 | `$plx:dev` | The full run: plan → build → review/fix → your final gate. |
 | `$plx:goal-spec` | A long-running goal needs an interview-locked, red-teamed, self-contained spec. No code. |
 | `$plx:claude` | A one-off Claude passthrough (question, plan, or explicit implementation). |
-| `$plx:grok` | A one-off Grok 4.5 passthrough. |
+| `$plx:grok` | A one-off Grok 4.6 passthrough. |
 | `$plx:agents-memory` | A repo's `AGENTS.md` / `CLAUDE.md` / `.project/` docs setup needs bootstrap or repair. |
 | `$plx:unknown-unknowns` | The user wants blindspot passes, brainstorms, or comprehension checks — host-only. |
 

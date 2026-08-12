@@ -46,8 +46,8 @@ Honor an explicit whole-round engine substitution in the current request:
 - `with all Codex lanes` → all selected roles use Codex.
 
 Mixed per-role routing is not part of this skill. Apply an explicit model or effort
-override to every selected lane. Otherwise use Grok `medium`, Claude `high`, or Codex
-`xhigh`; raise Grok to `high` for large or risky scope.
+override to every selected lane. Otherwise use Grok `grok-4.6` at `xhigh`, Claude
+`high`, or Codex `xhigh`.
 
 Also run `reviewer-security` on the selected engine when the user requests security
 review or scope touches auth, permissions, secrets/config, shell or subprocess
@@ -55,7 +55,7 @@ execution, sandboxing, network clients, dependencies/lockfiles, CI workflows,
 deserialization, or another trust boundary. Otherwise report `Security: not run`.
 
 Declare the shape in one line before launching (e.g. `Sizing: review 3×1
-(grok medium) · fixes: host`).
+(grok-4.6 xhigh) · fixes: host`).
 
 Write the same sizing line to `<tmp>/shape.txt`. Keep all lane prompt files directly in
 `<tmp>`; its `plx-review.<suffix>` basename mechanically groups their captured lanes.
@@ -88,14 +88,15 @@ interruption leaves the run incomplete. Then run `<plugin-root>/bin/plx-prefligh
 
    ```
    <plugin-root>/bin/plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/brief.md \
-     --rubric reviewer-<dimension> [--model <model>] [--effort <effort>] \
+     --rubric reviewer-<dimension> --model <model> --effort <effort> \
      --out <tmp>/<e>-<dimension>.md --log <tmp>/<e>-<dimension>.log
    ```
 
    Always request narrowly scoped host approval for Claude preflight and lanes; Codex's
    host sandbox can hide Claude's OAuth/keychain while Claude safe mode remains active.
-   Grok lanes may need narrowly scoped host approval when network or keychain access is blocked. The wrapper fixes `grok-4.5`; use `high` for a
-   risky Grok review or omit effort for its `medium` default, never `xhigh`. Exit codes:
+   Grok lanes may need narrowly scoped host approval when network or keychain access is
+   blocked. The wrapper defaults to `grok-4.6`; direct Grok review passes `xhigh`.
+   Exit codes:
    0 ok · 1 engine failure (read
    the log; if other lanes succeeded, proceed with the survivors and say so) · 2 your
    usage error · 3 not signed in → tell the user to log in.

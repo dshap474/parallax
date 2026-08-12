@@ -28,7 +28,7 @@ security, money movement, permissions, or production data.
 
 Follow the active engine policy and tune to the task:
 
-- effort / reasoning: GPT-5.6 Sol and Grok 4.5 start at `medium`; Claude starts at
+- effort / reasoning: GPT-5.6 Sol and Grok 4.6 start at `medium`; Claude starts at
   its configured default. Use `high` or `xhigh` only for concrete complexity, risk,
   or measured capability need; Grok does not support `xhigh`
 - thinking / verbosity: adaptive; preserve evidence, caveats, decisions, and verification

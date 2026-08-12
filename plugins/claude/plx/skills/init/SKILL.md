@@ -38,7 +38,7 @@ everything else:
   the lane defaults.
 - **Implementation → headless engine lanes** (`plx-engine`, mode rw) — never subagents,
   and never your own context beyond trivial single-file edits and post-review targeted
-  fixes (those are yours). **Grok 4.5 medium** is
+  fixes (those are yours). **Grok 4.6 medium** is
   the default writer; **Codex (GPT-5.6 Sol)** is the reported fallback and
   the plan/review judgment engine; **Opus 4.8** advises on user-facing taste. One
   writer per disjoint path set.
@@ -59,7 +59,7 @@ one, recommend it by name and let the user invoke it.
 | `/plx:dev` | The full run: plan → build → review/fix → your final gate. |
 | `/plx:goal-spec` | A long-running goal needs an interview-locked, red-teamed, self-contained spec. No code. |
 | `/plx:codex` | A one-off Codex passthrough (question, plan, or explicit implementation). |
-| `/plx:grok` | A one-off Grok 4.5 passthrough. |
+| `/plx:grok` | A one-off Grok 4.6 passthrough. |
 | `/plx:agents-memory` | A repo's `AGENTS.md` / `CLAUDE.md` / `.project/` docs setup needs bootstrap or repair. |
 | `/plx:unknown-unknowns` | The user wants blindspot passes, brainstorms, or comprehension checks — host-only. |
 

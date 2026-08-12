@@ -86,8 +86,8 @@ engine before launching its lanes.
   foreground cap. Fire independent lanes in one message; read out-files when completion
   notifications arrive. Always request narrowly scoped host approval for Claude
   preflight and lanes; Codex's host sandbox can hide Claude's OAuth/keychain while
-  Claude safe mode remains active. Grok lanes: request narrowly scoped host approval if network or keychain access is blocked; the wrapper fixes `grok-4.5`, defaults effort to
-  `medium`, and accepts explicit `low|medium|high` (never `xhigh`).
+  Claude safe mode remains active. Grok lanes: request narrowly scoped host approval if network or keychain access is blocked; the wrapper defaults to `grok-4.6` and `medium`,
+  and accepts explicit `low|medium|high|xhigh`.
 - Lane fails (exit 1) → read the log, retry once or escalate engines; a failed review
   lane among survivors → proceed and say so. Exit 3 → tell the user to log in and stop.
 

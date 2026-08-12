@@ -39,7 +39,7 @@ commands. Do not weaken or silently rewrite the spec.
 - Snapshot `git status --short` and the staged and unstaged diffs into `<tmp>`.
   Preserve all pre-existing work and never attribute it to this build.
 - Write the accepted spec verbatim to `<tmp>/task.md`.
-- Write `Implementation: host · review: 3×1 (grok medium) · fixes: host · verification: full relevant suite`
+- Write `Implementation: host · review: 3×1 (grok-4.6 medium) · fixes: host · verification: full relevant suite`
   to `<tmp>/shape.txt` and declare that shape before mutation.
 - Run `plx-preflight --repo <repo> --require-grok` before mutation. If Grok is
   unavailable, record an aborted run and stop without implementing.
@@ -78,20 +78,20 @@ Launch these three read-only Grok lanes in parallel:
 
 ```
 plx-engine --engine grok --mode ro --repo <repo> \
-  --prompt-file <tmp>/review-brief.md --rubric reviewer-correctness --effort medium \
+  --prompt-file <tmp>/review-brief.md --rubric reviewer-correctness --model grok-4.6 --effort medium \
   --out <tmp>/grok-correctness.md --log <tmp>/grok-correctness.log
 
 plx-engine --engine grok --mode ro --repo <repo> \
-  --prompt-file <tmp>/review-brief.md --rubric reviewer-cleanup --effort medium \
+  --prompt-file <tmp>/review-brief.md --rubric reviewer-cleanup --model grok-4.6 --effort medium \
   --out <tmp>/grok-cleanup.md --log <tmp>/grok-cleanup.log
 
 plx-engine --engine grok --mode ro --repo <repo> \
-  --prompt-file <tmp>/review-brief.md --rubric reviewer-structural --effort medium \
+  --prompt-file <tmp>/review-brief.md --rubric reviewer-structural --model grok-4.6 --effort medium \
   --out <tmp>/grok-structural.md --log <tmp>/grok-structural.log
 ```
 
-Honor an explicit whole-round model or effort override. Raise Grok to `high` for large
-or risky scope. Also run `reviewer-security` when requested or when the change touches
+Honor an explicit whole-round model or effort override. Otherwise keep the standalone
+Build review at `grok-4.6` and `medium`. Also run `reviewer-security` when requested or when the change touches
 auth, permissions, secrets/config, shell or subprocess execution, sandboxing, network
 clients, dependencies/lockfiles, CI workflows, deserialization, or another trust
 boundary. Otherwise report `Security: not run`.

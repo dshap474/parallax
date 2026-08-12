@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.13
+Status: v0.5.14
 
 ## Required tree
 
@@ -15,7 +15,7 @@ shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.13`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.14`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains eleven
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
@@ -35,11 +35,12 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
   supplies plan critics and three core review dimensions plus risk-triggered security.
 - Codex-host defaults: Codex plans, synthesizes, and applies targeted fixes; Claude
   supplies plan critics and three core review dimensions plus risk-triggered security.
-- KISS runs four read-only Grok Medium dimensions over a plan or code. An explicit
+- KISS runs four read-only Grok 4.6 High dimensions over a plan or code. An explicit
   whole-round engine request replaces all four. The host applies only confirmed safe
   improvements.
-- Standalone Build requires an accepted spec. The active host implements it directly,
-  three read-only Grok lanes review the result, the host fixes confirmed findings, and
+- Standalone Review runs three read-only Grok 4.6 XHigh lanes by default. Standalone
+  Build requires an accepted spec. The active host implements it directly,
+  three read-only Grok 4.6 Medium lanes review the result, the host fixes confirmed findings, and
   the complete relevant verification suite runs. It has no writer binding.
 - The separate `dev` pipeline prefers Grok for implementation and uses configured Codex
   fallback only when Grok fails an optional workspace-sandbox preflight before mutation.

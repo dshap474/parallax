@@ -109,17 +109,17 @@ PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
   --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
 rc=$?
 if [ "$rc" -eq 0 ]; then _pass "Grok default invocation exits 0"; else _fail "Grok default invocation exits $rc"; fi
-assert_contains "grok-4.5" "$fake_args" "Grok model is grok-4.5"
+assert_contains "grok-4.6" "$fake_args" "Grok model is grok-4.6"
 assert_contains "medium" "$fake_args" "Grok effort defaults to medium"
 for flag in --no-auto-update --no-plan --no-subagents --no-memory --no-alt-screen; do
   assert_contains "$flag" "$fake_args" "Grok receives $flag"
 done
 assert_contains "read-only" "$fake_args" "Grok ro uses read-only sandbox"
 
-for effort in low high; do
+for effort in low high xhigh; do
   PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
     "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode rw --repo "$REPO" \
-    --prompt-file "$fake_prompt" --model grok-4.5 --effort "$effort" \
+    --prompt-file "$fake_prompt" --model grok-4.6 --effort "$effort" \
     --out "$fake_out" --log "$fake_log" >/dev/null
   rc=$?
   if [ "$rc" -eq 0 ] && grep -qx "$effort" "$fake_args"; then

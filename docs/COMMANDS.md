@@ -6,12 +6,12 @@ Both packages expose the same core capabilities with platform-native invocation 
 | --- | --- | --- | --- |
 | Plan | `/plx:plan` | `$plx:plan` | Host authors; implementation and system critics red-team; no code |
 | Build | `/plx:build` | `$plx:build` | Host implements an accepted spec → Grok reviews → host fixes → full relevant verification |
-| Review | `/plx:review` | `$plx:review` | Three Grok review lanes by default, synthesis, and one host-applied fix round |
-| KISS | `/plx:kiss` | `$plx:kiss` | Four Grok Medium lanes simplify a plan or code; the host applies safe improvements |
+| Review | `/plx:review` | `$plx:review` | Three Grok 4.6 XHigh review lanes by default, synthesis, and one host-applied fix round |
+| KISS | `/plx:kiss` | `$plx:kiss` | Four Grok 4.6 High lanes simplify a plan or code; the host applies safe improvements |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
 | Goal spec | `/plx:goal-spec` | `$plx:goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Claude may persist Codex context |
-| Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; defaults to Grok 4.5 at medium effort |
+| Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; defaults to Grok 4.6 at medium effort |
 | Init | `/plx:init` | `$plx:init` | Prime the orchestrator: delegation posture + plx skill map; no repository writes |
 | Agents memory | `/plx:agents-memory` | `$plx:agents-memory` | Bootstrap root `AGENTS.md`, `CLAUDE.md`, and `.project/` policy |
 | Unknowns | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` | Host-only blindspot and comprehension work |
@@ -30,7 +30,7 @@ Configured pipelines read their package-local `config/parallax.yaml`. Config is 
 floor shape, not a limit: the host may scale lanes down or up and must declare the
 chosen shape before launching. Standalone Build is host-implemented and has no writer
 binding. KISS always runs reuse, simplification, efficiency, and altitude once each on
-Grok Medium. A current-message instruction may replace the engine for the whole round.
+Grok 4.6 High. A current-message instruction may replace the engine for the whole round.
 Skills never commit or publish; target-repository instructions govern Git.
 
 ## Runtime tools (package-local `bin/`)

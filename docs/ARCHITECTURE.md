@@ -67,7 +67,7 @@ disjoint path set. Standalone Build has no write lane: the host is its only writ
 Confirmed review findings are fixed once by the host; behavior-changing or ambiguous
 findings go back to the user.
 
-KISS runs four independent Grok Medium dimensions: reuse, simplification, efficiency,
+KISS runs four independent Grok 4.6 High dimensions: reuse, simplification, efficiency,
 and altitude. The host validates their findings and applies the smallest safe changes.
 It complements rather than replaces correctness review.
 
@@ -78,7 +78,7 @@ Pipeline lanes and default passthroughs use `plx-engine`. It pins:
 - Codex: `gpt-5.6-sol`, isolated config, ephemeral session, read-only or workspace-write;
 - Claude: Opus, safe mode, no session persistence, strict MCP/network isolation,
   read-only tools or repo-confined sandboxed Bash;
-- Grok: `grok-4.5`, no planning/subagent/memory features, kernel read-only or workspace
+- Grok: `grok-4.6`, no planning/subagent/memory features, kernel read-only or workspace
   sandbox.
 
 These models are defaults, not restrictions. Explicit user-requested model and effort

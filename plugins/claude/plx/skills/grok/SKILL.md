@@ -14,10 +14,10 @@ Run the user's request through **Grok only** — no Parallax review pipeline, no
 
 Resolve the model and effort from the user's request before writing the brief:
 
-- Defaults: `model=grok-4.5`, `effort=medium`.
+- Defaults: `model=grok-4.6`, `effort=medium`.
 - An explicit user model or effort always replaces that setting's default. Natural
-  wording is enough: `ask grok-composer-2.5-fast low for <task>`, `use grok-4.5 at
-  high`, and `model=grok-4.5 effort=medium` all set real launch flags.
+  wording is enough: `ask grok-composer-2.5-fast low for <task>`, `use grok-4.6 at
+  high`, and `model=grok-4.6 effort=medium` all set real launch flags.
 - Treat `reasoning`, `reasoning level`, and `effort` as names for the same launch
   setting.
 - Do not infer an override from model names discussed only as task content. Do not

@@ -5,7 +5,7 @@ set -euo pipefail
 # Safety flags are pinned here per engine, not decided by callers:
 #   codex  : gpt-5.6-sol, effort medium by default, --ignore-user-config,
 #            --ephemeral, sandbox read-only | workspace-write
-#   grok   : grok-4.5, effort medium by default,
+#   grok   : grok-4.6, effort medium by default,
 #            kernel sandbox read-only | workspace (Seatbelt/Landlock),
 #            bypassPermissions (required for headless completion; the kernel
 #            sandbox — not the permission mode — is the safety boundary)
@@ -40,7 +40,7 @@ Flags:
   --prompt-file <file>  file containing the brief/spec (required)
   --rubric <name>       lane rubric to inject (a file name under prompts/, no .md)
   --model <m>           codex: default gpt-5.6-sol · claude: default opus ·
-                        grok: default grok-4.5
+                        grok: default grok-4.6
   --effort <e>          codex: default medium · claude: default high ·
                         grok: default medium
                         Explicit values pass through to the selected engine.
@@ -170,7 +170,7 @@ PROMPT="$(abspath "$PROMPT")"
 [[ -n "$LOG" ]] && LOG="$(abspath "$LOG")"
 
 if [[ "$ENGINE" == "grok" ]]; then
-  [[ -n "$MODEL" ]] || MODEL="grok-4.5"
+  [[ -n "$MODEL" ]] || MODEL="grok-4.6"
   [[ -n "$EFFORT" ]] || EFFORT="medium"
 elif [[ "$ENGINE" == "codex" ]]; then
   [[ -n "$MODEL" ]] || MODEL="gpt-5.6-sol"

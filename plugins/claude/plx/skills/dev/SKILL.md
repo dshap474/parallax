@@ -84,8 +84,8 @@ plx-engine --engine <e> --mode <ro|rw> --repo <repo> --prompt-file <brief> \
 - **Always background Bash** (`run_in_background`) — engine turns can outrun the 10-min
   foreground cap. Fire independent lanes in one message; read out-files when completion
   notifications arrive. Grok lanes: disable the Bash sandbox for the call
-  (`dangerouslyDisableSandbox: true`); the wrapper fixes `grok-4.5`, defaults effort to
-  `medium`, and accepts explicit `low|medium|high` (never `xhigh`).
+  (`dangerouslyDisableSandbox: true`); the wrapper defaults to `grok-4.6` and `medium`,
+  and accepts explicit `low|medium|high|xhigh`.
 - Lane fails (exit 1) → read the log, retry once or escalate engines; a failed review
   lane among survivors → proceed and say so. Exit 3 → tell the user to log in and stop.
 

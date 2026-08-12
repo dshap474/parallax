@@ -3,7 +3,7 @@
 #
 # Usage examples:
 #   plx-eval lane --repo /abs/repo --run-dir /tmp/plx-dev.A1b2C3 \
-#     --engine grok --model grok-4.5 --effort medium --mode rw --role worker \
+#     --engine grok --model grok-4.6 --effort medium --mode rw --role worker \
 #     --started-at 2026-08-02T00:00:00.000Z --started-ns 1 --exit-code 0 \
 #     --prompt-file /tmp/prompt.md --out /tmp/out.md --log /tmp/engine.log
 #   plx-eval finish --skill dev --host codex --repo /abs/repo \

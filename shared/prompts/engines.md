@@ -44,7 +44,7 @@ open with the section header the rubric expects:
 | --- | --- | --- |
 | gpt-5.6-sol | `--engine codex` (medium effort by default) | Claude-host plan/review judgment and `dev` implementation fallback |
 | gpt-5.6-terra | `--engine codex --model gpt-5.6-terra --effort low` | doc-lookup web research lanes |
-| grok-4.5 | `--engine grok` (medium effort by default) | `dev` implementation and standalone Build review |
+| grok-4.6 | `--engine grok` (medium effort by default) | `dev` implementation and standalone Build review |
 | opus-4.8 | `--engine claude` | planning, review, or taste-heavy judgment when selected by the host config |
 | host orchestrator | you — never delegated | plan authoring, standalone Build implementation, synthesis, targeted fixes, and final gate |
 
@@ -63,7 +63,7 @@ How to apply:
   price tag — escalating costs less than shipping mediocre work. This permission changes
   only model or effort; it never expands task scope, target resources, credentials,
   permissions, or allowed side effects.
-- **Composed `dev` implementation prefers Grok 4.5 medium when available.** Probe it as optional before
+- **Composed `dev` implementation prefers Grok 4.6 medium when available.** Probe it as optional before
   mutation. If that probe fails, require the configured `code-fallback` engine (Codex by
   default), declare the substitution, and use it for the whole writer turn. An explicit
   user engine override disables automatic fallback. Never fall back after a writer has
@@ -82,11 +82,13 @@ How to apply:
   context; a fix lane plus a verification pass of that lane's diff is wasted steps and
   compute. Fix only after every lane has returned; a build-sized remedy is not a
   targeted fix — send it back to a writer lane.
-- **Effort**: Codex and Grok default to `medium`; Claude defaults to `high`. Escalate
+- **Effort**: Codex and general Grok work default to `medium`; Claude defaults to `high`. Escalate
   only for concrete complexity or risk. Reserve Codex `xhigh` for cross-file contracts,
   concurrency, data-integrity or money paths, wide refactors, and standalone plan
-  critics. Grok supports only `low|medium|high`.
-- **KISS** → exactly four read-only Grok `medium` dimensions: reuse, simplification,
+  critics. Grok 4.6 supports `low|medium|high|xhigh`.
+- **Standalone Review** → exactly three read-only Grok `xhigh` dimensions by default,
+  plus security when triggered.
+- **KISS** → exactly four read-only Grok `high` dimensions: reuse, simplification,
   efficiency, and altitude. The current request may replace all lanes with one engine.
   The host synthesizes and applies the smallest safe improvements to a draft or code.
 - **Doc-lookup research → Terra low.** When the task is finding official documentation
@@ -156,7 +158,7 @@ consume it later. A spec doc for a one-shot task is overhead, not rigor.
   don't pull bulk content into your own window.
 - **Grok may require narrowly scoped host approval** for network or keychain access;
   Grok's own kernel sandbox still confines it. The wrapper defaults the model to
-  `grok-4.5` and effort to `medium`; explicit values pass through to Grok. A Grok writer
+  `grok-4.6` and effort to `medium`; explicit values pass through to Grok. A Grok writer
   must pass `plx-preflight --optional-grok --grok-mode rw` (or `--require-grok` for an
   explicit selection) before mutation; the workspace probe runs against a disposable
   directory rather than the target repository.

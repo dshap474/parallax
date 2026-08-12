@@ -7,7 +7,7 @@ Parallax orchestrates local engine CLIs; it does not host or proxy models.
 | Claude Code | authenticated `claude` | authenticated `codex` | `grok` |
 | Codex | authenticated `codex` | authenticated `claude` | `grok` |
 
-The Codex CLI and Claude Code CLI must be available on `PATH`. Grok 4.5 requires a
+The Codex CLI and Claude Code CLI must be available on `PATH`. Grok 4.6 requires a
 current Grok CLI and `grok login` or `XAI_API_KEY`.
 
 ## Engine contract

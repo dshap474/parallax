@@ -9,7 +9,7 @@ flowchart TD
     X --> P
     P --> CR[Read-only opposite-engine critics]
     CR --> PF{Grok preflight passes?}
-    PF -->|yes| B[File-disjoint Grok 4.5 writer lanes]
+    PF -->|yes| B[File-disjoint Grok 4.6 writer lanes]
     PF -->|no, before mutation| CF[File-disjoint Codex fallback writer lanes]
     B --> R[Read-only core review + risk-triggered security]
     CF --> R

@@ -3,7 +3,7 @@ name: kiss
 description: Keep plans and code simple. Run four read-only lanes for reuse, simplification, efficiency, and altitude, then let the host verify and apply the smallest safe improvements. Use while planning, implementing, refactoring, or reviewing; say "report only" to skip fixes.
 ---
 
-# $plx:kiss — keep it simple
+# $plx:kiss — keep it simple, stupid
 
 Finish or draft the requested work, then improve it with four independent lanes. You are
 the Codex host: launch the lanes, verify their claims, revise or fix the work, and test it.

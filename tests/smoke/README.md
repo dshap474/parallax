@@ -43,7 +43,7 @@ engine turns) — run it from a terminal, or via background Bash from an agent s
 | Skill | Tiny task | Passes when |
 |---|---|---|
 | `plan` | plan a `median()` addition | exit 0 · **no edits** · the delivered plan mentions `median` |
-| `build` | implement an accepted `average([])` spec | exit 0 · host edits calc.py · all three Grok review rubrics run · no worker rubric runs · final functional check passes |
+| `build` | implement and locally commit an accepted `average([])` spec | exit 0 · host edits calc.py · commit contains only calc.py · all three Grok review rubrics run · no worker rubric runs · final functional check passes |
 | `dev` | add `median()` to calc.py + a test | exit 0 · diff has `def median` · functional check green · transcript shows a review round |
 | `review` | review the buggy calc.py | exit 0 · a finding names the empty-list / `ZeroDivisionError` bug · **the fix is applied** (`average([]) == 0.0`) |
 | `codex` | guard `average([])` | exit 0 · calc.py edited · `average([]) == 0.0` |

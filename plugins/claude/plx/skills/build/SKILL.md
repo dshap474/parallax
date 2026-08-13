@@ -36,6 +36,7 @@ commands. Do not weaken or silently rewrite the spec.
 - Resolve the absolute repository root (`git rev-parse --show-toplevel`); call it
   `<repo>`.
 - Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-build.XXXXXX"`.
+- Record the baseline commit from `git rev-parse HEAD` in `<tmp>/baseline-head.txt`.
 - Snapshot `git status --short` and the staged and unstaged diffs into `<tmp>`.
   Preserve all pre-existing work and never attribute it to this build.
 - Write the accepted spec verbatim to `<tmp>/task.md`.
@@ -47,6 +48,26 @@ commands. Do not weaken or silently rewrite the spec.
 Keep all run files directly in `<tmp>` so its `plx-build.<suffix>` basename groups the
 captured review lanes. Call `plx-eval finish` before every handled return. Recorder
 failure is non-fatal; interruption may leave the run incomplete.
+
+## Repository commits and publication
+
+The target repository's instructions and the accepted spec govern local commits:
+
+- You may create local commits when the accepted spec or the target repository's agent
+  instructions explicitly require or authorize them. If neither does, leave the Build
+  changes uncommitted.
+- Honor required checkpoint ordering. For example, when a repository requires a
+  preregistration-only commit before executable code, create that exact narrow checkpoint
+  before implementation and then continue the Build pipeline.
+- Stage only Build-owned paths or isolated Build-owned hunks. Never use `git add -A`, never
+  include pre-existing work, and inspect `git diff --cached` before every commit. If a file
+  had pre-existing changes that cannot be isolated safely, leave it uncommitted and report
+  the blocker.
+- Never amend, reset, rebase, rewrite, or delete existing commits or worktree changes.
+- Record every created commit hash and purpose for the final report.
+- Never push, open a pull request, merge, tag, release, deploy, or otherwise publish
+  externally unless the user separately authorizes that action under the target repository's
+  rules. Target-local artifacts explicitly required by the accepted spec are allowed.
 
 ## Pipeline
 
@@ -62,8 +83,10 @@ writer for the entire Build run.
 
 ### 2. Review with Grok
 
-After implementation is complete, determine the changed-file scope relative to the
-Bootstrap snapshot. Write one neutral brief to `<tmp>/review-brief.md`:
+After implementation is complete, determine the Build-owned changed-file scope relative
+to both `<tmp>/baseline-head.txt` and the Bootstrap worktree snapshots. This scope must
+include committed and uncommitted Build changes while excluding pre-existing work. Write
+one neutral brief to `<tmp>/review-brief.md`:
 
 ```
 ## Review brief
@@ -140,11 +163,15 @@ Spec coverage: <requirements satisfied; anything missing>
 Review: <lanes completed; confirmed, rejected, and residual findings>
 Fixed: <confirmed findings fixed by the host, or "none">
 Files: <files attributable to this build>
+Commits: <local commit hashes and purposes, or "none">
+Local artifacts: <target-local artifacts created or published, or "none">
+External publication: <authorized actions completed, or "none">
 Verification: <commands and results>
 Residuals: <blockers or uncertainty, or "none">
 ```
 
-Clean up with `plx-clean-temp <tmp>`. This skill does not commit or publish.
+Clean up with `plx-clean-temp <tmp>`. Local commits and target-local artifacts follow the
+repository policy above; remote publication always requires separate authority.
 
 ## Hard constraints
 
@@ -154,6 +181,8 @@ Clean up with `plx-clean-temp <tmp>`. This skill does not commit or publish.
 - Never hand-construct raw `codex`, `grok`, or `claude -p` commands.
 - Inject rubrics by name; never paste rubric text into prompts.
 - Never create `.parallax/` or leave runtime output in the target repository.
+- Never include pre-existing work in a Build-created commit, and never perform remote Git
+  or external publication without separate authority.
 - Never `uv run` inside a sandbox.
 
 Build input:

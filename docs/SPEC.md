@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.17
+Status: v0.5.18
 
 ## Required tree
 
@@ -15,7 +15,7 @@ shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.17`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.18`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains eleven
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
@@ -41,7 +41,10 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 - Standalone Review runs three read-only Grok 4.6 XHigh lanes by default. Standalone
   Build requires an accepted spec. The active host implements it directly,
   three read-only Grok 4.6 XHigh lanes review the result, the host fixes confirmed findings, and
-  the complete relevant verification suite runs. It has no writer binding.
+  the complete relevant verification suite runs. It has no writer binding. Build may
+  create local commits required or authorized by the accepted spec or target-repository
+  instructions, including ordered preregistration checkpoints, while staging only
+  Build-owned work and preserving pre-existing changes.
 - The separate `dev` pipeline prefers Grok for implementation and uses configured Codex
   fallback only when Grok fails an optional workspace-sandbox preflight before mutation.
   The workspace probe is confined to a disposable directory. Explicit engine selection
@@ -61,8 +64,10 @@ No skill constructs a raw external-engine command. No wrapper uses forbidden bro
 permission flags. Claude lanes ignore untrusted customization, do not persist sessions,
 and fail closed if their sandbox is unavailable. Grok sandbox startup failures receive a
 stable error marker and remain confined by the selected kernel profile. Temporary
-artifacts are removed only through the confined cleanup helper. Skills never commit or
-publish.
+artifacts are removed only through the confined cleanup helper. Standalone Build follows
+the repository-governed local-commit contract above. No skill performs remote Git,
+deployment, release, or external publication without separate authority; target-local
+artifacts required by an accepted spec are allowed.
 Persistent Codex access is passthrough-only and derives read or write scope for each
 turn; every pipeline lane remains isolated and ephemeral.
 

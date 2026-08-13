@@ -10,7 +10,7 @@
 #
 # Each scenarios/<skill>.txt declares: NEEDS (engine auth gate), FIXTURE, TASK, and any of
 # EXPECT_DIFF / EXPECT_EMPTY_DIFF / EXPECT_FILE / EXPECT_OUTPUT / EXPECT_OUTPUT_ALL /
-# EXPECT_ABSENT_OUTPUT / EXPECT_CHECK.
+# EXPECT_ABSENT_OUTPUT / EXPECT_CHECK / EXPECT_COMMIT.
 set -uo pipefail
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib-smoke.sh"
 
@@ -40,7 +40,7 @@ goal_spec_note() {
 }
 
 run_skill() {
-  local skill="$1" scn d fix task needs repo base prompt rc ok notes v
+  local skill="$1" scn d fix task needs repo base prompt rc ok notes v head committed
   scn="$SMOKE_DIR/scenarios/$skill.txt"
   _head "/plx:$skill"
   if [ ! -f "$scn" ]; then _fail "no scenario file: tests/smoke/scenarios/$skill.txt"; return; fi
@@ -119,6 +119,18 @@ run_skill() {
   v="$(field "$scn" EXPECT_CHECK)"
   if [ -n "$v" ]; then
     if ( cd "$repo" && eval "$v" ) > "$d/check.txt" 2>&1; then _pass "check passed"; else _fail "check failed: $v"; ok=0; notes="$notes,check"; fi
+  fi
+  v="$(field "$scn" EXPECT_COMMIT)"
+  if [ -n "$v" ]; then
+    head="$(git -C "$repo" rev-parse HEAD 2>/dev/null)"
+    committed="$(git -C "$repo" diff-tree --no-commit-id --name-only -r HEAD 2>/dev/null | sort)"
+    if [ "$head" = "$base" ]; then
+      _fail "expected a local commit, but HEAD did not advance"; ok=0; notes="$notes,no-commit"
+    elif [ "$committed" = "$v" ]; then
+      _pass "local commit contains only $v"
+    else
+      _fail "local commit paths differ: expected '$v', got '$committed'"; ok=0; notes="$notes,commit-scope"
+    fi
   fi
 
   smoke_summary_row "$RUNDIR" L2 "$skill" "$([ "$ok" -eq 1 ] && echo PASS || echo FAIL)" "${notes:-ok}"

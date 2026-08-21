@@ -87,6 +87,7 @@ Launch exactly one fresh Codex implementation agent:
 ```
 <plugin-root>/bin/plx-engine --engine codex --mode rw --repo <repo> \
   --prompt-file <tmp>/writer-brief.md --rubric worker \
+  --build-writer-full-access \
   --model gpt-5.6-sol --effort medium \
   --out <tmp>/writer.md --log <tmp>/writer.log
 ```
@@ -94,7 +95,9 @@ Launch exactly one fresh Codex implementation agent:
 The writer is the single implementation owner. It must follow the accepted spec and
 target-repository instructions, including any required local checkpoint ordering, keep
 the change narrow, preserve pre-existing work, and run useful targeted checks. The host
-does not implement alongside it.
+does not implement alongside it. Full host access exists only so this lane can write Git
+metadata and create authorized local commits; it does not expand the accepted spec,
+repository scope, publication authority, or external-system authority.
 
 Wait for the writer and inspect its report, repository status, and Build-owned diff. If
 the writer command fails, returns `[NEEDS CLARIFICATION]`, touches forbidden scope, or
@@ -203,6 +206,8 @@ authority.
   writer or a fix lane. The host owns only orchestration, review synthesis, targeted fixes,
   and final verification.
 - Review lanes are read-only and run only after implementation.
+- Full host access is limited to the one fresh worker-rubric implementation lane. Every
+  review lane remains read-only, and no other Parallax writer inherits this exception.
 - Never hand-construct raw `codex`, `grok`, or `claude -p` commands.
 - Inject rubrics by name; never paste rubric text into prompts.
 - Never create `.parallax/` or leave runtime output in the target repository.

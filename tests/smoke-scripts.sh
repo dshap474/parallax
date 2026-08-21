@@ -171,6 +171,51 @@ assert_contains "model_reasoning_effort=medium" "$fake_codex_args" "Codex effort
 assert_contains "workspace-write" "$fake_codex_args" "Codex rw uses workspace-write sandbox"
 
 PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode rw --repo "$REPO" \
+  --prompt-file "$fake_prompt" --rubric worker --build-writer-full-access \
+  --out "$fake_out" --log "$fake_log" >/dev/null
+rc=$?
+if [ "$rc" -eq 0 ]; then
+  _pass "Codex Build writer full-access invocation exits 0"
+else
+  _fail "Codex Build writer full-access invocation exits $rc"
+fi
+assert_contains "danger-full-access" "$fake_codex_args" "Codex Build writer receives full-access sandbox"
+if grep -qF -- '--dangerously-bypass-approvals-and-sandbox' "$fake_codex_args"; then
+  _fail "Codex Build writer bypasses approvals and sandbox"
+else
+  _pass "Codex Build writer does not use the approvals-and-sandbox bypass"
+fi
+
+"$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --rubric worker --build-writer-full-access \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 2 ]; then
+  _pass "Build writer full access rejects read-only mode"
+else
+  _fail "Build writer full access in read-only mode expected exit 2, got $rc"
+fi
+"$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode rw --repo "$REPO" \
+  --prompt-file "$fake_prompt" --rubric reviewer-correctness --build-writer-full-access \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 2 ]; then
+  _pass "Build writer full access rejects reviewer rubrics"
+else
+  _fail "Build writer full access with reviewer rubric expected exit 2, got $rc"
+fi
+"$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode rw --repo "$REPO" \
+  --prompt-file "$fake_prompt" --rubric worker --build-writer-full-access \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 2 ]; then
+  _pass "Build writer full access rejects Grok"
+else
+  _fail "Build writer full access with Grok expected exit 2, got $rc"
+fi
+
+PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode ro --repo "$REPO" \
   --prompt-file "$fake_prompt" --model gpt-5.5 --effort xhigh \
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
@@ -293,6 +338,22 @@ if grep -qxE 'Edit|Write|[^,]*Edit,[^,]*|[^,]*Write,[^,]*' "$fake_claude_args"; 
 else
   _pass "Claude rw excludes direct Edit and Write"
 fi
+
+PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
+  PLX_CLAUDE_PROMPT_FILE="$fake_claude_prompt" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode rw --repo "$REPO" \
+  --prompt-file "$fake_prompt" --rubric worker --build-writer-full-access \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 0 ]; then
+  _pass "Claude Build writer full-access invocation exits 0"
+else
+  _fail "Claude Build writer full-access invocation exits $rc"
+fi
+assert_contains "--dangerously-skip-permissions" "$fake_claude_args" "Claude Build writer bypasses host permission prompts"
+assert_contains '"enabled":false' "$fake_claude_args" "Claude Build writer disables the Claude sandbox"
+assert_contains "only so this standalone Build writer can write repository Git metadata" \
+  "$fake_claude_prompt" "Claude full-access prompt preserves the task authority boundary"
 
 _head "plx-clean-temp confines recursive cleanup"
 clean_target="$(mktemp -d "${TMPDIR:-/tmp}/plx-clean-smoke.XXXXXX")"

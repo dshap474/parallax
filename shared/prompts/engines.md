@@ -103,7 +103,11 @@ How to apply:
   host delegates to one fresh `gpt-5.6-sol` `medium` Codex lane; a Claude host delegates
   to one fresh `opus` `medium` Claude lane. The active host orchestrates, runs the three
   core Grok review dimensions, fixes confirmed findings, and executes the complete
-  relevant verification suite. There is no fallback or second writer.
+  relevant verification suite. There is no fallback or second writer. This one writer
+  receives explicit full host access so it can write repository Git metadata and honor
+  required local checkpoint ordering. That transport exception does not expand the accepted
+  spec, target-repository scope, publication authority, or external-system authority; all
+  review lanes remain read-only and other rw lanes remain workspace-confined.
 - **The host orchestrator is never delegated.** Spend the main session where the loaded
   skill assigns ownership: plan authoring, standalone Build orchestration, review
   synthesis, targeted fixes, and the final gate.

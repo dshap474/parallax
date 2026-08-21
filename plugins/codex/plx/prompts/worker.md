@@ -28,7 +28,10 @@ build and an honest report.
 - **Stay within authority.** Work only in the repo and on the exact targets the spec names.
   Do not substitute another target, deploy, publish, mutate production, run destructive
   cleanup, or search for, copy, move, or repurpose credentials unless the spec explicitly
-  authorizes that exact action and target. Existing access is not permission.
+  authorizes that exact action and target. Existing access is not permission. A Build lane
+  may receive full host access solely so Git metadata is writable; that transport capability
+  does not authorize work outside the repository or any action absent from the accepted spec
+  and repository instructions.
 
 ## Buildout report (return exactly this shape)
 

@@ -4,15 +4,20 @@ set -euo pipefail
 # Parallax engine API — the ONE wrapper that drives all engines headless.
 # Safety flags are pinned here per engine, not decided by callers:
 #   codex  : gpt-5.6-sol, effort medium by default, --ignore-user-config,
-#            --ephemeral, sandbox read-only | workspace-write
+#            --ephemeral, sandbox read-only | workspace-write; the standalone
+#            Build writer may explicitly request danger-full-access so it can
+#            write repository Git metadata and create required local commits
 #   grok   : grok-4.6, effort medium by default,
 #            kernel sandbox read-only | workspace (Seatbelt/Landlock),
 #            bypassPermissions (required for headless completion; the kernel
 #            sandbox — not the permission mode — is the safety boundary)
 #   claude : non-bare `claude -p` (bare mode breaks subscription auth),
 #            safe mode + no session persistence + no project customization,
-#            ro = read-only tools, rw = sandboxed Bash without direct write tools
-# Never danger-full-access, never --dangerously-*, never --yolo.
+#            ro = read-only tools, rw = sandboxed Bash without direct write
+#            tools; the standalone Build writer may explicitly disable the
+#            sandbox so it can create required local commits
+# Full access is accepted only for an rw worker-rubric Codex or Claude lane.
+# Never use Codex's approvals-and-sandbox bypass or --yolo.
 
 usage() {
   cat <<'EOF'
@@ -39,6 +44,9 @@ Flags:
   --repo <dir>          absolute path to the target repo (required)
   --prompt-file <file>  file containing the brief/spec (required)
   --rubric <name>       lane rubric to inject (a file name under prompts/, no .md)
+  --build-writer-full-access
+                        allow one rw worker-rubric Codex/Claude lane to write
+                        Git metadata; invalid for ro, Grok, or other rubrics
   --model <m>           codex: default gpt-5.6-sol · claude: default opus ·
                         grok: default grok-4.6
   --effort <e>          codex: default medium · claude: default high ·
@@ -57,6 +65,9 @@ Caller notes:
   * grok only: TRUST THE EXIT CODE, not stderr — grok prints non-fatal
     `worker quit ... AuthorizationRequired` lines to stderr even on success.
   * rw mode: inspect what changed with `git -C <repo> status --short` / `diff`.
+  * --build-writer-full-access removes filesystem confinement. It changes the
+    transport permission only; the accepted spec and repository rules remain
+    the writer's complete authority boundary.
 
 Exit codes:
   0  success — stdout (or --out) holds the engine's final message
@@ -86,6 +97,7 @@ EFFORT=""
 OUT=""
 LOG=""
 STDOUT=0
+BUILD_WRITER_FULL_ACCESS=0
 TMP_DIR=""
 # SQLite trace capture (opt-in via PLX_TRACE_DB). Armed just before dispatch.
 EVAL_ARMED=0
@@ -145,6 +157,7 @@ while [[ $# -gt 0 ]]; do
     --out) need_value "$1" "${2:-}"; OUT="$2"; shift 2 ;;
     --log) need_value "$1" "${2:-}"; LOG="$2"; shift 2 ;;
     --stdout) STDOUT=1; shift ;;
+    --build-writer-full-access) BUILD_WRITER_FULL_ACCESS=1; shift ;;
     --print-rubric)
       need_value "$1" "${2:-}"
       RF="$PROMPTS_DIR/$2.md"
@@ -157,6 +170,20 @@ done
 
 case "$ENGINE" in codex|grok|claude) ;; *) echo "--engine must be codex|grok|claude" >&2; exit 2 ;; esac
 case "$MODE" in ro|rw) ;; *) echo "--mode must be ro|rw" >&2; exit 2 ;; esac
+if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
+  [[ "$MODE" == "rw" ]] || {
+    echo "--build-writer-full-access requires --mode rw" >&2
+    exit 2
+  }
+  [[ "$RUBRIC" == "worker" ]] || {
+    echo "--build-writer-full-access requires --rubric worker" >&2
+    exit 2
+  }
+  [[ "$ENGINE" == "codex" || "$ENGINE" == "claude" ]] || {
+    echo "--build-writer-full-access supports only codex or claude" >&2
+    exit 2
+  }
+fi
 [[ -d "$REPO" ]] || { echo "repo not found: $REPO" >&2; exit 2; }
 [[ -s "$PROMPT" ]] || { echo "prompt file missing/empty: $PROMPT" >&2; exit 2; }
 
@@ -214,7 +241,13 @@ EVAL_PROMPT_FILE="$EXEC_PROMPT"
 
 run_codex() {
   local sandbox
-  [[ "$MODE" == "ro" ]] && sandbox="read-only" || sandbox="workspace-write"
+  if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
+    sandbox="danger-full-access"
+  elif [[ "$MODE" == "ro" ]]; then
+    sandbox="read-only"
+  else
+    sandbox="workspace-write"
+  fi
   if ! codex exec --ignore-user-config --sandbox "$sandbox" --skip-git-repo-check \
     -C "$REPO" -m "$MODEL" -c model_reasoning_effort="$EFFORT" --ephemeral \
     -o "$OUT" - < "$EXEC_PROMPT" > "$LOG" 2>&1; then
@@ -233,7 +266,11 @@ run_claude() {
   local -a flags guidance_paths
   local claude_prompt claude_settings path
   claude_prompt="$TMP_DIR/claude-prompt.md"
-  claude_settings='{"sandbox":{"enabled":true,"failIfUnavailable":true,"autoAllowBashIfSandboxed":true,"allowUnsandboxedCommands":false,"network":{"allowedDomains":[],"strictAllowlist":true}}}'
+  if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
+    claude_settings='{"sandbox":{"enabled":false}}'
+  else
+    claude_settings='{"sandbox":{"enabled":true,"failIfUnavailable":true,"autoAllowBashIfSandboxed":true,"allowUnsandboxedCommands":false,"network":{"allowedDomains":[],"strictAllowlist":true}}}'
+  fi
   flags=(
     --model "$MODEL"
     --effort "$EFFORT"
@@ -243,7 +280,9 @@ run_claude() {
     --mcp-config '{"mcpServers":{}}'
     --settings "$claude_settings"
   )
-  if [[ "$MODE" == "ro" ]]; then
+  if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
+    flags+=(--dangerously-skip-permissions --tools "Read,Grep,Glob,Bash" --allowedTools "Read,Grep,Glob,Bash")
+  elif [[ "$MODE" == "ro" ]]; then
     flags+=(--permission-mode dontAsk --tools "Read,Grep,Glob" --allowedTools "Read,Grep,Glob")
   else
     flags+=(--permission-mode acceptEdits --tools "Read,Grep,Glob,Bash" --allowedTools "Read,Grep,Glob,Bash")
@@ -270,7 +309,11 @@ run_claude() {
       printf -- '- %s\n' "$path" >> "$claude_prompt"
     done
   fi
-  if [[ "$MODE" == "rw" ]]; then
+  if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
+    printf '%s\n' \
+      'Full host access is enabled only so this standalone Build writer can write repository Git metadata. It does not expand task authority: work only inside this repository, follow the accepted spec and repository guidance, and do not publish or mutate external systems unless the spec explicitly authorizes the exact action and target. Direct Edit and Write tools are unavailable.' \
+      >> "$claude_prompt"
+  elif [[ "$MODE" == "rw" ]]; then
     printf '%s\n' \
       'For mutations, use sandboxed Bash commands confined to the repository. Direct Edit and Write tools are unavailable.' \
       >> "$claude_prompt"

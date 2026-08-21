@@ -13,8 +13,8 @@
 # chosen sizing before launching.
 #
 # Every configured role runs as one headless `plx-engine` call made by the
-# orchestrator — no subagents. Standalone build is host-implemented and therefore has
-# no configured writer role. The listed role determines the rubric and mode:
+# orchestrator. Standalone build uses one explicit same-host writer command in its skill,
+# not a configured pipeline role. The listed role determines the rubric and mode:
 #
 #   role                mode  rubric
 #   plan-critic-implementation ro plan-critic-implementation

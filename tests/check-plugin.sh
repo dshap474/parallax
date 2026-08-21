@@ -28,7 +28,7 @@ version_of() {
 claude_version="$(version_of "$PLX_CLAUDE/.claude-plugin/plugin.json")"
 codex_version="$(version_of "$PLX_CODEX/.codex-plugin/plugin.json")"
 market_version="$(version_of "$PLX_ROOT/.claude-plugin/marketplace.json")"
-if [ "$claude_version" = "0.5.18" ] && [ "$claude_version" = "$codex_version" ] &&
+if [ "$claude_version" = "0.5.19" ] && [ "$claude_version" = "$codex_version" ] &&
    [ "$claude_version" = "$market_version" ] &&
    grep -qx "v$claude_version" "$PLX_ROOT/README.md" &&
    grep -qx "Status: v$claude_version" "$PLX_ROOT/docs/SPEC.md"; then
@@ -293,7 +293,7 @@ parity_contract_ok=1
 for host in claude codex; do
   package="$PLX_ROOT/plugins/$host/plx"
   grep -Fq 'An accepted spec is required' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'active host is the only' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'exactly one fresh' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq 'reviewer-correctness' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq 'reviewer-cleanup' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq 'reviewer-structural' "$package/skills/build/SKILL.md" || parity_contract_ok=0
@@ -310,8 +310,17 @@ for host in claude codex; do
     "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq 'Commits: <local commit hashes and purposes, or "none">' \
     "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  ! grep -Fq -- '--rubric worker' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  ! grep -Fq -- '--mode rw' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq -- '--rubric worker' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq -- '--mode rw' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  if [ "$host" = claude ]; then
+    grep -Fq -- '--engine claude --mode rw' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+    grep -Fq -- '--model opus --effort medium' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+    grep -Fq -- '--require-claude --require-grok' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  else
+    grep -Fq -- '--engine codex --mode rw' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+    grep -Fq -- '--model gpt-5.6-sol --effort medium' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+    grep -Fq -- '--require-codex --require-grok' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  fi
   grep -Fq 'reviewer-security' "$package/skills/review/SKILL.md" || parity_contract_ok=0
   grep -Fq 'Security: not run' "$package/skills/review/SKILL.md" || parity_contract_ok=0
   grep -Fq 'with all Grok lanes' "$package/skills/review/SKILL.md" || parity_contract_ok=0
@@ -341,17 +350,19 @@ else
   _fail "Grok workspace preflight or fail-closed contract drift"
 fi
 
-if grep -Fq 'active host is the only' "$PLX_CLAUDE/skills/build/SKILL.md" &&
-   grep -Fq 'active host is the only' "$PLX_CODEX/skills/build/SKILL.md" &&
-   ! grep -Fq -- '--rubric worker' "$PLX_CLAUDE/skills/build/SKILL.md" &&
-   ! grep -Fq -- '--rubric worker' "$PLX_CODEX/skills/build/SKILL.md" &&
+if grep -Fq -- '--engine claude --mode rw' "$PLX_CLAUDE/skills/build/SKILL.md" &&
+   grep -Fq -- '--model opus --effort medium' "$PLX_CLAUDE/skills/build/SKILL.md" &&
+   grep -Fq -- '--engine codex --mode rw' "$PLX_CODEX/skills/build/SKILL.md" &&
+   grep -Fq -- '--model gpt-5.6-sol --effort medium' "$PLX_CODEX/skills/build/SKILL.md" &&
+   grep -Fq 'do not launch another writer' "$PLX_CLAUDE/skills/build/SKILL.md" &&
+   grep -Fq 'do not launch another writer' "$PLX_CODEX/skills/build/SKILL.md" &&
    grep -Fq 'does not invoke the standalone `/plx:build`' "$PLX_CLAUDE/skills/dev/SKILL.md" &&
    grep -Fq 'does not invoke the standalone `$plx:build`' "$PLX_CODEX/skills/dev/SKILL.md" &&
    [ -z "$(grep -L 'Fix directly' "$PLX_CLAUDE/skills/review/SKILL.md" "$PLX_CODEX/skills/review/SKILL.md" \
      "$PLX_CLAUDE/skills/dev/SKILL.md" "$PLX_CODEX/skills/dev/SKILL.md")" ] &&
    ! grep -q -- '--rubric planner' "$PLX_CLAUDE/skills/goal-spec/SKILL.md" \
      "$PLX_CODEX/skills/goal-spec/SKILL.md"; then
-  _pass "standalone Build is host-written while dev delegation and host-owned fixes remain intact"
+  _pass "standalone Build uses one fresh same-host writer while dev delegation and host-owned fixes remain intact"
 else
   _fail "standalone Build ownership, dev delegation, or goal-spec planning drift"
 fi

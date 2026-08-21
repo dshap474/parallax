@@ -99,12 +99,13 @@ How to apply:
   latency, not accuracy — benchmarked 2026-07: Terra low matched Terra high fact-for-fact
   while running fastest of six contenders; Luna was slower at every effort tier. Reserve
   higher effort for research that needs synthesis or judgment, not retrieval.
-- **Standalone Build is host-owned.** Given an accepted spec, the active host implements
-  it directly, runs the three core Grok review dimensions, fixes confirmed findings,
-  and executes the complete relevant verification suite. It has no writer lane and no
-  fallback writer configuration.
+- **Standalone Build uses one fresh same-host writer.** Given an accepted spec, a Codex
+  host delegates to one fresh `gpt-5.6-sol` `medium` Codex lane; a Claude host delegates
+  to one fresh `opus` `medium` Claude lane. The active host orchestrates, runs the three
+  core Grok review dimensions, fixes confirmed findings, and executes the complete
+  relevant verification suite. There is no fallback or second writer.
 - **The host orchestrator is never delegated.** Spend the main session where the loaded
-  skill assigns ownership: plan authoring, standalone Build implementation, review
+  skill assigns ownership: plan authoring, standalone Build orchestration, review
   synthesis, targeted fixes, and the final gate.
 
 ## Sizing the run (the escalation ladder)
@@ -129,9 +130,10 @@ return before the plan is final. The full dev skill uses the same two-critic def
 part of the larger end-to-end run.
 
 The standalone Build skill does not use this sizing ladder. Its ownership shape is
-fixed: an accepted spec, direct host implementation, three read-only Grok `xhigh` review lanes
-(plus security when triggered), host-applied confirmed fixes, and the complete relevant
-verification suite. `dev` remains self-contained and does not invoke standalone Build.
+fixed: an accepted spec, one fresh same-host writer at the package-specific model above,
+three read-only Grok `xhigh` review lanes (plus security when triggered), host-applied
+confirmed fixes, and the complete relevant verification suite. `dev` remains
+self-contained and does not invoke standalone Build.
 
 The standalone review skill is a fixed-shape quality pipeline: direct invocation runs
 correctness, cleanup, and structural lanes on Grok by default, plus a Grok security lane

@@ -28,9 +28,10 @@ those settings into engine launch flags; omitted settings retain their defaults.
 
 Configured pipelines read their package-local `config/parallax.yaml`. Config is the
 floor shape, not a limit: the host may scale lanes down or up and must declare the
-chosen shape before launching. Standalone Build is host-implemented and has no writer
-binding. KISS always runs reuse, simplification, efficiency, and altitude once each on
-Grok 4.6 High. A current-message instruction may replace the engine for the whole round.
+chosen shape before launching. Standalone Build always uses one fresh same-host writer:
+Claude Opus Medium or Codex `gpt-5.6-sol` Medium, with no fallback or second writer. KISS
+always runs reuse, simplification, efficiency, and altitude once each on Grok 4.6 High. A
+current-message instruction may replace the engine for the whole round.
 Standalone Build may create local commits when its accepted spec or the target
 repository's instructions explicitly require or authorize them. It stages only
 Build-owned work and reports every commit. Other skills retain their documented Git

@@ -1,20 +1,21 @@
 ---
 name: build
-description: Implement an accepted spec directly in the Codex host, review the result with three read-only Grok 4.6 XHigh lanes, fix confirmed findings, run the complete relevant verification suite, and report.
+description: Delegate an accepted spec to one fresh Codex gpt-5.6-sol Medium implementation agent, review the result with three read-only Grok 4.6 XHigh lanes, fix confirmed findings in the host, run the complete relevant verification suite, and report.
 argument-hint: "<accepted spec path, or omit when an accepted spec is already in this conversation>"
 ---
 
-# $plx:build — implement, review, fix, verify
+# $plx:build — delegate, review, fix, verify
 
 You are the Parallax orchestrator (Codex). Use this skill only after the user has an
-accepted implementation spec. You implement that spec directly in this session, run an
-independent Grok review, fix confirmed findings yourself, run the complete relevant
+accepted implementation spec. Delegate that spec to one fresh Codex implementation agent,
+run an independent Grok review, fix confirmed findings yourself, run the complete relevant
 verification suite, and report the result.
 
-This standalone workflow is separate from `$plx:dev`. It does not launch a writer lane
-or subagent. Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
-`/skills/build/SKILL.md`. Engine execution is allowed only through packaged
-`<plugin-root>/bin/` tools.
+This standalone workflow is separate from `$plx:dev`. It always launches exactly one fresh
+same-host writer lane: Codex `gpt-5.6-sol` at `medium`. The active host remains the
+orchestrator, reviewer, targeted fixer, and final verifier. Resolve `<plugin-root>` from
+this loaded `SKILL.md` path by removing `/skills/build/SKILL.md`. Engine execution is
+allowed only through packaged `<plugin-root>/bin/` tools.
 
 ## Require an accepted spec
 
@@ -40,10 +41,11 @@ commands. Do not weaken or silently rewrite the spec.
 - Snapshot `git status --short` and the staged and unstaged diffs into `<tmp>`.
   Preserve all pre-existing work and never attribute it to this build.
 - Write the accepted spec verbatim to `<tmp>/task.md`.
-- Write `Implementation: host · review: 3×1 (grok-4.6 xhigh) · fixes: host · verification: full relevant suite`
+- Write `Implementation: 1× fresh codex (gpt-5.6-sol medium) · review: 3×1 (grok-4.6 xhigh) · fixes: host · verification: full relevant suite`
   to `<tmp>/shape.txt` and declare that shape before mutation.
-- Run `<plugin-root>/bin/plx-preflight --repo <repo> --require-grok` before mutation.
-  If Grok is unavailable, record an aborted run and stop without implementing.
+- Run `<plugin-root>/bin/plx-preflight --repo <repo> --require-codex --require-grok`
+  before mutation. If either required engine is unavailable, record an aborted run and
+  stop without implementing.
 
 Keep all run files directly in `<tmp>` so its `plx-build.<suffix>` basename groups the
 captured review lanes. Call `<plugin-root>/bin/plx-eval finish` before every handled
@@ -71,15 +73,34 @@ The target repository's instructions and the accepted spec govern local commits:
 
 ## Pipeline
 
-### 1. Implement the accepted spec
+### 1. Delegate the accepted spec to one fresh writer
 
-Read the relevant repository code and implement every requirement directly with your
-native editing tools. Keep the change narrow, follow the repository's instructions,
-and preserve pre-existing edits. Run targeted checks while working when they shorten
-the feedback loop.
+Create `<tmp>/writer-brief.md` with the exact accepted spec under the required header:
 
-Do not launch a write-mode engine or a worker rubric. The active host is the only
-writer for the entire Build run.
+```
+## Spec
+<accepted spec verbatim>
+```
+
+Launch exactly one fresh Codex implementation agent:
+
+```
+<plugin-root>/bin/plx-engine --engine codex --mode rw --repo <repo> \
+  --prompt-file <tmp>/writer-brief.md --rubric worker \
+  --model gpt-5.6-sol --effort medium \
+  --out <tmp>/writer.md --log <tmp>/writer.log
+```
+
+The writer is the single implementation owner. It must follow the accepted spec and
+target-repository instructions, including any required local checkpoint ordering, keep
+the change narrow, preserve pre-existing work, and run useful targeted checks. The host
+does not implement alongside it.
+
+Wait for the writer and inspect its report, repository status, and Build-owned diff. If
+the writer command fails, returns `[NEEDS CLARIFICATION]`, touches forbidden scope, or
+leaves an unsafe ambiguous state, do not launch another writer and do not silently take
+over implementation. Record a failed or partial run as appropriate and report the exact
+blocker. The later host fix stage is only for confirmed, unambiguous review findings.
 
 ### 2. Review with Grok
 
@@ -92,7 +113,7 @@ one neutral brief to `<tmp>/review-brief.md`:
 ## Review brief
 - Repo: <repo>
 - Files touched: <changed files from this build>
-- What was implemented: <short summary grounded in the accepted spec>
+- What was implemented: <short summary grounded in the writer report and accepted spec>
 - Diff basis: <working tree relative to the Bootstrap snapshot>
 - Spec source: <path or accepted conversation spec>
 ```
@@ -159,6 +180,7 @@ Report:
 
 ```text
 Built: <what changed>
+Implementation: <fresh Codex writer result and summary>
 Spec coverage: <requirements satisfied; anything missing>
 Review: <lanes completed; confirmed, rejected, and residual findings>
 Fixed: <confirmed findings fixed by the host, or "none">
@@ -177,7 +199,9 @@ authority.
 ## Hard constraints
 
 - An accepted spec is required. Do not plan inside Build.
-- The host directly implements and fixes. Never launch a writer or fix lane.
+- Launch exactly one fresh Codex writer at `gpt-5.6-sol` `medium`; never launch a second
+  writer or a fix lane. The host owns only orchestration, review synthesis, targeted fixes,
+  and final verification.
 - Review lanes are read-only and run only after implementation.
 - Never hand-construct raw `codex`, `grok`, or `claude -p` commands.
 - Inject rubrics by name; never paste rubric text into prompts.

@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.18
+Status: v0.5.19
 
 ## Required tree
 
@@ -15,7 +15,7 @@ shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.18`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.19`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains eleven
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
@@ -39,9 +39,10 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
   whole-round engine request replaces all four. The host applies only confirmed safe
   improvements.
 - Standalone Review runs three read-only Grok 4.6 XHigh lanes by default. Standalone
-  Build requires an accepted spec. The active host implements it directly,
-  three read-only Grok 4.6 XHigh lanes review the result, the host fixes confirmed findings, and
-  the complete relevant verification suite runs. It has no writer binding. Build may
+  Build requires an accepted spec and delegates it to exactly one fresh same-host writer:
+  Codex `gpt-5.6-sol` Medium from Codex, or Claude Opus Medium from Claude. Three read-only
+  Grok 4.6 XHigh lanes review the result, the host fixes confirmed findings, and the
+  complete relevant verification suite runs. There is no fallback or second writer. Build may
   create local commits required or authorized by the accepted spec or target-repository
   instructions, including ordered preregistration checkpoints, while staging only
   Build-owned work and preserving pre-existing changes.

@@ -426,6 +426,25 @@ else
   _fail "shared sync left a destination-only file"
 fi
 
+atomic_source="$SYNC_REPO/shared/bin/plx-atomic-probe"
+atomic_destination="$SYNC_REPO/plugins/claude/plx/bin/plx-atomic-probe"
+printf '%s\n' old > "$atomic_source"
+chmod +x "$atomic_source"
+"$SYNC_REPO/scripts/sync-shared.sh" >/dev/null
+exec 9< "$atomic_destination"
+printf '%s\n' new > "$atomic_source"
+"$SYNC_REPO/scripts/sync-shared.sh" >/dev/null
+old_copy="$(cat <&9)"
+exec 9<&-
+new_copy="$(cat "$atomic_destination")"
+if [ "$old_copy" = old ] && [ "$new_copy" = new ] && [ -x "$atomic_destination" ]; then
+  _pass "shared sync atomically replaces files without changing active readers"
+else
+  _fail "shared sync changed an active reader or lost the executable mode"
+fi
+rm -f -- "$atomic_source"
+"$SYNC_REPO/scripts/sync-shared.sh" >/dev/null
+
 for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   label="$(basename "$(dirname "$package")")"
   for tool in plx-engine plx-preflight plx-config plx-skill plx-link-claude plx-eval plx-clean-temp; do

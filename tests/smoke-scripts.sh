@@ -104,6 +104,24 @@ printf '%s\n' '#!/usr/bin/env bash' \
 chmod +x "$fake_bin/grok"
 printf '%s\n' 'reply OK' > "$fake_prompt"
 
+incomplete_plugin="$WORK/incomplete-plugin"
+cp -R "$PLUGIN_ROOT" "$incomplete_plugin"
+awk '{ print; if ($0 == "EVAL_ARMED=1") print "exit 0" }' \
+  "$PLUGIN_ROOT/bin/plx-engine" > "$WORK/plx-engine-incomplete"
+mv "$WORK/plx-engine-incomplete" "$incomplete_plugin/bin/plx-engine"
+chmod +x "$incomplete_plugin/bin/plx-engine"
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
+  "$incomplete_plugin/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" \
+  > /dev/null 2> "$WORK/incomplete-error.txt"
+rc=$?
+if [ "$rc" -eq 1 ] && grep -Fq 'execution ended before output delivery completed' \
+   "$WORK/incomplete-error.txt"; then
+  _pass "plx-engine rejects an armed but incomplete zero-status exit"
+else
+  _fail "plx-engine incomplete execution expected exit 1, got $rc"
+fi
+
 PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
   --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null

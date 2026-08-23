@@ -22,6 +22,20 @@ esac
 # Synchronization
 # --------------------------------------------------------------------------- #
 
+atomic_copy() {
+  local source="$1" destination="$2" temporary
+
+  temporary="$(mktemp "${destination}.tmp.XXXXXX")" || return 1
+  if ! cp -p "$source" "$temporary"; then
+    rm -f -- "$temporary"
+    return 1
+  fi
+  if ! mv -f -- "$temporary" "$destination"; then
+    rm -f -- "$temporary"
+    return 1
+  fi
+}
+
 sync_tree() {
   local source="$1" destination="$2" preserve="${3:-}" relative source_file destination_file drift=0
 
@@ -34,7 +48,7 @@ sync_tree() {
         drift=1
       else
         mkdir -p "$(dirname "$destination_file")"
-        cp "$source_file" "$destination_file"
+        atomic_copy "$source_file" "$destination_file" || return 1
       fi
     fi
   done < <(find "$source" -type f | sort)
@@ -73,7 +87,7 @@ for package in "$ROOT/plugins/claude/plx" "$ROOT/plugins/codex/plx"; do
       echo "drift: ${package#"$ROOT/"}/LICENSE" >&2
       rc=1
     else
-      cp "$ROOT/LICENSE" "$package/LICENSE"
+      atomic_copy "$ROOT/LICENSE" "$package/LICENSE"
     fi
   fi
 done

@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-set -euo pipefail
-
 # Parallax engine API — the ONE wrapper that drives all engines headless.
+# Usage:
+#   plx-engine --engine codex|grok|claude --mode ro|rw --repo <abs-path> \
+#     --prompt-file <file> --stdout
+#   plx-engine --print-rubric <name>
+#
 # Safety flags are pinned here per engine, not decided by callers:
 #   codex  : gpt-5.6-sol, effort medium by default, --ignore-user-config,
 #            --ephemeral, sandbox read-only | workspace-write; the standalone
@@ -19,6 +22,13 @@ set -euo pipefail
 # Full access is accepted only for an rw worker- or build-worker-rubric Codex or
 # Claude lane.
 # Never use Codex's approvals-and-sandbox bypass or --yolo.
+
+# --------------------------------------------------------------------------- #
+# Main program
+# --------------------------------------------------------------------------- #
+
+main() {
+set -euo pipefail
 
 usage() {
   cat <<'EOF'
@@ -73,7 +83,7 @@ Caller notes:
 
 Exit codes:
   0  success — stdout (or --out) holds the engine's final message
-  1  engine failure — details on stderr / in the log
+  1  engine or wrapper failure — details on stderr / in the log
   2  usage error — bad flags or missing/empty inputs
   3  not signed in — tell the user to log in (codex login / grok login / claude /login)
 EOF
@@ -108,14 +118,19 @@ EVAL_PROMPT_FILE=""
 EVAL_STARTED_AT=""
 EVAL_STARTED_NS=""
 EVAL_ROLE=""
+PLX_COMPLETED=0
 
-# Exit handler: capture the original engine code, best-effort record the lane,
-# then clean temp files and re-exit with the original code. Recording failures
-# never mask the engine result.
+# Exit handler: capture the execution code, reject an armed run that never
+# completed output delivery, best-effort record the lane, then clean temp files.
+# Recording failures never mask the execution result.
 plx_engine_exit() {
   local rc=$?
   # Always restore errexit off for cleanup/recording so set -e cannot alter rc.
   set +e
+  if [[ "$EVAL_ARMED" -eq 1 && "$rc" -eq 0 && "$PLX_COMPLETED" -ne 1 ]]; then
+    echo "plx-engine: execution ended before output delivery completed" >&2
+    rc=1
+  fi
   if [[ "$EVAL_ARMED" -eq 1 && -n "$EVAL_RUN_DIR" ]]; then
     local out_arg=() log_arg=() rubric_arg=()
     # Hash stdout-mode artifacts before the temp dir is removed.
@@ -491,3 +506,11 @@ if [[ "$STDOUT" -eq 1 ]]; then
 else
   echo "OK plx-engine engine=$ENGINE mode=$MODE out=$OUT log=$LOG"
 fi
+PLX_COMPLETED=1
+}
+
+# --------------------------------------------------------------------------- #
+# Entry point
+# --------------------------------------------------------------------------- #
+
+main "$@"

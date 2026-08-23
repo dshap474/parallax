@@ -1,6 +1,6 @@
 interface:
   display_name: "PLX::Build"
-  short_description: "Implement, review, fix, and verify an accepted spec"
-  default_prompt: "Use $plx:build to implement this accepted spec, review it with Grok, fix confirmed findings, and run the full relevant verification suite."
+  short_description: "One build worker implements, reviews, fixes, and verifies an accepted spec"
+  default_prompt: "Use $plx:build to hand this accepted spec to one build worker that implements it, reviews it with Grok, fixes confirmed findings, and runs the full relevant verification suite."
 policy:
   allow_implicit_invocation: false

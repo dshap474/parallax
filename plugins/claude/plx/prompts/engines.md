@@ -36,7 +36,8 @@ open with the section header the rubric expects:
 | `planner`             | architecture consulting       | `## Task brief`     |
 | `plan-critic-implementation` | checkout/execution red-team | `## Draft plan` |
 | `plan-critic-system`  | system/design red-team        | `## Draft plan`     |
-| `worker`              | implementation (rw)           | `## Spec`           |
+| `worker`              | `dev` implementation (rw)     | `## Spec`           |
+| `build-worker`        | standalone Build: implement, Grok review, fix, verify (rw) | `## Spec` |
 
 ## Models
 
@@ -44,9 +45,9 @@ open with the section header the rubric expects:
 | --- | --- | --- |
 | gpt-5.6-sol | `--engine codex` (medium effort by default) | Claude-host plan/review judgment and `dev` implementation fallback |
 | gpt-5.6-terra | `--engine codex --model gpt-5.6-terra --effort low` | doc-lookup web research lanes |
-| grok-4.6 | `--engine grok` (medium effort by default) | `dev` implementation; standalone Build review uses `xhigh` |
+| grok-4.6 | `--engine grok` (medium effort by default) | `dev` implementation; standalone Build review lanes (launched by the build worker) use `xhigh` |
 | opus-4.8 | `--engine claude` | planning, review, or taste-heavy judgment when selected by the host config |
-| host orchestrator | you — never delegated | plan authoring, standalone Build implementation, synthesis, targeted fixes, and final gate |
+| host orchestrator | you — never delegated | plan authoring, standalone Build bootstrap and gate-check, review synthesis, targeted fixes, and final gate |
 
 Models in the host package config are defaults, not restrictions. When the user
 explicitly requests a model or effort, pass that exact value to the selected engine;
@@ -89,7 +90,8 @@ How to apply:
 - **Standalone Review** → exactly three read-only Grok `xhigh` dimensions by default,
   plus security when triggered.
 - **Standalone Build review** → exactly three read-only Grok `xhigh` dimensions by
-  default, plus security when triggered.
+  default, plus security when triggered — launched by the build worker itself through
+  the packaged wrapper, not by the host.
 - **KISS** → exactly four read-only Grok `high` dimensions: reuse, simplification,
   efficiency, and altitude. The current request may replace all lanes with one engine.
   The host synthesizes and applies the smallest safe improvements to a draft or code.
@@ -99,18 +101,22 @@ How to apply:
   latency, not accuracy — benchmarked 2026-07: Terra low matched Terra high fact-for-fact
   while running fastest of six contenders; Luna was slower at every effort tier. Reserve
   higher effort for research that needs synthesis or judgment, not retrieval.
-- **Standalone Build uses one fresh same-host writer.** Given an accepted spec, a Codex
-  host delegates to one fresh `gpt-5.6-sol` `medium` Codex lane; a Claude host delegates
-  to one fresh `opus` `medium` Claude lane. The active host orchestrates, runs the three
-  core Grok review dimensions, fixes confirmed findings, and executes the complete
-  relevant verification suite. There is no fallback or second writer. This one writer
-  receives explicit full host access so it can write repository Git metadata and honor
-  required local checkpoint ordering. That transport exception does not expand the accepted
-  spec, target-repository scope, publication authority, or external-system authority; all
-  review lanes remain read-only and other rw lanes remain workspace-confined.
+- **Standalone Build pushes the whole build into one fresh same-host worker.** Given an
+  accepted spec, a Codex host delegates to one fresh `gpt-5.6-sol` `high` Codex
+  `build-worker` lane; a Claude host delegates to one fresh `opus` `medium` Claude
+  `build-worker` lane (explicit current-message overrides win). That worker implements,
+  launches the three core Grok review dimensions itself, validates and fixes confirmed
+  findings itself in one bounded round, and executes the complete relevant verification
+  suite. The host only bootstraps, gate-checks the diff and report, records the trace, and
+  reports. There is no fallback or second writer. This one worker receives explicit full
+  host access so it can write repository Git metadata, honor required local checkpoint
+  ordering, and launch its packaged review lanes. That transport exception does not expand
+  the accepted spec, target-repository scope, publication authority, or external-system
+  authority; all review lanes remain read-only and other rw lanes remain
+  workspace-confined.
 - **The host orchestrator is never delegated.** Spend the main session where the loaded
-  skill assigns ownership: plan authoring, standalone Build orchestration, review
-  synthesis, targeted fixes, and the final gate.
+  skill assigns ownership: plan authoring, standalone Build bootstrap and gate-check,
+  review synthesis, targeted fixes, and the final gate.
 
 ## Sizing the run (the escalation ladder)
 
@@ -134,9 +140,10 @@ return before the plan is final. The full dev skill uses the same two-critic def
 part of the larger end-to-end run.
 
 The standalone Build skill does not use this sizing ladder. Its ownership shape is
-fixed: an accepted spec, one fresh same-host writer at the package-specific model above,
-three read-only Grok `xhigh` review lanes (plus security when triggered), host-applied
-confirmed fixes, and the complete relevant verification suite. `dev` remains
+fixed: an accepted spec, one fresh same-host build worker at the package-specific model
+above that implements, launches three read-only Grok `xhigh` review lanes (plus security
+when triggered), applies confirmed fixes, and runs the complete relevant verification
+suite; the host bootstraps and gate-checks. `dev` remains
 self-contained and does not invoke standalone Build.
 
 The standalone review skill is a fixed-shape quality pipeline: direct invocation runs

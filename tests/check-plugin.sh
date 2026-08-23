@@ -28,7 +28,7 @@ version_of() {
 claude_version="$(version_of "$PLX_CLAUDE/.claude-plugin/plugin.json")"
 codex_version="$(version_of "$PLX_CODEX/.codex-plugin/plugin.json")"
 market_version="$(version_of "$PLX_ROOT/.claude-plugin/marketplace.json")"
-if [ "$claude_version" = "0.5.20" ] && [ "$claude_version" = "$codex_version" ] &&
+if [ "$claude_version" = "0.5.21" ] && [ "$claude_version" = "$codex_version" ] &&
    [ "$claude_version" = "$market_version" ] &&
    grep -qx "v$claude_version" "$PLX_ROOT/README.md" &&
    grep -qx "Status: v$claude_version" "$PLX_ROOT/docs/SPEC.md"; then
@@ -310,18 +310,21 @@ for host in claude codex; do
     "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq 'Commits: <local commit hashes and purposes, or "none">' \
     "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq -- '--rubric worker' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq -- '--rubric build-worker' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq -- '--mode rw' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq -- '--build-writer-full-access' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'Full host access is limited to the one fresh worker-rubric implementation lane' \
+  grep -Fq 'Full host access is limited to the one fresh build-worker-rubric implementation lane' \
     "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'Engine wrapper: <plx-engine>' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'never run the review lanes' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+  grep -Fq '## Build run context' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   if [ "$host" = claude ]; then
     grep -Fq -- '--engine claude --mode rw' "$package/skills/build/SKILL.md" || parity_contract_ok=0
     grep -Fq -- '--model opus --effort medium' "$package/skills/build/SKILL.md" || parity_contract_ok=0
     grep -Fq -- '--require-claude --require-grok' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   else
     grep -Fq -- '--engine codex --mode rw' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-    grep -Fq -- '--model gpt-5.6-sol --effort medium' "$package/skills/build/SKILL.md" || parity_contract_ok=0
+    grep -Fq -- '--model gpt-5.6-sol --effort high' "$package/skills/build/SKILL.md" || parity_contract_ok=0
     grep -Fq -- '--require-codex --require-grok' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   fi
   grep -Fq 'reviewer-security' "$package/skills/review/SKILL.md" || parity_contract_ok=0
@@ -358,7 +361,7 @@ if grep -Fq -- '--engine claude --mode rw' "$PLX_CLAUDE/skills/build/SKILL.md" &
    grep -Fq -- '--model opus --effort medium' "$PLX_CLAUDE/skills/build/SKILL.md" &&
    grep -Fq -- '--engine codex --mode rw' "$PLX_CODEX/skills/build/SKILL.md" &&
    grep -Fq -- '--build-writer-full-access' "$PLX_CODEX/skills/build/SKILL.md" &&
-   grep -Fq -- '--model gpt-5.6-sol --effort medium' "$PLX_CODEX/skills/build/SKILL.md" &&
+   grep -Fq -- '--model gpt-5.6-sol --effort high' "$PLX_CODEX/skills/build/SKILL.md" &&
    grep -Fq 'do not launch another writer' "$PLX_CLAUDE/skills/build/SKILL.md" &&
    grep -Fq 'do not launch another writer' "$PLX_CODEX/skills/build/SKILL.md" &&
    grep -Fq 'does not invoke the standalone `/plx:build`' "$PLX_CLAUDE/skills/dev/SKILL.md" &&
@@ -367,7 +370,7 @@ if grep -Fq -- '--engine claude --mode rw' "$PLX_CLAUDE/skills/build/SKILL.md" &
      "$PLX_CLAUDE/skills/dev/SKILL.md" "$PLX_CODEX/skills/dev/SKILL.md")" ] &&
    ! grep -q -- '--rubric planner' "$PLX_CLAUDE/skills/goal-spec/SKILL.md" \
      "$PLX_CODEX/skills/goal-spec/SKILL.md"; then
-  _pass "standalone Build uses one fresh same-host writer while dev delegation and host-owned fixes remain intact"
+  _pass "standalone Build uses one fresh same-host build worker while dev delegation and host-owned fixes remain intact"
 else
   _fail "standalone Build ownership, dev delegation, or goal-spec planning drift"
 fi
@@ -418,7 +421,7 @@ for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   for tool in plx-engine plx-preflight plx-config plx-skill plx-link-claude plx-eval plx-clean-temp; do
     [ -x "$package/bin/$tool" ] && _pass "$label bin/$tool" || _fail "$label bin/$tool"
   done
-  for rubric in engines planner plan-critic-implementation plan-critic-system worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security kiss-reuse kiss-simplification kiss-efficiency kiss-altitude; do
+  for rubric in engines planner plan-critic-implementation plan-critic-system worker build-worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security kiss-reuse kiss-simplification kiss-efficiency kiss-altitude; do
     [ -s "$package/prompts/$rubric.md" ] || _fail "$label missing rubric $rubric"
   done
 done
@@ -448,12 +451,12 @@ if grep -RE '^[[:space:]]*[^#].*(dangerously-bypass-approvals-and-sandbox|--yolo
 elif [ "$(grep -Fc 'sandbox="danger-full-access"' "$PLX_ROOT/shared/bin/plx-engine")" -ne 1 ] ||
      [ "$(grep -Fc 'flags+=(--dangerously-skip-permissions' "$PLX_ROOT/shared/bin/plx-engine")" -ne 1 ] ||
      ! grep -Fq '[[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
-     ! grep -Fq '[[ "$RUBRIC" == "worker" ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
+     ! grep -Fq '[[ "$RUBRIC" == "worker" || "$RUBRIC" == "build-worker" ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
      find "$PLX_ROOT/shared/bin" -type f ! -name plx-engine -exec \
        grep -El 'danger-full-access|dangerously-skip-permissions' {} + | grep -q .; then
   _fail "Build-writer-only full-access runtime boundary drift"
 else
-  _pass "full access is confined to the explicit worker-rubric Build lane"
+  _pass "full access is confined to the explicit worker/build-worker-rubric Build lane"
 fi
 if grep -RE '^[[:space:]]*[^#].*rm[[:space:]]+-rf' \
      "$PLX_ROOT/shared/bin" "$PLX_ROOT/plugins/claude/plx/bin" \

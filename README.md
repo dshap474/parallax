@@ -46,9 +46,10 @@ Start a new Codex session, then use `$plx:dev`.
 
 Claude is the host orchestrator in the Claude package. Codex is the host orchestrator
 in the Codex package. In standalone `build`, the host delegates an accepted spec to one
-fresh same-host writer—Claude Opus Medium or Codex `gpt-5.6-sol` Medium—then three Grok
-4.6 XHigh lanes review it, the host fixes confirmed findings, and the full relevant
-verification suite runs. The separate `dev` pipeline uses isolated Grok 4.6 writers by
+fresh same-host build worker—Claude Opus Medium or Codex `gpt-5.6-sol` High—which
+implements it, runs three Grok 4.6 XHigh review lanes itself, fixes confirmed findings
+itself, and runs the full relevant verification suite; the host bootstraps and
+gate-checks. The separate `dev` pipeline uses isolated Grok 4.6 writers by
 default; the opposite host engine supplies its plan critics and review lanes. Direct
 `review` runs three Grok 4.6 XHigh lanes by default. `kiss` runs four Grok 4.6 High
 lanes over a plan or code; the host applies confirmed improvements itself.
@@ -80,7 +81,7 @@ See [Architecture](docs/ARCHITECTURE.md), [Commands](docs/COMMANDS.md),
 
 ## Status
 
-v0.5.20
+v0.5.21
 
 ## License
 

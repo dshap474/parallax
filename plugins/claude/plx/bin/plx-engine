@@ -16,7 +16,8 @@ set -euo pipefail
 #            ro = read-only tools, rw = sandboxed Bash without direct write
 #            tools; the standalone Build writer may explicitly disable the
 #            sandbox so it can create required local commits
-# Full access is accepted only for an rw worker-rubric Codex or Claude lane.
+# Full access is accepted only for an rw worker- or build-worker-rubric Codex or
+# Claude lane.
 # Never use Codex's approvals-and-sandbox bypass or --yolo.
 
 usage() {
@@ -45,7 +46,7 @@ Flags:
   --prompt-file <file>  file containing the brief/spec (required)
   --rubric <name>       lane rubric to inject (a file name under prompts/, no .md)
   --build-writer-full-access
-                        allow one rw worker-rubric Codex/Claude lane to write
+                        allow one rw worker/build-worker-rubric Codex/Claude lane to write
                         Git metadata; invalid for ro, Grok, or other rubrics
   --model <m>           codex: default gpt-5.6-sol · claude: default opus ·
                         grok: default grok-4.6
@@ -175,8 +176,8 @@ if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
     echo "--build-writer-full-access requires --mode rw" >&2
     exit 2
   }
-  [[ "$RUBRIC" == "worker" ]] || {
-    echo "--build-writer-full-access requires --rubric worker" >&2
+  [[ "$RUBRIC" == "worker" || "$RUBRIC" == "build-worker" ]] || {
+    echo "--build-writer-full-access requires --rubric worker or build-worker" >&2
     exit 2
   }
   [[ "$ENGINE" == "codex" || "$ENGINE" == "claude" ]] || {
@@ -311,7 +312,7 @@ run_claude() {
   fi
   if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
     printf '%s\n' \
-      'Full host access is enabled only so this standalone Build writer can write repository Git metadata. It does not expand task authority: work only inside this repository, follow the accepted spec and repository guidance, and do not publish or mutate external systems unless the spec explicitly authorizes the exact action and target. Direct Edit and Write tools are unavailable.' \
+      'Full host access is enabled only so this standalone Build worker can write repository Git metadata and launch its packaged review lanes. It does not expand task authority: work only inside this repository, follow the accepted spec and repository guidance, and do not publish or mutate external systems unless the spec explicitly authorizes the exact action and target. Direct Edit and Write tools are unavailable.' \
       >> "$claude_prompt"
   elif [[ "$MODE" == "rw" ]]; then
     printf '%s\n' \

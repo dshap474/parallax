@@ -187,6 +187,17 @@ else
   _pass "Codex Build writer does not use the approvals-and-sandbox bypass"
 fi
 
+PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode rw --repo "$REPO" \
+  --prompt-file "$fake_prompt" --rubric build-worker --build-writer-full-access \
+  --out "$fake_out" --log "$fake_log" >/dev/null
+rc=$?
+if [ "$rc" -eq 0 ]; then
+  _pass "Codex build-worker full-access invocation exits 0"
+else
+  _fail "Codex build-worker full-access invocation exits $rc"
+fi
+
 "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode ro --repo "$REPO" \
   --prompt-file "$fake_prompt" --rubric worker --build-writer-full-access \
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
@@ -352,7 +363,7 @@ else
 fi
 assert_contains "--dangerously-skip-permissions" "$fake_claude_args" "Claude Build writer bypasses host permission prompts"
 assert_contains '"enabled":false' "$fake_claude_args" "Claude Build writer disables the Claude sandbox"
-assert_contains "only so this standalone Build writer can write repository Git metadata" \
+assert_contains "only so this standalone Build worker can write repository Git metadata and launch its packaged review lanes" \
   "$fake_claude_prompt" "Claude full-access prompt preserves the task authority boundary"
 
 _head "plx-clean-temp confines recursive cleanup"

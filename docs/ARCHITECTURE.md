@@ -21,9 +21,10 @@ independent judgment. Every lane is one isolated `plx-engine` process.
 The Claude package keeps Claude as host and defaults plan critics and composed `dev`
 review lanes to Codex. The Codex package flips that judgment polarity: Codex remains
 host while Claude supplies those lanes. Direct `review` instead runs all three core
-lanes on Grok by default. Standalone Build delegates implementation to one fresh
-same-host writer (Codex `gpt-5.6-sol` Medium or Claude Opus Medium), uses Grok 4.6 XHigh
-for its three review lanes, and leaves fixes with the host. The separate `dev` pipeline prefers Grok
+lanes on Grok by default. Standalone Build delegates the whole build to one fresh
+same-host worker (Codex `gpt-5.6-sol` High or Claude Opus Medium) that implements, runs
+its three Grok 4.6 XHigh review lanes, and fixes confirmed findings itself; the host
+bootstraps and gate-checks. The separate `dev` pipeline prefers Grok
 4.6 for implementation, deterministically falls back to Codex only when Grok fails
 preflight, and keeps targeted review fixes with the host.
 
@@ -48,9 +49,9 @@ one Claude-only wrapper.
 
 `plan`, `build`, `review`, and `dev` are separate workflows. `dev` is self-contained; it
 does not invoke the standalone Build or Review skills. Standalone Build requires an
-accepted spec, delegates it to one fresh same-host writer, runs three Grok review lanes,
-has the host fix confirmed findings, and finishes with the complete relevant verification
-suite.
+accepted spec and delegates it to one fresh same-host build worker that implements, runs
+three Grok review lanes, fixes confirmed findings, and finishes with the complete
+relevant verification suite; the host bootstraps and gate-checks.
 `kiss` simplifies a plan or code, and `goal-spec` prepares a self-contained autonomous
 goal.
 
@@ -64,10 +65,11 @@ Inside `dev`, the host declares task sizing before launching anything:
   and up to two engines per review dimension.
 
 Critic and review lanes are always read-only. `dev` write lanes use one writer per
-disjoint path set. Standalone Build uses exactly one fresh same-host writer and never
-falls through to another writer or parallel host implementation. Confirmed review
-findings are fixed once by the host; behavior-changing or ambiguous findings go back to
-the user.
+disjoint path set. Standalone Build uses exactly one fresh same-host build worker and
+never falls through to another writer or parallel host implementation. In `dev` and
+`review`, confirmed review findings are fixed once by the host; in standalone Build the
+worker fixes them once itself. Behavior-changing or ambiguous findings go back to the
+user.
 
 KISS runs four independent Grok 4.6 High dimensions: reuse, simplification, efficiency,
 and altitude. The host validates their findings and applies the smallest safe changes.

@@ -23,7 +23,7 @@ review lanes to Codex. The Codex package flips that judgment polarity: Codex rem
 host while Claude supplies those lanes. Direct `review` instead runs all three core
 lanes on Grok by default. Standalone Build delegates the whole build to one fresh
 same-host worker (Codex `gpt-5.6-sol` High or Claude Opus Medium) that implements, runs
-its three Grok 4.6 XHigh review lanes, and fixes confirmed findings itself; the host
+its three Grok 4.6 Medium review lanes, and fixes confirmed findings itself; the host
 bootstraps and gate-checks. The separate `dev` pipeline prefers Grok
 4.6 for implementation, deterministically falls back to Codex only when Grok fails
 preflight, and keeps targeted review fixes with the host.
@@ -71,7 +71,7 @@ never falls through to another writer or parallel host implementation. In `dev` 
 worker fixes them once itself. Behavior-changing or ambiguous findings go back to the
 user.
 
-KISS runs four independent Grok 4.6 High dimensions: reuse, simplification, efficiency,
+KISS runs four independent Grok 4.6 Medium dimensions: reuse, simplification, efficiency,
 and altitude. The host validates their findings and applies the smallest safe changes.
 It complements rather than replaces correctness review.
 
@@ -82,12 +82,13 @@ Pipeline lanes and default passthroughs use `plx-engine`. It pins:
 - Codex: `gpt-5.6-sol`, isolated config, ephemeral session, read-only or workspace-write;
 - Claude: Opus, safe mode, no session persistence, strict MCP/network isolation,
   read-only tools or repo-confined sandboxed Bash;
-- Grok: `grok-4.6`, no planning/subagent/memory features, kernel read-only or workspace
-  sandbox.
+- Grok: `grok-4.6` at medium reasoning, no planning/subagent/memory features, kernel
+  read-only or workspace sandbox.
 
 These models are defaults, not restrictions. Explicit user-requested model and effort
-values pass through to the selected engine, which remains responsible for validating
-them. The wrapper never uses `danger-full-access`,
+values pass through to the selected engine except that `grok-4.6` is always normalized
+to medium reasoning. The selected engine remains responsible for validating other values.
+The wrapper never uses `danger-full-access`,
 `--dangerously-bypass-approvals-and-sandbox`, or `--yolo`. Runtime briefs, logs, and
 outputs use `plx-`-prefixed temporary directories and the confined `plx-clean-temp`
 helper; Parallax creates no `.parallax/` state.

@@ -35,8 +35,9 @@ explicit model/effort settings replace the shipped settings below.
   overridden. Always request narrowly scoped host approval for its preflight and lanes;
   Codex's host sandbox can hide Claude's OAuth/keychain while Claude safe mode remains active.
 - **grok** → `--model grok-4.6 --effort medium` by default; explicit model and effort
-  settings replace those defaults. Request narrowly scoped host approval if network
-  or keychain access is blocked; Grok's kernel sandbox remains the safety boundary.
+  settings replace those defaults for other models, but `grok-4.6` always stays at
+  `medium`. Request narrowly scoped host approval if network or keychain access is
+  blocked; Grok's kernel sandbox remains the safety boundary.
 
 Plan in chat by default. For large or risky work—cross-file contracts, concurrency,
 data-integrity or money paths, public/trust boundaries, wide refactors, or multi-session

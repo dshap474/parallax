@@ -54,7 +54,7 @@ one, recommend it by name and let the user invoke it.
 | Skill | Reach for it when |
 | --- | --- |
 | `/plx:plan` | A task needs a plan; you author it, two opposite-engine critics red-team it. No code. |
-| `/plx:build` | An accepted spec is ready — one fresh build worker implements, runs the Grok 4.6 XHigh reviews, fixes, and runs the full relevant verification suite; you bootstrap and gate-check. |
+| `/plx:build` | An accepted spec is ready — one fresh build worker implements, runs the Grok 4.6 Medium reviews, fixes, and runs the full relevant verification suite; you bootstrap and gate-check. |
 | `/plx:review` | Changes need review — three read-only Grok lanes by default, synthesis, then you apply confirmed fixes yourself ("report only" skips fixes). |
 | `/plx:dev` | The full run: plan → build → review/fix → your final gate. |
 | `/plx:goal-spec` | A long-running goal needs an interview-locked, red-teamed, self-contained spec. No code. |

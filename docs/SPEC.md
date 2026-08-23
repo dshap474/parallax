@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.21
+Status: v0.5.22
 
 ## Required tree
 
@@ -15,7 +15,7 @@ shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.21`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.22`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains eleven
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
@@ -35,13 +35,13 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
   supplies plan critics and three core review dimensions plus risk-triggered security.
 - Codex-host defaults: Codex plans, synthesizes, and applies targeted fixes; Claude
   supplies plan critics and three core review dimensions plus risk-triggered security.
-- KISS runs four read-only Grok 4.6 High dimensions over a plan or code. An explicit
+- KISS runs four read-only Grok 4.6 Medium dimensions over a plan or code. An explicit
   whole-round engine request replaces all four. The host applies only confirmed safe
   improvements.
-- Standalone Review runs three read-only Grok 4.6 XHigh lanes by default. Standalone
+- Standalone Review runs three read-only Grok 4.6 Medium lanes by default. Standalone
   Build requires an accepted spec and delegates it to exactly one fresh same-host build
   worker: Codex `gpt-5.6-sol` High from Codex, or Claude Opus Medium from Claude. That
-  worker implements, launches three read-only Grok 4.6 XHigh review lanes itself, fixes
+  worker implements, launches three read-only Grok 4.6 Medium review lanes itself, fixes
   confirmed findings itself, and runs the complete relevant verification suite; the host
   bootstraps and gate-checks. There is no fallback or second writer. Build may
   create local commits required or authorized by the accepted spec or target-repository

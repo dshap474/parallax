@@ -28,7 +28,7 @@ version_of() {
 claude_version="$(version_of "$PLX_CLAUDE/.claude-plugin/plugin.json")"
 codex_version="$(version_of "$PLX_CODEX/.codex-plugin/plugin.json")"
 market_version="$(version_of "$PLX_ROOT/.claude-plugin/marketplace.json")"
-if [ "$claude_version" = "0.5.21" ] && [ "$claude_version" = "$codex_version" ] &&
+if [ "$claude_version" = "0.5.22" ] && [ "$claude_version" = "$codex_version" ] &&
    [ "$claude_version" = "$market_version" ] &&
    grep -qx "v$claude_version" "$PLX_ROOT/README.md" &&
    grep -qx "Status: v$claude_version" "$PLX_ROOT/docs/SPEC.md"; then
@@ -129,9 +129,7 @@ fi
 passthrough_overrides_ok=1
 for skill in \
   "$PLX_CLAUDE/skills/codex/SKILL.md" \
-  "$PLX_CLAUDE/skills/grok/SKILL.md" \
-  "$PLX_CODEX/skills/claude/SKILL.md" \
-  "$PLX_CODEX/skills/grok/SKILL.md"; do
+  "$PLX_CODEX/skills/claude/SKILL.md"; do
   grep -Fq "An explicit user model or effort always replaces" "$skill" ||
     passthrough_overrides_ok=0
   grep -Fq -- "--model <model> --effort <effort>" "$skill" ||
@@ -140,8 +138,20 @@ for skill in \
   grep -Fq "silently replace an explicit value" "$skill" ||
     passthrough_overrides_ok=0
 done
+for skill in \
+  "$PLX_CLAUDE/skills/grok/SKILL.md" \
+  "$PLX_CODEX/skills/grok/SKILL.md"; do
+  grep -Fq "An explicit user model always replaces" "$skill" ||
+    passthrough_overrides_ok=0
+  grep -Fq 'default for models other than `grok-4.6`' "$skill" ||
+    passthrough_overrides_ok=0
+  grep -Fq "pinning Grok 4.6 to medium" "$skill" ||
+    passthrough_overrides_ok=0
+  grep -Fq -- "--model <model> --effort <effort>" "$skill" ||
+    passthrough_overrides_ok=0
+done
 if [ "$passthrough_overrides_ok" -eq 1 ]; then
-  _pass "single-engine passthroughs preserve explicit model and effort overrides"
+  _pass "single-engine passthroughs preserve overrides with Grok 4.6 fixed at medium"
 else
   _fail "single-engine passthrough override contract drift"
 fi
@@ -206,7 +216,7 @@ fi
 kiss_contract_ok=1
 for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   skill="$package/skills/kiss/SKILL.md"
-  grep -Fq 'default is four `grok-4.6` lanes at `high`' "$skill" || kiss_contract_ok=0
+  grep -Fq 'default is four `grok-4.6` lanes at `medium`' "$skill" || kiss_contract_ok=0
   grep -Fq 'Run exactly these read-only roles' "$skill" || kiss_contract_ok=0
   grep -Fq 'Do not create repository runtime state' "$skill" || kiss_contract_ok=0
   grep -Fq -- '--model <model>' "$skill" || kiss_contract_ok=0
@@ -216,7 +226,7 @@ for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   done
 done
 if [ "$kiss_contract_ok" -eq 1 ]; then
-  _pass "KISS keeps four Grok 4.6 High dimensions and host synthesis"
+  _pass "KISS keeps four Grok 4.6 Medium dimensions and host synthesis"
 else
   _fail "KISS fixed-shape contract drift"
 fi
@@ -235,7 +245,7 @@ for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   grep -Fq 'do not scale a direct' "$skill" || review_contract_ok=0
   grep -Fq 'with all Grok lanes' "$skill" || review_contract_ok=0
   grep -Fq 'default engine for all three' "$skill" || review_contract_ok=0
-  grep -Fq '(grok-4.6 xhigh) · fixes: host' "$skill" || review_contract_ok=0
+  grep -Fq '(grok-4.6 medium) · fixes: host' "$skill" || review_contract_ok=0
   grep -Fq -- '--model <model> --effort <effort>' "$skill" || review_contract_ok=0
   grep -Fq 'reviewer-correctness' "$skill" || review_contract_ok=0
   grep -Fq 'reviewer-cleanup' "$skill" || review_contract_ok=0
@@ -298,7 +308,7 @@ for host in claude codex; do
   grep -Fq 'reviewer-cleanup' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq 'reviewer-structural' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq 'reviewer-security' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  [ "$(grep -Fc -- '--model grok-4.6 --effort xhigh' "$package/skills/build/SKILL.md")" -eq 3 ] || parity_contract_ok=0
+  [ "$(grep -Fc -- '--model grok-4.6 --effort medium' "$package/skills/build/SKILL.md")" -eq 3 ] || parity_contract_ok=0
   grep -Fq 'complete relevant repository verification suite' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq -- '--report-file <tmp>/report.md' "$package/skills/build/SKILL.md" || parity_contract_ok=0
   grep -Fq "target repository's instructions and the accepted spec govern local commits" \
@@ -330,8 +340,8 @@ for host in claude codex; do
   grep -Fq 'reviewer-security' "$package/skills/review/SKILL.md" || parity_contract_ok=0
   grep -Fq 'Security: not run' "$package/skills/review/SKILL.md" || parity_contract_ok=0
   grep -Fq 'with all Grok lanes' "$package/skills/review/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'Grok `grok-4.6` at `xhigh`' "$package/skills/review/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'default is four `grok-4.6` lanes at `high`' "$package/skills/kiss/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'Grok `grok-4.6` at `medium`' "$package/skills/review/SKILL.md" || parity_contract_ok=0
+  grep -Fq 'default is four `grok-4.6` lanes at `medium`' "$package/skills/kiss/SKILL.md" || parity_contract_ok=0
   grep -Fq 'Understand the work first' "$package/skills/kiss/SKILL.md" || parity_contract_ok=0
   grep -Fq 'up to **3 questions per round**' "$package/skills/goal-spec/SKILL.md" || parity_contract_ok=0
   grep -Fq 'tool is not' "$package/skills/goal-spec/SKILL.md" || parity_contract_ok=0

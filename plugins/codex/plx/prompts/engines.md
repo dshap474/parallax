@@ -45,15 +45,14 @@ open with the section header the rubric expects:
 | --- | --- | --- |
 | gpt-5.6-sol | `--engine codex` (medium effort by default) | Claude-host plan/review judgment and `dev` implementation fallback |
 | gpt-5.6-terra | `--engine codex --model gpt-5.6-terra --effort low` | doc-lookup web research lanes |
-| grok-4.6 | `--engine grok` (medium effort by default) | `dev` implementation; standalone Build review lanes (launched by the build worker) use `xhigh` |
+| grok-4.6 | `--engine grok` (always medium effort) | `dev` implementation and Grok review lanes |
 | opus-4.8 | `--engine claude` | planning, review, or taste-heavy judgment when selected by the host config |
 | host orchestrator | you — never delegated | plan authoring, standalone Build bootstrap and gate-check, review synthesis, targeted fixes, and final gate |
 
 Models in the host package config are defaults, not restrictions. When the user
-explicitly requests a model or effort, pass that exact value to the selected engine;
-never silently substitute a configured default. Standalone plan critics otherwise
-resolve from the host package config, and the loaded skill defines their model and
-effort.
+explicitly requests a model or effort, pass that exact value to the selected engine
+except that `grok-4.6` always uses `medium`. Standalone plan critics otherwise resolve
+from the host package config, and the loaded skill defines their model and effort.
 
 How to apply:
 
@@ -83,16 +82,16 @@ How to apply:
   context; a fix lane plus a verification pass of that lane's diff is wasted steps and
   compute. Fix only after every lane has returned; a build-sized remedy is not a
   targeted fix — send it back to a writer lane.
-- **Effort**: Codex and general Grok work default to `medium`; Claude defaults to `high`. Escalate
-  only for concrete complexity or risk. Reserve Codex `xhigh` for cross-file contracts,
-  concurrency, data-integrity or money paths, wide refactors, and standalone plan
-  critics. Grok 4.6 supports `low|medium|high|xhigh`.
-- **Standalone Review** → exactly three read-only Grok `xhigh` dimensions by default,
+- **Effort**: Codex and Grok models other than 4.6 default to `medium`; Claude defaults
+  to `high`. Grok 4.6 is fixed at `medium`. Escalate other models only for concrete
+  complexity or risk. Reserve Codex `xhigh` for cross-file contracts, concurrency,
+  data-integrity or money paths, wide refactors, and standalone plan critics.
+- **Standalone Review** → exactly three read-only Grok 4.6 `medium` dimensions by default,
   plus security when triggered.
-- **Standalone Build review** → exactly three read-only Grok `xhigh` dimensions by
+- **Standalone Build review** → exactly three read-only Grok 4.6 `medium` dimensions by
   default, plus security when triggered — launched by the build worker itself through
   the packaged wrapper, not by the host.
-- **KISS** → exactly four read-only Grok `high` dimensions: reuse, simplification,
+- **KISS** → exactly four read-only Grok 4.6 `medium` dimensions: reuse, simplification,
   efficiency, and altitude. The current request may replace all lanes with one engine.
   The host synthesizes and applies the smallest safe improvements to a draft or code.
 - **Doc-lookup research → Terra low.** When the task is finding official documentation
@@ -105,7 +104,7 @@ How to apply:
   accepted spec, a Codex host delegates to one fresh `gpt-5.6-sol` `high` Codex
   `build-worker` lane; a Claude host delegates to one fresh `opus` `medium` Claude
   `build-worker` lane (explicit current-message overrides win). That worker implements,
-  launches the three core Grok review dimensions itself, validates and fixes confirmed
+  launches the three core Grok 4.6 Medium review dimensions itself, validates and fixes confirmed
   findings itself in one bounded round, and executes the complete relevant verification
   suite. The host only bootstraps, gate-checks the diff and report, records the trace, and
   reports. There is no fallback or second writer. This one worker receives explicit full
@@ -141,7 +140,7 @@ part of the larger end-to-end run.
 
 The standalone Build skill does not use this sizing ladder. Its ownership shape is
 fixed: an accepted spec, one fresh same-host build worker at the package-specific model
-above that implements, launches three read-only Grok `xhigh` review lanes (plus security
+above that implements, launches three read-only Grok 4.6 `medium` review lanes (plus security
 when triggered), applies confirmed fixes, and runs the complete relevant verification
 suite; the host bootstraps and gate-checks. `dev` remains
 self-contained and does not invoke standalone Build.
@@ -173,7 +172,8 @@ consume it later. A spec doc for a one-shot task is overhead, not rigor.
   don't pull bulk content into your own window.
 - **Grok may require narrowly scoped host approval** for network or keychain access;
   Grok's own kernel sandbox still confines it. The wrapper defaults the model to
-  `grok-4.6` and effort to `medium`; explicit values pass through to Grok. A Grok writer
+  `grok-4.6` and effort to `medium`; explicit values pass through for other Grok models,
+  while Grok 4.6 remains pinned to medium. A Grok writer
   must pass `plx-preflight --optional-grok --grok-mode rw` (or `--require-grok` for an
   explicit selection) before mutation; the workspace probe runs against a disposable
   directory rather than the target repository.

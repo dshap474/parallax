@@ -26,7 +26,7 @@ The headline case: Codex reviewing Claude-authored code found a truthiness bug i
 
 ## Takeaway
 
-With a strong writer, the default `dev` pipeline is enough for ordinary work. For broader risk, ambiguity, or high-stakes changes, escalate per `prompts/engines.md`: add a second reviewer engine per dimension and raise effort to `xhigh` — the config is a default, not a limit.
+With a strong writer, the default `dev` pipeline is enough for ordinary work. For broader risk, ambiguity, or high-stakes changes, escalate per `prompts/engines.md`: add a second reviewer engine per dimension and raise effort to `xhigh` where supported — Grok 4.6 remains fixed at medium — because the config is a default, not a limit.
 
 ## Caveats
 

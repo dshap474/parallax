@@ -7,7 +7,7 @@ set -euo pipefail
 #            --ephemeral, sandbox read-only | workspace-write; the standalone
 #            Build writer may explicitly request danger-full-access so it can
 #            write repository Git metadata and create required local commits
-#   grok   : grok-4.6, effort medium by default,
+#   grok   : grok-4.6, effort always medium,
 #            kernel sandbox read-only | workspace (Seatbelt/Landlock),
 #            bypassPermissions (required for headless completion; the kernel
 #            sandbox — not the permission mode — is the safety boundary)
@@ -51,8 +51,9 @@ Flags:
   --model <m>           codex: default gpt-5.6-sol · claude: default opus ·
                         grok: default grok-4.6
   --effort <e>          codex: default medium · claude: default high ·
-                        grok: default medium
-                        Explicit values pass through to the selected engine.
+                        grok-4.6: always medium · other Grok models: default medium
+                        Explicit values pass through except that grok-4.6 is pinned
+                        to medium.
   --stdout              print the final message to stdout; temp files auto-cleaned
   --out <f> --log <f>   instead of --stdout: write final message / full log to files
   --print-rubric <n>    print the named rubric (e.g. reviewer-correctness, engines)
@@ -207,6 +208,11 @@ else
   [[ -n "$MODEL" ]] || MODEL="opus"
   [[ -n "$EFFORT" ]] || EFFORT="high"
 fi
+
+# Grok 4.6 is tuned and validated only at medium reasoning in Parallax. Keep
+# this invariant at the execution boundary so every pipeline and passthrough
+# gets the same setting, including callers that request another effort.
+[[ "$MODEL" == "grok-4.6" ]] && EFFORT="medium"
 
 RUBRIC_FILE=""
 if [[ -n "$RUBRIC" ]]; then

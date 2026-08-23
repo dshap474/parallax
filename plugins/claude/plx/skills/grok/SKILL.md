@@ -1,6 +1,6 @@
 ---
 name: grok
-description: Single-engine Grok passthrough with overridable model and effort defaults, read-only for questions/plans and write-capable only for explicit implementation requests. No multi-model review pipeline.
+description: Single-engine Grok passthrough with overridable model and effort defaults except Grok 4.6 always uses medium, read-only for questions/plans and write-capable only for explicit implementation requests. No multi-model review pipeline.
 argument-hint: "<question, coding task, or plan request>"
 disable-model-invocation: true
 user-invocable: true
@@ -15,14 +15,15 @@ Run the user's request through **Grok only** — no Parallax review pipeline, no
 Resolve the model and effort from the user's request before writing the brief:
 
 - Defaults: `model=grok-4.6`, `effort=medium`.
-- An explicit user model or effort always replaces that setting's default. Natural
-  wording is enough: `ask grok-composer-2.5-fast low for <task>`, `use grok-4.6 at
-  high`, and `model=grok-4.6 effort=medium` all set real launch flags.
+- An explicit user model always replaces the default. An explicit effort replaces the
+  default for models other than `grok-4.6`; Grok 4.6 always resolves to `medium`.
+  Natural wording is enough: `ask grok-composer-2.5-fast low for <task>` and
+  `model=grok-4.6 effort=medium` both set real launch flags.
 - Treat `reasoning`, `reasoning level`, and `effort` as names for the same launch
   setting.
-- Do not infer an override from model names discussed only as task content. Do not
-  normalize, forbid, or silently replace an explicit value. If Grok rejects it,
-  surface that error.
+- Do not infer an override from model names discussed only as task content. Apart from
+  pinning Grok 4.6 to medium, do not normalize, forbid, or silently replace an explicit
+  value. If Grok rejects it, surface that error.
 
 Always pass both resolved values as `--model <model> --effort <effort>`.
 

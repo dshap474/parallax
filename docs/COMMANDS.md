@@ -5,13 +5,13 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Capability | Claude Code | Codex | Behavior |
 | --- | --- | --- | --- |
 | Plan | `/plx:plan` | `$plx:plan` | Host authors; implementation and system critics red-team; no code |
-| Build | `/plx:build` | `$plx:build` | One fresh same-host build worker implements an accepted spec → runs Grok 4.6 XHigh reviews → fixes → full relevant verification; host bootstraps and gate-checks |
-| Review | `/plx:review` | `$plx:review` | Three Grok 4.6 XHigh review lanes by default, synthesis, and one host-applied fix round |
-| KISS | `/plx:kiss` | `$plx:kiss` | Four Grok 4.6 High lanes simplify a plan or code; the host applies safe improvements |
+| Build | `/plx:build` | `$plx:build` | One fresh same-host build worker implements an accepted spec → runs Grok 4.6 Medium reviews → fixes → full relevant verification; host bootstraps and gate-checks |
+| Review | `/plx:review` | `$plx:review` | Three Grok 4.6 Medium review lanes by default, synthesis, and one host-applied fix round |
+| KISS | `/plx:kiss` | `$plx:kiss` | Four Grok 4.6 Medium lanes simplify a plan or code; the host applies safe improvements |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
 | Goal spec | `/plx:goal-spec` | `$plx:goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Claude may persist Codex context |
-| Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; defaults to Grok 4.6 at medium effort |
+| Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; Grok 4.6 always uses medium effort |
 | Init | `/plx:init` | `$plx:init` | Prime the orchestrator: delegation posture + plx skill map; no repository writes |
 | Agents memory | `/plx:agents-memory` | `$plx:agents-memory` | Bootstrap root `AGENTS.md`, `CLAUDE.md`, and `.project/` policy |
 | Unknowns | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` | Host-only blindspot and comprehension work |
@@ -24,14 +24,15 @@ likely multi-turn repository rediscovery justifies a persistent app-server threa
 resume requires a known thread ID, and every turn derives read or write access anew.
 All single-engine passthroughs accept explicit model and effort requests in natural
 language (for example, `$plx:claude ask fable medium for <task>`). The host converts
-those settings into engine launch flags; omitted settings retain their defaults.
+those settings into engine launch flags; omitted settings retain their defaults. Grok
+4.6 is the one model-specific exception: its reasoning is always normalized to medium.
 
 Configured pipelines read their package-local `config/parallax.yaml`. Config is the
 floor shape, not a limit: the host may scale lanes down or up and must declare the
 chosen shape before launching. Standalone Build always uses one fresh same-host build
 worker that owns implementation, Grok review, fixes, and verification: Claude Opus Medium
 or Codex `gpt-5.6-sol` High, with no fallback or second writer. KISS
-always runs reuse, simplification, efficiency, and altitude once each on Grok 4.6 High. A
+always runs reuse, simplification, efficiency, and altitude once each on Grok 4.6 Medium. A
 current-message instruction may replace the engine for the whole round.
 Standalone Build may create local commits when its accepted spec or the target
 repository's instructions explicitly require or authorize them. It stages only

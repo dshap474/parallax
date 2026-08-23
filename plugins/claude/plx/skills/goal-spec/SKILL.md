@@ -124,7 +124,7 @@ from the config and write one neutral `<tmp>/critic-brief.md`:
 ```
 
 The approved lock overrides conflicting original wording; together they are the task
-contract. Resolve effort per engine before launch: Grok uses `high`; Codex and Claude use
+contract. Resolve effort per engine before launch: Grok uses `medium`; Codex and Claude use
 `xhigh`. Launch both dimensions **in parallel** (background Bash), one lane per configured
 engine:
 

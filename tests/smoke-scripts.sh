@@ -89,7 +89,7 @@ else
 fi
 rm "$XDG_CONFIG_HOME/parallax/env"
 
-_head "plx-engine defaults Grok settings and passes explicit overrides"
+_head "plx-engine pins Grok 4.6 to medium and passes other model overrides"
 fake_bin="$WORK/fake-bin"
 fake_args="$WORK/grok-args.txt"
 fake_prompt="$WORK/grok-prompt.md"
@@ -122,10 +122,10 @@ for effort in low high xhigh; do
     --prompt-file "$fake_prompt" --model grok-4.6 --effort "$effort" \
     --out "$fake_out" --log "$fake_log" >/dev/null
   rc=$?
-  if [ "$rc" -eq 0 ] && grep -qx "$effort" "$fake_args"; then
-    _pass "Grok accepts explicit $effort effort"
+  if [ "$rc" -eq 0 ] && grep -qx "medium" "$fake_args"; then
+    _pass "Grok 4.6 normalizes explicit $effort effort to medium"
   else
-    _fail "Grok failed explicit $effort effort"
+    _fail "Grok 4.6 did not normalize explicit $effort effort to medium"
   fi
 done
 assert_contains "workspace" "$fake_args" "Grok rw uses workspace sandbox"

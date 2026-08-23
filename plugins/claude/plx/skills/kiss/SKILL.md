@@ -43,9 +43,10 @@ correctness, security, validation, data safety, accessibility, error handling, o
 | `kiss-efficiency` | `kiss-efficiency` |
 | `kiss-altitude` | `kiss-altitude` |
 
-The default is four `grok-4.6` lanes at `high`. `with all Codex|Claude|Grok lanes`
-replaces the engine for all four. Honor an explicit model or effort; otherwise use
-Grok `high`, Claude `high`, or Codex `xhigh`. Preflight each selected engine once. Write the chosen
+The default is four `grok-4.6` lanes at `medium`. `with all Codex|Claude|Grok lanes`
+replaces the engine for all four. Honor an explicit model or effort, except that
+`grok-4.6` always uses `medium`; otherwise use Grok `medium`, Claude `high`, or Codex
+`xhigh`. Preflight each selected engine once. Write the chosen
 shape to `<tmp>/shape.txt` before launch.
 
 Write one neutral `<tmp>/brief.md` beginning with `## KISS brief`, followed by the target

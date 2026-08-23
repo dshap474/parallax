@@ -1,6 +1,6 @@
 ---
 name: build
-description: Delegate an accepted spec to one fresh Claude Opus Medium build worker that implements it, runs three read-only Grok 4.6 XHigh review lanes itself, fixes confirmed findings itself, runs the complete relevant verification suite, and reports; the host bootstraps, gate-checks, and records.
+description: Delegate an accepted spec to one fresh Claude Opus Medium build worker that implements it, runs three read-only Grok 4.6 Medium review lanes itself, fixes confirmed findings itself, runs the complete relevant verification suite, and reports; the host bootstraps, gate-checks, and records.
 argument-hint: "<accepted spec path, or omit when an accepted spec is already in this conversation>"
 ---
 
@@ -46,7 +46,7 @@ commands; the worker brief names them. Do not weaken or silently rewrite the spe
   `<tmp>/diff-unstaged-baseline.patch`. Preserve all pre-existing work and never
   attribute it to this build.
 - Write the accepted spec verbatim to `<tmp>/task.md`.
-- Write `Implementation: 1× fresh claude (opus medium) owns implement · review: 3×1 (grok-4.6 xhigh, worker-run) · fixes: worker · verification: full relevant suite (worker-run) · host: bootstrap + gate`
+- Write `Implementation: 1× fresh claude (opus medium) owns implement · review: 3×1 (grok-4.6 medium, worker-run) · fixes: worker · verification: full relevant suite (worker-run) · host: bootstrap + gate`
   to `<tmp>/shape.txt` and declare that shape before mutation.
 - Run `plx-preflight --repo <repo> --require-claude --require-grok` before mutation. If
   either required engine is unavailable, record an aborted run and stop without
@@ -104,15 +104,15 @@ followed by the run context the worker needs:
 - Review lanes (launch all three in parallel after implementation):
 
 <plx-engine> --engine grok --mode ro --repo <repo> \
-  --prompt-file <tmp>/review-brief.md --rubric reviewer-correctness --model grok-4.6 --effort xhigh \
+  --prompt-file <tmp>/review-brief.md --rubric reviewer-correctness --model grok-4.6 --effort medium \
   --out <tmp>/grok-correctness.md --log <tmp>/grok-correctness.log
 
 <plx-engine> --engine grok --mode ro --repo <repo> \
-  --prompt-file <tmp>/review-brief.md --rubric reviewer-cleanup --model grok-4.6 --effort xhigh \
+  --prompt-file <tmp>/review-brief.md --rubric reviewer-cleanup --model grok-4.6 --effort medium \
   --out <tmp>/grok-cleanup.md --log <tmp>/grok-cleanup.log
 
 <plx-engine> --engine grok --mode ro --repo <repo> \
-  --prompt-file <tmp>/review-brief.md --rubric reviewer-structural --model grok-4.6 --effort xhigh \
+  --prompt-file <tmp>/review-brief.md --rubric reviewer-structural --model grok-4.6 --effort medium \
   --out <tmp>/grok-structural.md --log <tmp>/grok-structural.log
 
   When the security lane is required, also run `--rubric reviewer-security` with the
@@ -120,7 +120,8 @@ followed by the run context the worker needs:
 ```
 
 Honor an explicit whole-round review model or effort override by editing those lane
-commands; otherwise keep the standalone Build review at `grok-4.6` and `xhigh`.
+commands, except that `grok-4.6` always stays at `medium`. Otherwise keep the standalone
+Build review at `grok-4.6` and `medium`.
 
 Launch exactly one fresh Claude build worker in a retained/background shell session:
 

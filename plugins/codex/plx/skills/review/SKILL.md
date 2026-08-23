@@ -46,8 +46,8 @@ Honor an explicit whole-round engine substitution in the current request:
 - `with all Codex lanes` → all selected roles use Codex.
 
 Mixed per-role routing is not part of this skill. Apply an explicit model or effort
-override to every selected lane. Otherwise use Grok `grok-4.6` at `xhigh`, Claude
-`high`, or Codex `xhigh`.
+override to every selected lane, except that `grok-4.6` always uses `medium`.
+Otherwise use Grok `grok-4.6` at `medium`, Claude `high`, or Codex `xhigh`.
 
 Also run `reviewer-security` on the selected engine when the user requests security
 review or scope touches auth, permissions, secrets/config, shell or subprocess
@@ -55,7 +55,7 @@ execution, sandboxing, network clients, dependencies/lockfiles, CI workflows,
 deserialization, or another trust boundary. Otherwise report `Security: not run`.
 
 Declare the shape in one line before launching (e.g. `Sizing: review 3×1
-(grok-4.6 xhigh) · fixes: host`).
+(grok-4.6 medium) · fixes: host`).
 
 Write the same sizing line to `<tmp>/shape.txt`. Keep all lane prompt files directly in
 `<tmp>`; its `plx-review.<suffix>` basename mechanically groups their captured lanes.
@@ -95,7 +95,7 @@ interruption leaves the run incomplete. Then run `<plugin-root>/bin/plx-prefligh
    Always request narrowly scoped host approval for Claude preflight and lanes; Codex's
    host sandbox can hide Claude's OAuth/keychain while Claude safe mode remains active.
    Grok lanes may need narrowly scoped host approval when network or keychain access is
-   blocked. The wrapper defaults to `grok-4.6`; direct Grok review passes `xhigh`.
+   blocked. The wrapper defaults to `grok-4.6`; direct Grok review passes `medium`.
    Exit codes:
    0 ok · 1 engine failure (read
    the log; if other lanes succeeded, proceed with the survivors and say so) · 2 your

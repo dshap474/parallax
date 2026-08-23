@@ -28,12 +28,13 @@ security, money movement, permissions, or production data.
 
 Follow the active engine policy and tune to the task:
 
-- effort / reasoning: GPT-5.6 Sol and Grok 4.6 start at `medium`; Claude starts at
-  its configured default. Use `high` or `xhigh` only for concrete complexity, risk,
-  or measured capability need; Grok does not support `xhigh`
+- effort / reasoning: GPT-5.6 Sol starts at `medium`, Grok 4.6 stays at `medium`, and
+  Claude starts at its configured default. Use `high` or `xhigh` on other models only
+  for concrete complexity, risk, or measured capability need
 - thinking / verbosity: adaptive; preserve evidence, caveats, decisions, and verification
 
-Escalate effort only when task complexity justifies the extra latency and cost.
+Escalate effort on models other than Grok 4.6 only when task complexity justifies the
+extra latency and cost.
 
 ---
 

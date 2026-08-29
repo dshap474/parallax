@@ -26,6 +26,18 @@ model availability, and the selected sandbox profile. Grok writer selection uses
 `--grok-mode rw`, which probes its workspace sandbox against a disposable directory
 rather than the target repository.
 
+Codex runs ephemerally with `approval_policy=never` and a selected sandbox; it never uses
+the combined approvals-and-sandbox bypass. Claude runs in safe mode with ambient plugins,
+hooks, MCP servers, and automatic project customization disabled, so `plx-engine` lists
+the repository guidance files the lane must apply. Grok's `bypassPermissions` is an
+unattended approval mode, separate from its read-only or workspace filesystem sandbox.
+
+Normal lanes remain read-only or workspace-constrained. The one standalone Build writer
+uses the explicit full-access transport needed for repository Git metadata and packaged
+review launches: Codex `danger-full-access`, or Claude's sandbox-disabled permission
+bypass. The wrapper rejects that mode outside an `rw` `worker`/`build-worker` lane, and
+the transport does not grant publication or external-system authority.
+
 Long engine calls should run in a retained/background shell session. Grok may require
 narrowly scoped host approval for network or keychain access; its own kernel sandbox
 remains the file-confinement boundary. A sandbox-initialization failure is named

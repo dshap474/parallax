@@ -16,8 +16,9 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Agents memory | `/plx:agents-memory` | `$plx:agents-memory` | Bootstrap root `AGENTS.md`, `CLAUDE.md`, and `.project/` policy |
 | Unknowns | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` | Host-only blindspot and comprehension work |
 
-Codex skills are explicit-only (`allow_implicit_invocation: false`) so an expensive
-pipeline never starts merely because a prompt resembles its description.
+All skills are explicit-only so an expensive pipeline never starts merely because a
+prompt resembles its description. Codex uses `allow_implicit_invocation: false`; Claude
+uses `disable-model-invocation: true` with `user-invocable: true`.
 
 `/plx:codex` uses the isolated one-shot engine path unless explicit continuation or
 likely multi-turn repository rediscovery justifies a persistent app-server thread. A
@@ -40,6 +41,11 @@ Build-owned work and reports every commit. Other skills retain their documented 
 policies. No skill pushes, opens a pull request, merges, tags, releases, deploys, or
 publishes externally without separate authority; target-local artifacts explicitly
 required by an accepted spec are allowed.
+
+The standalone Build worker is the only full-access engine lane. Codex uses
+`danger-full-access`; Claude disables its sandbox and uses its explicit permission
+bypass. Review lanes and `dev` writers keep their configured read-only or workspace
+sandbox, and full access never expands the accepted task or publication authority.
 
 ## Runtime tools (package-local `bin/`)
 

@@ -55,6 +55,12 @@ for skill in "$PLX_CLAUDE"/skills/*/SKILL.md; do
   else
     _fail "Claude $name repeats or changes the plugin namespace: $declared_name"
   fi
+  if grep -qx 'disable-model-invocation: true' "$skill" &&
+     grep -qx 'user-invocable: true' "$skill"; then
+    _pass "Claude $name explicit-only"
+  else
+    _fail "Claude $name missing explicit-only metadata"
+  fi
 done
 for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
   name="$(basename "$(dirname "$skill")")"

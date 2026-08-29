@@ -1,16 +1,15 @@
 ---
 name: build
-description: Delegate an accepted spec to one fresh Codex gpt-5.6-sol High build worker that implements it, runs three read-only Grok 4.6 Medium review lanes itself, fixes confirmed findings itself, runs the complete relevant verification suite, and reports; the host bootstraps, gate-checks, and records.
+description: Build an accepted spec through one fresh Codex gpt-5.6-sol High worker. The worker owns implementation, Grok review, confirmed fixes, and full relevant verification; the host bootstraps and gate-checks.
 argument-hint: "<accepted spec path, or omit when an accepted spec is already in this conversation>"
 ---
 
 # $plx:build — delegate implement → review → fix → verify to one worker
 
-You are the Parallax orchestrator (Codex). Use this skill only after the user has an
-accepted implementation spec. Push the whole build down into one fresh Codex build
-worker: it implements the spec, runs the independent Grok review itself, fixes confirmed
-findings itself, runs the complete relevant verification suite, and returns a report. You
-bootstrap the run, gate-check the result, record the trace, and report.
+You are the Parallax orchestrator (Codex). The outcome is a faithfully implemented and
+verified accepted spec. Delegate it once to a fresh Codex worker that owns implementation,
+Grok review, confirmed fixes, and the complete relevant verification suite. You only
+bootstrap, gate-check, record, and report.
 
 This standalone workflow is separate from `$plx:dev`. It always launches exactly one
 fresh same-host worker lane: Codex `gpt-5.6-sol` at `high` by default. An explicit

@@ -79,19 +79,31 @@ It complements rather than replaces correctness review.
 
 Pipeline lanes and default passthroughs use `plx-engine`. It pins:
 
-- Codex: `gpt-5.6-sol`, isolated config, ephemeral session, read-only or workspace-write;
+- Codex: `gpt-5.6-sol`, user config ignored, approval policy `never`, ephemeral session,
+  and an explicit filesystem sandbox;
 - Claude: Opus, safe mode, no session persistence, strict MCP/network isolation,
   read-only tools or repo-confined sandboxed Bash;
-- Grok: `grok-4.6` at medium reasoning, no planning/subagent/memory features, kernel
-  read-only or workspace sandbox.
+- Grok: `grok-4.6` at medium reasoning, unattended tool approval, no
+  planning/subagent/memory features, and an explicit read-only or workspace sandbox.
 
 These models are defaults, not restrictions. Explicit user-requested model and effort
 values pass through to the selected engine except that `grok-4.6` is always normalized
 to medium reasoning. The selected engine remains responsible for validating other values.
-The wrapper never uses `danger-full-access`,
-`--dangerously-bypass-approvals-and-sandbox`, or `--yolo`. Runtime briefs, logs, and
-outputs use `plx-`-prefixed temporary directories and the confined `plx-clean-temp`
-helper; Parallax creates no `.parallax/` state.
+Normal lanes use read-only or workspace-constrained execution. The one standalone Build
+writer intentionally uses full host access: Codex `danger-full-access`, or Claude with
+its sandbox disabled and `--dangerously-skip-permissions`. The wrapper accepts that mode
+only for an `rw` `worker`/`build-worker` lane. It is a transport requirement for Git
+metadata and packaged review launches, not permission to expand the accepted spec,
+repository scope, or publication authority. Review lanes remain read-only. Codex never
+uses `--dangerously-bypass-approvals-and-sandbox` or `--yolo`.
+
+Claude safe mode disables automatic project customization, so the wrapper supplies a
+deterministic list of physical source-tree `AGENTS.md`, `CLAUDE.md`, `CLAUDE.local.md`,
+and `.claude/rules/*.md` files, including ignored and untracked guidance while excluding
+common dependency/cache trees. Root guidance is repo-wide; nested guidance is
+path-scoped. Runtime briefs, logs, and outputs use
+`plx-`-prefixed temporary directories and the confined `plx-clean-temp` helper;
+Parallax creates no `.parallax/` state.
 
 ### Optional trace capture
 

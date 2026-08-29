@@ -99,7 +99,7 @@ mkdir -p "$fake_bin"
 printf '%s\n' '#!/usr/bin/env bash' \
   '# Fake Grok CLI — records argv and returns one successful headless envelope.' \
   'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
-  'printf '\''{"text":"OK","stopReason":"EndTurn","sessionId":""}\n'\''' \
+  'printf '\''{"text":"OK","stopReason":"end_turn","sessionId":""}\n'\''' \
   > "$fake_bin/grok"
 chmod +x "$fake_bin/grok"
 printf '%s\n' 'reply OK' > "$fake_prompt"
@@ -133,6 +133,27 @@ for flag in --no-auto-update --no-plan --no-subagents --no-memory --no-alt-scree
   assert_contains "$flag" "$fake_args" "Grok receives $flag"
 done
 assert_contains "read-only" "$fake_args" "Grok ro uses read-only sandbox"
+
+printf '%s\n' '#!/usr/bin/env bash' \
+  'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
+  'printf '\''{"text":"should not pass","stopReason":"cancelled","sessionId":""}\n'\''' \
+  > "$fake_bin/grok"
+chmod +x "$fake_bin/grok"
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" \
+  >/dev/null 2> "$WORK/grok-cancelled.txt"
+rc=$?
+if [ "$rc" -eq 1 ] && grep -Fq 'grok turn was cancelled' "$WORK/grok-cancelled.txt"; then
+  _pass "Grok lowercase cancelled stop reason fails closed"
+else
+  _fail "Grok lowercase cancelled stop reason expected exit 1, got $rc"
+fi
+printf '%s\n' '#!/usr/bin/env bash' \
+  'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
+  'printf '\''{"text":"OK","stopReason":"end_turn","sessionId":""}\n'\''' \
+  > "$fake_bin/grok"
+chmod +x "$fake_bin/grok"
 
 for effort in low high xhigh; do
   PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
@@ -186,6 +207,7 @@ rc=$?
 if [ "$rc" -eq 0 ]; then _pass "Codex default invocation exits 0"; else _fail "Codex default invocation exits $rc"; fi
 assert_contains "gpt-5.6-sol" "$fake_codex_args" "Codex model defaults to GPT-5.6 Sol"
 assert_contains "model_reasoning_effort=medium" "$fake_codex_args" "Codex effort defaults to medium"
+assert_contains "approval_policy=never" "$fake_codex_args" "Codex headless approval policy is explicit"
 assert_contains "workspace-write" "$fake_codex_args" "Codex rw uses workspace-write sandbox"
 
 PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
@@ -313,6 +335,12 @@ fi
 
 fake_claude_args="$WORK/claude-args.txt"
 fake_claude_prompt="$WORK/claude-prompt.md"
+mkdir -p "$REPO/ignored-guidance" "$REPO/untracked-guidance" "$REPO/.claude/rules"
+printf '%s\n' '/ignored-guidance/' >> "$REPO/.gitignore"
+printf '%s\n' '# ignored nested guidance' > "$REPO/ignored-guidance/AGENTS.md"
+printf '%s\n' '# untracked nested guidance' > "$REPO/untracked-guidance/AGENTS.md"
+ln -s AGENTS.md "$REPO/untracked-guidance/CLAUDE.md"
+printf '%s\n' '# path-scoped rule' > "$REPO/.claude/rules/review.md"
 printf '%s\n' '#!/usr/bin/env bash' \
   '# Fake Claude CLI — records argv and returns one successful response.' \
   'printf '\''%s\n'\'' "$@" > "$PLX_CLAUDE_ARGS_FILE"' \
@@ -342,6 +370,9 @@ assert_contains "Read,Grep,Glob" "$fake_claude_args" "Claude ro exposes only rea
 assert_contains '"failIfUnavailable":true' "$fake_claude_args" "Claude sandbox fails closed"
 assert_contains '"strictAllowlist":true' "$fake_claude_args" "Claude network allowlist is strict"
 assert_contains '{"mcpServers":{}}' "$fake_claude_args" "Claude receives an empty MCP configuration"
+assert_contains "ignored-guidance/AGENTS.md" "$fake_claude_prompt" "Claude sees ignored nested guidance"
+assert_contains "untracked-guidance/CLAUDE.md" "$fake_claude_prompt" "Claude sees untracked symlink guidance"
+assert_contains ".claude/rules/review.md" "$fake_claude_prompt" "Claude sees path-scoped rules"
 if grep -qx -- '--setting-sources' "$fake_claude_args"; then
   _fail "Claude loads ambient setting sources"
 else
@@ -383,6 +414,13 @@ assert_contains "--dangerously-skip-permissions" "$fake_claude_args" "Claude Bui
 assert_contains '"enabled":false' "$fake_claude_args" "Claude Build writer disables the Claude sandbox"
 assert_contains "only so this standalone Build worker can write repository Git metadata and launch its packaged review lanes" \
   "$fake_claude_prompt" "Claude full-access prompt preserves the task authority boundary"
+rm -f -- \
+  "$REPO/ignored-guidance/AGENTS.md" \
+  "$REPO/untracked-guidance/AGENTS.md" \
+  "$REPO/untracked-guidance/CLAUDE.md" \
+  "$REPO/.claude/rules/review.md"
+rmdir "$REPO/ignored-guidance" "$REPO/untracked-guidance" \
+  "$REPO/.claude/rules" "$REPO/.claude"
 
 _head "plx-clean-temp confines recursive cleanup"
 clean_target="$(mktemp -d "${TMPDIR:-/tmp}/plx-clean-smoke.XXXXXX")"
@@ -433,7 +471,7 @@ _head "plx-eval config, grouped lanes, and full trace bodies"
 printf '%s\n' '#!/usr/bin/env bash' \
   'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
   'echo TRACE_BODY >&2' \
-  'printf '\''{"text":"OK","stopReason":"EndTurn","sessionId":""}\n'\''' \
+  'printf '\''{"text":"OK","stopReason":"end_turn","sessionId":""}\n'\''' \
   > "$fake_bin/grok"
 chmod +x "$fake_bin/grok"
 
@@ -591,7 +629,7 @@ fi
 
 printf '%s\n' '#!/usr/bin/env bash' \
   'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
-  'printf '\''{"text":"OK","stopReason":"EndTurn","sessionId":""}\n'\''' \
+  'printf '\''{"text":"OK","stopReason":"end_turn","sessionId":""}\n'\''' \
   > "$fake_bin/grok"
 chmod +x "$fake_bin/grok"
 bad_db="$WORK/missing-parent/traces.db"
@@ -744,7 +782,7 @@ fi
 printf '%s\n' '#!/usr/bin/env bash' \
   '# Fake Grok CLI — records argv and returns one successful headless envelope.' \
   'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
-  'printf '\''{"text":"OK","stopReason":"EndTurn","sessionId":""}\n'\''' \
+  'printf '\''{"text":"OK","stopReason":"end_turn","sessionId":""}\n'\''' \
   > "$fake_bin/grok"
 chmod +x "$fake_bin/grok"
 PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \

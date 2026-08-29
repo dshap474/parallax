@@ -22,7 +22,8 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 ## Package contracts
 
 - Claude skill frontmatter uses the bare capability name, which Claude Code prefixes
-  with the plugin namespace and exposes as `/plx:<name>`.
+  with the plugin namespace and exposes as `/plx:<name>`; every skill is user-invocable
+  and disables model-initiated invocation.
 - Codex skill frontmatter uses the bare capability name, which the plugin namespace
   exposes as `$plx:<name>`; every skill has
   `agents/openai.yaml` with `allow_implicit_invocation: false`.
@@ -62,14 +63,23 @@ read-only; `dev` writer lanes are scoped to the target repository and one disjoi
 Plans carry original request, confirmed decisions, candidate plan, and an observable
 done condition.
 
-No skill constructs a raw external-engine command. No wrapper uses forbidden broad
-permission flags. Claude lanes ignore untrusted customization, do not persist sessions,
-and fail closed if their sandbox is unavailable. Grok sandbox startup failures receive a
-stable error marker and remain confined by the selected kernel profile. Temporary
-artifacts are removed only through the confined cleanup helper. Standalone Build follows
-the repository-governed local-commit contract above. No skill performs remote Git,
-deployment, release, or external publication without separate authority; target-local
-artifacts required by an accepted spec are allowed.
+No skill constructs a raw external-engine command. Codex lanes pin unattended approval
+explicitly and never use the approvals-and-sandbox bypass or `--yolo`. Normal lanes use
+read-only or workspace-constrained execution. The single standalone Build writer is the
+deliberate exception: an `rw` `worker`/`build-worker` Codex or Claude lane receives full
+host access for repository Git metadata and packaged review launches. That transport does
+not expand task, target, external-system, or publication authority.
+
+Claude lanes ignore ambient customization, do not persist sessions, and fail closed if
+their normal sandbox is unavailable. Because safe mode disables instruction discovery,
+the wrapper lists physical source-tree guidance, including ignored, untracked, symlinked,
+and path-scoped rule files while excluding common dependency/cache trees. Grok uses
+unattended tool approval with a separate explicit filesystem sandbox; current snake-case
+stop reasons are handled, and sandbox startup failures receive a stable error marker.
+Temporary artifacts are removed only through the confined cleanup helper. Standalone
+Build follows the repository-governed local-commit contract above. No skill performs
+remote Git, deployment, release, or external publication without separate authority;
+target-local artifacts required by an accepted spec are allowed.
 Persistent Codex access is passthrough-only and derives read or write scope for each
 turn; every pipeline lane remains isolated and ephemeral.
 
@@ -84,8 +94,8 @@ state.
 ## Acceptance
 
 `bash tests/run.sh` must validate both manifests and marketplaces, version agreement,
-eleven-skill inventories, platform frontmatter, engine polarity, KISS shape, fallback and security
-bindings, executable wrappers, rubric resolution, shared-copy agreement, fake-engine
-safety flags, cleanup confinement, optional eval
-recorder contracts, and isolated `plx-link-claude` behavior. Official Claude and Codex
-validators must also pass.
+eleven-skill inventories, explicit-only platform metadata, engine polarity, KISS shape,
+fallback and security bindings, executable wrappers, rubric resolution, shared-copy
+agreement, fake-engine safety flags and current result envelopes, cleanup confinement,
+optional eval recorder contracts, and isolated `plx-link-claude` behavior. Official
+Claude and Codex validators must also pass.

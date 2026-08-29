@@ -6,7 +6,7 @@
     {
       "name": "plx",
       "source": "./plugins/claude/plx",
-      "description": "Parallax (plx) — multi-model orchestration as a toolbox. Stage skills (plan/build/review) compose into dev; the orchestrator drives Codex, Grok, and Claude headless (no subagents), sizes every run, and auto-fixes review findings.",
+      "description": "Parallax (plx) — multi-model orchestration as a toolbox. Stage skills (plan/build/review) compose into dev; the orchestrator drives direct Codex, Grok, and Claude headless lanes without orchestration subagents, sizes every run, and fixes confirmed review findings.",
       "version": "0.5.23",
       "category": "development",
       "keywords": ["multi-model", "code-review", "orchestration", "plx"],

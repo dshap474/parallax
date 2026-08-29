@@ -20,8 +20,15 @@ in `plx-engine`. Optional evaluation provenance belongs in `plx-eval` (opt-in vi
 runtime state, hooks, telemetry services, or publishing behavior.
 
 Codex skills use plain `plx-*` names and `agents/openai.yaml` with implicit invocation
-disabled. Claude skills use `/plx:*` namespaced commands. Equivalent capability does not
-mean identical prose: preserve host-native tools and the configured review polarity.
+disabled. Claude skills use `/plx:*` namespaced commands and explicit-only frontmatter
+(`disable-model-invocation: true`, `user-invocable: true`). Equivalent capability does
+not mean identical prose: preserve host-native tools and configured review polarity.
+
+Keep full access confined to the single standalone Build worker. Codex
+`danger-full-access` and Claude's sandbox-disabled permission bypass are transport
+requirements for Git metadata and packaged review launches; they do not belong in review
+lanes or expand task/publication authority. Keep Codex's combined approvals-and-sandbox
+bypass and `--yolo` prohibited.
 
 ## Verification
 

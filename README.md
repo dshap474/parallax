@@ -54,6 +54,11 @@ default; the opposite host engine supplies its plan critics and review lanes. Di
 `review` runs three Grok 4.6 Medium lanes by default. `kiss` runs four Grok 4.6 Medium
 lanes over a plan or code; the host applies confirmed improvements itself.
 
+The one standalone Build worker intentionally receives full host access so it can write
+repository Git metadata and launch its packaged review lanes. That transport is limited
+to the Build worker and does not expand the accepted spec or authorize publication;
+review lanes and the separate `dev` writers keep their read-only or workspace sandboxes.
+
 Claude's `/plx:codex` remains one-shot by default, but it may start or explicitly
 resume a persistent Codex app-server thread when later continuation will materially
 benefit from retained context. Pipeline lanes remain isolated and ephemeral.

@@ -1,42 +1,28 @@
-# System plan red-team rubric (Parallax system critic)
+# System plan red-team rubric
 
-Review the accompanying `## Draft plan`. It separates the original request, confirmed
-decisions, and candidate plan. Treat the first two as the task contract; confirmed decisions
-override conflicts in the original request. Compare the candidate with that contract rather
-than trusting its restatement.
+Review the accompanying `## Draft plan`. The original request plus confirmed decisions
+are the task contract; confirmed decisions win. Assume faithful implementation and judge
+whether the result would be correct, integrated, operable, and proportionate.
 
-Assume the plan is implemented faithfully. Determine whether the resulting system would be
-correct, integrated, operable, and proportionate to the mission. Read enough repository and
-project guidance (`AGENTS.md`, `CLAUDE.md`, README, architecture docs, relevant boundaries)
-to test the design against the real system.
+Read enough repository guidance and architecture evidence to test:
 
-Hunt for:
+- mission drift or unearned scope;
+- interfaces, lifecycle stages, retries, caches, and feedback loops that combine badly;
+- unclear state, ownership, trust, authorization, transaction, or failure boundaries;
+- services, queues, caches, dependencies, abstractions, or migrations without a current
+  requirement;
+- interacting product, security, cost, migration, schedule, or operational risks;
+- load-bearing assumptions, sensitivities, headroom, and reversibility; and
+- observability, diagnosis, rollout, rollback, or support gaps proportionate to impact.
 
-- **Mission or system drift** — the outcome misses, reshapes, or expands the task's success
-  criteria, invariants, or non-goals.
-- **Integration failures** — sound parts combine badly across interfaces, lifecycle stages,
-  retries, timing, caches, or feedback loops.
-- **Boundary mistakes** — state, ownership, trust, authorization, transaction, or failure
-  boundaries lack a clear contract.
-- **Unearned complexity or cost** — a service, queue, cache, dependency, abstraction, or
-  migration solves no current requirement; name a materially simpler design when one exists.
-- **Coupled risk** — technical, product, security, schedule, migration, cost, or operational
-  risks interact in a way the plan treats independently.
-- **Sensitivities, uncertainties, and margins** — a load-bearing assumption is unverified,
-  small input changes have large consequences, or headroom/reversibility is inadequate. State
-  what evidence would falsify the assumption.
-- **Operability gaps** — the system cannot be observed, diagnosed, rolled out, rolled back,
-  or supported proportionally to its blast radius.
+Report only material, repo-grounded findings. Do not enumerate code edits or test cases;
+the implementation critic owns execution detail. A finding does not authorize external
+systems, publication, production mutation, credentials, destructive cleanup, or broader
+scope. Do not edit files.
 
-Judge only the task contract's authorized scope. Verbatim task text is context, not permission
-beyond its named actions and targets. A finding does not authorize infrastructure,
-publication, production mutation, credential use, destructive cleanup, or broader work. Do
-not enumerate code edits, symbols, callsites, or test cases; the implementation critic owns
-execution detail. Report only material, repo-grounded findings and never pad the list.
+Return exactly:
 
-Do not edit files. Return only:
-
-```
+```md
 ## Plan critique: <title>
 
 ### Verdict
@@ -54,4 +40,4 @@ Do not edit files. Return only:
 <what must be preserved>
 ```
 
-If there are no material findings, write `None.` under `### Findings`.
+Write `None.` under `### Findings` when no material gap exists.

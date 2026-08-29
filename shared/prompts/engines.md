@@ -1,201 +1,136 @@
-# Engines — the Parallax toolbox and how to choose
+# Engines — Parallax routing guide
 
-Parallax gives the orchestrator **tools, not a script**: three coding engines, each
-drivable headless through one wrapper, plus a set of lane rubrics. You decide which
-engines to use for which work, and how much machinery a task deserves; this doc carries
-the judgment.
+Parallax gives the host three headless engines and focused lane rubrics. Choose the
+smallest shape that can deliver a verified outcome. Skills define workflow ownership;
+this guide defines routing, safety, and scaling.
 
-## The toolbox
+## Engine API
 
-One package-local wrapper, shown below as `<plx-engine>`. Each host skill defines how
-to resolve it: Claude Code may invoke the packaged tool from `PATH`, while Codex uses
-the installed plugin root explicitly. Follow the loaded skill's invocation form.
+Use the package-local wrapper exactly as the loaded skill specifies:
 
-```
+```text
 <plx-engine> --engine codex|grok|claude --mode ro|rw --repo <abs-path> \
-  --prompt-file <brief> [--rubric <name>] [--effort <e>] [--model <m>] \
-  (--stdout | --out <f> --log <f>)
+  --prompt-file <brief> [--rubric <name>] [--model <model>] [--effort <level>] \
+  (--stdout | --out <file> --log <file>)
 ```
 
-Safety is pinned inside the wrapper per engine (sandboxes, config isolation); callers
-never touch raw engine CLIs. Run `plx-engine --help` for the full contract.
+Never hand-build raw engine commands or paste rubric text into briefs. The wrapper pins
+non-interactive execution, approval policy, sandbox selection, and session behavior.
+Codex ignores user config but may still load other documented configuration layers.
 
-Rubrics live beside this file and are injected by name — the caller's brief file must
-open with the section header the rubric expects:
+Write briefs in plain language with only what the lane needs:
 
-| `--rubric`            | lane                          | brief opens with    |
-| --------------------- | ----------------------------- | ------------------- |
-| `reviewer-correctness`| behavioral-defect review      | `## Review brief`   |
-| `reviewer-cleanup`    | reuse/simplification review   | `## Review brief`   |
-| `reviewer-structural` | maintainability review        | `## Review brief`   |
-| `reviewer-security`   | risk-triggered security review| `## Review brief`   |
-| `kiss-reuse`          | existing-mechanism reuse      | `## KISS brief`     |
-| `kiss-simplification` | complexity reduction          | `## KISS brief`     |
-| `kiss-efficiency`     | unnecessary-work review       | `## KISS brief`     |
-| `kiss-altitude`       | implementation-depth review   | `## KISS brief`     |
-| `planner`             | architecture consulting       | `## Task brief`     |
-| `plan-critic-implementation` | checkout/execution red-team | `## Draft plan` |
-| `plan-critic-system`  | system/design red-team        | `## Draft plan`     |
-| `worker`              | `dev` implementation (rw)     | `## Spec`           |
-| `build-worker`        | standalone Build: implement, Grok review, fix, verify (rw) | `## Spec` |
+- outcome;
+- relevant context and evidence sources;
+- hard scope and authority boundaries;
+- observable success checks; and
+- required output shape.
 
-## Models
+Let the model choose local implementation steps unless their sequence is part of the
+contract. State each rule once.
 
-| model | how to call | default role |
+| Rubric | Outcome | Brief header |
 | --- | --- | --- |
-| gpt-5.6-sol | `--engine codex` (medium effort by default) | Claude-host plan/review judgment and `dev` implementation fallback |
-| gpt-5.6-terra | `--engine codex --model gpt-5.6-terra --effort low` | doc-lookup web research lanes |
-| grok-4.6 | `--engine grok` (always medium effort) | `dev` implementation and Grok review lanes |
-| opus-4.8 | `--engine claude` | planning, review, or taste-heavy judgment when selected by the host config |
-| host orchestrator | you — never delegated | plan authoring, standalone Build bootstrap and gate-check, review synthesis, targeted fixes, and final gate |
+| `planner` | architecture recommendation | `## Task brief` |
+| `plan-critic-implementation` | execution red-team | `## Draft plan` |
+| `plan-critic-system` | system/design red-team | `## Draft plan` |
+| `worker` | `dev` implementation | `## Spec` |
+| `build-worker` | standalone Build: implement, review, fix, verify | `## Spec` |
+| `reviewer-correctness` | behavioral-defect review | `## Review brief` |
+| `reviewer-cleanup` | reuse and simplification review | `## Review brief` |
+| `reviewer-structural` | maintainability review | `## Review brief` |
+| `reviewer-security` | risk-triggered security review | `## Review brief` |
+| `kiss-reuse` | existing-mechanism reuse | `## KISS brief` |
+| `kiss-simplification` | complexity reduction | `## KISS brief` |
+| `kiss-efficiency` | unnecessary-work review | `## KISS brief` |
+| `kiss-altitude` | implementation-depth review | `## KISS brief` |
 
-Models in the host package config are defaults, not restrictions. When the user
-explicitly requests a model or effort, pass that exact value to the selected engine
-except that `grok-4.6` always uses `medium`. Standalone plan critics otherwise resolve
-from the host package config, and the loaded skill defines their model and effort.
+## Defaults and routing
 
-How to apply:
+| Model | Default role |
+| --- | --- |
+| Codex `gpt-5.6-sol` | plan/review judgment and `dev` fallback |
+| Codex `gpt-5.6-terra` low | official-document lookup |
+| Grok `grok-4.6` medium | `dev` implementation and Grok review lanes |
+| Claude `opus` | planning, review, and taste-heavy judgment |
+| Host orchestrator | plan authorship, synthesis, targeted fixes, and final gate |
 
-- **Defaults, not limits.** Start from the current host package's
-  `config/parallax.yaml`. You have standing permission to override a binding if a cheaper
-  model's output doesn't meet the bar: rerun the
-  work on a smarter engine or higher effort without asking. Judge the output, not the
-  price tag — escalating costs less than shipping mediocre work. This permission changes
-  only model or effort; it never expands task scope, target resources, credentials,
-  permissions, or allowed side effects.
-- **Composed `dev` implementation prefers Grok 4.6 medium when available.** Probe it as optional before
-  mutation. If that probe fails, require the configured `code-fallback` engine (Codex by
-  default), declare the substitution, and use it for the whole writer turn. An explicit
-  user engine override disables automatic fallback. Never fall back after a writer has
-  started or after the worktree becomes dirty; stop and report the partial state.
-- **Anything user-facing** (UI, copy, API design) may use Opus for a taste-focused
-  advisory pass, while implementation remains on the configured Grok writer unless
-  the reported fallback rule is triggered.
-- **Reviews** → a capable model, plus optionally an independent perspective. Always prefer
-  a *different* engine than the one that wrote the code — independence catches what
-  self-review can't. Add `reviewer-security` when the user requests security review or
-  the scope touches auth, permissions, secrets/config, shell or subprocess execution,
-  sandboxing, network clients, dependencies/lockfiles, CI workflows, deserialization, or
-  another trust boundary. Otherwise report `Security: not run`.
-- **Targeted fixes from a review** → the host orchestrator applies them itself, as
-  small scoped edits at the cited sites. It already holds the findings and the code
-  context; a fix lane plus a verification pass of that lane's diff is wasted steps and
-  compute. Fix only after every lane has returned; a build-sized remedy is not a
-  targeted fix — send it back to a writer lane.
-- **Effort**: Codex and Grok models other than 4.6 default to `medium`; Claude defaults
-  to `high`. Grok 4.6 is fixed at `medium`. Escalate other models only for concrete
-  complexity or risk. Reserve Codex `xhigh` for cross-file contracts, concurrency,
-  data-integrity or money paths, wide refactors, and standalone plan critics.
-- **Standalone Review** → exactly three read-only Grok 4.6 `medium` dimensions by default,
-  plus security when triggered.
-- **Standalone Build review** → exactly three read-only Grok 4.6 `medium` dimensions by
-  default, plus security when triggered — launched by the build worker itself through
-  the packaged wrapper, not by the host.
-- **KISS** → exactly four read-only Grok 4.6 `medium` dimensions: reuse, simplification,
-  efficiency, and altitude. The current request may replace all lanes with one engine.
-  The host synthesizes and applies the smallest safe improvements to a draft or code.
-- **Doc-lookup research → Terra low.** When the task is finding official documentation
-  and transcribing the facts (API shapes, config keys, version tables), run a read-only
-  Codex lane with `--model gpt-5.6-terra --effort low`. On lookup work, effort buys
-  latency, not accuracy — benchmarked 2026-07: Terra low matched Terra high fact-for-fact
-  while running fastest of six contenders; Luna was slower at every effort tier. Reserve
-  higher effort for research that needs synthesis or judgment, not retrieval.
-- **Standalone Build pushes the whole build into one fresh same-host worker.** Given an
-  accepted spec, a Codex host delegates to one fresh `gpt-5.6-sol` `high` Codex
-  `build-worker` lane; a Claude host delegates to one fresh `opus` `medium` Claude
-  `build-worker` lane (explicit current-message overrides win). That worker implements,
-  launches the three core Grok 4.6 Medium review dimensions itself, validates and fixes confirmed
-  findings itself in one bounded round, and executes the complete relevant verification
-  suite. The host only bootstraps, gate-checks the diff and report, records the trace, and
-  reports. There is no fallback or second writer. This one worker receives explicit full
-  host access so it can write repository Git metadata, honor required local checkpoint
-  ordering, and launch its packaged review lanes. That transport exception does not expand
-  the accepted spec, target-repository scope, publication authority, or external-system
-  authority; all review lanes remain read-only and other rw lanes remain
-  workspace-confined.
-- **The host orchestrator is never delegated.** Spend the main session where the loaded
-  skill assigns ownership: plan authoring, standalone Build bootstrap and gate-check,
-  review synthesis, targeted fixes, and the final gate.
+Package config supplies defaults, not restrictions. An explicit current-message model or
+effort request wins, except `grok-4.6` always runs at medium. Escalate model or effort
+when the first result is materially inadequate; this never expands scope or authority.
 
-## Sizing the run (the escalation ladder)
+- `dev` prefers Grok 4.6 medium for implementation. Probe its workspace sandbox before
+  mutation. If optional preflight fails, use the configured Codex fallback for the whole
+  writer turn and report the substitution. Explicit engine selection disables fallback.
+  Never switch writers after mutation starts or the worktree becomes dirty.
+- Plan critics and composed `dev` reviewers use the opposite engine from the host as
+  defined by package config. Direct Review instead runs the three core Grok 4.6 Medium
+  lanes by default.
+- Add the security lane when requested or when changes touch auth, permissions, secrets,
+  shell/subprocess execution, sandboxing, network clients, dependencies, CI,
+  deserialization, or another trust boundary. Otherwise report `Security: not run`.
+- KISS always runs reuse, simplification, efficiency, and altitude on Grok 4.6 Medium,
+  unless the current request replaces the whole round with one engine.
+- Official-document lookup defaults to Terra low. Use higher effort only when the work
+  needs synthesis or judgment, not simple retrieval.
+- Apply confirmed, small review fixes in the host after all lanes return. A build-sized or
+  behavior-changing remedy needs a writer or user decision.
 
-For the composed `dev` pipeline, config bindings are the **floor shape**, not the ceiling or the mandate. Before
-launching lanes, size the task and **declare the shape you chose in one line** (e.g.
-`Sizing: implementation critic (<critic-engine>, high) · 1 worker (<writer-engine>, medium) · review 3×1
-(<review-engine>, high)`) — it
-gives the user a veto point before tokens burn. Scale down as readily as up.
+## Standalone Build
 
-| `dev` scale | plan | implementation | review |
+Build has a fixed shape and does not use the `dev` sizing ladder. One fresh same-host
+worker receives the accepted spec:
+
+- Codex host: `gpt-5.6-sol` high;
+- Claude host: `opus` medium.
+
+That worker implements, launches three read-only Grok 4.6 Medium review lanes, validates
+and fixes confirmed findings once, and runs the complete relevant verification suite.
+The host only bootstraps, gate-checks, records, and reports. There is no fallback, second
+writer, or parallel host implementation.
+
+This worker is the sole full-access lane. Codex uses `danger-full-access`; Claude disables
+its sandbox and permission prompts. The wrapper accepts this only for an `rw`
+`worker`/`build-worker` rubric. Full access permits repository Git metadata and packaged
+review launches; it does not expand the accepted spec, repository scope, publication
+authority, or external-system authority. Review lanes remain read-only. Never use Codex
+`--dangerously-bypass-approvals-and-sandbox` or `--yolo`.
+
+## Size composed `dev`
+
+Declare the chosen shape before launching lanes. Scale down as readily as up.
+
+| Scale | Plan | Implementation | Review |
 | --- | --- | --- | --- |
-| **trivial** — one file, obvious change | none — decide and go | one Grok rw lane | read the diff yourself |
-| **small** — clear task, low blast radius | plan in-context, no critic | 1 worker | 1 lane (correctness only) |
-| **default** | plan in-context + implementation and system critics | 1 configured worker | 3 dims × 1 opposite engine |
-| **large / risky** | spec doc + both critics | parallel file-disjoint configured workers | 3 dims plus risk-triggered security × 1 opposite engine; add a second non-writer engine when proportionate |
+| trivial | host decision | one configured writer | host reads diff and verifies |
+| small | in-context plan | one writer | correctness lane |
+| default | implementation + system critics | one writer | three opposite-engine dimensions |
+| large/risky | persisted spec + both critics | file-disjoint writers only when safe | core dimensions + security when triggered; add a second perspective when proportionate |
 
-The standalone plan skill preserves the full default plan rung: it resolves exactly one
-engine for each critic dimension from the host package and runs both in
-parallel. Explicit current-message substitutions win. Both required dimensions must
-return before the plan is final. The full dev skill uses the same two-critic default as
-part of the larger end-to-end run.
+Use the larger shapes for cross-file contracts, concurrency, data integrity, money paths,
+wide refactors, high ambiguity, or hard-to-verify behavior. Use the smaller shapes for an
+obvious, low-blast-radius change with strong existing tests. Even a trivial `dev` code
+change keeps one configured writer; it skips advisory fanout, not implementation
+delegation.
 
-The standalone Build skill does not use this sizing ladder. Its ownership shape is
-fixed: an accepted spec, one fresh same-host build worker at the package-specific model
-above that implements, launches three read-only Grok 4.6 `medium` review lanes (plus security
-when triggered), applies confirmed fixes, and runs the complete relevant verification
-suite; the host bootstraps and gate-checks. `dev` remains
-self-contained and does not invoke standalone Build.
+Plans stay in conversation unless another session or worker needs a durable artifact.
 
-The standalone review skill is a fixed-shape quality pipeline: direct invocation runs
-correctness, cleanup, and structural lanes on Grok by default, plus a Grok security lane
-when triggered. An explicit current-message `all <engine> lanes` substitution applies
-to the whole round. The composed `dev` review stage keeps the opposite-host config
-bindings and sizing ladder above.
+## Run and failure rules
 
-KISS is a fixed four-lane quality pass for plans or code. An explicit current-message
-`all <engine> lanes` substitution applies to the whole round.
+- Long lanes run in retained/background shells with `--out` and `--log`. Launch
+  independent read-only lanes concurrently and read their output files after completion.
+- Exit codes: 0 success; 1 engine failure; 2 usage error; 3 authentication required.
+- Follow the loaded skill's retry rule. General advisory lanes may retry once, then
+  continue with survivors and disclose the missing lane. Required plan critics and
+  explicit passthrough skills fail closed.
+- If a lane stalls beyond a reasonable runtime, inspect its log, stop it, and relaunch
+  according to the skill instead of waiting indefinitely.
+- Grok permission bypass auto-approves tools but does not disable its selected filesystem
+  sandbox. A workspace-sandbox startup failure never authorizes host substitution.
 
-Scale-up signals: cross-file contracts, concurrency, data-integrity or money paths,
-wide refactors, high ambiguity, code you can't easily verify. Scale-down signals: one
-file, an obvious mechanism, strong existing tests, a change you can read in one sitting.
-Inside `dev`, the smallest rung skips advisory fanout, not implementation delegation:
-even a trivial code change uses one configured rw lane, followed by host verification.
+## Writer discipline
 
-Plan artifacts follow the same logic: a plan is a chat message by default; write it to
-`.project/builds/<thread>/` only when the effort is multi-session or another agent must
-consume it later. A spec doc for a one-shot task is overhead, not rigor.
-
-## Running lanes
-
-- **Always use a retained/background shell session.** Engine turns can run 10–40+
-  minutes. Launch with `--out <f> --log <f>`, fire independent lanes concurrently, and
-  synthesize after completion. Results live on disk — read the out-files selectively;
-  don't pull bulk content into your own window.
-- **Grok may require narrowly scoped host approval** for network or keychain access;
-  Grok's own kernel sandbox still confines it. The wrapper defaults the model to
-  `grok-4.6` and effort to `medium`; explicit values pass through for other Grok models,
-  while Grok 4.6 remains pinned to medium. A Grok writer
-  must pass `plx-preflight --optional-grok --grok-mode rw` (or `--require-grok` for an
-  explicit selection) before mutation; the workspace probe runs against a disposable
-  directory rather than the target repository.
-- **Pipeline-specific retry and completion rules override this general playbook.** If a lane
-  fails (exit 1), read its log, then retry once — same engine, or a
-  smarter one if the failure looks like capability. If a review lane fails and others
-  succeeded, proceed with the survivors and say so; this survivor rule does not apply to
-  required plan critics. **If a lane hangs** well past its
-  expected runtime, check the log, kill it, and relaunch rather than waiting forever.
-  The explicit single-engine passthrough skills are fail-closed exceptions: never redo
-  their failed task in the host session or substitute another engine.
-- Exit codes are uniform: 0 ok · 1 engine failure · 2 usage error · 3 not signed in
-  (tell the user to log in to that engine).
-
-## Writers
-
-- **Within `dev`, one writer per disjoint path set.** Any number of parallel read-only lanes; rw lanes
-  may run in parallel **only** when their file sets don't overlap — each writer's brief
-  must name the paths it owns and state that other paths are being edited in parallel.
-  Never edit a file yourself while a lane owns it. When in doubt, one writer.
-- The sandboxes are repo-wide — path disjointness is brief discipline, not enforced.
-  Split work only along genuinely independent seams; shared files (barrel exports,
-  lockfiles, shared configs) mean the work is one package.
-- **Verification runs after all writers land** — parallel test runs against half-built
-  code in a shared worktree are noise.
+Within `dev`, assign one writer per genuinely disjoint path set. Briefs name owned paths
+and concurrent edits. Shared files, lockfiles, exports, and configs usually make the work
+one writer's job. The sandbox is repo-wide, so ownership is a workflow contract rather
+than an enforced path boundary. Run verification only after all writers finish.

@@ -142,8 +142,9 @@ and surviving artifacts; do not author or persist a final spec.
 
 The implementation critic checks whether the design can be executed correctly against the
 checkout; the system critic checks whether faithful execution would produce the right
-integrated and operable system. Both return findings, never rewrites. If either configured
-dimension is empty, skip that dimension and note it.
+integrated and operable system. Both return findings, never rewrites. Skip a dimension
+only when configuration explicitly leaves it empty, and note the skip; otherwise a
+missing configured lane is `[RED-TEAM INCOMPLETE]`.
 
 ### 5. Synthesize the final spec
 

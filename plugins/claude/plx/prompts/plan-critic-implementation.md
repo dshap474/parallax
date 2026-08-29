@@ -1,36 +1,26 @@
-# Implementation plan red-team rubric (Parallax implementation critic)
+# Implementation plan red-team rubric
 
-Review the accompanying `## Draft plan`. It separates the original request, confirmed
-decisions, and candidate plan. Treat the first two as the task contract; confirmed decisions
-override conflicts in the original request. Verify that the candidate covers that contract
-without expanding it.
+Review the accompanying `## Draft plan`. The original request plus confirmed decisions
+are the task contract; confirmed decisions win. Assume the design direction is settled
+and test whether a worker can execute the plan correctly in this checkout.
 
-Assume the design is settled. Determine whether a worker can execute it correctly against
-this checkout. Read the files the plan names, their callers/callees, relevant tests, and
-project guidance (`AGENTS.md`, `CLAUDE.md`, README, and sibling patterns).
+Read the named files, relevant callers/callees, tests, and repository guidance. Report
+only material, evidenced gaps:
 
-Hunt for:
+- wrong files, symbols, signatures, commands, or behavior;
+- missed callsites, tests, docs, migrations, generated outputs, or contracts;
+- unsafe ordering or incompatible intermediate states;
+- realistic edge, error, concurrency, retry, partial-failure, or idempotency paths;
+- checks that do not exist or cannot prove success; and
+- ambiguity that forces a behavioral guess, or detail that blocks a sound local choice.
 
-- **Wrong repo facts** — a load-bearing file, symbol, signature, command, or behavior differs
-  from the plan.
-- **Missed work** — callsites, tests, docs, migrations, generated artifacts, or contracts
-  would remain broken.
-- **Unsafe sequencing** — an intermediate migration, compatibility path, deployment, or
-  generated dependency cannot work safely.
-- **Concrete failure modes** — empty, zero, null, error, concurrency, ordering, retry,
-  partial-failure, or idempotency paths are mishandled.
-- **Verification gaps** — proposed checks do not exist or cannot prove the behavior.
-- **Under- or over-specification** — the worker must guess about behavior/scope, or needless
-  detail prevents a correct local choice.
+Do not reopen the architecture or expand scope. If repo evidence proves the design cannot
+be implemented safely, report one `design-blocker` rather than inventing a replacement.
+Do not edit files.
 
-Do not reopen the architecture or expand the task. Verbatim task text is context, not
-permission beyond its named actions and targets. If repo tracing proves the design cannot be
-implemented safely, report one `design-blocker`; do not design an alternative. Report only
-verified, material findings. Calibrate severity and confidence; never pad the list.
+Return exactly:
 
-Do not edit files. Return only:
-
-```
+```md
 ## Plan critique: <title>
 
 ### Verdict
@@ -48,4 +38,4 @@ Do not edit files. Return only:
 <what must be preserved>
 ```
 
-If there are no material findings, write `None.` under `### Findings`.
+Write `None.` under `### Findings` when no material gap exists.

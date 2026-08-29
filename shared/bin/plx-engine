@@ -7,15 +7,17 @@
 #
 # Safety flags are pinned here per engine, not decided by callers:
 #   codex  : gpt-5.6-sol, effort medium by default, --ignore-user-config,
-#            --ephemeral, sandbox read-only | workspace-write; the standalone
-#            Build writer may explicitly request danger-full-access so it can
-#            write repository Git metadata and create required local commits
+#            approval_policy=never, --ephemeral, sandbox read-only |
+#            workspace-write; the standalone Build writer may explicitly
+#            request danger-full-access so it can write repository Git metadata
+#            and launch its packaged review lanes
 #   grok   : grok-4.6, effort always medium,
 #            kernel sandbox read-only | workspace (Seatbelt/Landlock),
 #            bypassPermissions (required for headless completion; the kernel
 #            sandbox — not the permission mode — is the safety boundary)
 #   claude : non-bare `claude -p` (bare mode breaks subscription auth),
-#            safe mode + no session persistence + no project customization,
+#            safe mode + no session persistence + automatic customization
+#            disabled, with source-tree guidance listed in the prompt;
 #            ro = read-only tools, rw = sandboxed Bash without direct write
 #            tools; the standalone Build writer may explicitly disable the
 #            sandbox so it can create required local commits
@@ -270,8 +272,9 @@ run_codex() {
   else
     sandbox="workspace-write"
   fi
-  if ! codex exec --ignore-user-config --sandbox "$sandbox" --skip-git-repo-check \
-    -C "$REPO" -m "$MODEL" -c model_reasoning_effort="$EFFORT" --ephemeral \
+  if ! codex exec --ignore-user-config --sandbox "$sandbox" \
+    -c approval_policy=never --skip-git-repo-check -C "$REPO" \
+    -m "$MODEL" -c model_reasoning_effort="$EFFORT" --ephemeral \
     -o "$OUT" - < "$EXEC_PROMPT" > "$LOG" 2>&1; then
     if grep -qiE "not logged in|401 unauthorized|codex login|invalid api key" "$LOG"; then
       echo "plx-engine: codex not authenticated — run \`codex login\` (or set CODEX_API_KEY), then retry." >&2
@@ -314,16 +317,21 @@ run_claude() {
   cat "$EXEC_PROMPT" > "$claude_prompt"
   printf '\n\n## Parallax runtime boundary\n' >> "$claude_prompt"
   printf '%s\n' \
-    'Safe mode disables automatic project customization. Read every applicable repository guidance file listed below before acting; deeper files govern their subtree.' \
+    'Safe mode disables automatic project customization. Before inspecting or changing a path, read the listed guidance that governs it. Root files apply repo-wide; nested files and .claude/rules apply only to their subtree or declared paths.' \
     >> "$claude_prompt"
   guidance_paths=()
-  for path in AGENTS.md CLAUDE.md; do
-    [[ -f "$REPO/$path" ]] && guidance_paths+=("$path")
-  done
   while IFS= read -r path; do
-    [[ "$path" == "AGENTS.md" || "$path" == "CLAUDE.md" ]] && continue
-    [[ -f "$REPO/$path" ]] && guidance_paths+=("$path")
-  done < <(git -C "$REPO" ls-files -- '*AGENTS.md' '*CLAUDE.md' 2>/dev/null || true)
+    [[ -f "$path" ]] || continue
+    guidance_paths+=("${path#"$REPO"/}")
+  done < <(
+    find "$REPO" \
+      \( -path "$REPO/.git" -o -path '*/node_modules' -o -path '*/.venv' -o \
+         -path '*/venv' -o -path '*/.cache' -o -path '*/__pycache__' -o \
+         -path '*/.tox' -o -path '*/.nox' \) -prune -o \
+      \( -name AGENTS.md -o -name CLAUDE.md -o -name CLAUDE.local.md -o \
+         -path '*/.claude/rules/*.md' \) -print 2>/dev/null |
+      LC_ALL=C sort -u
+  )
   if [[ "${#guidance_paths[@]}" -eq 0 ]]; then
     printf '%s\n' '- No repository guidance files found.' >> "$claude_prompt"
   else
@@ -428,8 +436,8 @@ except Exception:
     text="$(cat "$raw")"
   fi
 
-  if [[ "$stop" == "Cancelled" ]]; then
-    echo "plx-engine: grok turn was Cancelled — a tool call was gated, not auto-approved." >&2
+  if [[ "$stop" == "cancelled" || "$stop" == "Cancelled" ]]; then
+    echo "plx-engine: grok turn was cancelled — a tool call was gated, not auto-approved." >&2
     echo "plx-engine: expected only if bypassPermissions is not taking effect (check grok version)." >&2
     exit 1
   fi

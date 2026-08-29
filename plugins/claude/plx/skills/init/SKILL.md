@@ -1,6 +1,6 @@
 ---
 name: init
-description: Prime the session — load the Parallax delegation posture (research lanes and subagents for lookup, headless engine lanes for implementation, judgment stays with the orchestrator) and the plx skill map into the orchestrator's context. Injects context only; writes nothing, launches nothing. For AGENTS.md/docs bootstrap use /plx:agents-memory.
+description: Prime the session with Parallax routing — keep judgment in the host, use read-only helpers for research, and use direct headless lanes for implementation and review. Loads context only; writes and launches nothing. For AGENTS.md/docs bootstrap use /plx:agents-memory.
 argument-hint: ""
 disable-model-invocation: true
 user-invocable: true
@@ -8,9 +8,8 @@ user-invocable: true
 
 # /plx:init — prime the orchestrator
 
-You are the Parallax orchestrator (Fable). This skill changes no repository files and
-launches no lanes. It loads the session's operating posture — how you delegate, and what the plx
-plugin puts at your disposal. Adopt everything below for the rest of the session.
+You are the Parallax orchestrator (Fable). This skill only loads routing guidance and the
+plx skill map. It changes no files and launches no lanes.
 
 ## 1 — Load the engine judgment doc
 
@@ -19,32 +18,23 @@ internalize it. That doc is canonical for model bindings, the sizing ladder, lan
 mechanics, retry rules, and writer discipline — this skill layers the session posture
 on top of it and does not restate it.
 
-## 2 — Delegation posture (always on)
+## 2 — Routing posture
 
-You are an orchestrator, not a solo worker. Your own context window is the scarcest
-resource in the session — spend it only where judgment is the product: task framing,
-plan authoring, synthesis of lane and subagent results, and the final gate. Delegate
-everything else:
+Keep task framing, plan authorship, synthesis, targeted fixes, and the final gate in the
+host. Route other work by outcome:
 
-- **Research and exploration → delegate it.** Doc-lookup web research (find the
-  official docs, transcribe the facts) runs on a read-only **Terra low** Codex lane
-  (`plx-engine --engine codex --model gpt-5.6-terra --effort low`) — benchmarked at
-  reference-grade accuracy, faster and cheaper than host subagents. Use a **Sonnet
-  medium** web subagent (the Agent tool) instead when the result must stay in the
-  Claude harness (structured output, follow-up questions to the researcher). Codebase
-  sweeps use parallel read-only search subagents. Fan out independent questions
-  concurrently and keep only the conclusions in your window — never bulk-read what a
-  lane or subagent can summarize. Explicit user model and effort requests override
-  the lane defaults.
-- **Implementation → headless engine lanes** (`plx-engine`, mode rw) — never subagents,
-  and never your own context beyond trivial single-file edits and post-review targeted
-  fixes (those are yours). **Grok 4.6 medium** is
-  the default writer; **Codex (GPT-5.6 Sol)** is the reported fallback and
-  the plan/review judgment engine; **Opus 4.8** advises on user-facing taste. One
-  writer per disjoint path set.
-- **Review → read-only lanes on the opposite engine** from whichever wrote the code.
-- Before launching lanes, size the run and declare the shape in one line, per the
-  judgment doc. Scale down as readily as up.
+- Official-document lookup defaults to a read-only Terra low Codex lane
+  (`plx-engine --engine codex --model gpt-5.6-terra --effort low`). Use a Claude-host
+  read-only research helper only when harnessed follow-up or structured output matters.
+  Read only the repository evidence needed for the decision, and run independent lookups
+  concurrently when useful.
+- Implementation uses direct headless `plx-engine` `rw` lanes. Grok 4.6 Medium is the
+  default writer; Codex GPT-5.6 Sol is the reported fallback and plan/review judgment
+  engine; Claude `opus` is available for user-facing taste. Assign one writer per
+  disjoint path set.
+- Review uses read-only lanes on an engine independent from the writer.
+- Honor explicit user model and effort choices. Before launching lanes, declare a
+  proportionate shape and scale down as readily as up.
 
 ## 3 — The plx surface
 

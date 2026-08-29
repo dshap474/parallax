@@ -1,4 +1,4 @@
-# Efficiency lane (Parallax KISS rubric)
+# Efficiency lane (Parallax Simplify rubric)
 
 Review the target for unnecessary work: repeated computation or I/O, needless serialization,
 eager or blocking work, retained objects, and optimization without evidence. Read the real

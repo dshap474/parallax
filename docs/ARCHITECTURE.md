@@ -52,8 +52,8 @@ does not invoke the standalone Build or Review skills. Standalone Build requires
 accepted spec and delegates it to one fresh same-host build worker that implements, runs
 three Grok review lanes, fixes confirmed findings, and finishes with the complete
 relevant verification suite; the host bootstraps and gate-checks.
-`kiss` simplifies a plan or code, and `goal-spec` prepares a self-contained autonomous
-goal.
+`simplify` simplifies a plan or code, `kiss` prints the user-authored KISS principles,
+and `goal-spec` prepares a self-contained autonomous goal.
 
 Inside `dev`, the host declares task sizing before launching anything:
 
@@ -71,8 +71,8 @@ never falls through to another writer or parallel host implementation. In `dev` 
 worker fixes them once itself. Behavior-changing or ambiguous findings go back to the
 user.
 
-KISS runs four independent Grok 4.6 Medium dimensions: reuse, simplification, efficiency,
-and altitude. The host validates their findings and applies the smallest safe changes.
+Simplify runs four independent Grok 4.6 Medium dimensions: reuse, simplification,
+efficiency, and altitude. The host validates their findings and applies the smallest safe changes.
 It complements rather than replaces correctness review.
 
 ## Runtime and safety
@@ -118,15 +118,16 @@ takes precedence.
 `plx-engine` records each completed lane from its exit trap without changing the engine
 exit code. Prompt files directly under a `plx-<skill>.<suffix>` temp directory share that
 directory basename as their run ID. A direct engine call from any other directory creates
-and closes a standalone run. Every user-facing skill calls `plx-eval finish` once; host-only
-skills therefore produce a useful zero-lane run. An interruption before `finish` leaves a
-grouped run incomplete. Connections enable foreign keys, WAL, and a five-second busy
-timeout. Retention and schema migration remain manual for v1; `plx-eval doctor` checks
-integrity and counts. Parallax ships no host hooks, telemetry daemon, MCP, or target-repo
+and closes a standalone run. Every operational skill calls `plx-eval finish` once;
+host-only operational skills therefore produce a useful zero-lane run. The static KISS
+principles skill performs no runtime work and creates no trace. An interruption before
+`finish` leaves a grouped run incomplete. Connections enable foreign keys, WAL, and a
+five-second busy timeout. Retention and schema migration remain manual for v1;
+`plx-eval doctor` checks integrity and counts. Parallax ships no host hooks, telemetry daemon, MCP, or target-repo
 `.parallax/` state. Persistent `plx-codex-thread` internals are not yet lane-captured, but
 their enclosing passthrough skill run is recorded.
 
 As a narrow exception, `/plx:codex` may use `plx-codex-thread` to start or resume a
 Codex app-server session. It is ephemeral by default, keeps no Parallax registry,
 returns the thread ID to the user, and re-derives `inspect` or `edit` access on every
-turn. Plan, build, goal-spec, dev, review, and KISS lanes never use this path.
+turn. Plan, build, goal-spec, dev, review, and Simplify lanes never use this path.

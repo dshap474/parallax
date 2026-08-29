@@ -1,4 +1,4 @@
-# Simplification lane (Parallax KISS rubric)
+# Simplification lane (Parallax Simplify rubric)
 
 Review the target for things that need not exist: speculative flexibility, redundant state,
 copy-paste variants, deep nesting, needless wrappers or layers, and dead paths. Read the real

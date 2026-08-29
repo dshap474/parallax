@@ -16,7 +16,7 @@ scripts/sync-shared.sh
 ```
 
 Both manifests use plugin name `plx` and version `0.5.24`. Both marketplaces use
-`parallax-marketplace` and point to their platform package. Each package contains eleven
+`parallax-marketplace` and point to their platform package. Each package contains twelve
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
 ## Package contracts
@@ -36,9 +36,11 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
   supplies plan critics and three core review dimensions plus risk-triggered security.
 - Codex-host defaults: Codex plans, synthesizes, and applies targeted fixes; Claude
   supplies plan critics and three core review dimensions plus risk-triggered security.
-- KISS runs four read-only Grok 4.6 Medium dimensions over a plan or code. An explicit
+- Simplify runs four read-only Grok 4.6 Medium dimensions over a plan or code. An explicit
   whole-round engine request replaces all four. The host applies only confirmed safe
   improvements.
+- KISS is a static explicit-only skill that prints the user-authored principles in its
+  body. It launches no engine or runtime tooling.
 - Standalone Review runs three read-only Grok 4.6 Medium lanes by default. Standalone
   Build requires an accepted spec and delegates it to exactly one fresh same-host build
   worker: Codex `gpt-5.6-sol` High from Codex, or Claude Opus Medium from Claude. That
@@ -57,7 +59,7 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 
 ## Runtime contracts
 
-Brief headers are `## Draft plan`, `## Task brief`, `## Review brief`, `## KISS brief`,
+Brief headers are `## Draft plan`, `## Task brief`, `## Review brief`, `## Simplify brief`,
 or `## Spec`, matching the injected rubric. Advisory lanes are
 read-only; `dev` writer lanes are scoped to the target repository and one disjoint path set.
 Plans carry original request, confirmed decisions, candidate plan, and an observable
@@ -84,8 +86,9 @@ Persistent Codex access is passthrough-only and derives read or write scope for 
 turn; every pipeline lane remains isolated and ephemeral.
 
 Optional `PLX_TRACE_DB` collection writes local schema-v1 SQLite traces via `plx-eval`.
-All eleven user-facing skills close a run; `plx-engine` captures complete prompts, traces,
-outputs, and lane metadata, with grouped and standalone behavior. Recording failures
+The eleven operational skills close a run; the static KISS principles skill does not.
+`plx-engine` captures complete prompts, traces, outputs, and lane metadata, with grouped
+and standalone behavior. Recording failures
 never change engine results. When the process variable is unset, a deterministic
 non-executing parser reads the same literal assignment from the standard per-user
 Parallax config file. No host hooks, telemetry service, MCP, or target-repo `.parallax/`
@@ -94,8 +97,9 @@ state.
 ## Acceptance
 
 `bash tests/run.sh` must validate both manifests and marketplaces, version agreement,
-eleven-skill inventories, explicit-only platform metadata, engine polarity, KISS shape,
-fallback and security bindings, executable wrappers, rubric resolution, shared-copy
-agreement, fake-engine safety flags and current result envelopes, cleanup confinement,
-optional eval recorder contracts, and isolated `plx-link-claude` behavior. Official
+twelve-skill inventories, explicit-only platform metadata, engine polarity, Simplify
+shape, the static KISS scaffold, fallback and security bindings, executable wrappers,
+rubric resolution, shared-copy agreement, fake-engine safety flags and current result
+envelopes, cleanup confinement, optional eval recorder contracts, and isolated
+`plx-link-claude` behavior. Official
 Claude and Codex validators must also pass.

@@ -35,7 +35,8 @@ Start a new Codex session, then use `$plx:dev`.
 | Plan | `/plx:plan` | `$plx:plan` |
 | Build | `/plx:build` | `$plx:build` |
 | Review and fix | `/plx:review` | `$plx:review` |
-| Keep it simple | `/plx:kiss` | `$plx:kiss` |
+| Simplify and fix | `/plx:simplify` | `$plx:simplify` |
+| KISS principles | `/plx:kiss` | `$plx:kiss` |
 | Full pipeline | `/plx:dev` | `$plx:dev` |
 | Autonomous goal spec | `/plx:goal-spec` | `$plx:goal-spec` |
 | Opposite-engine passthrough | `/plx:codex` | `$plx:claude` |
@@ -51,8 +52,9 @@ implements it, runs three Grok 4.6 Medium review lanes itself, fixes confirmed f
 itself, and runs the full relevant verification suite; the host bootstraps and
 gate-checks. The separate `dev` pipeline uses isolated Grok 4.6 writers by
 default; the opposite host engine supplies its plan critics and review lanes. Direct
-`review` runs three Grok 4.6 Medium lanes by default. `kiss` runs four Grok 4.6 Medium
-lanes over a plan or code; the host applies confirmed improvements itself.
+`review` runs three Grok 4.6 Medium lanes by default. `simplify` runs four Grok 4.6
+Medium lanes over a plan or code; the host applies confirmed improvements itself. The
+static `kiss` skill prints the user-authored KISS principles stored in its skill body.
 
 The one standalone Build worker intentionally receives full host access so it can write
 repository Git metadata and launch its packaged review lanes. That transport is limited

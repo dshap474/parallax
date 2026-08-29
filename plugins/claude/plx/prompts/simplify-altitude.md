@@ -1,4 +1,4 @@
-# Altitude lane (Parallax KISS rubric)
+# Altitude lane (Parallax Simplify rubric)
 
 Review whether the target solves the root cause at the owning shared boundary or adds a
 special-case patch or needless architectural layer. Read the real flow first. Prefer one small

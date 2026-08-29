@@ -40,10 +40,10 @@ contract. State each rule once.
 | `reviewer-cleanup` | reuse and simplification review | `## Review brief` |
 | `reviewer-structural` | maintainability review | `## Review brief` |
 | `reviewer-security` | risk-triggered security review | `## Review brief` |
-| `kiss-reuse` | existing-mechanism reuse | `## KISS brief` |
-| `kiss-simplification` | complexity reduction | `## KISS brief` |
-| `kiss-efficiency` | unnecessary-work review | `## KISS brief` |
-| `kiss-altitude` | implementation-depth review | `## KISS brief` |
+| `simplify-reuse` | existing-mechanism reuse | `## Simplify brief` |
+| `simplify-simplification` | complexity reduction | `## Simplify brief` |
+| `simplify-efficiency` | unnecessary-work review | `## Simplify brief` |
+| `simplify-altitude` | implementation-depth review | `## Simplify brief` |
 
 ## Defaults and routing
 
@@ -69,7 +69,7 @@ when the first result is materially inadequate; this never expands scope or auth
 - Add the security lane when requested or when changes touch auth, permissions, secrets,
   shell/subprocess execution, sandboxing, network clients, dependencies, CI,
   deserialization, or another trust boundary. Otherwise report `Security: not run`.
-- KISS always runs reuse, simplification, efficiency, and altitude on Grok 4.6 Medium,
+- Simplify always runs reuse, simplification, efficiency, and altitude on Grok 4.6 Medium,
   unless the current request replaces the whole round with one engine.
 - Official-document lookup defaults to Terra low. Use higher effort only when the work
   needs synthesis or judgment, not simple retrieval.

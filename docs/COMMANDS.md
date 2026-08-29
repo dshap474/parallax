@@ -7,7 +7,8 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Plan | `/plx:plan` | `$plx:plan` | Host authors; implementation and system critics red-team; no code |
 | Build | `/plx:build` | `$plx:build` | One fresh same-host build worker implements an accepted spec → runs Grok 4.6 Medium reviews → fixes → full relevant verification; host bootstraps and gate-checks |
 | Review | `/plx:review` | `$plx:review` | Three Grok 4.6 Medium review lanes by default, synthesis, and one host-applied fix round |
-| KISS | `/plx:kiss` | `$plx:kiss` | Four Grok 4.6 Medium lanes simplify a plan or code; the host applies safe improvements |
+| Simplify | `/plx:simplify` | `$plx:simplify` | Four Grok 4.6 Medium lanes simplify a plan or code; the host applies safe improvements |
+| KISS | `/plx:kiss` | `$plx:kiss` | Print the user-authored KISS principles exactly as written |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
 | Goal spec | `/plx:goal-spec` | `$plx:goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Claude may persist Codex context |
@@ -32,9 +33,10 @@ Configured pipelines read their package-local `config/parallax.yaml`. Config is 
 floor shape, not a limit: the host may scale lanes down or up and must declare the
 chosen shape before launching. Standalone Build always uses one fresh same-host build
 worker that owns implementation, Grok review, fixes, and verification: Claude Opus Medium
-or Codex `gpt-5.6-sol` High, with no fallback or second writer. KISS
+or Codex `gpt-5.6-sol` High, with no fallback or second writer. Simplify
 always runs reuse, simplification, efficiency, and altitude once each on Grok 4.6 Medium. A
 current-message instruction may replace the engine for the whole round.
+KISS is a static principles skill and launches no engine lanes.
 Standalone Build may create local commits when its accepted spec or the target
 repository's instructions explicitly require or authorize them. It stages only
 Build-owned work and reports every commit. Other skills retain their documented Git

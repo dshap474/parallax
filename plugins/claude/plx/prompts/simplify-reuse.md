@@ -1,4 +1,4 @@
-# Reuse lane (Parallax KISS rubric)
+# Reuse lane (Parallax Simplify rubric)
 
 Review the target for code or machinery the repository, standard library, native platform,
 or an installed dependency already provides. Read the real flow first. Report only concrete,

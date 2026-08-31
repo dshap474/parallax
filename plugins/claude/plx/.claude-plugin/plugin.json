@@ -1,6 +1,6 @@
 {
   "name": "plx",
-  "version": "0.5.24",
+  "version": "0.5.25",
   "description": "Parallax for Claude Code: twelve planning, implementation, review, simplification, KISS principles, goal-preparation, passthrough, session-priming, docs-bootstrap, and blindspot skills driven through one safety-pinned headless engine wrapper.",
   "author": { "name": "Daniel Shapiro", "url": "https://github.com/dshap474" },
   "homepage": "https://github.com/dshap474/parallax",

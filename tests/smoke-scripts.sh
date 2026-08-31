@@ -747,7 +747,7 @@ out="$WORK/kiss-skill.txt"
 "$PLUGIN_ROOT/bin/plx-skill" kiss > "$out" 2>&1
 rc=$?
 if [ "$rc" -eq 0 ]; then _pass "kiss exits 0"; else _fail "kiss exit $rc"; fi
-assert_contains "# KISS principles" "$out" "emits the KISS principles scaffold"
+assert_contains "# KISS principles" "$out" "emits the KISS principles"
 if "$PLUGIN_ROOT/bin/plx-skill" no-such-skill >/dev/null 2>&1; then
   _fail "should reject unknown skill"
 else

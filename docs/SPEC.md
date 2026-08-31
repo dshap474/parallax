@@ -39,8 +39,8 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 - Simplify runs four read-only Grok 4.6 Medium dimensions over a plan or code. An explicit
   whole-round engine request replaces all four. The host applies only confirmed safe
   improvements.
-- KISS is a static explicit-only skill that prints the user-authored principles in its
-  body. It launches no engine or runtime tooling.
+- KISS is an explicit-only skill that loads the user-authored principles in its body into
+  the current context. It launches no engine or runtime tooling.
 - Standalone Review runs three read-only Grok 4.6 Medium lanes by default. Standalone
   Build requires an accepted spec and delegates it to exactly one fresh same-host build
   worker: Codex `gpt-5.6-sol` High from Codex, or Claude Opus Medium from Claude. That
@@ -86,10 +86,10 @@ Persistent Codex access is passthrough-only and derives read or write scope for 
 turn; every pipeline lane remains isolated and ephemeral.
 
 Optional `PLX_TRACE_DB` collection writes local schema-v1 SQLite traces via `plx-eval`.
-The eleven operational skills close a run; the static KISS principles skill does not.
-`plx-engine` captures complete prompts, traces, outputs, and lane metadata, with grouped
-and standalone behavior. Recording failures
-never change engine results. When the process variable is unset, a deterministic
+The eleven operational skills close a run; the context-only KISS principles skill does
+not. `plx-engine` captures complete prompts, traces, outputs, and lane metadata, with
+grouped and standalone behavior. Recording failures never change engine results. When
+the process variable is unset, a deterministic
 non-executing parser reads the same literal assignment from the standard per-user
 Parallax config file. No host hooks, telemetry service, MCP, or target-repo `.parallax/`
 state.
@@ -98,8 +98,7 @@ state.
 
 `bash tests/run.sh` must validate both manifests and marketplaces, version agreement,
 twelve-skill inventories, explicit-only platform metadata, engine polarity, Simplify
-shape, the static KISS scaffold, fallback and security bindings, executable wrappers,
+shape, the KISS principles contract, fallback and security bindings, executable wrappers,
 rubric resolution, shared-copy agreement, fake-engine safety flags and current result
 envelopes, cleanup confinement, optional eval recorder contracts, and isolated
-`plx-link-claude` behavior. Official
-Claude and Codex validators must also pass.
+`plx-link-claude` behavior. Official Claude and Codex validators must also pass.

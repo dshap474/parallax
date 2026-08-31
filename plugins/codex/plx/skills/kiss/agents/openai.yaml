@@ -1,6 +1,6 @@
 interface:
   display_name: "PLX::KISS"
-  short_description: "Print the user's KISS principles exactly"
-  default_prompt: "Use $plx:kiss to print my KISS principles."
+  short_description: "Load the user's KISS principles into context"
+  default_prompt: "Use $plx:kiss to load my KISS principles into this task's context."
 policy:
   allow_implicit_invocation: false

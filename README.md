@@ -54,7 +54,7 @@ gate-checks. The separate `dev` pipeline uses isolated Grok 4.6 writers by
 default; the opposite host engine supplies its plan critics and review lanes. Direct
 `review` runs three Grok 4.6 Medium lanes by default. `simplify` runs four Grok 4.6
 Medium lanes over a plan or code; the host applies confirmed improvements itself. The
-static `kiss` skill prints the user-authored KISS principles stored in its skill body.
+static `kiss` skill loads the user-authored KISS principles into the current context.
 
 The one standalone Build worker intentionally receives full host access so it can write
 repository Git metadata and launch its packaged review lanes. That transport is limited

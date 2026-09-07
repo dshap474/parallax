@@ -63,7 +63,11 @@ Brief headers are `## Draft plan`, `## Task brief`, `## Review brief`, `## Simpl
 or `## Spec`, matching the injected rubric. Advisory lanes are
 read-only; `dev` writer lanes are scoped to the target repository and one disjoint path set.
 Plans carry original request, confirmed decisions, candidate plan, and an observable
-done condition.
+done condition. Worker and host reports may use a compact natural format while retaining
+scope, findings, decisions, and verification evidence. Review hosts may read code to
+establish scope before sending the same neutral brief to every reviewer. Passthroughs
+preserve engine exit status and cleanup without prescribing a tool-call count. Codex-hosted
+Claude calls request host approval only when the host sandbox blocks required access.
 
 No skill constructs a raw external-engine command. Codex lanes pin unattended approval
 explicitly and never use the approvals-and-sandbox bypass or `--yolo`. Normal lanes use

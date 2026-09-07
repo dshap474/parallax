@@ -1,115 +1,58 @@
 ---
 name: goal-spec
-description: Interview-locked goal planning for long-running efforts. A Socratic interview (`request_user_input`) locks the goal — intent, binary success criteria, invariants, non-goals — then the Codex host designs the how, parallel Claude system and implementation critics red-team it, and the host synthesizes ONE self-contained spec to the shared template. No code is written.
+description: Lock the goal with the user, author a design, obtain independent implementation and system critiques, and persist one self-contained spec. No implementation code.
 argument-hint: "<the goal to plan>"
 ---
 
-# $plx:goal-spec — interview-locked goal planning
+# $plx:goal-spec
 
-You are the Parallax orchestrator (Codex). This skill produces **one self-contained spec
-`.md`**, constructed so an autonomous agent with no prior context can execute from it —
-you hand it straight to `/goal` (or `$plx:build`) and walk away. Three things
-make that possible, and they are your whole job here:
-
-1. A **Socratic interview** that kills ambiguity and *locks the goal* before any design.
-2. **Your design** of the *how*, red-teamed by **Claude system and implementation
-   critics in parallel**.
-3. **Your synthesis** of that design and the critiques into one airtight, self-verifying spec.
-
-The deliverable lands in the build thread under `.project/builds/<thread>/`, and you return
-a paste-ready `/goal` condition that points at it. **No code is written.**
-
-Your context discipline: inspect only the repository surfaces needed to author a concrete
-plan, then keep the external lanes focused on independent criticism.
-
-## Bootstrap
-
-Establish ground truth with your own tools — nothing is injected for you:
-
-- Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
-- Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-goal-spec.XXXXXX"` and write
-  the original request to `<tmp>/task.md` for the run record.
-- If the worktree is dirty, note `git status --short`.
-- Get today's date (`date +%F`) for the thread directory prefix.
-- Read `.project/VISION.md` if it exists — it is the project **constitution**. Its hard
-  rules become non-negotiable Invariants in the spec. Read it; never edit it.
-- Resolve the **build thread**. Continuing an existing effort → use that thread's existing
-  directory under `.project/builds/`. New effort → derive a short kebab thread name from the
-  goal and prefix it with today's date → `YYYY-MM-DD_<thread-name>`. You read `.project/`
-  freely and write it yourself — there is no docs subagent.
-
-## Engines & preflight
+Lock the goal with the user, author a design, obtain independent implementation and
+system critiques, and deliver one self-contained spec for `$plx:build` or `/goal`.
+Write no implementation code.
 
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
-`/skills/goal-spec/SKILL.md`. Read `<plugin-root>/bin/plx-config` → key `goal-spec`.
-Shipped defaults: `plan-critic-implementation: [claude]` ·
-`plan-critic-system: [claude]`. You are the planner. Declare the resolved shape, then run `<plugin-root>/bin/plx-preflight --repo
-<repo> --require-<engine>` once per **distinct** resolved engine. If a required engine is
-unavailable, report `[RED-TEAM INCOMPLETE]` and stop; never silently drop a configured lane.
-Always request narrowly scoped host approval for Claude preflight and lanes; Codex's
-host sandbox can hide Claude's OAuth/keychain while Claude safe mode remains active.
-Write the declaration to `<tmp>/shape.txt`. Keep every lane prompt directly under `<tmp>`
-so its `plx-goal-spec.<suffix>` basename groups captured lanes. Before every handled return,
-call the `<plugin-root>/bin/plx-eval finish` command in step 6 with the honest outcome.
+`/skills/goal-spec/SKILL.md`. Use the packaged helpers in `<plugin-root>/bin/`.
 
-## Pipeline (run in order)
+## Prepare
 
-### 1. Socratic interview — lock the goal
+Resolve `<repo>` with `git rev-parse --show-toplevel` and note existing changes.
+Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-goal-spec.XXXXXX"` and write the
+original request to `<tmp>/task.md`. Keep all lane prompts directly in `<tmp>`.
+Read `.project/VISION.md` if present and carry its hard constraints into the spec;
+never edit it. Continue the existing build thread or choose
+`.project/builds/YYYY-MM-DD_<thread-name>/` using `date +%F` and a short goal name.
 
-Before any planning, interview the user with **`request_user_input` when it is available**
-until material ambiguities are resolved or the bounded interview ends. If the tool is not
-available, ask one concise plain-chat round and wait for the answer. An autonomous `/goal`
-run cannot ask questions later, so record any remaining material gap explicitly.
+Read `<plugin-root>/bin/plx-config`, key `goal-spec`. Defaults are implementation and system
+critics on `claude`. Declare the configured shape, save it to `<tmp>/shape.txt`,
+and run `<plugin-root>/bin/plx-preflight --repo <repo> --require-<engine>` once per distinct engine.
+If a required engine is unavailable, report `[RED-TEAM INCOMPLETE]` and stop.
+If the host sandbox blocks Claude or Grok network/keychain access, request narrowly scoped host approval for that call; keep the engine sandbox active.
 
-Ask in a funnel — broad to narrow — and **defer every "how" question** until the
-host-authored design step:
+## Lock the goal
 
-1. **Problem & users** — what outcome, for whom, and why now.
-2. **Scope & non-goals** — what is in, and explicitly what is *out*.
-3. **Success criteria** — what "done" looks like, in checkable terms.
-4. **Constraints & invariants** — hard rules, do-not-touch areas, contracts that must hold.
-5. **Risks & open decisions** — the hard parts the user may not have considered.
+Resolve material ambiguity with `request_user_input` when available, otherwise ask in chat
+and wait. Ask up to three questions per round, for about two or three rounds at most.
+Offer a recommended option when useful; accept "I don't know" and record the resulting
+assumption or open question. Ask only questions whose answers change the plan.
 
-Rules:
+Cover the problem and users, scope and material non-goals, checkable success criteria,
+invariants, and open risks. Probe conflicting requirements, missing behavior, and
+scenarios that must be allowed or refused. Defer implementation choices to the design.
+Skip questions already answered by the request.
 
-- **Batch, don't drip:** up to **3 questions per round**, at most ~2–3
-  rounds. Make each a multiple-choice with a recommended first option where you have a view.
-- **Cover the five gaps**, skipping any with nothing to ask: *ambiguity* (multiple
-  readings), *conflict* (incompatible asks), *completeness* (unspecified behavior),
-  *must-allow* scenarios, *must-refuse* scenarios.
-- **Only ask what changes the plan.** If an answer would not change what gets built, don't
-  ask it. If the request already resolves the material ambiguities, say so and skip to the
-  lock summary — do not manufacture questions.
-- **Accept "I don't know."** Record the gap as an `ASSUMPTION:` (state the default you will
-  take) or an Open Question — never silently guess.
-- **Record only material non-goals.** Include exclusions that clarify a real scope
-  boundary; do not manufacture a quota.
+Summarize Intent, binary Success Criteria, Invariants, and Non-goals. Ask the user to
+confirm or amend this summary and wait for approval before authoring the design. This
+lock gate applies even when no interview questions were needed.
 
-Close with a **reflect-back**: one tight paragraph — *Intent, Success Criteria (binary),
-Invariants, Non-goals* — as you now understand the goal.
+## Design and critique
 
-### 2. Lock gate (mandatory)
+Read the repository surfaces needed to design against the locked goal. If external
+facts matter, run a read-only documentation lookup using `<plugin-root>/bin/plx-engine --engine codex
+--model gpt-5.6-terra --effort low --mode ro` and a focused brief while reading the repo.
+Author a concrete plan with the recommended path, material alternatives, supporting repo
+facts, affected components, and observable validation. Save it to `<tmp>/plan-brief.md`.
 
-Ask the user to confirm or amend that summary. **Author nothing until they approve.** This
-approval is the lock: the goal is now fixed, and planning designs against it. The only way
-to skip the gate is if you genuinely asked no questions because the request was already
-airtight — and even then, show the reflect-back and get a yes.
-
-### 3. Host-authored design — fill the how
-
-Study the repository surfaces needed to resolve the design; if the design depends on
-external facts (library APIs, official docs, version behavior), launch one read-only
-doc-lookup lane in parallel — `<plugin-root>/bin/plx-engine --engine codex --model
-gpt-5.6-terra --effort low --mode ro` with a compact research brief — and fold its
-findings in (lookup research runs at low effort; higher effort buys latency, not
-accuracy). Then author one concrete candidate plan from the locked goal. Include the recommended path, material alternatives,
-load-bearing repository facts, exact files or components involved, and observable
-validation. Save that draft verbatim to `<tmp>/plan-brief.md` for neutral critic input.
-
-### 4. Parallel two-dimension red-team (engine-sized effort)
-
-Cross-model rigor comes from review, not delegated plan authorship. Resolve both critic dimensions
-from the config and write one neutral `<tmp>/critic-brief.md`:
+Write one neutral `<tmp>/critic-brief.md`:
 
 ```markdown
 ## Draft plan
@@ -118,16 +61,15 @@ from the config and write one neutral `<tmp>/critic-brief.md`:
 <$ARGUMENTS verbatim>
 
 ### Confirmed decisions
-<the user-approved lock summary verbatim>
+<user-approved lock summary verbatim>
 
 ### Candidate plan
-<your candidate plan verbatim>
+<candidate plan verbatim>
 ```
 
-The approved lock overrides conflicting original wording; together they are the task
-contract. Resolve effort per engine before launch: Grok uses `medium`; Codex and Claude use
-`xhigh`. Launch both dimensions **in parallel** (background shell), one lane per configured
-engine:
+The approved lock resolves conflicts with the original request. Run both configured
+critic dimensions in parallel in retained background sessions. Grok uses `medium`;
+Codex and Claude use `xhigh`.
 
 ```
 <plugin-root>/bin/plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/critic-brief.md \
@@ -135,101 +77,57 @@ engine:
   --out <tmp>/critique-<dimension>-<e>.md --log <tmp>/critic-<dimension>-<e>.log
 ```
 
-A failed required lane gets one retry on the same binding after log inspection. Correct an
-exit-2 invocation error once; exit 3 requires authentication and stops the run. If
-either configured critic still has no result, return `[RED-TEAM INCOMPLETE]` with the diagnosis
-and surviving artifacts; do not author or persist a final spec.
+Skip a dimension only when configuration explicitly leaves it empty, and disclose the
+skip. Inspect failed lanes and retry once on the same binding. Correct an exit-2 usage
+error once; exit 3 requires authentication and stops the run. If a required critic still
+has no result, return `[RED-TEAM INCOMPLETE]` with the diagnosis and surviving artifacts;
+do not persist a final spec.
 
-The implementation critic checks whether the design can be executed correctly against the
-checkout; the system critic checks whether faithful execution would produce the right
-integrated and operable system. Both return findings, never rewrites. Skip a dimension
-only when configuration explicitly leaves it empty, and note the skip; otherwise a
-missing configured lane is `[RED-TEAM INCOMPLETE]`.
+Use packaged wrappers and named rubrics; no raw engine commands, pasted rubrics, or
+subagents. All lanes are read-only. Never `uv run` inside a sandbox.
 
-### 5. Synthesize the final spec
+## Synthesize the spec
 
-Weigh your candidate plan against both critiques: where are the critics right, where is the
-design sound, what did they miss, is there a simpler approach? Deduplicate shared findings
-and settle it yourself — not a merge.
+Deduplicate findings, verify material claims, and adopt or reject them with reasons.
+Load `<plugin-root>/bin/plx-skill --ref plan/spec-template` and author one final spec:
 
-Then author **one** spec doc to the canonical template — the single source of truth shared
-by every engine, not a copy inlined here. Load it with `<plugin-root>/bin/plx-skill --ref plan/spec-template`,
-then fill it:
+- Put the locked goal in Intent, Success Criteria, and Invariants, including VISION
+  constraints and material non-goals.
+- Put the design and critique decisions in Context, Suggested Path, and Validation.
+- Keep Stop Rules and include Milestones and a Progress Log for this long-running effort.
 
-- The **locked goal** populates **Intent**, **Success Criteria**, and **Invariants** (fold
-  in the VISION constraints and material non-goals).
-- The **synthesis** populates **Context**, **Suggested Path**, and **Validation**.
-- Keep **Stop Rules** — they keep an autonomous run from over-shooting the goal.
-- Because this is a long-running effort, **turn on the optional Milestones + Progress Log
-  sections** — they are the multi-session anchor a resumed run reads to know where it is.
+Pair each success criterion with a command or observation and its passing signal. Surface
+that evidence in the run output. Resolve every validation placeholder to a concrete
+command or explicit manual check before handoff. Record unresolved gaps and chosen
+assumptions under Open Questions. Explain material departures from the candidate or critiques.
 
-Make every Success Criterion **demonstrable** — pair each with its oracle (the command and
-the observable in its output that proves it). `/goal`'s evaluator judges only what the run
-surfaces in the transcript, never the filesystem, so a criterion with no nameable proof
-cannot be confirmed done. Resolve every **Validation** command to something concrete before
-you emit — no `<placeholder>`s; if a check genuinely cannot be automated, write an explicit
-"verify by X" fallback instead. The handoff promises "its Validation commands pass," so a
-leftover placeholder leaves the goal unsatisfiable. Record any unresolved gap under Open
-Questions with the assumption you took.
+## Persist and hand off
 
-Note where the final spec diverges from the candidate plan and the critiques, and why.
+Write the complete spec to `.project/builds/<thread>/PLAN_<slug>.md` and add it to the
+thread's `README.md` index, following repository layout guidance. These planning documents
+are the only repository writes. Keep runtime state in `<tmp>`, never `.parallax/`.
 
-### 6. Persist to the thread + emit the /goal handoff
+Return the goal, spec path, approach, material critique dispositions, assumptions or
+residuals, and a paste-ready handoff such as:
 
-- **Persist the spec to the thread yourself.** Write it **verbatim** to
-  `.project/builds/<thread>/PLAN_<slug>.md` (the thread folder is `YYYY-MM-DD_<thread>`;
-  it is an executable spec, not a record to summarize) and add its line to the thread
-  `README.md` index. Follow the repo's `AGENTS.md` Runtime Rules for the build-folder
-  layout. There is no docs subagent.
-- **Emit the handoff.** Output the persisted spec's path and a **paste-ready `/goal`
-  condition** derived from the Success Criteria — a "done when…" line that references the
-  file, e.g.:
-
-  ```
-  /goal Execute .project/builds/<thread>/PLAN_<slug>.md — done when every
-        Success Criterion in it is satisfied with evidence and its Validation commands pass.
-  ```
-
-- Close the run, then **stop**. Do not build:
-
-  ```
-  <plugin-root>/bin/plx-eval finish --skill goal-spec --host codex --repo <repo> --run-dir <tmp> \
-    --host-model <actual host model if known, otherwise unknown> \
-    --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
-    --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-    || echo "plx-eval finish failed (non-fatal)" >&2
-  ```
-
-  Clean up the planning temp directory with `<plugin-root>/bin/plx-clean-temp <tmp>`
-  once the spec is written to the thread. Recorder failures never fail the skill; an
-  interruption before `finish` leaves the grouped run incomplete.
-
-## Output discipline
-
-End with a compact report:
-
-```text
-Goal:     <one line — the locked intent>
-Spec:     .project/builds/<thread>/PLAN_<slug>.md
-Approach: <one line — the design + where it diverged from the lane briefs>
-Red-team: <system + implementation dispositions — findings folded / rebutted / skipped>
-Run it:   /goal <condition referencing the spec>   (or $plx:build on the same spec)
-Open:     <assumptions / [NEEDS CLARIFICATION] / residual risk, or "none">
+```
+/goal Execute .project/builds/<thread>/PLAN_<slug>.md — done when every
+      Success Criterion is satisfied with evidence and its Validation commands pass.
 ```
 
-## Hard constraints
+Mention `$plx:build` as the alternative and stop without building. Before every handled
+return, record the honest outcome and verification status, then clean up:
 
-- The **lock gate is mandatory** (step 2): author nothing before the user approves the goal.
-- Planner and implementation/system critic lanes are read-only, always. The only write in this skill is you
-  persisting the spec to the thread under `.project/builds/`.
-- You write the spec yourself, following the repo's `AGENTS.md` Runtime Rules; there is no
-  docs subagent. **Never edit `VISION.md`.**
-- Never hand-construct raw `codex` / `grok` / `claude -p` commands — `<plugin-root>/bin/plx-engine` is the
-  only sanctioned path. Rubrics are injected by `--rubric` name; never paste rubric text
-  into briefs.
-- Do not write Parallax state into the target repo — no `.parallax/` dirs; create temp
-  files under `mktemp -d "${TMPDIR:-/tmp}/plx-goal-spec.XXXXXX"`.
-- Never `uv run` inside a sandbox.
+```
+<plugin-root>/bin/plx-eval finish --skill goal-spec --host codex --repo <repo> --run-dir <tmp> \
+  --host-model <actual host model if known, otherwise unknown> \
+  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
+  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
+  || echo "plx-eval finish failed (non-fatal)" >&2
+<plugin-root>/bin/plx-clean-temp <tmp>
+```
+
+Recorder failure is non-fatal; an interrupted run may remain incomplete.
 
 Goal to plan:
 

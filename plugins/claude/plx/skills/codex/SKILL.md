@@ -6,9 +6,12 @@ disable-model-invocation: true
 user-invocable: true
 ---
 
-# /plx:codex — single-engine passthrough (Codex)
+# /plx:codex
 
-Run the user's request through **Codex only** — no Parallax review pipeline, no other engines. You (the orchestrator) drive the engine wrapper yourself and return its output. Do not re-do or review the work.
+Run the request through Codex only. Return its answer without redoing or
+reviewing the work. Do not launch other engines or subagents.
+
+Use the packaged helpers on PATH.
 
 ## Resolve launch settings
 
@@ -30,63 +33,68 @@ on the persistent path.
 
 ## Choose the thread mode
 
-Default to the existing **ephemeral** `plx-engine` path below. Choose a persistent
-app-server thread only when the user explicitly wants future continuation or when you
-reasonably expect multiple later `/plx:codex` turns and repository rediscovery would be
-material. Complexity alone is not a reason to persist.
+Default to the existing **ephemeral** `plx-engine` path. Use a persistent thread only
+when the user wants future continuation or repeated turns would materially benefit from
+retaining repository context. Complexity alone does not require persistence.
 
-Before starting a persistent thread, say `Persistent Codex thread: yes — <reason>`.
-Resume only when the user supplies a thread ID or the current conversation contains one
-unambiguous ID previously returned by this skill. Persistent threads are only for this
-passthrough — never use them for Parallax plan critics, goal specs, dev runs, or code
-review lanes. There is no hidden current-thread registry.
+Announce persistence and its reason. Resume only a supplied thread ID or one unambiguous
+ID previously returned in this conversation. Persistent threads belong only to this
+passthrough; do not reuse them for pipeline lanes.
 
 ## Execute
 
-Three tool calls — no subagent.
+Resolve `<repo>` with `git rev-parse --show-toplevel`. Snapshot Git status and relevant
+diffs to distinguish existing work. Create `<tmp>` with
+`mktemp -d "${TMPDIR:-/tmp}/plx-codex.XXXXXX"`.
 
-1. **One Bash call** to set up: `git rev-parse --show-toplevel && git status --short && mktemp -d "${TMPDIR:-/tmp}/plx-codex.XXXXXX"`. The first line is `<repo>` (the wrapper needs an absolute `--repo`, and that path is the write boundary); the status snapshot is so pre-existing edits aren't later attributed to Codex; the last line is `<tmp>`.
-2. **One Write call** to write `<tmp>/prompt.md` as a self-contained brief — Codex runs headless and fresh, seeing only this file plus the repo it reads itself, never your conversation. Lead with the user's request verbatim. Add a short `## Context` heading **only if** the ask leans on the conversation ("ok build this", "use the approach we discussed") — the minimum it needs: decisions already made, stated constraints, specific files/paths discussed. Terse bullets, no transcript dumps; carry conversation-held facts only, not repo facts (Codex reads the repo). No analysis, opinions, or proposed solution of your own — context, not coaching; the passthrough's point is Codex's take. A self-contained ask needs no `## Context`.
-   Choose `<mode>` from the request: questions, audits, investigations, reviews, and plans use `ro`; only an explicit implementation or edit request uses `rw`. When context says "don't code yet" or equivalent, use `ro`.
-3. **One Bash call** to run, check, and clean up in a single `;`-chained command (so status/cleanup run even on engine failure). Choose exactly one path:
+Write `<tmp>/prompt.md` with the user's request verbatim. Add `## Context` only for
+necessary prior decisions, constraints, or paths from the conversation. Keep your own
+analysis and proposed solution out of the brief; the engine can inspect the repository.
 
-   **Ephemeral default:**
+Use `ro` for questions, audits, investigations, reviews, plans, and "don't code yet"
+requests. Use `rw` only for explicit implementation or editing. Run:
 
-   ```
-   plx-engine --engine codex --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; outcome=fail; [[ "$rc" -eq 0 ]] && outcome=pass; plx-eval finish --skill codex --host claude --repo <repo> --run-dir <tmp> --task-file <tmp>/prompt.md --outcome "$outcome" --verification not-run || echo "plx-eval finish failed (non-fatal)" >&2; echo ---; git -C <repo> status --short; plx-clean-temp <tmp>; (exit $rc)
-   ```
+```
+plx-engine --engine codex --mode <ro|rw> --repo <repo> \
+  --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout
+```
 
-   `plx-engine` is on your PATH (shipped in the plugin's `bin/`); it runs one headless `codex exec` turn with safety pinned (`read-only` or repo-scoped `workspace-write`, `--ignore-user-config`, `--ephemeral`) and prints only Codex's final message.
+Use a retained background session for a long call. Save the wrapper exit code and final
+output before status checks or cleanup. Trust exit codes: 0 success, 1 engine failure,
+2 invocation error, 3 unavailable credentials. Surface the diagnostic on failure;
+credentials require user authentication.
 
-   - If the call may run long, use the Bash tool's `run_in_background` option rather than blocking (the post-run status/diff then happens after the completion notification).
-   - Exit codes: **0** ok · **1** Codex failure (surface the stderr/log excerpt to the user) · **2** usage error (your invocation is wrong — fix it) · **3** not signed in → tell the user to run `codex login` and stop.
+For persistent execution, replace the engine command with one of:
 
-   Then emit Codex's output verbatim — no review pass of your own. Only if the status shows new changes vs the step-1 snapshot, add a summary (`git -C <repo> diff --stat`).
+```
+plx-codex-thread start --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort>
+plx-codex-thread resume --thread <thread-id> --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort>
+```
 
-   **Persistent start:**
+Re-derive access mode on every resume; prior write access grants no new authority.
+The packaged client prepares its locked environment outside the plugin cache. If the
+host sandbox blocks dependency or keychain access, request narrowly scoped approval;
+never enable full access. Read `final_response` from the JSON result. Return it verbatim
+with `thread_id`, the absolute repo, and `Resume with: /plx:codex resume <thread_id> —
+<next request>`. On persistent failure, report the error and stop; do not retry through
+the ephemeral path because the failed turn may have changed files.
 
-   ```
-   plx-codex-thread start --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort>; rc=$?; outcome=fail; [[ "$rc" -eq 0 ]] && outcome=pass; plx-eval finish --skill codex --host claude --repo <repo> --run-dir <tmp> --task-file <tmp>/prompt.md --outcome "$outcome" --verification not-run || echo "plx-eval finish failed (non-fatal)" >&2; echo ---; git -C <repo> status --short; plx-clean-temp <tmp>; (exit $rc)
-   ```
+## Finish
 
-   **Persistent resume:**
+Even on failure, compare final Git status/diffs with the baseline, record the outcome,
+and clean up. Do not let a recorder or cleanup result replace the engine exit status.
+Use `pass` on engine success and `fail` otherwise; this passthrough performs no independent
+verification.
 
-   ```
-   plx-codex-thread resume --thread <thread-id> --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort>; rc=$?; outcome=fail; [[ "$rc" -eq 0 ]] && outcome=pass; plx-eval finish --skill codex --host claude --repo <repo> --run-dir <tmp> --task-file <tmp>/prompt.md --outcome "$outcome" --verification not-run || echo "plx-eval finish failed (non-fatal)" >&2; echo ---; git -C <repo> status --short; plx-clean-temp <tmp>; (exit $rc)
-   ```
+```
+plx-eval finish --skill codex --host claude --repo <repo> --run-dir <tmp> \
+  --task-file <tmp>/prompt.md --outcome <pass|fail> --verification not-run \
+  || echo "plx-eval finish failed (non-fatal)" >&2
+plx-clean-temp <tmp>
+```
 
-   `plx-codex-thread` is packaged with this plugin. It runs the pinned app client through
-   `uv`, keeps its environment outside the installed plugin cache, maps `ro` to inspect
-   and `rw` to edit, and emits one JSON result. Its first use may need network access to
-   prepare the locked environment; request narrowly scoped host approval if the Bash
-   sandbox blocks dependency or keychain access. Never enable full access.
-
-   Read `final_response` from the JSON and emit it verbatim. Also return `thread_id`, the
-   absolute repo, and `Resume with: /plx:codex resume <thread_id> — <next request>`.
-   Re-derive `ro` or `rw` from every resumed request; prior thread access never grants
-   write access. On any persistent-path failure, surface the error and stop — never
-   silently retry through the ephemeral path, because a failed turn may already have
-   changed files.
+On success, emit the engine's final output verbatim. If it changed files, append diff
+statistics attributable to this run; do not attribute pre-existing edits to the engine.
 
 Request:
 

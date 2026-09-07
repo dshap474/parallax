@@ -4,11 +4,13 @@ description: Explicit single-engine Claude passthrough for Codex. Use for a Clau
 argument-hint: "<question, coding task, or plan request>"
 ---
 
-# $plx:claude — single-engine passthrough (Claude)
+# $plx:claude
 
-Run the user's request through **Claude only** — no Parallax review pipeline, no other engines. You (the Codex orchestrator) drive the engine wrapper yourself and return its output. Do not re-do or review the work.
+Run the request through Claude only. Return its answer without redoing or
+reviewing the work. Do not launch other engines or subagents.
 
-Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing `/skills/claude/SKILL.md`; invoke the packaged wrapper at `<plugin-root>/bin/plx-engine`.
+Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
+`/skills/claude/SKILL.md`. Use its packaged helpers in `<plugin-root>/bin/`.
 
 ## Resolve launch settings
 
@@ -29,31 +31,47 @@ Always pass both resolved values as `--model <model> --effort <effort>`.
 
 ## Execute
 
-Three tool calls — no subagent.
+Resolve `<repo>` with `git rev-parse --show-toplevel`. Snapshot Git status and relevant
+diffs to distinguish existing work. Create `<tmp>` with
+`mktemp -d "${TMPDIR:-/tmp}/plx-claude.XXXXXX"`.
 
-1. **One shell call** to set up: `git rev-parse --show-toplevel && git status --short && mktemp -d "${TMPDIR:-/tmp}/plx-claude.XXXXXX"`. The first line is `<repo>` (the wrapper needs an absolute `--repo`, and that path is the write boundary); the status snapshot is so pre-existing edits are not later attributed to Claude; the last line is `<tmp>`.
-2. **One file edit** to write `<tmp>/prompt.md` as a self-contained brief — Claude runs headless and fresh, seeing only this file plus the repo it reads itself, never your conversation. Lead with the user's request verbatim. Add a short `## Context` heading only when the ask depends on prior conversation decisions. Carry facts and constraints, not your analysis; the passthrough's point is Claude's take.
-   Choose `<mode>` from the request: questions, audits, investigations, reviews, and plans use `ro`; only an explicit implementation or edit request uses `rw`. When context says "don't code yet" or equivalent, use `ro`.
-3. **One shell call with narrowly scoped host approval** to run, check, and clean up in
-   a single `;`-chained command (so status/cleanup run even on engine failure). Codex's
-   default host sandbox can hide Claude's OAuth/keychain; Claude safe mode remains the
-   engine confinement boundary:
+Write `<tmp>/prompt.md` with the user's request verbatim. Add `## Context` only for
+necessary prior decisions, constraints, or paths from the conversation. Keep your own
+analysis and proposed solution out of the brief; the engine can inspect the repository.
 
-   ```
-   <plugin-root>/bin/plx-engine --engine claude --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; outcome=fail; [[ "$rc" -eq 0 ]] && outcome=pass; <plugin-root>/bin/plx-eval finish --skill claude --host codex --repo <repo> --run-dir <tmp> --task-file <tmp>/prompt.md --outcome "$outcome" --verification not-run || echo "plx-eval finish failed (non-fatal)" >&2; echo ---; git -C <repo> status --short; <plugin-root>/bin/plx-clean-temp <tmp>; (exit $rc)
-   ```
+Use `ro` for questions, audits, investigations, reviews, plans, and "don't code yet"
+requests. Use `rw` only for explicit implementation or editing. Run:
 
-   The wrapper runs one headless `claude -p` turn with safe mode, no session persistence,
-   explicit repository-guidance discovery, and read-only tools or repo-confined sandboxed
-   Bash. It prints only Claude's final message.
+```
+<plugin-root>/bin/plx-engine --engine claude --mode <ro|rw> --repo <repo> \
+  --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout
+```
 
-   - If the call may run long, use a retained execution session and poll it; run status
-     and cleanup after completion.
-   - Exit codes: **0** ok · **1** Claude failure · **2** wrapper usage error · **3**
-     credentials unavailable. After a host-approved call, ask the user to authenticate
-     the Claude CLI and stop.
+Use a retained background session for a long call. Save the wrapper exit code and final
+output before status checks or cleanup. Trust exit codes: 0 success, 1 engine failure,
+2 invocation error, 3 unavailable credentials. Surface the diagnostic on failure;
+credentials require user authentication.
 
-   Emit Claude's output verbatim with no review pass of your own. If status shows new changes, append `git -C <repo> diff --stat`.
+If the host sandbox blocks network or keychain access, request narrowly scoped host approval
+for the wrapper call. Keep the engine sandbox active. If credentials remain unavailable,
+ask the user to authenticate the CLI and stop.
+
+## Finish
+
+Even on failure, compare final Git status/diffs with the baseline, record the outcome,
+and clean up. Do not let a recorder or cleanup result replace the engine exit status.
+Use `pass` on engine success and `fail` otherwise; this passthrough performs no independent
+verification.
+
+```
+<plugin-root>/bin/plx-eval finish --skill claude --host codex --repo <repo> --run-dir <tmp> \
+  --task-file <tmp>/prompt.md --outcome <pass|fail> --verification not-run \
+  || echo "plx-eval finish failed (non-fatal)" >&2
+<plugin-root>/bin/plx-clean-temp <tmp>
+```
+
+On success, emit the engine's final output verbatim. If it changed files, append diff
+statistics attributable to this run; do not attribute pre-existing edits to the engine.
 
 Request:
 

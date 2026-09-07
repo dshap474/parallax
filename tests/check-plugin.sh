@@ -261,31 +261,21 @@ else
   _pass "shared engine guidance is host-neutral"
 fi
 
+# Check launch contracts and cross-host copies; prose wording is not a runtime API.
 review_contract_ok=1
 for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   skill="$package/skills/review/SKILL.md"
-  grep -Fq 'Direct invocation always runs exactly these three core' "$skill" || review_contract_ok=0
-  grep -Fq 'do not scale a direct' "$skill" || review_contract_ok=0
-  grep -Fq 'with all Grok lanes' "$skill" || review_contract_ok=0
-  grep -Fq 'default engine for all three' "$skill" || review_contract_ok=0
-  grep -Fq '(grok-4.6 medium) · fixes: host' "$skill" || review_contract_ok=0
-  grep -Fq -- '--model <model> --effort <effort>' "$skill" || review_contract_ok=0
-  grep -Fq 'reviewer-correctness' "$skill" || review_contract_ok=0
-  grep -Fq 'reviewer-cleanup' "$skill" || review_contract_ok=0
-  grep -Fq 'reviewer-structural' "$skill" || review_contract_ok=0
-  grep -Fq 'reviewer-security' "$skill" || review_contract_ok=0
-  ! grep -Fq 'small change, low blast radius' "$skill" || review_contract_ok=0
+  for role in correctness cleanup structural security; do
+    grep -Fq "reviewer-$role" "$skill" || review_contract_ok=0
+  done
+  for token in '--mode ro' '--model <model> --effort <effort>' 'grok-4.6' 'medium'; do
+    grep -Fq -- "$token" "$skill" || review_contract_ok=0
+  done
 done
-if [ "$review_contract_ok" -eq 1 ] &&
-   grep -q '(claude, high) · fixes: host' "$PLX_CODEX/skills/dev/SKILL.md" &&
-   grep -q '(codex, xhigh) · fixes: host' "$PLX_CLAUDE/skills/dev/SKILL.md" &&
-   grep -Fq 'standalone `$plx:review` Grok default does not apply inside `dev`' "$PLX_CODEX/skills/dev/SKILL.md" &&
-   grep -Fq 'standalone `/plx:review` Grok default does not apply inside `dev`' "$PLX_CLAUDE/skills/dev/SKILL.md" &&
-   ! grep -qiE 'fix lanes? on|fix-engine|fixes: grok' "$PLX_CODEX/skills/review/SKILL.md" "$PLX_CLAUDE/skills/review/SKILL.md" \
-     "$PLX_CODEX/skills/dev/SKILL.md" "$PLX_CLAUDE/skills/dev/SKILL.md"; then
-  _pass "standalone review defaults all core lanes to Grok while dev keeps opposite-engine review"
+if [ "$review_contract_ok" -eq 1 ]; then
+  _pass "standalone review supplies core and security roles with explicit read-only launch settings"
 else
-  _fail "standalone or composed review routing contract drift"
+  _fail "standalone review launch contract drift"
 fi
 
 if grep -Fq 'current change directly makes it obsolete' \
@@ -326,57 +316,68 @@ else
   _fail "skill trace capture contract drift"
 fi
 
-parity_contract_ok=1
-for host in claude codex; do
-  package="$PLX_ROOT/plugins/$host/plx"
-  grep -Fq 'An accepted spec is required' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'exactly one fresh' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'reviewer-correctness' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'reviewer-cleanup' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'reviewer-structural' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'reviewer-security' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  [ "$(grep -Fc -- '--model grok-4.6 --effort medium' "$package/skills/build/SKILL.md")" -eq 3 ] || parity_contract_ok=0
-  grep -Fq 'complete relevant repository verification suite' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq -- '--report-file <tmp>/report.md' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq "target repository's instructions and the accepted spec govern local commits" \
-    "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'Never use `git add -A`' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'include committed and uncommitted Build changes while excluding pre-existing work' \
-    "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'Never push, open a pull request, merge, tag, release, deploy' \
-    "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'Commits: <local commit hashes and purposes, or "none">' \
-    "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq -- '--rubric build-worker' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq -- '--mode rw' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq -- '--build-writer-full-access' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'Full host access is limited to the one fresh build-worker-rubric implementation lane' \
-    "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'Engine wrapper: <plx-engine>' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'never run the review lanes' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  grep -Fq '## Build run context' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  if [ "$host" = claude ]; then
-    grep -Fq -- '--engine claude --mode rw' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-    grep -Fq -- '--model opus --effort medium' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-    grep -Fq -- '--require-claude --require-grok' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  else
-    grep -Fq -- '--engine codex --mode rw' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-    grep -Fq -- '--model gpt-5.6-sol --effort high' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-    grep -Fq -- '--require-codex --require-grok' "$package/skills/build/SKILL.md" || parity_contract_ok=0
-  fi
-  grep -Fq 'reviewer-security' "$package/skills/review/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'Security: not run' "$package/skills/review/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'with all Grok lanes' "$package/skills/review/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'Grok `grok-4.6` at `medium`' "$package/skills/review/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'default is four `grok-4.6` lanes at `medium`' "$package/skills/simplify/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'Understand the work first' "$package/skills/simplify/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'up to **3 questions per round**' "$package/skills/goal-spec/SKILL.md" || parity_contract_ok=0
-  grep -Fq 'tool is not' "$package/skills/goal-spec/SKILL.md" || parity_contract_ok=0
-done
-if [ "$parity_contract_ok" -eq 1 ]; then
-  _pass "Claude and Codex behavioral governance contracts are parallel"
+if python3 - "$PLX_ROOT" <<'PY_CONTRACT'
+import re
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+errors = []
+for host, model, effort in (("claude", "opus", "medium"), ("codex", "gpt-5.6-sol", "high")):
+    package = root / "plugins" / host / "plx"
+    build = (package / "skills/build/SKILL.md").read_text()
+    commands = [" ".join(block.replace("\\\n", " ").split())
+                for block in re.findall(r"```[^\n]*\n(.*?)```", build, re.S)]
+    launch = [block for block in commands if "--rubric build-worker" in block]
+    required = (f"--engine {host} --mode rw", "--build-writer-full-access",
+                f"--model {model} --effort {effort}", "--prompt-file <tmp>/writer-brief.md")
+    if len(launch) != 1 or not all(flag in launch[0] for flag in required):
+        errors.append(f"{host}: standalone Build must launch one configured worker")
+    reviews = [block for block in commands if "--rubric reviewer-correctness" in block]
+    if len(reviews) != 1 or reviews[0].count("--engine grok --mode ro") != 3 or reviews[0].count("--model grok-4.6 --effort medium") != 3:
+        errors.append(f"{host}: Build review command defaults drifted")
+    for field in ("## Spec", "## Build run context", "Engine wrapper: <plx-engine>",
+                  "Baseline commit:", "Baseline snapshots:", "Verification suite:",
+                  "--report-file <tmp>/report.md", f"--require-{host} --require-grok"):
+        if field not in build:
+            errors.append(f"{host}: Build handoff missing {field}")
+
+# These workflows differ only in native invocation, model polarity, and host transport.
+# Compare normalized bodies to catch a change shipped to only one host, independently
+# of headings, line wrapping, or the particular wording chosen for shared instructions.
+for name in ("build", "dev", "plan", "goal-spec", "review", "unknown-unknowns"):
+    bodies = []
+    for host in ("claude", "codex"):
+        body = (root / f"plugins/{host}/plx/skills/{name}/SKILL.md").read_text().split("---", 2)[2]
+        body = re.sub(r"Resolve `<plugin-root>` from this loaded `SKILL.md` path.*?Use (?:the packaged helpers in|its packaged helpers in) `<plugin-root>/bin/`\.", "Use the packaged helpers on PATH.", body, flags=re.S)
+        body = re.sub(r"If the host sandbox blocks Claude or Grok network/keychain access,.*?(?:active|transport)\.", "HOST_BOUNDARY", body, flags=re.S)
+        body = re.sub(r"For Grok (?:calls and preflight|preflight and review calls),.*?active\.", "HOST_BOUNDARY", body, flags=re.S)
+        body = body.replace("<plugin-root>/bin/", "").replace("$plx:", "/plx:")
+        if name == "build":
+            body = body.replace("gpt-5.6-sol", "opus").replace("high", "medium")
+            body = body.replace("Codex", "Claude").replace("codex", "claude")
+        else:
+            body = body.replace(f"--host {host}", "--host HOST")
+            opposite = "claude" if host == "codex" else "codex"
+            body = body.replace(f"`{opposite}`", "`OPPOSITE`")
+            body = body.replace("request_user_input", "AskUserQuestion")
+            if name == "dev":
+                body = body.replace("`high`", "`REVIEW_EFFORT`") if host == "codex" else body.replace("`xhigh`", "`REVIEW_EFFORT`")
+        bodies.append(" ".join(body.split()))
+    if bodies[0] != bodies[1]:
+        errors.append(f"{name}: host-normalized workflow bodies differ")
+
+template = "skills/plan/references/spec-template.md"
+if (root / "plugins/claude/plx" / template).read_bytes() != (root / "plugins/codex/plx" / template).read_bytes():
+    errors.append("spec templates differ between hosts")
+for error in errors:
+    print(error, file=sys.stderr)
+sys.exit(bool(errors))
+PY_CONTRACT
+then
+  _pass "Build launch/handoff contracts and host-normalized workflow parity"
 else
-  _fail "Claude and Codex behavioral governance contract drift"
+  _fail "Build launch/handoff or host workflow parity drift"
 fi
 
 grok_sandbox_contract_ok=1
@@ -393,23 +394,30 @@ else
   _fail "Grok workspace preflight or fail-closed contract drift"
 fi
 
-if grep -Fq -- '--engine claude --mode rw' "$PLX_CLAUDE/skills/build/SKILL.md" &&
-   grep -Fq -- '--build-writer-full-access' "$PLX_CLAUDE/skills/build/SKILL.md" &&
-   grep -Fq -- '--model opus --effort medium' "$PLX_CLAUDE/skills/build/SKILL.md" &&
-   grep -Fq -- '--engine codex --mode rw' "$PLX_CODEX/skills/build/SKILL.md" &&
-   grep -Fq -- '--build-writer-full-access' "$PLX_CODEX/skills/build/SKILL.md" &&
-   grep -Fq -- '--model gpt-5.6-sol --effort high' "$PLX_CODEX/skills/build/SKILL.md" &&
-   grep -Fq 'do not launch another writer' "$PLX_CLAUDE/skills/build/SKILL.md" &&
-   grep -Fq 'do not launch another writer' "$PLX_CODEX/skills/build/SKILL.md" &&
-   grep -Fq 'does not invoke the standalone `/plx:build`' "$PLX_CLAUDE/skills/dev/SKILL.md" &&
-   grep -Fq 'does not invoke the standalone `$plx:build`' "$PLX_CODEX/skills/dev/SKILL.md" &&
-   [ -z "$(grep -L 'Fix directly' "$PLX_CLAUDE/skills/review/SKILL.md" "$PLX_CODEX/skills/review/SKILL.md" \
-     "$PLX_CLAUDE/skills/dev/SKILL.md" "$PLX_CODEX/skills/dev/SKILL.md")" ] &&
-   ! grep -q -- '--rubric planner' "$PLX_CLAUDE/skills/goal-spec/SKILL.md" \
-     "$PLX_CODEX/skills/goal-spec/SKILL.md"; then
-  _pass "standalone Build uses one fresh same-host build worker while dev delegation and host-owned fixes remain intact"
+prompt_constraints_ok=1
+for host in claude codex; do
+  package="$PLX_ROOT/plugins/$host/plx"
+  # Guard the intentional relaxation without pinning replacement prose.
+  if grep -qiE 'three tool calls|exactly three calls|WITHOUT reading file contents|do NOT read the code under review|always request narrowly scoped host approval' \
+      "$package"/skills/*/SKILL.md; then
+    prompt_constraints_ok=0
+  fi
+  if grep -qE 'Return exactly|Final Report Format|recursive delegation' \
+      "$package/prompts/worker.md" "$package/prompts/build-worker.md" \
+      "$package/skills/plan/references/spec-template.md"; then
+    prompt_constraints_ok=0
+  fi
+  for skill in plan dev goal-spec; do
+    for field in '## Draft plan' '### Original request' '### Confirmed decisions' '### Candidate plan'; do
+      grep -Fq "$field" "$package/skills/$skill/SKILL.md" || prompt_constraints_ok=0
+    done
+  done
+  ! grep -q -- '--rubric planner' "$package/skills/goal-spec/SKILL.md" || prompt_constraints_ok=0
+done
+if [ "$prompt_constraints_ok" -eq 1 ]; then
+  _pass "neutral critic briefs remain structured while host mechanics and reports stay flexible"
 else
-  _fail "standalone Build ownership, dev delegation, or goal-spec planning drift"
+  _fail "critic brief or prompt simplification contract drift"
 fi
 
 # --------------------------------------------------------------------------- #
@@ -553,7 +561,8 @@ fi
 explain_output="$("$PLX_ROOT/tests/explain-skill.sh" codex dev)"
 if printf '%s\n' "$explain_output" | grep -q 'config key: dev' &&
    printf '%s\n' "$explain_output" | grep -q 'review-correctness: \[claude\]' &&
-   printf '%s\n' "$explain_output" | grep -q '^preflight: plx-preflight'; then
+   printf '%s\n' "$explain_output" | grep -q '^preflight: plx-preflight' &&\
+   printf '%s\n' "$explain_output" | grep -q '^## Implement$'; then
   _pass "skill explanation resolves Codex bindings and preflight"
 else
   _fail "skill explanation omitted Codex bindings or preflight"

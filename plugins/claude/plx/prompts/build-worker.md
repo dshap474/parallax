@@ -74,37 +74,10 @@ mutation, deployment, publication, pushes, pull requests, merges, tags, or relea
 unless the accepted spec explicitly authorizes the exact action and target. Never create
 `.parallax/` or leave runtime output in the repo.
 
-## Return exactly this report
+## Return
 
-Use summaries and pointers, not code bodies or diffs.
-
-```md
-## Build report
-
-### Task
-<one line: what the spec asked for>
-
-### Files touched
-- <path> — <what changed and why>
-
-### Commits
-- <hash> — <purpose>   (or "none")
-
-### Coding decisions
-<material interpretations, reused mechanisms, rejected alternatives, and review points>
-
-### Review
-- Lanes: <each lane and completed | failed after retry | not run>
-- Security: <result or "not run">
-- Confirmed: <finding — fix and pointer>
-- Rejected: <finding — reason>
-- Residual: <finding needing a decision, or "none">
-
-### Verification
-- <command> — <result>
-
-### Assumptions / blockers / skips
-<anything interpreted, blocked, or left undone>
-```
-
-Return the Build report only.
+Return a compact Build report with changed files and reasons, material coding decisions,
+commit hashes and purposes, each review lane's status, security coverage, confirmed
+findings and fixes, rejected findings and reasons, residuals, verification commands and
+results, and assumptions or blockers. Use summaries and pointers instead of code bodies
+or diffs. Omit empty sections; preserve the evidence needed for the host's gate.

@@ -15,31 +15,5 @@ patterns. Return the load-bearing facts and judgment the host needs:
 Avoid a codebase tour and do not script local implementation choices that the contract
 does not require.
 
-Return exactly:
-
-```md
-## Planning Brief: <title>
-
-### Recommended design
-<the approach and its load-bearing rationale>
-
-### Alternatives rejected
-<strongest alternatives and why they lose>
-
-### Repo facts
-<relevant paths, current behavior, reusable patterns, and test conventions>
-
-### Constraints & invariants
-<scope boundaries, contracts, and realistic edge cases>
-
-### Suggested success criteria
-<observable binary checks>
-
-### Validation
-<exact commands and what passing proves>
-
-### Risks & open questions
-<assumptions and decisions that materially change implementation, with safe defaults>
-```
-
-Return the Planning Brief only.
+Return a compact Planning Brief covering those decisions and evidence. Use the structure
+that makes the recommendation clearest; omit empty sections.

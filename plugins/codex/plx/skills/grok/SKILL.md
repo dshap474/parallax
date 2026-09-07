@@ -4,12 +4,13 @@ description: Single-engine Grok passthrough with overridable model and effort de
 argument-hint: "<question, coding task, or plan request>"
 ---
 
-# $plx:grok — single-engine passthrough (Grok)
+# $plx:grok
 
-Run the user's request through **Grok only** — no Parallax review pipeline, no other engines, no subagent. You (the orchestrator) drive the engine wrapper yourself and return its output. Do not re-do or review the work.
+Run the request through Grok only. Return its answer without redoing or
+reviewing the work. Do not launch other engines or subagents.
 
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
-`/skills/grok/SKILL.md`; invoke the packaged wrapper at `<plugin-root>/bin/plx-engine`.
+`/skills/grok/SKILL.md`. Use its packaged helpers in `<plugin-root>/bin/`.
 
 ## Resolve launch settings
 
@@ -30,45 +31,53 @@ Always pass both resolved values as `--model <model> --effort <effort>`.
 
 ## Execute
 
-Three tool calls — no subagent.
+Resolve `<repo>` with `git rev-parse --show-toplevel`. Snapshot Git status and relevant
+diffs to distinguish existing work. Create `<tmp>` with
+`mktemp -d "${TMPDIR:-/tmp}/plx-grok.XXXXXX"`.
 
-1. **One shell call** to set up: `git rev-parse --show-toplevel && git status --short && mktemp -d "${TMPDIR:-/tmp}/plx-grok.XXXXXX"`. The first line is `<repo>` (the wrapper needs an absolute `--repo`, and that path is the write boundary); the status snapshot is so pre-existing edits aren't later attributed to Grok; the last line is `<tmp>`.
-2. **One file edit** to write `<tmp>/prompt.md` as a self-contained brief — grok runs headless and fresh, seeing only this file plus the repo it reads itself, never your conversation. Lead with the user's request verbatim. Add a short `## Context` heading **only if** the ask leans on the conversation ("ok build this", "use the approach we discussed") — the minimum it needs: decisions already made, stated constraints, specific files/paths discussed. Terse bullets, no transcript dumps; carry conversation-held facts only, not repo facts (grok reads the repo). No analysis, opinions, or proposed solution of your own — context, not coaching; the passthrough's point is grok's take. A self-contained ask needs no `## Context`.
-   Choose `<mode>` from the request: questions, audits, investigations, reviews, and plans use `ro`; only an explicit implementation or edit request uses `rw`. When context says "don't code yet" or equivalent, use `ro`.
-3. **One shell call** to run, check, and clean up in a single `;`-chained command (so status/cleanup run even on engine failure):
+Write `<tmp>/prompt.md` with the user's request verbatim. Add `## Context` only for
+necessary prior decisions, constraints, or paths from the conversation. Keep your own
+analysis and proposed solution out of the brief; the engine can inspect the repository.
 
-   ```
-   <plugin-root>/bin/plx-engine --engine grok --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout; rc=$?; outcome=fail; [[ "$rc" -eq 0 ]] && outcome=pass; <plugin-root>/bin/plx-eval finish --skill grok --host codex --repo <repo> --run-dir <tmp> --task-file <tmp>/prompt.md --outcome "$outcome" --verification not-run || echo "plx-eval finish failed (non-fatal)" >&2; echo ---; git -C <repo> status --short; <plugin-root>/bin/plx-clean-temp <tmp>; (exit $rc)
-   ```
+Use `ro` for questions, audits, investigations, reviews, plans, and "don't code yet"
+requests. Use `rw` only for explicit implementation or editing. Run:
 
-   `<plugin-root>/bin/plx-engine` is packaged with this skill (shipped in the plugin's `bin/`); it runs one headless Grok turn with safety pinned (kernel-enforced `read-only` or repo-scoped `workspace` sandbox + bypassPermissions) and emits only the model's final text.
+```
+<plugin-root>/bin/plx-engine --engine grok --mode <ro|rw> --repo <repo> \
+  --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout
+```
 
-   Two caller rules from the wrapper's own help text:
-   - If Grok cannot reach its network or keychain under the host sandbox, request narrowly
-     scoped approval for this wrapper invocation. Grok's kernel workspace sandbox still
-     confines its writes.
-   - **Trust the exit code, not stderr.** grok prints non-fatal `worker quit ... AuthorizationRequired` noise to stderr even on success — judge the run by its exit code.
+Use a retained background session for a long call. Save the wrapper exit code and final
+output before status checks or cleanup. Trust exit codes: 0 success, 1 engine failure,
+2 invocation error, 3 unavailable credentials. Surface the diagnostic on failure;
+credentials require user authentication.
 
-   - If the call may run long, use a retained execution session and poll it; run status
-     and cleanup after completion.
-   - Exit codes: **0** ok · **1** grok failure — a cancelled turn means no edits applied (surface the stderr/log excerpt to the user) · **2** usage error (your invocation is wrong — fix it) · **3** not signed in → tell the user to run `grok login` and stop.
+If the host sandbox blocks network or keychain access, request narrowly scoped host approval
+for the wrapper call. Keep the engine sandbox active. If credentials remain unavailable,
+ask the user to authenticate the CLI and stop.
 
-   Any nonzero exit ends this skill. Do not perform the task in the host session, retry
-   it through another engine, synthesize a substitute answer, or claim `$plx:grok`
-   completed. Return:
+Judge success by the exit code; `AuthorizationRequired` on stderr can be non-fatal.
+Any nonzero exit ends this skill. Do not perform the task in the host session, switch
+engines, or synthesize a substitute answer. Return `[PLX:GROK FAILED]`, the wrapper
+diagnostic and relevant log excerpt, and any possible partial changes. For exit 3,
+direct the user to `grok login`.
 
-   ```
-   [PLX:GROK FAILED]
-   The headless Grok lane did not start or complete.
-   <the wrapper diagnostic and raw log excerpt>
-   No substitute task work was performed by this skill.
-   ```
+## Finish
 
-   This fail-closed rule overrides the general engine guide's retry and escalation advice
-   for this explicit single-engine passthrough. If Git status differs from the initial
-   snapshot, report that possible partial state instead of claiming no changes.
+Even on failure, compare final Git status/diffs with the baseline, record the outcome,
+and clean up. Do not let a recorder or cleanup result replace the engine exit status.
+Use `pass` on engine success and `fail` otherwise; this passthrough performs no independent
+verification.
 
-   Then emit grok's output verbatim — no review pass of your own. Only if the status shows new changes vs the step-1 snapshot, add a summary (`git -C <repo> diff --stat`).
+```
+<plugin-root>/bin/plx-eval finish --skill grok --host codex --repo <repo> --run-dir <tmp> \
+  --task-file <tmp>/prompt.md --outcome <pass|fail> --verification not-run \
+  || echo "plx-eval finish failed (non-fatal)" >&2
+<plugin-root>/bin/plx-clean-temp <tmp>
+```
+
+On success, emit the engine's final output verbatim. If it changed files, append diff
+statistics attributable to this run; do not attribute pre-existing edits to the engine.
 
 Request:
 

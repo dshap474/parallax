@@ -1,113 +1,80 @@
 ---
 name: dev
-description: The full Parallax dev run — plan, Grok implementation, opposite-engine review, host-applied targeted fixes, and a host final gate. The orchestrator sizes every stage while preserving that role separation. No subagents, no commits.
+description: The full Parallax dev run — plan, Grok implementation, opposite-engine review, host-applied targeted fixes, and a host final gate. The orchestrator sizes every stage while preserving that role separation. Explicit invocation only.
 argument-hint: "<coding task>"
 disable-model-invocation: true
 user-invocable: true
 ---
 
-# /plx:dev — plan → build → review, end to end
+# /plx:dev
 
-You are the Parallax orchestrator (Fable). This skill strings plan, build, and review
-together plus a final gate. Its composed review stage keeps the opposite-host config
-bindings below; the standalone `/plx:review` Grok default does not apply inside `dev`.
-`dev` is self-contained and does not invoke the standalone `/plx:build`; its configured
-writer and opposite-engine review stages remain unchanged.
-Your philosophy: **never hold bulk content you can delegate.** Headless engines read
-broadly, write the code, and produce findings in their own contexts; you carry only the
-compact artifacts between stages — and spend your own intelligence at plan authoring,
-review synthesis, and the final gate.
+Author the plan, delegate implementation, synthesize independent review, apply confirmed
+fixes, and verify the result. This workflow is self-contained; do not invoke standalone
+`/plx:build` or `/plx:review`. The host owns planning and post-review fixes; engine
+workers own initial implementation.
 
-There are no subagents. Every lane is one `plx-engine` call you make yourself — see
-`plx-engine --help` for the tool contract and `plx-engine --print-rubric engines` for
-the judgment doc (model rankings, the sizing ladder, writer rules).
+Use the packaged helpers on PATH.
 
-## Bootstrap
+## Prepare and size
 
-- Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
-- Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-dev.XXXXXX"` for stage
-  artifacts. Never write Parallax state into the
-  target repo.
-- Snapshot `git status --short` and the current staged/unstaged diff into `<tmp>` so
-  pre-existing edits are preserved and never attributed to this run.
-- Write the task text to `<tmp>/task.md` (the user's request verbatim). Every later
-  `plx-engine` call whose prompt is directly under `<tmp>` shares one grouped run
-  because the directory basename is `plx-dev.<suffix>`:
+Resolve `<repo>` with `git rev-parse --show-toplevel`. Create `<tmp>` with
+`mktemp -d "${TMPDIR:-/tmp}/plx-dev.XXXXXX"`. Save Git status and staged/unstaged diffs
+there to preserve pre-existing work. Write the user's request verbatim to `<tmp>/task.md`.
+Keep all lane prompts directly in `<tmp>`.
 
-```
-printf '%s\n' "$ARGUMENTS" > <tmp>/task.md
-# after declaring sizing:
-printf '%s\n' '<sizing line>' > <tmp>/shape.txt
-```
+Read `plx-config`, key `dev`, and `plx-engine --print-rubric engines`.
+Defaults are `code: grok`, `code-fallback: codex`, and `codex` for implementation
+and system critics and each review dimension. Size the stages to the task:
 
-  Do not prefix background commands with recorder flags. Interruption before the final
-  `plx-eval finish` leaves the run incomplete.
+| Size | Critics | Writers | Review |
+| --- | --- | --- | --- |
+| Trivial | None | One cheap configured worker | Host verification |
+| Small | None | One worker | Correctness |
+| Default | Implementation and system | One worker | Correctness, cleanup, structural |
+| Large or risky | Implementation and system | File-disjoint workers when useful | Core roles; a second non-writer engine when proportionate |
 
-## Size the whole run — then declare it
+Declare the selected roles, engines, models, effort, and host-owned fixes before launch;
+write the declaration to `<tmp>/shape.txt`. Default review uses `codex` at
+`xhigh`; standalone review's Grok routing does not apply.
 
-Read the engine config (`plx-config`) → key `dev`. Shipped defaults:
-`plan-critic-implementation: [codex]` · `plan-critic-system: [codex]` · `code: grok` ·
-each review dimension `[codex]`; confirmed post-review fixes are yours. These are available lanes, not a mandate
-to run all of them — size each stage per the judgment doc's ladder and declare it in one
-line before launching anything, e.g.:
+Resolve writer settings from `code` and `code-fallback`. An explicit engine selection
+disables fallback and requires preflight. For explicit Grok, use
+`plx-preflight --repo <repo> --require-grok --grok-mode rw`.
+With shipped defaults, probe `plx-preflight --repo <repo> --optional-grok --grok-mode rw`;
+select Grok on success, otherwise require Codex preflight before choosing the fallback.
+For other configured writers, preflight the selected engine. Never switch writers after
+a writer starts or task mutation begins. Require every selected critic/reviewer engine.
+For Grok calls and preflight, disable the Bash sandbox (`dangerouslyDisableSandbox: true`); keep Grok's kernel sandbox active.
 
-```
-Sizing: implementation + system critics (codex, xhigh) · 1 worker (grok, medium) · review 3×1 (codex, xhigh) · fixes: host
-```
+## Lane mechanics
 
-Write that same sizing line to `<tmp>/shape.txt` before any lane.
-
-**The smallest rung skips advisory fanout, not the writer**: for a trivial ask (one file,
-obvious change), launch one cheap configured rw lane, verify, and report. The host never writes
-initial implementation code in this pipeline — its only edits are the post-review
-targeted fixes. For small work, keep planning in context and run one writer plus one
-correctness reviewer. The default runs both plan-critic dimensions and
-all three core review dimensions on Codex. For large/risky work, use file-disjoint
-workers and add a second non-writer review engine only when proportionate.
-
-For the writer, resolve `code` and `code-fallback` from config. An explicit user engine
-selection disables fallback and must pass required preflight; explicit Grok uses
-`plx-preflight --repo <repo> --require-grok --grok-mode rw`. Otherwise probe Grok with
-`plx-preflight --repo <repo> --optional-grok --grok-mode rw`; select it on success, or
-run the same command with `--require-codex` and select Codex on failure. Run Grok's
-workspace probe with the same disabled Claude Bash sandbox required by its writer lane.
-Declare the selected writer, model, effort, and fallback before mutation. Never fall back
-after a writer starts or the worktree becomes dirty. Require every selected
-critic/reviewer engine before launching its lanes.
-
-## Lane mechanics (every stage)
+Use packaged wrappers and named rubrics in retained background sessions:
 
 ```
 plx-engine --engine <e> --mode <ro|rw> --repo <repo> --prompt-file <brief> \
-  --rubric <lane> [--effort <e>] --out <tmp>/<lane>.md --log <tmp>/<lane>.log
+  --rubric <lane> --model <model> --effort <effort> \
+  --out <tmp>/<lane>.md --log <tmp>/<lane>.log
 ```
 
-- **Always background Bash** (`run_in_background`) — engine turns can outrun the 10-min
-  foreground cap. Fire independent lanes in one message; read out-files when completion
-  notifications arrive. Grok lanes: disable the Bash sandbox for the call
-  (`dangerouslyDisableSandbox: true`); the wrapper defaults to `grok-4.6` and `medium`,
-  and accepts explicit `low|medium|high|xhigh`.
-- Lane fails (exit 1) → read the log, retry once or escalate engines; a failed review
-  lane among survivors → proceed and say so. Exit 3 → tell the user to log in and stop.
+Run independent lanes in parallel with unique out/log files. Grok defaults to `grok-4.6`
+at `medium`; that model always stays at `medium`. Do not use raw engine commands,
+pasted rubrics, or subagents. On exit 1, inspect the log and retry once or escalate a
+read-only lane; writer fallback remains limited to preflight. Disclose failed review
+lanes and proceed with survivors as a partial round. Correct exit-2 usage errors;
+exit 3 requires authentication and stops the run.
 
-## Pipeline (run in order)
+## Plan
 
-### 1. Plan
+Ask up to three material clarification questions if needed. Read the repository surfaces
+needed for the design and author the plan yourself. When external facts matter, run a
+read-only documentation lookup with `plx-engine --engine codex --model gpt-5.6-terra
+--effort low --mode ro` and a focused brief while reading the repo.
 
-Clarify first only if a material ambiguity would change the plan (≤3 sharp questions;
-for a large/risky effort, a short `AskUserQuestion` interview into the hard parts).
-Then **author the plan yourself** — read the repo scoped to what the design needs and
-settle the design, outcome-first. If the design depends on external facts (library APIs,
-official docs, version behavior), launch one read-only doc-lookup lane in parallel with
-the repo reading — `plx-engine --engine codex --model gpt-5.6-terra --effort low
---mode ro` with a compact research brief — and fold its findings into the plan; lookup
-research runs at low effort, higher effort buys latency, not accuracy. In-context plan by default; a spec doc in the build
-thread (`plx-skill --ref plan/spec-template` → `.project/builds/YYYY-MM-DD_<thread>/`)
-only for multi-session efforts. **The plan ends with a `Done means:` line** — the
-concrete command(s)/observable(s) that prove the work; the worker self-verifies against
-it and the gate re-runs it.
+Keep the plan in context unless a multi-session effort warrants a build-thread spec
+using `plx-skill --ref plan/spec-template`. End with `Done means:` and the commands
+or observables that prove completion.
 
-Red-team it if sized in. Write one neutral `<tmp>/critic-brief.md` for every critic:
+When sized in, give each critic the same `<tmp>/critic-brief.md`:
 
 ```markdown
 ## Draft plan
@@ -116,87 +83,75 @@ Red-team it if sized in. Write one neutral `<tmp>/critic-brief.md` for every cri
 <$ARGUMENTS verbatim>
 
 ### Confirmed decisions
-<material answers from clarification, or "none">
+<material clarification answers, or none>
 
 ### Candidate plan
-<the plan verbatim>
+<plan verbatim>
 ```
 
-Confirmed decisions override conflicting original wording; together they are the task
-contract. Trivial and small work skip critic lanes. For default and large/risky work,
-launch ro `plan-critic-implementation` and `plan-critic-system` lanes in parallel against
-that same neutral brief, one lane per configured engine. Deduplicate, then fold the
-critiques — adopt or reject every finding with a reason, verifying load-bearing claims yourself. If a fundamental
-objection invalidates the plan, revise once and rerun the sized critics once before build.
+Confirmed decisions resolve conflicts with the original request. Run read-only
+`plan-critic-implementation` and `plan-critic-system` for the configured engines in
+parallel. Deduplicate, verify material claims, and adopt or reject findings with reasons.
+If a finding invalidates the plan, revise once and rerun the sized critics once.
 
-### 2. Build
+## Implement
 
-Write `<tmp>/spec.md`: a `## Spec` header, then the final plan verbatim, followed by a
-`### Pre-existing worktree state` section listing dirty paths (or `clean`) and instructing
-the worker to preserve them. If a target path is already dirty, include the relevant
-baseline-diff context. Launch the
-writer lane(s) — `--rubric worker --mode rw`, the `code` engine. **One writer per
-disjoint path set**: parallel workers only when the plan splits along genuinely
-independent seams (each brief names the paths it owns and warns others are parallel);
-when in doubt, one writer. Never edit the same files yourself while lanes run.
+Write `<tmp>/spec.md` with `## Spec`, the final plan verbatim, and
+`### Pre-existing worktree state` naming dirty paths and relevant baseline diffs.
+Instruct workers to preserve that work. Launch `--rubric worker --mode rw` lanes on
+the selected writer engine. Use one writer per disjoint path set. Each parallel brief
+names its owned paths and the other concurrent work; use one writer when seams overlap.
+Do not edit worker-owned files while lanes run.
 
-Workers self-verify; with parallel packages, run the repo's checks once yourself after
-all writers land. While the writer builds, prepare only the stage-3 brief fields and
-verification commands already required by this task.
+Workers self-verify. After parallel writers finish, run the combined repository checks.
+While they work, prepare only the review brief fields and verification commands already
+needed by this task.
 
-### 3. Review + fix
+## Review and fix
 
-When the build lands, write `<tmp>/review-brief.md` — one brief, identical for every
-lane, no steer:
+After implementation, write one neutral `<tmp>/review-brief.md` for all reviewers:
 
 ```
 ## Review brief
 - Repo: <repo>
-- Files touched: <from git status vs the Bootstrap snapshot — ground truth, not the
-  worker's report>
-- What was implemented / what to scrutinize: <from the spec and the Buildout report>
-- Diff basis: <task-produced changes vs the saved Bootstrap status/diff>
-- Task contract: <the final plan verbatim>
+- Files touched: <Git status/diff compared with the saved baseline>
+- What was implemented / what to scrutinize: <spec and worker report summary>
+- Diff basis: <task changes relative to saved status/diffs>
+- Task contract: <final plan verbatim>
 ```
 
-Launch the sized review lanes in one message (`--mode ro`, rubrics
-`reviewer-correctness` / `reviewer-cleanup` / `reviewer-structural`) — prefer engines
-that didn't write the code. Then **synthesize as the integrating reviewer**: dedup
-across lanes; correctness governs; verify each material finding against the cited code
-(kill false positives, say why); drop pre-existing issues, untouched-code findings,
-linter-catchable style, generic test wishes, speculative no-path edges, and micro-opts.
-Add `reviewer-security` when requested or when the scope touches auth, permissions,
-secrets/config, shell or subprocess execution, sandboxing, network clients,
-dependencies/lockfiles, CI workflows, deserialization, or another trust boundary.
-Otherwise record `Security: not run`. If another lane finds a concrete security risk,
-run the security lane if possible or report it as a named residual; never drop it.
+Launch sized read-only `reviewer-correctness`, `reviewer-cleanup`, and
+`reviewer-structural` lanes, preferring engines that did not write the code. Add
+`reviewer-security` when requested or when scope touches auth, permissions,
+secrets/config, shell/subprocess execution, sandboxing, network clients, dependencies,
+lockfiles, CI, deserialization, or another trust boundary. Otherwise record
+`Security: not run`. If another lane finds a concrete security risk, run security review
+or preserve the risk as a named residual.
 
-**Fix directly.** You apply the confirmed fixes yourself — small targeted edits at the
-cited sites, exactly the confirmed findings, nothing else; you already hold the
-findings and the code context, so a fix lane plus a verification pass is wasted steps.
-Wait for every review lane to return first. Genuinely uncertain
-items (behavior/scope changes the user may not want) → one batched `AskUserQuestion`,
-folded into one follow-up pass. One fix round, hard cap; leftovers are
-residuals. A build-sized remedy is not a targeted fix — report it as residual or write
-a fresh spec and return to stage 2. Re-run verification after fixes.
+Deduplicate and verify material findings against code. Let correctness determine scope
+before cleanup or structural fixes. Reject false positives, unrelated pre-existing
+issues, untouched code without a causal link, linter-only style, generic test wishes,
+speculative unreachable cases, and optimizations without material cost.
 
-### 4. Final gate
+Fix directly after all lanes stop. Apply confirmed targeted fixes in one bounded round.
+Batch questions where behavior or scope needs a user decision. Report leftovers as
+residuals. For a build-sized remedy, report the residual or write a fresh spec and return
+to implementation. Re-run verification after fixes.
 
-Read the diff once (`git -C <repo> diff`, scoped to the touched files; mind
-pre-existing dirt) — a fresh-eyes sanity pass, not a re-review: does the change satisfy
-the plan's success criteria? Do the fixes hold? Did every lane miss something
-obvious? If the fix cap remains, apply a targeted fix yourself and re-verify;
-otherwise report the issue as residual. If
-structural rework is required, write a fresh spec and return to stage 2.
+## Gate and finish
 
-### 5. Docs + report
+Inspect the task-owned diff against the plan and its `Done means:` checks. If a targeted
+fix remains within the fix round, apply it and re-verify; otherwise report the residual.
+Structural rework needs a fresh spec and delegated implementation.
 
-Update `.project/` surfaces per the repo's `AGENTS.md` Runtime Rules if the system
-shape changed — you write them yourself; keep it narrow. This skill does **not**
-commit; version control follows the repo's own agent instructions.
+Update project docs when repository guidance and the change warrant it. Follow repository
+instructions for local commits; this skill grants no publication authority. Keep runtime
+output out of the repo, including `.parallax/`. Never `uv run` inside a sandbox.
 
-Close the run **before** cleaning `<tmp>` (best-effort; never fail
-the run over recorder errors). Use the honest outcome and verification status:
+Report the outcome, chosen shape and changes to it, material planning decisions, worker
+and review results, fixes, gate evidence, verification commands/results, docs, and residuals.
+Use a compact natural format; omit empty sections. Before every handled return, finish
+and clean up:
 
 ```
 plx-eval finish --skill dev --host claude --repo <repo> --run-dir <tmp> \
@@ -204,37 +159,10 @@ plx-eval finish --skill dev --host claude --repo <repo> --run-dir <tmp> \
   --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
   --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
   || echo "plx-eval finish failed (non-fatal)" >&2
+plx-clean-temp <tmp>
 ```
 
-Then clean up with `plx-clean-temp <tmp>`. Interruption before this step leaves the run
-`incomplete`.
-End with:
-
-```text
-Built: <what shipped>
-Sizing: <the declared shape — and any mid-run escalation>
-Plan: <one line — approach + where it diverged from the critique>
-Build: <workers × engines; Buildout summary in one line>
-Review: <lanes × engines; findings — fixed / asked / won't-fix / residual>
-Gate: <what you checked; nits fixed inline, or "clean">
-Verification: <commands + results>
-Docs: <.project/ surfaces updated, or "none">
-Residual risk: <what to watch>
-```
-
-## Hard constraints
-
-- Critic and review lanes are `--mode ro`, always. Build lanes follow
-  **one writer per disjoint path set** — never two writers on overlapping paths, never
-  you editing files a lane owns. Post-review fixes are your own targeted edits, applied
-  only when no lane is running.
-- Never hand-construct raw `codex` / `grok` / `claude -p` commands — `plx-engine` is
-  the only sanctioned path; safety is pinned inside it.
-- Rubrics are injected by `--rubric` name; never paste rubric text into briefs.
-- This skill does not commit or publish.
-- Do not write Parallax state into the target repo — no `.parallax/` dirs. Temp files
-  live in `<tmp>`, cleaned up after the docs pass.
-- Never `uv run` inside a sandbox.
+Recorder failure is non-fatal; an interrupted run may remain incomplete.
 
 Task:
 

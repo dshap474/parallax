@@ -69,16 +69,9 @@ may correct stale entries under the generated policy.
 
 ## Report
 
-Return:
-
-```text
-Agents memory: <repo> (apply | dry-run)
-AGENTS.md: <missing | legacy | current> → <created | rewritten | no write | blocked>
-Project Memory: <preserved (n entries) | initialized | blocked: memory drift>
-.gitignore: <ok | fixed | would fix | tracked files need user decision>
-Mirror: <created>/<relinked>/<skipped>/<blocked>
-Idempotency: <current ✓ | not established>
-```
+Report the repository and mode, AGENTS.md classification and changes, Project Memory
+preservation, gitignore and mirror results, and whether idempotency was established.
+Use a compact format and call out blockers.
 
 Before returning, record this host-only run. Use `pass` for a completed apply/dry-run,
 `partial` for a blocked result, and `fail` for a handled failure:

@@ -4,143 +4,76 @@ description: Surface the user's unknowns — blindspot passes, brainstorms and t
 argument-hint: "<what you're working on, and where you are with it>"
 ---
 
-# $plx:unknown-unknowns — find the gap between the map and the territory
+# $plx:unknown-unknowns
 
-You are the Parallax orchestrator (Codex). The user's prompt is a map; the codebase and
-the real world are the territory. The difference is their **unknowns**, and your job is
-to surface them cheaply — before, during, or after implementation — so they never get
-discovered where they're expensive to fix.
+Surface gaps that could change the user's work. Search the repository, research external
+facts when useful, ask focused questions, and produce artifacts yourself. Do not launch
+engine lanes or subagents; no preflight is needed.
 
-Frame the work with the four quadrants and say which ones you're targeting:
+Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
+`/skills/unknown-unknowns/SKILL.md`. Use the packaged helpers in `<plugin-root>/bin/`.
 
-- **Known knowns** — what's already in the prompt.
-- **Known unknowns** — what the user knows they haven't figured out yet.
-- **Unknown knowns** — what's so obvious to the user they'd never write it down, but
-  they'd recognize it (or its absence) on sight. Taste, house style, "I know it when I
-  see it" criteria.
-- **Unknown unknowns** — what the user hasn't considered at all: questions they don't
-  know to ask, prior art they haven't seen, how good the result *could* be.
+Resolve `<repo>` with `git rev-parse --show-toplevel`. Read `.project/VISION.md` if it
+exists and preserve its constraints; never edit it. Use the existing build thread for
+persistent artifacts, or `.project/builds/YYYY-MM-DD_<thread-name>/` for a new effort.
 
-This is **pure orchestrator work**: no `<plugin-root>/bin/plx-engine` lanes, no preflight, no subagents.
-Your tools are codebase search, web search where useful, `request_user_input`, and artifacts.
+Infer the user's experience and phase from the request: exploring, about to implement,
+mid-implementation, or done and shipping. Ask one focused question if that context is
+missing and would affect the approach.
 
-## Bootstrap
+Distinguish facts already known, questions the user recognizes, unstated criteria they
+would recognize on sight, and issues they have not considered. Name the gaps you target
+and choose the useful techniques below, usually one or two.
 
-- Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
-- Resolve the **build thread** under `.project/builds/` (existing effort → its directory;
-  new effort → `YYYY-MM-DD_<thread-name>` from `date +%F` and a short kebab name).
-  Persistent artifacts from this skill land there.
-- Read `.project/VISION.md` if it exists — it constrains what "good" means here. Never
-  edit it.
-- Get the user's starting point. If the argument doesn't already say, ask (one
-  `request_user_input`, not a drawn-out interview): their experience with this problem and
-  this part of the codebase, and their phase — **exploring**, **about to implement**,
-  **mid-implementation**, or **done and shipping**. That answer drives the routing below.
-
-## Route
-
-Pick the technique(s) that fit; say which you chose and why. You'll rarely run more than
-two in one invocation.
-
-| The user is… | Run |
+| Need | Technique |
 | --- | --- |
-| New to the domain or this part of the codebase; doesn't know what to ask | Blindspot pass |
-| Facing "I'll know it when I see it" criteria (design, UX, tone, scope) | Brainstorm & prototype |
-| Able to point at something that already does it right | References |
-| Holding material ambiguity that needs *their* answers, or prepping an autonomous run | Hand off → `$plx:goal-spec` (interview + locked spec) |
-| Ready to implement and wanting the how designed and red-teamed | Hand off → `$plx:plan` |
-| Starting an implementation session from a settled plan | Implementation notes |
-| Done and needing buy-in from reviewers or stakeholders | Pitch & explainer |
-| Done and unsure they actually understand what changed | Quiz |
+| New to the domain or codebase | Blindspot pass |
+| Scope or taste needs exploration | Brainstorm or prototype |
+| An existing example gets it right | Reference extraction |
+| Material goal ambiguity or an autonomous run | Hand off to `$plx:goal-spec` |
+| A design ready for implementation and critique | Hand off to `$plx:plan` |
+| A settled plan entering implementation | Implementation notes |
+| Completed work needing stakeholder understanding | Pitch and explainer |
+| Uncertainty about what changed | Quiz |
 
-For the two hand-offs, don't reimplement a lite version — tell the user to invoke the
-skill, and hand them a paste-ready argument that folds in whatever this pass surfaced.
+For a handoff, supply a paste-ready invocation carrying the relevant discoveries.
+Leave the full interview and implementation plan to their owning skills.
 
 ## Techniques
 
-### Blindspot pass
+For a blindspot pass, inspect prior art, relevant modules and conventions, historical
+attempts, and known pitfalls. Explain the concepts needed to judge quality. Rank the
+questions worth asking by their effect on the work and describe what good looks like.
 
-Target: unknown unknowns. Search the codebase (and the web, for domain topics) for what
-the user doesn't know to ask about, then **teach, don't just list**:
+For brainstorming, inspect the repo and offer distinct approaches from cheapest to most
+ambitious, with a recommendation. For visual exploration, build one self-contained HTML
+prototype with fake data and several distinct directions. After the user reacts, record
+the criteria revealed by their choices. Save useful prototypes and criteria in the thread.
 
-1. Map the relevant territory: prior art in the repo, existing modules and conventions
-   they'd be expected to follow, historical attempts, known potholes.
-2. For a domain gap (not a codebase gap), explain the concepts they'd need to evaluate
-   quality — enough that they can tell good from bad, not a textbook.
-3. Deliver: the questions they should be asking, ranked by how much the answer would
-   change the work, plus a short "what good looks like here" section.
-4. Close by offering an improved version of the prompt they came in with.
+For references, read the supplied code, site, docs, or diagram; ask for a pointer if
+missing. Inspect underlying code when available. Extract the desired behavior, structure,
+and edge-case handling into a short contract the user can confirm.
 
-### Brainstorm & prototype
+For implementation notes, maintain `implementation-notes.md` in the thread during the
+active implementation session. Under Deviations, record what was planned, what was found,
+and what changed. Continue only for local, reversible choices that preserve scope,
+behavior, and locked invariants; ask about material departures. Review deviations with
+the user at session end.
 
-Target: unknown knowns — criteria the user can only define by reacting. Verbalizing them
-now is cheap; discovering them mid-implementation forces expensive reverts.
+For a pitch or explainer, create one self-contained Markdown or HTML document in the
+thread. Lead with a demo, explain the decisions from the reader's starting point, and
+cover likely failure questions. Integrate relevant spec, prototype, and implementation
+notes into the explanation.
 
-- **Brainstorm** when scope is the unknown: search the codebase, then present a range of
-  approaches ordered cheapest → most ambitious, and let the user say which resonate.
-  Flag the ones you'd pick and why.
-- **Prototype** when look-and-feel is the unknown: build a single self-contained HTML
-  file with fake data — several genuinely different directions, not one direction with
-  tweaks. No backend wiring, no real state; the point is reaction speed.
-- After the user reacts, write down the criteria their reactions revealed — those are
-  the unknown knowns, now known. Persist prototypes and the extracted criteria to the
-  build thread.
-
-### References
-
-Target: things the user can't articulate but can point at. Source code beats any prose
-description — even in a different language.
-
-- Ask the user for the pointer if they haven't given one: a vendored library, a module
-  in the repo, a component on a website (read the underlying code, not the screenshot),
-  docs, or a diagram.
-- Read it and extract the **semantics** the user wants — behavior, structure, edge-case
-  handling — into a short written contract they can confirm. That contract is what feeds
-  the eventual plan or build, not the raw reference.
-
-### Implementation notes
-
-Target: unknowns that only surface mid-build. Set this up at the *start* of an
-implementation session, then it runs passively:
-
-- Keep `implementation-notes.md` in the build thread. When an edge case forces a
-  deviation from the plan, take the conservative option, log it under **Deviations**
-  (what was planned, what was found, what was done instead), and continue only when the
-  choice is local, reversible, and preserves scope, behavior, and locked invariants.
-  Otherwise stop and ask.
-- At session end, review the Deviations list with the user: each one is a map error,
-  and the fix is usually to the spec or their prompting, not just the code.
-
-### Pitch & explainer
-
-Target: the *reviewers'* unknowns, which start where the user's did. Package the work
-into one self-contained doc (`.md` or `.html`, in the build thread) that:
-
-- Leads with the demo — what it does, shown, not described.
-- Walks the reader from the same starting unknowns the user had to the decisions made,
-  covering the failure points an expert reviewer would probe.
-- Folds in the spec, prototypes, and implementation notes rather than linking a pile of
-  files.
-
-### Quiz
-
-Target: the user's understanding of what actually changed — diffs alone hide behavior
-that depends on existing code paths. Produce an HTML report in the build thread:
-
-- Context and intuition first: what changed, why, and how it interacts with the code
-  around it.
-- A quiz at the bottom on the material points — behavior, edge cases, interactions —
-  with answers hidden until revealed.
-- The bar is theirs to enforce, but state it plainly: don't merge until you pass clean.
+For a quiz, create an HTML report in the thread. Explain what changed and how it interacts
+with existing code, then quiz the material behavior, edge cases, and interactions with
+answers hidden until revealed. Encourage the user to resolve misunderstandings before merging.
 
 ## Return
 
-Close every run with: which quadrants you targeted, the unknowns surfaced (now known),
-any artifacts written to the build thread, and — always — the improved next prompt or
-skill invocation the user should run, paste-ready. Results in chat; never create
-repo-local runtime state outside `.project/`.
-
-Before every handled return, record the host-only run with the honest status:
+Report the gaps examined, discoveries, artifact paths, and an improved next prompt or
+skill invocation. Keep temporary runtime state out of the repository. Before every
+handled return, record the host-only run:
 
 ```
 <plugin-root>/bin/plx-eval finish --skill unknown-unknowns --host codex --repo <repo> \
@@ -148,4 +81,4 @@ Before every handled return, record the host-only run with the honest status:
   || echo "plx-eval finish failed (non-fatal)" >&2
 ```
 
-Trace recording is best-effort and never changes the skill result.
+Recorder failure is non-fatal.

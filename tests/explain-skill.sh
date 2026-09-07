@@ -73,9 +73,8 @@ echo
 echo "sections:"
 grep '^## ' "$SKILL" | sed 's/^## /  /'
 echo
-echo "pipeline:"
+echo "instructions:"
 awk '
-  /^## Pipeline/ {found=1}
-  found && (/^Task:/ || /^Request:/ || /^\$ARGUMENTS/) {exit}
-  found {print}
+  /^---$/ && frontmatter < 2 {frontmatter++; next}
+  frontmatter == 2 {print}
 ' "$SKILL"

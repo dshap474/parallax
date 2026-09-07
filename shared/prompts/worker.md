@@ -24,27 +24,8 @@ Run the spec's checks with the repository's own toolchain binaries. Never use `u
 inside a sandbox. Report exact commands and results. Claim only outcomes you directly
 observed; label blocked or unrun checks.
 
-## Return exactly this report
+## Return
 
-Use summaries and pointers, not code bodies or diffs.
-
-```md
-## Buildout report
-
-### Task
-<one line: what the spec asked for>
-
-### Files touched
-- <path> — <what changed and why>
-
-### Coding decisions
-<material interpretations, reused mechanisms, rejected alternatives, and review points>
-
-### Verification
-- <command> — <result>
-
-### Assumptions / blockers / skips
-<anything interpreted, blocked, or left undone>
-```
-
-Return the Buildout report only.
+Return a compact Buildout report with the outcome, changed files and reasons, material
+coding decisions, verification commands and results, and assumptions or blockers. Use
+summaries and pointers instead of code bodies or diffs. Omit empty sections.

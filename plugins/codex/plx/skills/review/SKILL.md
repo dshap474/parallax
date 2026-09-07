@@ -4,193 +4,107 @@ description: Explicit standalone Parallax review for Codex. Run Grok correctness
 argument-hint: "<scope> [with all Codex|Claude|Grok lanes] [at <effort> effort] [report only]"
 ---
 
-# $plx:review — review, then fix
+# $plx:review
 
-You are the Parallax orchestrator (Codex). This skill is the standalone review stage:
-read-only lanes find, you synthesize, and by default you **fix everything confirmed** —
-yourself, as small targeted edits — asking the user only where you are
-genuinely unsure a fix is wanted. If the user said "report only" (or equivalent), stop
-after the synthesis.
-
-There are no subagents — every lane is a `<plugin-root>/bin/plx-engine` call you make yourself (see
-`<plugin-root>/bin/plx-engine --help`; judgment doc via `<plugin-root>/bin/plx-engine --print-rubric engines`).
-
-Your context discipline: you do NOT read the code under review before the lanes report.
-You write one small review brief, read the findings reports, and only then read code —
-surgically, guided by the findings.
-
-## Bootstrap
-
-- Resolve the absolute repo root (`git rev-parse --show-toplevel`); call it `<repo>`.
-- Determine the review scope WITHOUT reading file contents: the files the user names,
-  or the changed files from `git status --short` / `git diff --name-only` / a named
-  commit range. Snapshot the status — pre-existing edits may be exactly what you're
-  asked to review.
-- Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-review.XXXXXX"` for the
-  brief and lane outputs.
-- Write the review request and resolved scope to `<tmp>/task.md` for the run record.
-
-## Resolve the standalone round — then declare it
+Run independent read-only review lanes, verify their findings, and fix confirmed issues
+with small targeted edits. A report-only request stops after synthesis.
 
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
-`/skills/review/SKILL.md`. Direct invocation always runs exactly these three core
-read-only roles: `reviewer-correctness`, `reviewer-cleanup`, and
-`reviewer-structural`. Grok is the default engine for all three; do not scale a direct
-review down to one lane. The opposite-host bindings under `pipelines.dev` in
-`<plugin-root>/bin/plx-config` apply only to the composed `$plx:dev` review stage.
-Standalone review does not read YAML bindings.
+`/skills/review/SKILL.md`. Use the packaged helpers in `<plugin-root>/bin/`.
 
-Honor an explicit whole-round engine substitution in the current request:
+## Prepare the round
 
-- `with all Grok lanes` → all selected roles use Grok;
-- `with all Claude lanes` → all selected roles use Claude;
-- `with all Codex lanes` → all selected roles use Codex.
+Resolve `<repo>` with `git rev-parse --show-toplevel`. Establish the requested files,
+change range, and baseline from the user and Git status/diffs. Read enough code to make
+the scope accurate. Save the status and diffs so fixes preserve existing work.
 
-Mixed per-role routing is not part of this skill. Apply an explicit model or effort
-override to every selected lane, except that `grok-4.6` always uses `medium`.
-Otherwise use Grok `grok-4.6` at `medium`, Claude `high`, or Codex `xhigh`.
+Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-review.XXXXXX"`. Write the request
+and scope to `<tmp>/task.md`; keep every lane prompt directly in `<tmp>`.
 
-Also run `reviewer-security` on the selected engine when the user requests security
-review or scope touches auth, permissions, secrets/config, shell or subprocess
-execution, sandboxing, network clients, dependencies/lockfiles, CI workflows,
-deserialization, or another trust boundary. Otherwise report `Security: not run`.
+Run exactly three core roles: `reviewer-correctness`, `reviewer-cleanup`, and
+`reviewer-structural`. Default all three to Grok `grok-4.6` at `medium`. Honor an
+explicit whole-round engine override, such as `with all Grok lanes`, `with all Claude
+lanes`, or `with all Codex lanes`. Claude defaults to `high`, Codex to `xhigh`.
+Apply model/effort overrides to the whole round; `grok-4.6` stays at `medium`.
+Do not use mixed per-role routing or YAML bindings here. The `pipelines.dev` bindings
+belong to `$plx:dev`.
 
-Declare the shape in one line before launching (e.g. `Sizing: review 3×1
-(grok-4.6 medium) · fixes: host`).
+Add `reviewer-security` when requested or when scope touches auth, permissions,
+secrets/config, shell/subprocess execution, sandboxing, network clients, dependencies,
+lockfiles, CI, deserialization, or another trust boundary. Otherwise report
+`Security: not run`.
 
-Write the same sizing line to `<tmp>/shape.txt`. Keep all lane prompt files directly in
-`<tmp>`; its `plx-review.<suffix>` basename mechanically groups their captured lanes.
-Call `<plugin-root>/bin/plx-eval finish` before every handled return, including preflight,
-authentication, lane, and report-only exits. Recorder failures never fail review;
-interruption leaves the run incomplete. Then run `<plugin-root>/bin/plx-preflight
---repo <repo> --require-<engine>` for each engine the round will use.
+Declare the roles, engines, effort, and host-owned fixes; save to `<tmp>/shape.txt`.
+Run `<plugin-root>/bin/plx-preflight --repo <repo> --require-<engine>` for the selected engine.
+If the host sandbox blocks Claude or Grok network/keychain access, request narrowly scoped host approval for that call; keep the engine sandbox active.
 
-## Pipeline (run in order)
+## Launch
 
-1. **Write the review brief** to `<tmp>/brief.md` — one compact brief, identical for
-   all lanes (neutral context — same inputs, independent judgment):
+Write one neutral `<tmp>/brief.md`, identical for every lane:
 
-   ```
-   ## Review brief
-   - Repo: <repo>
-   - Files touched: <the scope list from Bootstrap>
-   - What was implemented / what to scrutinize: <from the user's request — verbatim
-     where possible>
-   - Diff basis: <working tree vs HEAD, exact commit range, or another explicit baseline>
-   - Spec source: <the task statement, plan, or doc the work should match, or "derive
-     from code and tests">
-   ```
+```
+## Review brief
+- Repo: <repo>
+- Files touched: <scope>
+- What was implemented / what to scrutinize: <the user's request>
+- Diff basis: <exact baseline or commit range>
+- Spec source: <task, plan, or doc; otherwise derive from code and tests>
+```
 
-   No analysis, no suspicions, no steer toward a verdict.
+Keep suspicions and proposed verdicts out of the brief. Launch all selected dimensions
+in parallel in retained background sessions:
 
-2. **Launch all lanes in parallel** — one background shell call per lane (dimension ×
-   engine), all in a single message (`a retained background execution session`; lanes can outrun the 10-min
-   foreground cap):
+```
+<plugin-root>/bin/plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/brief.md \
+  --rubric reviewer-<dimension> --model <model> --effort <effort> \
+  --out <tmp>/<e>-<dimension>.md --log <tmp>/<e>-<dimension>.log
+```
 
-   ```
-   <plugin-root>/bin/plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/brief.md \
-     --rubric reviewer-<dimension> --model <model> --effort <effort> \
-     --out <tmp>/<e>-<dimension>.md --log <tmp>/<e>-<dimension>.log
-   ```
+Use packaged wrappers and named rubrics; no raw engine commands, pasted rubrics, or
+subagents. On exit 1, inspect the log; proceed with surviving lanes and disclose the
+omission. Correct exit-2 usage errors. Exit 3 requires authentication; report it.
+Missing required lanes make the round partial.
 
-   Always request narrowly scoped host approval for Claude preflight and lanes; Codex's
-   host sandbox can hide Claude's OAuth/keychain while Claude safe mode remains active.
-   Grok lanes may need narrowly scoped host approval when network or keychain access is
-   blocked. The wrapper defaults to `grok-4.6`; direct Grok review passes `medium`.
-   Exit codes:
-   0 ok · 1 engine failure (read
-   the log; if other lanes succeeded, proceed with the survivors and say so) · 2 your
-   usage error · 3 not signed in → tell the user to log in.
+## Synthesize and fix
 
-3. **Synthesize as the integrating reviewer.** The reports come back in the Finding
-   Schema (`### F<id>` items with Severity + Confidence). Do not just merge:
+Deduplicate by root cause and try to disprove each material finding against the code.
+Correctness determines which objects belong in scope before cleanup or structural
+remedies. Reject false positives with a reason. Filter unrelated pre-existing issues
+(unless this is a whole-file audit), untouched code without a causal link, linter-only
+style, generic test/doc wishes, speculative unreachable cases, and optimizations without
+material cost. Read further where the reports reveal a gap.
 
-   - **Dedup across lanes.** Same root mechanism → keep the most concrete statement; a
-     finding raised by more than one lane is weightier, not several findings.
-   - **Correctness governs.** Classify each object (required / extra / wrong-scope /
-     missing) first, then keep cleanup and structural findings only on code that's
-     staying. Never polish an object correctness says should be deleted.
-   - **Verify before trusting — try to disprove.** For each material finding, read the
-     cited code surgically and confirm the mechanism is real. Kill false positives —
-     say which and why. Never carry "X unless handled elsewhere" when the code can
-     answer it.
-   - **Apply the false-positive filter** — drop anything that is: a pre-existing issue
-     (unless the user asked for a whole-file/audit review); anchored only to untouched
-     code; pure style a linter catches; a generic missing-tests/docs wish; a
-     speculative no-path edge case; a micro-opt without material-cost evidence; an
-     intentional, well-scoped change that misses no consequence; a broad architectural
-     objection with no introduced problem; or praise/filler.
-   - **Security escalates.** If any core lane returns a concrete security risk and the
-     security lane was not already run, run it when possible. Otherwise preserve the
-     risk as a named residual; never drop it.
-   - **Smell what's missing.** Use the reports as pointers to the places no lane
-     looked; read those spots. A targeted intelligence pass, not a re-review.
+If a core lane finds a concrete security risk, run the security lane if possible or
+retain the risk as a named residual. Rank confirmed findings by severity. Ask about
+remedies only when intent, behavior, scope, or an interface needs a user decision;
+batch those questions. For report-only requests, deliver findings and a repair plan.
 
-4. **Triage the survivors into three buckets:**
+Fix directly after every lane has returned. Apply confirmed, unambiguous remedies in
+one bounded fix round, including approved answers. Preserve unrelated edits. Leave
+build-sized remedies and remaining issues as residuals and recommend `$plx:build`.
+Re-read your diff and run the relevant repository checks. Never `uv run` inside a sandbox.
+Follow repository instructions for local commits; this skill grants no publication authority.
 
-   - **Auto-fix** (the default bucket): the finding is confirmed and the remedy is
-     unambiguous.
-   - **Ask first**: fixing it would change behavior, scope, or an interface in a way
-     the user may not want, or the "right" fix depends on intent you can't infer.
-     Batch these into one `request_user_input` call — don't drip.
-   - **Won't fix**: rebutted or filtered — say why, one line each.
+## Finish
 
-   If the user asked for **report only**: present the synthesis (findings ranked by
-   severity + the repair plan) and stop here.
+Report scope and lane coverage, confirmed and rejected findings, security status, fixes,
+open decisions, residuals, and verification commands/results. Use a compact natural
+format; omit empty sections. Report-only verification may pass when all required lanes
+and finding checks completed.
 
-5. **Fix directly.** You apply the confirmed fixes yourself — small targeted edits at
-   the cited sites, exactly the confirmed findings, nothing else. You already hold the
-   findings, the verification reads, and the code context; launching a fix lane and
-   then verifying its diff is wasted steps and compute. Do not fix while any review
-   lane is still running. Batch the ask-first questions while you fix; fold approved
-   items into one follow-up pass (one round, hard cap).
+Keep runtime output out of the repo, including `.parallax/`. Before every handled return,
+including report-only and errors, finish the run and clean up:
 
-   If a confirmed remedy turns out to be build-sized (a wide refactor, a new module),
-   it is not a targeted fix — leave it, report it as residual, and recommend a
-   `$plx:build` run.
+```
+<plugin-root>/bin/plx-eval finish --skill review --host codex --repo <repo> --run-dir <tmp> \
+  --host-model <actual host model if known, otherwise unknown> \
+  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
+  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
+  || echo "plx-eval finish failed (non-fatal)" >&2
+<plugin-root>/bin/plx-clean-temp <tmp>
+```
 
-6. **Verify and deliver.** Re-read your own diff — did each fix land, and nothing
-   else? Run the repo's own checks (toolchain binaries; never
-   `uv run` in a sandbox). Close the run before cleaning `<tmp>`, using
-   the honest review outcome and verification result (report-only review may use
-   `verification pass` when all required lanes and finding checks completed):
-
-   ```
-   <plugin-root>/bin/plx-eval finish --skill review --host codex --repo <repo> --run-dir <tmp> \
-     --host-model <actual host model if known, otherwise unknown> \
-     --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
-     --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-     || echo "plx-eval finish failed (non-fatal)" >&2
-   ```
-
-   Report:
-
-   ```text
-   Reviewed: <scope> — sizing <lanes × engines, effort>
-   Findings: <n confirmed / n false-positive killed / n filtered>
-   Security: <reviewed with n findings | not run | residual: reason>
-   Fixed: <n, by you — one line each>
-   Asked: <items awaiting/answered user confirmation, or "none">
-   Won't fix: <items + one-line reasons, or "none">
-   Verification: <commands + results>
-   ```
-
-   This skill does not commit; version control follows the repo's own agent
-   instructions. Clean up with `<plugin-root>/bin/plx-clean-temp <tmp>`.
-   Close the run on every normal or handled-error return; an interruption before
-   `finish` leaves it incomplete.
-
-## Hard constraints
-
-- Review lanes are `--mode ro`, always. You are the only writer in this skill — fixes
-  are your own targeted edits, applied only after every lane has returned.
-- Never hand-construct raw `codex` / `grok` / `claude -p` commands — `<plugin-root>/bin/plx-engine` is
-  the only sanctioned path; safety is pinned inside it.
-- Rubrics are injected by `--rubric` name; never paste rubric text into briefs.
-- Do not write Parallax state into the target repo — no `.parallax/` dirs. Temp files
-  live in `<tmp>`, cleaned up before returning.
-- This skill does not commit or publish.
-- Never `uv run` inside a sandbox.
+Recorder failure is non-fatal; an interrupted run may remain incomplete.
 
 Request:
 

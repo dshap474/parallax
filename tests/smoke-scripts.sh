@@ -737,7 +737,11 @@ out="$WORK/skill.txt"
 "$PLUGIN_ROOT/bin/plx-skill" dev > "$out" 2>&1
 rc=$?
 if [ "$rc" -eq 0 ]; then _pass "exits 0"; else _fail "exit $rc"; fi
-assert_contains "## Pipeline" "$out" "emits the pipeline section"
+if cmp -s "$out" "$PLUGIN_ROOT/skills/dev/SKILL.md"; then
+  _pass "emits the complete source skill"
+else
+  _fail "skill output differs from its source"
+fi
 out="$WORK/simplify-skill.txt"
 "$PLUGIN_ROOT/bin/plx-skill" simplify > "$out" 2>&1
 rc=$?

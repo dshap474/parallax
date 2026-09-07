@@ -1,0 +1,5 @@
+# Loading principles must not eagerly simplify the seeded buggy code.
+NEEDS:
+FIXTURE: calc
+TASK:
+EXPECT_EMPTY_DIFF: true

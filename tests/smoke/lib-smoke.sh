@@ -5,6 +5,10 @@
 # and a cached engine-auth gate. Source AFTER computing your own dir.
 # Bash 3.2 safe (no associative arrays, no mapfile).
 
+# --------------------------------------------------------------------------- #
+# Fixtures, output, and authentication gates
+# --------------------------------------------------------------------------- #
+
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib.sh"
 SMOKE_DIR="$PLX_ROOT/tests/smoke"
 
@@ -12,6 +16,7 @@ SMOKE_DIR="$PLX_ROOT/tests/smoke"
 fixture_dir() {
   case "$1" in
     calc) printf '%s\n' "$PLX_ROOT/tests/fixture" ;;
+    redundant) printf '%s\n' "$SMOKE_DIR/fixtures/redundant" ;;
     bare) printf '%s\n' "$SMOKE_DIR/fixtures/bare" ;;
     *) echo "unknown fixture: $1" >&2; return 2 ;;
   esac
@@ -21,7 +26,7 @@ fixture_dir() {
 # created one (PLX_SMOKE_RUNDIR), reuse it so both layers share a dir.
 smoke_run_dir() {
   if [ -n "${PLX_SMOKE_RUNDIR:-}" ]; then mkdir -p "$PLX_SMOKE_RUNDIR"; printf '%s\n' "$PLX_SMOKE_RUNDIR"; return; fi
-  local d; d="$SMOKE_DIR/logs/$(date +%Y-%m-%dT%H-%M-%S)"; mkdir -p "$d"; printf '%s\n' "$d"
+  local d; d="$(mktemp -d "${TMPDIR:-/tmp}/plx-smoke.XXXXXX")"; mkdir -p "$d"; printf '%s\n' "$d"
 }
 
 # smoke_summary_row <rundir> <layer> <item> <verdict> <note>

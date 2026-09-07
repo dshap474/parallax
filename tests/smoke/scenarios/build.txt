@@ -1,5 +1,6 @@
-# /plx:build — fresh same-host writer implements, Grok reviews, host fixes, final gate runs
+# Build: fresh build worker implements, reviews, fixes, verifies, and commits; host gates.
 NEEDS: claude grok
+NEEDS_CODEX: codex grok
 FIXTURE: calc
 TASK: Accepted spec: update only calc.py so average([]) returns 0.0, preserve existing behavior for non-empty lists, verify both cases with Python assertions, and create one local commit containing only calc.py after verification. Do not push or publish externally.
 EXPECT_DIFF: average

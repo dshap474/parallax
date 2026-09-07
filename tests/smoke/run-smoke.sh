@@ -11,6 +11,10 @@
 #   run-smoke.sh --with-grok ... include grok lanes (off by default)
 #   run-smoke.sh --dry-run ...   prepare fixtures + print commands, run nothing
 set -uo pipefail
+# --------------------------------------------------------------------------- #
+# Arguments and run directory
+# --------------------------------------------------------------------------- #
+
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
 usage() { sed -n '6,12p' "$0" | sed 's/^# \{0,1\}//'; }
@@ -28,12 +32,16 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-PLX_SMOKE_RUNDIR="$HERE/logs/$(date +%Y-%m-%dT%H-%M-%S)"
+PLX_SMOKE_RUNDIR="${PLX_SMOKE_RUNDIR:-$(mktemp -d "${TMPDIR:-/tmp}/plx-smoke.XXXXXX")}"
 export PLX_SMOKE_RUNDIR
 export PLX_SMOKE_WITH_GROK="$WITH_GROK"
 mkdir -p "$PLX_SMOKE_RUNDIR"
 echo "Parallax smoke — run dir: $PLX_SMOKE_RUNDIR"
 [ "$DRY" -eq 1 ] && echo "(dry-run: nothing actually executes)"
+
+# --------------------------------------------------------------------------- #
+# Suite entry point
+# --------------------------------------------------------------------------- #
 
 g=""; [ "$WITH_GROK" -eq 1 ] && g="--with-grok"
 rc=0

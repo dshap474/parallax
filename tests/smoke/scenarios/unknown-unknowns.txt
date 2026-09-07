@@ -1,0 +1,6 @@
+# A bounded blindspot pass should surface the seeded bug without modifying code.
+NEEDS:
+FIXTURE: calc
+TASK: I am an experienced Python developer about to use this small calculator. Inspect calc.py for a brief codebase blindspot pass, report only in chat, and do not create artifacts or edit files. No web research is needed.
+EXPECT_EMPTY_DIFF: true
+EXPECT_OUTPUT: empty|zerodivision|zero.division

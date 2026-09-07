@@ -1,5 +1,6 @@
 # /plx:review — must catch the seeded empty-list bug AND auto-fix it (host-applied fixes are the default posture)
-NEEDS: codex
+NEEDS: grok
+NEEDS_CODEX: grok
 FIXTURE: calc
 TASK: review calc.py for correctness bugs
 EXPECT_DIFF: average

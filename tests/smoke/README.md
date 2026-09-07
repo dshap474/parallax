@@ -1,9 +1,9 @@
-# Parallax Claude-package behavioral smoke suite
+# Parallax behavioral smoke suite
 
 This is the **end-to-end audit** the deterministic harness (`tests/run.sh`) deliberately
-skips. It runs the real Claude skills and the real engine wrapper against throwaway 1-file
+skips. It runs the selected host skills and the real engine wrapper against throwaway 1-file
 fixtures with **real (small) model calls**, then asserts on what actually happened and
-captures the full transcript of every lane. Use it to confirm the live system works, not
+captures the host log and final answer. Use it to confirm the live system works, not
 just that it's wired correctly.
 
 > `tests/run.sh` / `tests/smoke-scripts.sh` are static and free. **This suite spends
@@ -14,11 +14,13 @@ just that it's wired correctly.
 | Layer | What it exercises | How | Cost |
 |---|---|---|---|
 | **L1 — engines** | `bin/plx-engine` actually drives each CLI (codex, claude; grok opt-in); `--mode ro` stays read-only and `--rubric` injection lands (the reviewer finds the seeded bug); `--mode rw` edits land in-repo and are correct | pure shell drives the wrapper | tiny (2 calls/engine) |
-| **L2 — skills** | each `/plx:*` skill runs start→finish (plan → red-team → build → review lanes → fixes → gate, etc.) | headless `claude --plugin-dir <this repo>` per skill | real (a full pipeline per skill) |
+| **L2 — skills** | each `/plx:*` skill runs start→finish (plan → red-team → build → review lanes → fixes → gate, etc.) | selected headless host per skill | real (a full pipeline per skill) |
 
-L2 loads `plugins/claude/plx` via `--plugin-dir`, so it tests uncommitted changes — not
-the installed cache. The Codex package is covered by the deterministic dual-package
-suite. Claude skills launch their engine lanes as background shell calls inside that
+L2 defaults to `plugins/claude/plx` via `--plugin-dir`. Set `PLX_PACKAGE=codex` to
+run the Codex host through packaged `plx-engine`, with an explicit instruction to read
+this checkout's exact `SKILL.md`. This exercises workflow behavior from source; it does
+not verify installed Codex plugin discovery or desktop approval UI. Both hosts test
+uncommitted changes. Claude skills launch their engine lanes as background shell calls inside that
 headless session, so the runner sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` — without
 it, headless `claude -p` stops waiting on background work after 10 minutes and long lanes
 get orphaned.
@@ -31,10 +33,17 @@ bash tests/smoke/run-smoke.sh --skills        # L1 + every skill end to end (ful
 bash tests/smoke/run-smoke.sh --skill dev     # one skill end to end
 bash tests/smoke/run-smoke.sh --with-grok ... # add grok lanes (off by default)
 bash tests/smoke/run-smoke.sh --dry-run --skills   # prep fixtures + print commands, run nothing
+PLX_PACKAGE=codex bash tests/smoke/run-smoke.sh --dry-run --skills
+PLX_PACKAGE=codex bash tests/smoke/run-smoke.sh --skill init # real Codex host
 ```
 
+`--with-grok` adds the L1 Grok probes and the Grok passthrough scenario only. The Build,
+Review, Simplify, and Dev scenarios require Grok; they skip when its authentication is
+unavailable, regardless of this flag. The Dev scenario covers its preferred writer;
+it does not exercise the Codex fallback.
+
 Engines that aren't installed/authed are **skipped** (via `plx-preflight`), never failed.
-A bare run is safe and cheap; the token-spending audit is one flag (`--skills`) away.
+Even a bare run spends model tokens for L1; use `--dry-run` for a model-free preview.
 A full `--skills` run can take a long wall-clock time (each pipeline runs multiple
 engine turns) — run it from a terminal, or via background Bash from an agent session.
 
@@ -43,12 +52,17 @@ engine turns) — run it from a terminal, or via background Bash from an agent s
 | Skill | Tiny task | Passes when |
 |---|---|---|
 | `plan` | plan a `median()` addition | exit 0 · **no edits** · the delivered plan mentions `median` |
-| `build` | implement and locally commit an accepted `average([])` spec | exit 0 · host edits calc.py · commit contains only calc.py · all three Grok review rubrics run · no worker rubric runs · final functional check passes |
+| `build` | implement and locally commit an accepted `average([])` spec | exit 0 · calc.py changes · commit contains only calc.py · transcript contains the writer and three Grok review artifact names · final functional check passes |
 | `dev` | add `median()` to calc.py + a test | exit 0 · diff has `def median` · functional check green · transcript shows a review round |
 | `review` | review the buggy calc.py | exit 0 · a finding names the empty-list / `ZeroDivisionError` bug · **the fix is applied** (`average([]) == 0.0`) |
 | `codex` | guard `average([])` | exit 0 · calc.py edited · `average([]) == 0.0` |
 | `grok` | same (with `--with-grok`) | same |
 | `agents-memory` | run in a bare repo | exit 0 · `AGENTS.md` created · `CLAUDE.md` symlink |
+| `init` | load routing | exit 0 · no tracked or untracked changes · final answer confirms routing |
+| `kiss` | load principles | exit 0 · no tracked or untracked changes |
+| `unknown-unknowns` | chat-only calculator blindspot pass | exit 0 · no changes · final answer identifies empty-input failure |
+| `simplify` | remove redundant collections | exit 0 · code changes · empty, negative, fractional and generator cases retain results |
+| `claude` | guard `average([])` (Codex host only) | same functional checks as `codex` |
 | `goal-spec` | — | **manual** (see below) |
 
 Scenarios live in `scenarios/<skill>.txt` — edit the `TASK:` / `EXPECT_*:` lines there;
@@ -56,24 +70,28 @@ no code change needed to retune a check.
 
 ## The audit artifact
 
-Every run writes one timestamped dir under `logs/` (git-ignored):
+Every run writes a unique directory outside the repository under the system temp directory
+(or explicit `PLX_SMOKE_RUNDIR`). DRY and SKIP rows are not behavioral verification:
 
 ```text
-logs/<timestamp>/
+<run-dir>/
   summary.md                             # the cross-layer PASS/FAIL/SKIP table (printed at the end)
   engines/<engine>-{ro,rw}.{out,log,rc,diff}  # L1: each lane's answer, full log, exit code, diff
   skills/<skill>/
-    cmd.txt           # the exact claude invocation (reproducible by hand)
-    transcript.jsonl  # stream-json: every tool call, background lane launch, message
+    cmd.txt           # the exact host invocation (reproducible by hand)
+    answer.txt        # final host response; output assertions exclude echoed prompts
+    host.log          # Claude host JSONL copy or Codex packaged wrapper log
+    transcript.jsonl  # Claude only: stream-json host events
     diff.patch        # what the skill changed vs the pristine fixture
     repo-status.txt   # git status --short
     check.txt         # the functional check's output
     stderr.log        # claude stderr
 ```
 
-`transcript.jsonl` is the point of the whole thing — it records the plx-engine lane
-launches (critic, writer, reviewers) and the orchestrator's synthesis, so you can see
-what each lane did. The lanes' own outputs land in the run's temp dir, which the skill
+The host log records what the host exposes about launches and synthesis. Nested lane
+outputs can be cleaned up by skills and are not guaranteed to be captured in full. Artifact-name transcript assertions are structural evidence; they do not independently prove a nested lane completed or that its review was correct.
+
+The lanes' own outputs land in the run's temp dir, which the skill
 cleans up — the transcript is the durable record.
 
 ## goal-spec is a manual check
@@ -89,6 +107,7 @@ automated run. To smoke it by hand:
 ## Fixtures
 
 - `tests/fixture/` (shared) — `calc.py` with the seeded empty-list bug; used by plan/build/dev/review/codex/grok and the L1 engine lanes.
+- `tests/smoke/fixtures/redundant/` — sums of squares with redundant collections; used by simplify.
 - `tests/smoke/fixtures/bare/` — a 1-file repo with no `AGENTS.md`; used by agents-memory.
 
 Each is copied to a fresh `mktemp` + `git init` per run; the templates are never edited.

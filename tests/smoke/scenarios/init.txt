@@ -1,0 +1,6 @@
+# Context-only routing initialization must leave the repository unchanged.
+NEEDS:
+FIXTURE: calc
+TASK:
+EXPECT_EMPTY_DIFF: true
+EXPECT_OUTPUT: routing|posture|skill map

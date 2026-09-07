@@ -1,0 +1,6 @@
+# Remove needless materialization while preserving iterable and numeric semantics.
+NEEDS: grok
+FIXTURE: redundant
+TASK: Simplify total_squares in calc.py by removing unnecessary intermediate collections. Keep support for any finite iterable, including generators, and preserve empty, negative, and fractional input behavior. Scope is calc.py only. Do not commit.
+EXPECT_DIFF: ^-
+EXPECT_CHECK: python3 -c "from calc import total_squares as f; assert f([])==0; assert f([2,-3,.5])==13.25; assert f(x for x in [2,-3])==13"

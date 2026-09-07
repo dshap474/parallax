@@ -61,7 +61,7 @@ if [ -n "$KEY" ]; then
     found {print "  "$0}
   ' "$YAML"
 else
-  echo "config key: (none — router, scaffold, or passthrough)"
+  echo "config key: (none — this skill does not read pipeline bindings)"
 fi
 PF="$(grep -oE 'plx-preflight[^`]*' "$SKILL" | head -1)"
 if [ -n "$PF" ]; then

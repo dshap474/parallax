@@ -29,10 +29,14 @@ language (for example, `$plx:claude ask fable medium for <task>`). The host conv
 those settings into engine launch flags; omitted settings retain their defaults. Grok
 4.6 is the one model-specific exception: its reasoning is always normalized to medium.
 
-Configured pipelines read their package-local `config/parallax.yaml`. Config is the
-floor shape, not a limit: the host may scale lanes down or up and must declare the
-chosen shape before launching. Standalone Build always uses one fresh same-host build
-worker that owns implementation, Grok review, fixes, and verification: Claude Opus Medium
+`plan`, `simplify`, `dev`, and `goal-spec` read engine bindings from their package-local
+`config/parallax.yaml`; each skill owns its workflow shape and allowed overrides.
+`dev` scales stages with task size and reads its own review bindings. Standalone
+Review owns its three Grok core lanes, risk-triggered security lane, and explicit
+current-message whole-round engine override in its skill; it does not read YAML
+review bindings. Declare the chosen shape before launching.
+
+Standalone Build always uses one fresh same-host build worker that owns implementation, Grok review, fixes, and verification: Claude Opus Medium
 or Codex `gpt-5.6-sol` High, with no fallback or second writer. Simplify
 always runs reuse, simplification, efficiency, and altitude once each on Grok 4.6 Medium. A
 current-message instruction may replace the engine for the whole round.

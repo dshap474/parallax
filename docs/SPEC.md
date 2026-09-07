@@ -27,15 +27,15 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 - Codex skill frontmatter uses the bare capability name, which the plugin namespace
   exposes as `$plx:<name>`; every skill has
   `agents/openai.yaml` with `allow_implicit_invocation: false`.
-- The Codex opposite-host passthrough is `plx-claude`; the Claude opposite-host
+- The Codex opposite-host passthrough is `$plx:claude`; the Claude opposite-host
   passthrough is `plx:codex`.
 - Claude `/plx:codex` is ephemeral by default and may start or resume a persistent
   app-server thread only for explicit continuation or material multi-turn reuse. It
   returns the thread ID and keeps no Parallax thread registry.
 - Claude-host defaults: Claude plans, synthesizes, and applies targeted fixes; Codex
-  supplies plan critics and three core review dimensions plus risk-triggered security.
+  supplies plan critics and composed `dev` review dimensions plus risk-triggered security.
 - Codex-host defaults: Codex plans, synthesizes, and applies targeted fixes; Claude
-  supplies plan critics and three core review dimensions plus risk-triggered security.
+  supplies plan critics and composed `dev` review dimensions plus risk-triggered security.
 - Simplify runs four read-only Grok 4.6 Medium dimensions over a plan or code. An explicit
   whole-round engine request replaces all four. The host applies only confirmed safe
   improvements.

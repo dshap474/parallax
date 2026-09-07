@@ -1,16 +1,13 @@
 # Parallax engine defaults for the Codex-hosted plugin.
 # Codex is the orchestrator, Claude is the opposite-engine critic, and Grok is the
 # preferred optional writer for the self-contained dev pipeline.
+# Skills own workflow shape and allowed overrides; config supplies engine bindings.
+# Standalone review owns its Grok defaults and whole-round overrides in SKILL.md;
+# composed dev review uses only the review-* bindings under dev below.
 pipelines:
   plan:
     plan-critic-implementation: [claude]
     plan-critic-system: [claude]
-
-  review:
-    review-correctness: [claude]
-    review-cleanup: [claude]
-    review-structural: [claude]
-    review-security: [claude]
 
   simplify:
     simplify-reuse: [grok]

@@ -37,8 +37,8 @@ surgically, guided by the findings.
 Direct invocation always runs exactly these three core read-only roles:
 `reviewer-correctness`, `reviewer-cleanup`, and `reviewer-structural`. Grok is the
 default engine for all three; do not scale a direct review down to one lane. The
-opposite-host bindings in `plx-config` remain the default for the composed `/plx:dev`
-review stage and do not apply here.
+opposite-host bindings under `pipelines.dev` in `plx-config` apply only to the
+composed `/plx:dev` review stage. Standalone review does not read YAML bindings.
 
 Honor an explicit whole-round engine substitution in the current request:
 

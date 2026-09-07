@@ -207,12 +207,12 @@ if [ "$(grep -c '^    code: grok$' "$PLX_CODEX/config/parallax.yaml")" -eq 1 ] &
    [ "$(grep -c '^    code: grok$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 1 ] &&
    [ "$(grep -c '^    code-fallback: codex$' "$PLX_CODEX/config/parallax.yaml")" -eq 1 ] &&
    [ "$(grep -c '^    code-fallback: codex$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 1 ] &&
-   [ "$(grep -c '^    review-security: \[claude\]$' "$PLX_CODEX/config/parallax.yaml")" -eq 2 ] &&
-   [ "$(grep -c '^    review-security: \[codex\]$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 2 ] &&
+   [ "$(grep -c '^    review-security: \[claude\]$' "$PLX_CODEX/config/parallax.yaml")" -eq 1 ] &&
+   [ "$(grep -c '^    review-security: \[codex\]$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 1 ] &&
    ! grep -q '^    fix:' "$PLX_CODEX/config/parallax.yaml" &&
    ! grep -q '^    fix:' "$PLX_CLAUDE/config/parallax.yaml" &&
-   [ "$(grep -c '\[claude\]' "$PLX_CODEX/config/parallax.yaml")" -eq 14 ] &&
-   [ "$(grep -c '\[codex\]' "$PLX_CLAUDE/config/parallax.yaml")" -eq 14 ] &&
+   [ "$(grep -c '\[claude\]' "$PLX_CODEX/config/parallax.yaml")" -eq 10 ] &&
+   [ "$(grep -c '\[codex\]' "$PLX_CLAUDE/config/parallax.yaml")" -eq 10 ] &&
    [ "$simplify_defaults_ok" -eq 1 ] &&
    ! grep -q '^    plan:' "$PLX_CODEX/config/parallax.yaml" &&
    ! grep -q '^    plan:' "$PLX_CLAUDE/config/parallax.yaml"; then

@@ -1,16 +1,13 @@
 # Parallax engine configuration
 #
-# Binds pipeline ROLES to ENGINES, keyed by pipeline. Each skill names the key it
-# reads (plan -> `plan`, review -> `review`, simplify -> `simplify`, dev -> `dev`,
-# goal-spec -> `goal-spec`). Each skill's SKILL.md is fully
-# self-contained — it documents its own pipeline steps — and resolves each role to its
-# engine from this file before running.
+# Binds roles for plan, simplify, dev, and goal-spec. Each owning skill resolves
+# its package-local key and defines its workflow shape and allowed overrides.
+# Standalone review owns its Grok defaults and whole-round overrides in SKILL.md;
+# composed dev review uses only the review-* bindings under dev below.
 #
-# The values below are the shipped DEFAULTS — the floor shape, not a mandate. The
-# orchestrator sizes every run per the judgment doc (`plx-engine --print-rubric
-# engines`): it may drop lanes for small tasks, add engines/lanes for large or risky
-# ones, and swap engines when the output doesn't meet the bar. It declares the
-# chosen sizing before launching.
+# Config supplies engine bindings, not a universal sizing policy. Dev sizes its
+# stages with the engines rubric; standalone plan and simplify keep their fixed
+# dimensions as documented in their skills. Declare the chosen shape before launch.
 #
 # Every configured role runs as one headless `plx-engine` call made by the
 # orchestrator. Standalone build uses one explicit same-host writer command in its skill,
@@ -44,19 +41,13 @@
 #     current-message "all <engine> lanes" substitution replaces all four bindings.
 #   - Plan authoring, review synthesis, and the final gate are always the
 #     orchestrator. Never delegated, not configurable.
-#   - Cross-engine review is the default posture: prefer review engines that
-#     didn't write the code.
+#   - Dev defaults to opposite-host review engines. Standalone review routing
+#     is defined by its skill, independently of these bindings.
 
 pipelines:
   plan:
     plan-critic-implementation: [codex]
     plan-critic-system: [codex]
-
-  review:
-    review-correctness: [codex]
-    review-cleanup: [codex]
-    review-structural: [codex]
-    review-security: [codex]
 
   simplify:
     simplify-reuse: [grok]

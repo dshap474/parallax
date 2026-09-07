@@ -52,7 +52,7 @@ to run all of them — size each stage per the judgment doc's ladder and declare
 line before launching anything, e.g.:
 
 ```
-Sizing: implementation critic (claude, high) · 1 worker (grok, medium) · review 3×1 (claude, high) · fixes: host
+Sizing: implementation + system critics (claude, high) · 1 worker (grok, medium) · review 3×1 (claude, high) · fixes: host
 ```
 
 Write that same sizing line to `<tmp>/shape.txt` before any lane.
@@ -60,7 +60,8 @@ Write that same sizing line to `<tmp>/shape.txt` before any lane.
 **The smallest rung skips advisory fanout, not the writer**: for a trivial ask (one file,
 obvious change), launch one cheap configured rw lane, verify, and report. The host never writes
 initial implementation code in this pipeline — its only edits are the post-review
-targeted fixes. The default runs both plan-critic dimensions and
+targeted fixes. For small work, keep planning in context and run one writer plus one
+correctness reviewer. The default runs both plan-critic dimensions and
 all three core review dimensions on Claude. For large/risky work, use file-disjoint
 workers and add a second non-writer review engine only when proportionate.
 
@@ -124,10 +125,10 @@ Red-team it if sized in. Write one neutral `<tmp>/critic-brief.md` for every cri
 ```
 
 Confirmed decisions override conflicting original wording; together they are the task
-contract. Default: one ro `plan-critic-implementation` lane. Large/risky: launch
-`plan-critic-implementation` and `plan-critic-system` in parallel against that same neutral
-brief, one lane per configured engine. Deduplicate, then fold the critiques — adopt or reject
-every finding with a reason, verifying load-bearing claims yourself. If a fundamental
+contract. Trivial and small work skip critic lanes. For default and large/risky work,
+launch ro `plan-critic-implementation` and `plan-critic-system` lanes in parallel against
+that same neutral brief, one lane per configured engine. Deduplicate, then fold the
+critiques — adopt or reject every finding with a reason, verifying load-bearing claims yourself. If a fundamental
 objection invalidates the plan, revise once and rerun the sized critics once before build.
 
 ### 2. Build

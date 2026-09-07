@@ -21,7 +21,10 @@ independent judgment. Every lane is one isolated `plx-engine` process.
 The Claude package keeps Claude as host and defaults plan critics and composed `dev`
 review lanes to Codex. The Codex package flips that judgment polarity: Codex remains
 host while Claude supplies those lanes. Direct `review` instead runs all three core
-lanes on Grok by default. Standalone Build delegates the whole build to one fresh
+lanes on Grok by default, with security added when triggered and an explicit
+current-message engine override applied to the whole round. Its skill owns that
+routing; the package config supplies the separate `pipelines.dev` review bindings.
+Standalone Build delegates the whole build to one fresh
 same-host worker (Codex `gpt-5.6-sol` High or Claude Opus Medium) that implements, runs
 its three Grok 4.6 Medium review lanes, and fixes confirmed findings itself; the host
 bootstraps and gate-checks. The separate `dev` pipeline prefers Grok

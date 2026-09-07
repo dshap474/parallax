@@ -19,10 +19,13 @@ in `plx-engine`. Optional evaluation provenance belongs in `plx-eval` (opt-in vi
 `PLX_TRACE_DB`). Do not add orchestration subagents, plugin-root traversal, repo-local
 runtime state, hooks, telemetry services, or publishing behavior.
 
-Codex skills use plain `plx-*` names and `agents/openai.yaml` with implicit invocation
+Codex skills use bare capability names (such as `plan`) and `agents/openai.yaml` with implicit invocation
 disabled. Claude skills use `/plx:*` namespaced commands and explicit-only frontmatter
 (`disable-model-invocation: true`, `user-invocable: true`). Equivalent capability does
 not mean identical prose: preserve host-native tools and configured review polarity.
+Config supplies engine bindings for `plan`, `simplify`, `dev`, and `goal-spec`; each
+skill owns its shape and override rules. Standalone Review defines Grok defaults and
+whole-round overrides in its skill. Keep composed review bindings under `dev`.
 
 Keep full access confined to the single standalone Build worker. Codex
 `danger-full-access` and Claude's sandbox-disabled permission bypass are transport

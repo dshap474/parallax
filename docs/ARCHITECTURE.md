@@ -88,7 +88,7 @@ Pipeline lanes and default passthroughs use `plx-engine`. It pins:
   read-only tools or repo-confined sandboxed Bash;
 - Grok: `grok-4.6` at medium reasoning, unattended tool approval, no
   planning/subagent/memory features, and an explicit read-only or workspace sandbox;
-- Devin: `swe-2-medium`, one-shot print mode, generated config with supported imports,
+- Devin: `swe-2-high`, one-shot print mode, generated config with supported imports,
   updates, and subagents disabled, dangerous permission mode, and no OS sandbox.
 
 These models are defaults, not restrictions. Explicit user-requested model and effort

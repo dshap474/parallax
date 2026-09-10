@@ -23,7 +23,7 @@
 #            ro = read-only tools, rw = sandboxed Bash without direct write
 #            tools; the standalone Build writer may explicitly disable the
 #            sandbox so it can create required local commits
-#   devin  : SWE-2 Medium by default, non-interactive print mode, generated
+#   devin  : SWE-2 High by default, non-interactive print mode, generated
 #            config with automatic imports/updates/subagents disabled, and the
 #            documented dangerous permission mode with no OS sandbox. Devin
 #            therefore has full host access; repository-native Devin config can
@@ -72,7 +72,7 @@ Flags:
                         allow one rw worker/build-worker-rubric Codex/Claude lane to write
                         Git metadata; invalid for ro, Grok, or other rubrics
   --model <m>           codex: default gpt-5.6-sol · claude: default opus ·
-                        grok: default grok-4.6 · devin: default swe-2-medium
+                        grok: default grok-4.6 · devin: default swe-2-high
   --effort <e>          codex: default medium · claude: default high ·
                         grok-4.6: always medium · other Grok models: default medium
                         Explicit values pass through except that grok-4.6 is pinned
@@ -253,7 +253,7 @@ elif [[ "$ENGINE" == "claude" ]]; then
   [[ -n "$MODEL" ]] || MODEL="opus"
   [[ -n "$EFFORT" ]] || EFFORT="high"
 else
-  [[ -n "$MODEL" ]] || MODEL="swe-2-medium"
+  [[ -n "$MODEL" ]] || MODEL="swe-2-high"
 fi
 
 # Grok 4.6 is tuned and validated only at medium reasoning in Parallax. Keep

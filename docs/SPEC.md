@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.26
+Status: v0.5.27
 
 ## Required tree
 
@@ -15,7 +15,7 @@ shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.26`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.27`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains thirteen
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
@@ -30,7 +30,7 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 - The Codex opposite-host passthrough is `$plx:claude`; the Claude opposite-host
   passthrough is `plx:codex`.
 - Both packages expose a standalone `devin` passthrough. It defaults to
-  `swe-2-medium`, accepts exact model overrides, rejects generic effort, and uses the
+  `swe-2-high`, accepts exact model overrides, rejects generic effort, and uses the
   explicit `full-access` wrapper mode without changing pipeline routing.
 - Claude `/plx:codex` is ephemeral by default and may start or resume a persistent
   app-server thread only for explicit continuation or material multi-turn reuse. It

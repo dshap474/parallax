@@ -263,7 +263,7 @@ if [ "$rc" -eq 0 ] && [ "$(cat "$fake_out")" = FINAL_OK ]; then
 else
   _fail "Devin default invocation expected FINAL_OK, got exit $rc"
 fi
-assert_contains "swe-2-medium" "$fake_devin_args" "Devin model defaults to SWE-2 Medium"
+assert_contains "swe-2-high" "$fake_devin_args" "Devin model defaults to SWE-2 High"
 assert_contains "dangerous" "$fake_devin_args" "Devin uses documented full-access permission mode"
 assert_contains "unset" "$fake_devin_sandbox_env" "Devin ignores inherited DEVIN_SANDBOX"
 if grep -qx -- '--sandbox' "$fake_devin_args" ||

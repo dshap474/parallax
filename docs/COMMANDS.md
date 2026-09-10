@@ -13,7 +13,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Goal spec | `/plx:goal-spec` | `$plx:goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Claude may persist Codex context |
 | Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; Grok 4.6 always uses medium effort |
-| Devin | `/plx:devin` | `$plx:devin` | One full-access Devin passthrough; SWE-2 Medium by default; no generic effort flag |
+| Devin | `/plx:devin` | `$plx:devin` | One full-access Devin passthrough; SWE-2 High by default; no generic effort flag |
 | Init | `/plx:init` | `$plx:init` | Prime the orchestrator: delegation posture + plx skill map; no repository writes |
 | Agents memory | `/plx:agents-memory` | `$plx:agents-memory` | Bootstrap root `AGENTS.md`, `CLAUDE.md`, and `.project/` policy |
 | Unknowns | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` | Host-only blindspot and comprehension work |

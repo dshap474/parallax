@@ -28,7 +28,7 @@ version_of() {
 claude_version="$(version_of "$PLX_CLAUDE/.claude-plugin/plugin.json")"
 codex_version="$(version_of "$PLX_CODEX/.codex-plugin/plugin.json")"
 market_version="$(version_of "$PLX_ROOT/.claude-plugin/marketplace.json")"
-if [ "$claude_version" = "0.5.26" ] && [ "$claude_version" = "$codex_version" ] &&
+if [ "$claude_version" = "0.5.27" ] && [ "$claude_version" = "$codex_version" ] &&
    [ "$claude_version" = "$market_version" ] &&
    grep -qx "v$claude_version" "$PLX_ROOT/README.md" &&
    grep -qx "Status: v$claude_version" "$PLX_ROOT/docs/SPEC.md"; then
@@ -161,7 +161,7 @@ done
 for skill in \
   "$PLX_CLAUDE/skills/devin/SKILL.md" \
   "$PLX_CODEX/skills/devin/SKILL.md"; do
-  grep -Fq 'Default: `model=swe-2-medium`.' "$skill" ||
+  grep -Fq 'Default: `model=swe-2-high`.' "$skill" ||
     passthrough_overrides_ok=0
   grep -Fq -- '--mode full-access' "$skill" || passthrough_overrides_ok=0
   grep -Fq 'Never pass `--effort`.' "$skill" || passthrough_overrides_ok=0

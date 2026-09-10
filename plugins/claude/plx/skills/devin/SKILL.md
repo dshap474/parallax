@@ -1,6 +1,6 @@
 ---
 name: devin
-description: Single-engine Devin CLI passthrough with explicit full host access, SWE-2 Medium by default, exact model overrides, and validated final-only output. No multi-model review pipeline.
+description: Single-engine Devin CLI passthrough with explicit full host access, SWE-2 High by default, exact model overrides, and validated final-only output. No multi-model review pipeline.
 argument-hint: "<question, coding task, or plan request>"
 disable-model-invocation: true
 user-invocable: true
@@ -15,7 +15,7 @@ Use the packaged helpers on PATH.
 
 ## Resolve the model
 
-- Default: `model=swe-2-medium`.
+- Default: `model=swe-2-high`.
 - Resolve an explicit SWE-2 medium, high, or max request to `swe-2-medium`,
   `swe-2-high`, or `swe-2-max`.
 - Pass any other explicit exact model ID through unchanged. If Devin rejects it,

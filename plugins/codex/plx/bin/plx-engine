@@ -3,6 +3,8 @@
 # Usage:
 #   plx-engine --engine codex|grok|claude --mode ro|rw --repo <abs-path> \
 #     --prompt-file <file> --stdout
+#   plx-engine --engine devin --mode full-access --repo <abs-path> \
+#     --prompt-file <file> --stdout
 #   plx-engine --print-rubric <name>
 #
 # Safety flags are pinned here per engine, not decided by callers:
@@ -21,8 +23,13 @@
 #            ro = read-only tools, rw = sandboxed Bash without direct write
 #            tools; the standalone Build writer may explicitly disable the
 #            sandbox so it can create required local commits
-# Full access is accepted only for an rw worker- or build-worker-rubric Codex or
-# Claude lane.
+#   devin  : SWE-2 Medium by default, non-interactive print mode, generated
+#            config with automatic imports/updates/subagents disabled, and the
+#            documented dangerous permission mode with no OS sandbox. Devin
+#            therefore has full host access; repository-native Devin config can
+#            still load. ATIF export supplies the validated final response.
+# Full access is accepted for Devin, and for an rw worker- or build-worker-rubric
+# Codex or Claude lane.
 # Never use Codex's approvals-and-sandbox bypass or --yolo.
 
 # --------------------------------------------------------------------------- #
@@ -39,21 +46,25 @@ plx-engine — run a coding engine headless against a repo (Parallax engine API)
 Usage:
   plx-engine --engine codex|grok|claude --mode ro|rw --repo <abs-path> \
     --prompt-file <file> [--rubric <name>] [--model <m>] [--effort <e>] --stdout
+  plx-engine --engine devin --mode full-access --repo <abs-path> \
+    --prompt-file <file> [--rubric <name>] [--model <m>] --stdout
   plx-engine ... --out <file> --log <file>     (instead of --stdout)
   plx-engine --print-rubric <name>             (print prompts/<name>.md and exit)
 
 What it does:
-  One non-interactive engine turn with safety pinned per engine (see the header
-  of this script). Mode `ro` = the engine cannot edit anything; `rw` = edits
-  confined to --repo. With --rubric, the named rubric from the plugin's
+  One non-interactive engine turn with transport settings pinned per engine
+  (see the header of this script). For codex/grok/claude, mode `ro` = the engine
+  cannot edit anything and `rw` = edits confined to --repo. Devin requires
+  `full-access`; it is unrestricted transport, not an enforced read/write
+  profile. With --rubric, the named rubric from the plugin's
   prompts/ dir is injected ahead of your prompt (codex/grok: prepended to the
   prompt; claude: appended to the system prompt). Your prompt file should open
   with the section header the rubric expects (see prompts/engines.md).
   Only the engine's FINAL message is emitted; progress/noise goes to the log.
 
 Flags:
-  --engine <e>          codex | grok | claude (required)
-  --mode <m>            ro | rw (required; rw's write boundary is --repo)
+  --engine <e>          codex | grok | claude | devin (required)
+  --mode <m>            ro | rw for codex/grok/claude; full-access for Devin
   --repo <dir>          absolute path to the target repo (required)
   --prompt-file <file>  file containing the brief/spec (required)
   --rubric <name>       lane rubric to inject (a file name under prompts/, no .md)
@@ -61,11 +72,12 @@ Flags:
                         allow one rw worker/build-worker-rubric Codex/Claude lane to write
                         Git metadata; invalid for ro, Grok, or other rubrics
   --model <m>           codex: default gpt-5.6-sol · claude: default opus ·
-                        grok: default grok-4.6
+                        grok: default grok-4.6 · devin: default swe-2-medium
   --effort <e>          codex: default medium · claude: default high ·
                         grok-4.6: always medium · other Grok models: default medium
                         Explicit values pass through except that grok-4.6 is pinned
-                        to medium.
+                        to medium. Devin has no effort flag; a nonempty value is
+                        rejected—choose a model variant instead.
   --stdout              print the final message to stdout; temp files auto-cleaned
   --out <f> --log <f>   instead of --stdout: write final message / full log to files
   --print-rubric <n>    print the named rubric (e.g. reviewer-correctness, engines)
@@ -82,12 +94,15 @@ Caller notes:
   * --build-writer-full-access removes filesystem confinement. It changes the
     transport permission only; the accepted spec and repository rules remain
     the writer's complete authority boundary.
+  * Devin full-access mode likewise removes filesystem/network confinement and
+    uses no OS sandbox. It does not grant publication or external-system authority.
+    Repository-native Devin hooks, MCP servers, rules, and skills may still load.
 
 Exit codes:
   0  success — stdout (or --out) holds the engine's final message
   1  engine or wrapper failure — details on stderr / in the log
   2  usage error — bad flags or missing/empty inputs
-  3  not signed in — tell the user to log in (codex login / grok login / claude /login)
+  3  not signed in — tell the user to log in (codex login / grok login / claude /login / devin auth login)
 EOF
 }
 
@@ -187,8 +202,21 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-case "$ENGINE" in codex|grok|claude) ;; *) echo "--engine must be codex|grok|claude" >&2; exit 2 ;; esac
-case "$MODE" in ro|rw) ;; *) echo "--mode must be ro|rw" >&2; exit 2 ;; esac
+case "$ENGINE" in codex|grok|claude|devin) ;; *) echo "--engine must be codex|grok|claude|devin" >&2; exit 2 ;; esac
+case "$MODE" in ro|rw|full-access) ;; *) echo "--mode must be ro|rw|full-access" >&2; exit 2 ;; esac
+if [[ "$ENGINE" == "devin" ]]; then
+  [[ "$MODE" == "full-access" ]] || {
+    echo "Devin requires --mode full-access; its transport is not read-only or workspace-confined" >&2
+    exit 2
+  }
+  [[ -z "$EFFORT" ]] || {
+    echo "Devin does not support --effort; choose an exact model variant such as swe-2-medium, swe-2-high, or swe-2-max" >&2
+    exit 2
+  }
+elif [[ "$MODE" == "full-access" ]]; then
+  echo "--mode full-access supports only Devin" >&2
+  exit 2
+fi
 if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
   [[ "$MODE" == "rw" ]] || {
     echo "--build-writer-full-access requires --mode rw" >&2
@@ -221,9 +249,11 @@ if [[ "$ENGINE" == "grok" ]]; then
 elif [[ "$ENGINE" == "codex" ]]; then
   [[ -n "$MODEL" ]] || MODEL="gpt-5.6-sol"
   [[ -n "$EFFORT" ]] || EFFORT="medium"
-else
+elif [[ "$ENGINE" == "claude" ]]; then
   [[ -n "$MODEL" ]] || MODEL="opus"
   [[ -n "$EFFORT" ]] || EFFORT="high"
+else
+  [[ -n "$MODEL" ]] || MODEL="swe-2-medium"
 fi
 
 # Grok 4.6 is tuned and validated only at medium reasoning in Parallax. Keep
@@ -380,6 +410,180 @@ run_claude() {
   [[ -s "$OUT" ]] || { echo "claude produced empty output: $OUT" >&2; exit 1; }
 }
 
+run_devin() {
+  local -a guidance_paths
+  local config export_file raw auth_log parser_log devin_prompt path auth_rc rc
+
+  # Never preserve a prior successful answer when any validation or invocation
+  # step fails, including missing binary and authentication checks.
+  : > "$OUT"
+  : > "$LOG"
+  command -v devin >/dev/null 2>&1 || {
+    echo "plx-engine: Devin CLI not found — install it and run \`devin auth login\`, then retry." >&2
+    exit 1
+  }
+
+  config="$TMP_DIR/devin-config.json"
+  export_file="$TMP_DIR/devin-export.json"
+  raw="$TMP_DIR/devin-stdout.log"
+  auth_log="$TMP_DIR/devin-auth.log"
+  parser_log="$TMP_DIR/devin-parser.log"
+  devin_prompt="$TMP_DIR/devin-prompt.md"
+  cat > "$config" <<'JSON'
+{
+  "permissions": {"allow": [], "deny": [], "ask": []},
+  "read_config_from": {"cursor": false, "windsurf": false, "claude": false},
+  "subagents_enabled": false,
+  "auto_update": false,
+  "attribution": false,
+  "show_hints": false,
+  "notify": "never",
+  "theme_mode": "nocolor"
+}
+JSON
+
+  cat "$EXEC_PROMPT" > "$devin_prompt"
+  printf '\n\n## Parallax runtime boundary\n' >> "$devin_prompt"
+  printf '%s\n' \
+    'Devin has full host access. Before inspecting or changing a path, read the listed guidance that governs it. Root files apply repo-wide; nested files and rule files apply only to their subtree or declared paths. Full access does not expand the task; publication, deployment, credential changes, and external-system mutations require the user to authorize the exact action and target.' \
+    >> "$devin_prompt"
+  guidance_paths=()
+  while IFS= read -r path; do
+    [[ -f "$path" ]] || continue
+    guidance_paths+=("${path#"$REPO"/}")
+  done < <(
+    find "$REPO" \
+      \( -path "$REPO/.git" -o -path '*/node_modules' -o -path '*/.venv' -o \
+         -path '*/venv' -o -path '*/.cache' -o -path '*/__pycache__' -o \
+         -path '*/.tox' -o -path '*/.nox' \) -prune -o \
+      \( -name AGENTS.md -o -name CLAUDE.md -o -name CLAUDE.local.md -o \
+         -path '*/.claude/rules/*.md' -o -path '*/.devin/rules/*.md' -o \
+         -path '*/.devin/skills/*/SKILL.md' \) -print 2>/dev/null |
+      LC_ALL=C sort -u
+  )
+  if [[ "${#guidance_paths[@]}" -eq 0 ]]; then
+    printf '%s\n' '- No repository guidance files found.' >> "$devin_prompt"
+  else
+    for path in "${guidance_paths[@]}"; do
+      printf -- '- %s\n' "$path" >> "$devin_prompt"
+    done
+  fi
+  EVAL_PROMPT_FILE="$devin_prompt"
+
+  set +e
+  env -u DEVIN_SANDBOX devin --config "$config" auth status > "$auth_log" 2>&1
+  auth_rc=$?
+  set -e
+  if [[ $auth_rc -ne 0 ]]; then
+    if grep -qiE 'not logged in|please log in|authentication required|no credentials|devin auth login' "$auth_log"; then
+      echo "plx-engine: Devin not authenticated — run \`devin auth login\`, then retry." >&2
+      exit 3
+    fi
+    echo "plx-engine: \`devin auth status\` failed (exit $auth_rc)" >&2
+    exit 1
+  fi
+
+  devin_interrupt() {
+    local tries=0 devin_state=""
+    trap - INT TERM
+    set +e
+    [[ -n "${DEVIN_PID:-}" ]] && kill -TERM -- "-$DEVIN_PID" 2>/dev/null
+    [[ -n "${DEVIN_PID:-}" ]] && kill -TERM "$DEVIN_PID" 2>/dev/null
+    devin_state="$(ps -o stat= -p "${DEVIN_PID:-0}" 2>/dev/null || true)"
+    while [[ -n "$devin_state" && "$devin_state" != Z* && "$tries" -lt 40 ]]; do
+      sleep 0.05
+      tries=$((tries + 1))
+      devin_state="$(ps -o stat= -p "${DEVIN_PID:-0}" 2>/dev/null || true)"
+    done
+    [[ -n "${DEVIN_PID:-}" ]] && kill -KILL -- "-$DEVIN_PID" 2>/dev/null
+    [[ -n "${DEVIN_PID:-}" ]] && kill -KILL "$DEVIN_PID" 2>/dev/null
+    tries=0
+    devin_state="$(ps -o stat= -p "${DEVIN_PID:-0}" 2>/dev/null || true)"
+    while [[ -n "$devin_state" && "$devin_state" != Z* && "$tries" -lt 40 ]]; do
+      sleep 0.05
+      tries=$((tries + 1))
+      devin_state="$(ps -o stat= -p "${DEVIN_PID:-0}" 2>/dev/null || true)"
+    done
+    if [[ -n "$devin_state" && "$devin_state" != Z* ]]; then
+      echo "plx-engine: Devin invocation interrupted; could not confirm that the owned process tree stopped" >&2
+    else
+      [[ -n "${DEVIN_PID:-}" ]] && wait "$DEVIN_PID" 2>/dev/null
+      echo "plx-engine: Devin invocation interrupted; the owned process tree was stopped and will not be retried" >&2
+    fi
+    exit 1
+  }
+
+  set +e
+  DEVIN_PID=""
+  trap devin_interrupt INT TERM
+  (
+    cd "$REPO" || exit 1
+    exec python3 -c \
+      'import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' \
+      env -u DEVIN_SANDBOX devin --config "$config" \
+      --permission-mode dangerous --model "$MODEL" \
+      --prompt-file "$devin_prompt" --export "$export_file" -p </dev/null
+  ) > "$raw" 2> "$LOG" &
+  DEVIN_PID=$!
+  wait "$DEVIN_PID"
+  rc=$?
+  DEVIN_PID=""
+  trap - INT TERM
+  set -e
+
+  if [[ -s "$raw" ]]; then
+    printf '\n%s\n' '--- Devin print stdout ---' >> "$LOG"
+    cat "$raw" >> "$LOG"
+  fi
+  if [[ $rc -ne 0 ]]; then
+    if grep -qiE 'not logged in|please log in|authentication required|no credentials|devin auth login' "$LOG" "$raw"; then
+      echo "plx-engine: Devin not authenticated — run \`devin auth login\`, then retry." >&2
+      exit 3
+    fi
+    echo "Devin invocation failed (exit $rc)" >&2
+    [[ -s "$LOG" ]] && sed -n '1,40p' "$LOG" >&2
+    exit 1
+  fi
+
+  if ! python3 - "$export_file" "$OUT" > "$parser_log" 2>&1 <<'PY_ATIF'
+import json
+import sys
+from pathlib import Path
+
+export_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+
+try:
+    document = json.loads(export_path.read_text())
+except (OSError, json.JSONDecodeError) as exc:
+    raise SystemExit(f"missing or malformed Devin ATIF export: {exc}")
+
+if document.get("schema_version") != "ATIF-v1.7":
+    raise SystemExit(f"unsupported Devin ATIF schema: {document.get('schema_version')!r}")
+
+steps = document.get("steps")
+if not isinstance(steps, list) or not steps:
+    raise SystemExit("Devin ATIF export has no steps")
+
+terminal = steps[-1]
+if not isinstance(terminal, dict) or terminal.get("source") != "agent":
+    raise SystemExit("Devin ATIF export has no terminal agent response")
+if terminal.get("tool_calls") not in (None, []):
+    raise SystemExit("Devin ATIF export ended on a pending or denied tool call")
+
+message = terminal.get("message")
+if not isinstance(message, str) or not message.strip():
+    raise SystemExit("Devin ATIF terminal response is empty")
+
+output_path.write_text(message.rstrip() + "\n")
+PY_ATIF
+  then
+    echo "plx-engine: Devin completed without a valid terminal response" >&2
+    [[ -s "$parser_log" ]] && sed -n '1,20p' "$parser_log" >&2
+    exit 1
+  fi
+}
+
 run_grok() {
   local sandbox raw rc stop text pyrc final
   [[ "$MODE" == "ro" ]] && sandbox="read-only" || sandbox="workspace"
@@ -506,6 +710,7 @@ EVAL_ARMED=1
 case "$ENGINE" in
   codex) run_codex ;;
   claude) run_claude ;;
+  devin) run_devin ;;
   grok) run_grok ;;
 esac
 

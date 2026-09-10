@@ -41,11 +41,11 @@ fi
 # Skill surfaces and polarity
 # --------------------------------------------------------------------------- #
 
-_head "Twelve host-native skills per package"
+_head "Thirteen host-native skills per package"
 claude_count="$(find "$PLX_CLAUDE/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
 codex_count="$(find "$PLX_CODEX/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
-[ "$claude_count" = 12 ] && _pass "Claude skills: 12" || _fail "Claude skills: $claude_count"
-[ "$codex_count" = 12 ] && _pass "Codex skills: 12" || _fail "Codex skills: $codex_count"
+[ "$claude_count" = 13 ] && _pass "Claude skills: 13" || _fail "Claude skills: $claude_count"
+[ "$codex_count" = 13 ] && _pass "Codex skills: 13" || _fail "Codex skills: $codex_count"
 
 for skill in "$PLX_CLAUDE"/skills/*/SKILL.md; do
   name="$(basename "$(dirname "$skill")")"
@@ -80,6 +80,7 @@ for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
     agents-memory) display_name="PLX::AgentsMemory" ;;
     build) display_name="PLX::Build" ;;
     claude) display_name="PLX::Claude" ;;
+    devin) display_name="PLX::Devin" ;;
     dev) display_name="PLX::Dev" ;;
     goal-spec) display_name="PLX::GoalSpec" ;;
     grok) display_name="PLX::Grok" ;;
@@ -157,8 +158,19 @@ for skill in \
   grep -Fq -- "--model <model> --effort <effort>" "$skill" ||
     passthrough_overrides_ok=0
 done
+for skill in \
+  "$PLX_CLAUDE/skills/devin/SKILL.md" \
+  "$PLX_CODEX/skills/devin/SKILL.md"; do
+  grep -Fq 'Default: `model=swe-2-medium`.' "$skill" ||
+    passthrough_overrides_ok=0
+  grep -Fq -- '--mode full-access' "$skill" || passthrough_overrides_ok=0
+  grep -Fq 'Never pass `--effort`.' "$skill" || passthrough_overrides_ok=0
+  grep -Fq 'full host access' "$skill" || passthrough_overrides_ok=0
+  grep -Fq 'Repository-native Devin hooks, MCP servers, rules, and skills can' "$skill" ||
+    passthrough_overrides_ok=0
+done
 if [ "$passthrough_overrides_ok" -eq 1 ]; then
-  _pass "single-engine passthroughs preserve overrides with Grok 4.6 fixed at medium"
+  _pass "single-engine passthroughs preserve overrides and Devin uses explicit full access"
 else
   _fail "single-engine passthrough override contract drift"
 fi
@@ -518,9 +530,13 @@ elif [ "$(grep -Fc 'sandbox="danger-full-access"' "$PLX_ROOT/shared/bin/plx-engi
      ! grep -Fq '[[ "$RUBRIC" == "worker" || "$RUBRIC" == "build-worker" ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
      find "$PLX_ROOT/shared/bin" -type f ! -name plx-engine -exec \
        grep -El 'danger-full-access|dangerously-skip-permissions' {} + | grep -q .; then
-  _fail "Build-writer-only full-access runtime boundary drift"
+  _fail "explicit full-access runtime boundary drift"
+elif ! grep -Fq -- '--permission-mode dangerous' "$PLX_ROOT/shared/bin/plx-engine" ||
+     ! grep -Fq 'Devin requires --mode full-access' "$PLX_ROOT/shared/bin/plx-engine" ||
+     ! grep -Fq 'elif [[ "$MODE" == "full-access" ]]' "$PLX_ROOT/shared/bin/plx-engine"; then
+  _fail "Devin full-access transport boundary drift"
 else
-  _pass "full access is confined to the explicit worker/build-worker-rubric Build lane"
+  _pass "full access is explicit for Build workers and standalone Devin only"
 fi
 if grep -RE '^[[:space:]]*[^#].*rm[[:space:]]+-rf' \
      "$PLX_ROOT/shared/bin" "$PLX_ROOT/plugins/claude/plx/bin" \

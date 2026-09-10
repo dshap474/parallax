@@ -13,6 +13,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Goal spec | `/plx:goal-spec` | `$plx:goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Claude may persist Codex context |
 | Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; Grok 4.6 always uses medium effort |
+| Devin | `/plx:devin` | `$plx:devin` | One full-access Devin passthrough; SWE-2 Medium by default; no generic effort flag |
 | Init | `/plx:init` | `$plx:init` | Prime the orchestrator: delegation posture + plx skill map; no repository writes |
 | Agents memory | `/plx:agents-memory` | `$plx:agents-memory` | Bootstrap root `AGENTS.md`, `CLAUDE.md`, and `.project/` policy |
 | Unknowns | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` | Host-only blindspot and comprehension work |
@@ -24,10 +25,12 @@ uses `disable-model-invocation: true` with `user-invocable: true`.
 `/plx:codex` uses the isolated one-shot engine path unless explicit continuation or
 likely multi-turn repository rediscovery justifies a persistent app-server thread. A
 resume requires a known thread ID, and every turn derives read or write access anew.
-All single-engine passthroughs accept explicit model and effort requests in natural
+Codex, Claude, and Grok passthroughs accept explicit model and effort requests in natural
 language (for example, `$plx:claude ask fable medium for <task>`). The host converts
 those settings into engine launch flags; omitted settings retain their defaults. Grok
-4.6 is the one model-specific exception: its reasoning is always normalized to medium.
+4.6 is always normalized to medium. Devin accepts an exact model ID instead: medium,
+high, and max map to `swe-2-medium`, `swe-2-high`, and `swe-2-max`; a separate effort
+value is rejected.
 
 `plan`, `simplify`, `dev`, and `goal-spec` read engine bindings from their package-local
 `config/parallax.yaml`; each skill owns its workflow shape and allowed overrides.
@@ -48,10 +51,13 @@ policies. No skill pushes, opens a pull request, merges, tags, releases, deploys
 publishes externally without separate authority; target-local artifacts explicitly
 required by an accepted spec are allowed.
 
-The standalone Build worker is the only full-access engine lane. Codex uses
+The standalone Build worker uses full access. Codex uses
 `danger-full-access`; Claude disables its sandbox and uses its explicit permission
 bypass. Review lanes and `dev` writers keep their configured read-only or workspace
 sandbox, and full access never expands the accepted task or publication authority.
+The standalone Devin passthrough is also explicitly full access, using Devin's dangerous
+permission mode without its OS sandbox. It is not a Build, review, or fallback lane and
+does not change any pipeline routing.
 
 ## Runtime tools (package-local `bin/`)
 

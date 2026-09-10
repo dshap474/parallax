@@ -41,6 +41,7 @@ Start a new Codex session, then use `$plx:dev`.
 | Autonomous goal spec | `/plx:goal-spec` | `$plx:goal-spec` |
 | Opposite-engine passthrough | `/plx:codex` | `$plx:claude` |
 | Grok passthrough | `/plx:grok` | `$plx:grok` |
+| Devin passthrough | `/plx:devin` | `$plx:devin` |
 | Session primer | `/plx:init` | `$plx:init` |
 | Repository setup | `/plx:agents-memory` | `$plx:agents-memory` |
 | Blindspot work | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` |
@@ -60,6 +61,13 @@ The one standalone Build worker intentionally receives full host access so it ca
 repository Git metadata and launch its packaged review lanes. That transport is limited
 to the Build worker and does not expand the accepted spec or authorize publication;
 review lanes and the separate `dev` writers keep their read-only or workspace sandboxes.
+
+`PLX::Devin` is a separate one-shot passthrough. It uses SWE-2 Medium by default and
+explicitly gives Devin full host access; questions and reviews carry a no-edit
+instruction, but no sandbox enforces it. Repository-native Devin hooks, MCP servers,
+rules, and skills may load. The user request and repository guidance remain the authority
+boundary, and deployment, publication, credential changes, or external mutations require
+exact user authorization.
 
 Claude's `/plx:codex` remains one-shot by default, but it may start or explicitly
 resume a persistent Codex app-server thread when later continuation will materially

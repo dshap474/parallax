@@ -1,0 +1,6 @@
+interface:
+  display_name: "PLX::Devin"
+  short_description: "Run one full-access Devin passthrough"
+  default_prompt: "Use $plx:devin to run this request through the local Devin CLI."
+policy:
+  allow_implicit_invocation: false

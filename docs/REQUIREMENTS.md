@@ -4,11 +4,13 @@ Parallax orchestrates local engine CLIs; it does not host or proxy models.
 
 | Host package | Required host | Required default lane engine | Optional |
 | --- | --- | --- | --- |
-| Claude Code | authenticated `claude` | authenticated `codex` | `grok` |
-| Codex | authenticated `codex` | authenticated `claude` | `grok` |
+| Claude Code | authenticated `claude` | authenticated `codex` | `grok`, `devin` |
+| Codex | authenticated `codex` | authenticated `claude` | `grok`, `devin` |
 
 The Codex CLI and Claude Code CLI must be available on `PATH`. Grok 4.6 requires a
 current Grok CLI and `grok login` or `XAI_API_KEY`.
+`/plx:devin` and `$plx:devin` additionally require the Devin CLI and
+`devin auth login`; Devin is not required by existing pipelines or preflight checks.
 
 ## Engine contract
 
@@ -17,6 +19,14 @@ All packages invoke `bin/plx-engine` with:
 ```text
 plx-engine --engine codex|claude|grok --mode ro|rw --repo <absolute-path> \
   --prompt-file <file> [--rubric <name>] [--model <model>] [--effort <level>] \
+  (--stdout | --out <file> --log <file>)
+```
+
+Devin uses the same wrapper with its explicit transport contract:
+
+```text
+plx-engine --engine devin --mode full-access --repo <absolute-path> \
+  --prompt-file <file> [--model <exact-model-id>] \
   (--stdout | --out <file> --log <file>)
 ```
 
@@ -38,6 +48,14 @@ review launches: Codex `danger-full-access`, or Claude's sandbox-disabled permis
 bypass. The wrapper rejects that mode outside an `rw` `worker`/`build-worker` lane, and
 the transport does not grant publication or external-system authority.
 
+Devin is intentionally different: the wrapper selects dangerous permission mode and no
+OS sandbox, so it has full filesystem and network access. The generated user config
+disables supported imports, automatic updates, and subagents, but repository-native
+hooks, MCP servers, rules, and skills may still load. The wrapper appends a deterministic
+list of ignored, untracked, and nested repository guidance, validates the terminal ATIF
+response, never retries a possibly mutating task, and stops its owned process group on
+interruption. Full access does not grant publication or external-system authority.
+
 Long engine calls should run in a retained/background shell session. Grok may require
 narrowly scoped host approval for network or keychain access; its own kernel sandbox
 remains the file-confinement boundary. A sandbox-initialization failure is named
@@ -45,7 +63,7 @@ remains the file-confinement boundary. A sandbox-initialization failure is named
 
 ## Optional trace capture
 
-Set `PLX_TRACE_DB` to an absolute SQLite path to collect local schema-v1 skill runs and
+Set `PLX_TRACE_DB` to an absolute SQLite path to collect local schema-v2 skill runs and
 engine lanes via `plx-eval`. An explicit process value wins. When it is unset, `plx-eval`
 reads the literal assignment from `~/.config/parallax/env` (or
 `$XDG_CONFIG_HOME/parallax/env`); that file may symlink to a git-ignored checkout `.env`.
@@ -53,7 +71,8 @@ The loader does not execute shell syntax. When neither source defines the variab
 capture is fully disabled. Records include complete prompts, engine logs, final outputs,
 tasks, and run metadata; protect the database accordingly. `plx-eval doctor` reports
 disabled or validates schema and integrity. Recording is best-effort and never alters
-engine exit codes. Parallax does not add hooks, telemetry services, MCP servers, or
+engine exit codes. Existing schema-v1 databases migrate in place on first use. Parallax
+does not add hooks, telemetry services, MCP servers, or
 `.parallax/` state in target repos.
 
 ## Local development install

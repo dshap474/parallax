@@ -1,7 +1,7 @@
 {
   "name": "plx",
   "version": "0.5.26",
-  "description": "Parallax for Codex: twelve planning, implementation, review, simplification, KISS principles, goal-preparation, passthrough, initialization, and blindspot skills.",
+  "description": "Parallax for Codex: thirteen planning, implementation, review, simplification, KISS principles, goal-preparation, passthrough, initialization, and blindspot skills.",
   "author": {
     "name": "Daniel Shapiro",
     "url": "https://github.com/dshap474"
@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Parallax",
     "shortDescription": "Multi-model planning, building, and review for Codex",
-    "longDescription": "Parallax lets Codex author plans, use focused review and Simplify lanes, load the user's KISS principles into context, prefer isolated Grok 4.6 implementation with Codex fallback, and apply targeted fixes itself through safety-pinned headless engines.",
+    "longDescription": "Parallax lets Codex author plans, use focused review and Simplify lanes, load the user's KISS principles into context, prefer isolated Grok 4.6 implementation with Codex fallback, invoke an explicit full-access Devin passthrough, and apply targeted fixes itself through one headless engine wrapper.",
     "developerName": "Daniel Shapiro",
     "category": "Developer Tools",
     "capabilities": [

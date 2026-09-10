@@ -8,7 +8,7 @@ Claude Code host                         Codex host
       │                                        │
       └────────── package-local plx-engine ────┘
                     │
-             Codex · Claude · Grok
+             Codex · Claude · Grok · Devin
 ```
 
 ## Host responsibilities
@@ -87,7 +87,9 @@ Pipeline lanes and default passthroughs use `plx-engine`. It pins:
 - Claude: Opus, safe mode, no session persistence, strict MCP/network isolation,
   read-only tools or repo-confined sandboxed Bash;
 - Grok: `grok-4.6` at medium reasoning, unattended tool approval, no
-  planning/subagent/memory features, and an explicit read-only or workspace sandbox.
+  planning/subagent/memory features, and an explicit read-only or workspace sandbox;
+- Devin: `swe-2-medium`, one-shot print mode, generated config with supported imports,
+  updates, and subagents disabled, dangerous permission mode, and no OS sandbox.
 
 These models are defaults, not restrictions. Explicit user-requested model and effort
 values pass through to the selected engine except that `grok-4.6` is always normalized
@@ -100,6 +102,14 @@ metadata and packaged review launches, not permission to expand the accepted spe
 repository scope, or publication authority. Review lanes remain read-only. Codex never
 uses `--dangerously-bypass-approvals-and-sandbox` or `--yolo`.
 
+The standalone Devin passthrough is the other explicit full-access path. It does not
+join pipeline routing, retry, fall back, or launch a Parallax review. Its effective prompt
+lists physical source-tree guidance, including ignored and untracked nested instructions,
+while disclosing that repository-native Devin hooks, MCP servers, rules, and skills may
+still load. Questions and reviews include a no-edit instruction, but that is behavioral
+task scope rather than sandbox enforcement. A terminal ATIF response and native exit 0
+are both required for wrapper success; interruption terminates the owned process group.
+
 Claude safe mode disables automatic project customization, so the wrapper supplies a
 deterministic list of physical source-tree `AGENTS.md`, `CLAUDE.md`, `CLAUDE.local.md`,
 and `.claude/rules/*.md` files, including ignored and untracked guidance while excluding
@@ -110,7 +120,7 @@ Parallax creates no `.parallax/` state.
 
 ### Optional trace capture
 
-When `PLX_TRACE_DB` names an absolute SQLite path, `plx-eval` stores schema-v1 skill runs
+When `PLX_TRACE_DB` names an absolute SQLite path, `plx-eval` stores schema-v2 skill runs
 and engine lanes for later routing and quality analysis. Records are local and opt-in,
 and include complete task, prompt, trace, and final-output text; treat the database as
 sensitive. With the variable unset, capture stays disabled unless
@@ -125,7 +135,7 @@ and closes a standalone run. Every operational skill calls `plx-eval finish` onc
 host-only operational skills therefore produce a useful zero-lane run. The context-only
 KISS principles skill performs no runtime work and creates no trace. An interruption
 before `finish` leaves a grouped run incomplete. Connections enable foreign keys, WAL, and a
-five-second busy timeout. Retention and schema migration remain manual for v1;
+five-second busy timeout. Version 1 databases migrate in place to version 2;
 `plx-eval doctor` checks integrity and counts. Parallax ships no host hooks, telemetry daemon, MCP, or target-repo
 `.parallax/` state. Persistent `plx-codex-thread` internals are not yet lane-captured, but
 their enclosing passthrough skill run is recorded.

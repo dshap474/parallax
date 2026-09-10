@@ -181,6 +181,271 @@ if [ "$rc" -eq 0 ] &&
 else
   _fail "Grok overrides did not pass through (exit $rc)"
 fi
+
+_head "plx-engine runs Devin as explicit full access and validates terminal ATIF"
+fake_devin_args="$WORK/devin-args.txt"
+fake_devin_prompt="$WORK/devin-prompt.md"
+fake_devin_config="$WORK/devin-config.json"
+fake_devin_sandbox_env="$WORK/devin-sandbox-env.txt"
+fake_devin_child="$WORK/devin-child.pid"
+fake_devin_ready="$WORK/devin-ready"
+mkdir -p "$REPO/nested/.devin/rules" "$REPO/nested/.devin/skills/local" \
+  "$REPO/ignored"
+printf '%s\n' 'nested claude guidance' > "$REPO/nested/CLAUDE.md"
+printf '%s\n' 'native Devin rule' > "$REPO/nested/.devin/rules/native.md"
+printf '%s\n' 'native Devin skill' > "$REPO/nested/.devin/skills/local/SKILL.md"
+printf '%s\n' 'ignored agent guidance' > "$REPO/ignored/AGENTS.md"
+printf '%s\n' '/ignored/' >> "$REPO/.git/info/exclude"
+printf '%s\n' '#!/usr/bin/env bash' \
+  '# Fake Devin CLI — records calls and emits selected ATIF terminal shapes.' \
+  'set -u' \
+  'printf '\''CALL\n'\'' >> "$PLX_DEVIN_ARGS_FILE"' \
+  'printf '\''%s\n'\'' "$@" >> "$PLX_DEVIN_ARGS_FILE"' \
+  'is_auth=0; config=""; prompt=""; export_file=""' \
+  'while [ "$#" -gt 0 ]; do' \
+  '  case "$1" in' \
+  '    auth) is_auth=1; shift ;;' \
+  '    --config) config="$2"; shift 2 ;;' \
+  '    --prompt-file) prompt="$2"; shift 2 ;;' \
+  '    --export) export_file="$2"; shift 2 ;;' \
+  '    *) shift ;;' \
+  '  esac' \
+  'done' \
+  'if [ "$is_auth" -eq 1 ]; then' \
+  '  if [ "${PLX_DEVIN_FAKE_CASE:-success}" = auth-fail ]; then' \
+  '    printf '\''Not logged in; run devin auth login\n'\'' >&2; exit 1' \
+  '  fi' \
+  '  exit 0' \
+  'fi' \
+  'cp "$config" "$PLX_DEVIN_CONFIG_FILE"' \
+  'cp "$prompt" "$PLX_DEVIN_PROMPT_FILE"' \
+  'printf '\''%s\n'\'' "${DEVIN_SANDBOX-unset}" > "$PLX_DEVIN_SANDBOX_ENV_FILE"' \
+  'printf '\''PROGRESS_STDOUT\n'\''' \
+  'printf '\''PROGRESS_STDERR\n'\'' >&2' \
+  'case "${PLX_DEVIN_FAKE_CASE:-success}" in' \
+  '  success)' \
+  '    printf '\''%s\n'\'' '\''{"schema_version":"ATIF-v1.7","steps":[{"source":"agent","message":"INTERMEDIATE","reasoning_content":"SECRET","tool_calls":[{"function_name":"read"}]},{"source":"agent","message":"FINAL_OK","reasoning_content":"PRIVATE","tool_calls":[]}]} '\'' > "$export_file"' \
+  '    exit 0 ;;' \
+  '  success-auth-text)' \
+  '    printf '\''%s\n'\'' '\''{"schema_version":"ATIF-v1.7","steps":[{"source":"agent","message":"Documentation may mention devin auth login","tool_calls":[]}]} '\'' > "$export_file"' \
+  '    exit 0 ;;' \
+  '  incomplete)' \
+  '    printf '\''%s\n'\'' '\''{"schema_version":"ATIF-v1.7","steps":[{"source":"agent","message":"","tool_calls":[{"function_name":"write"}],"observation":{"results":[{"content":"Write access denied"}]}}]} '\'' > "$export_file"' \
+  '    exit 0 ;;' \
+  '  malformed) printf '\''{\n'\'' > "$export_file"; exit 0 ;;' \
+  '  native-fail)' \
+  '    printf '\''%s\n'\'' '\''{"schema_version":"ATIF-v1.7","steps":[{"source":"agent","message":"MUST_NOT_PASS","tool_calls":[]}]} '\'' > "$export_file"' \
+  '    exit 7 ;;' \
+  '  native-auth-fail)' \
+  '    printf '\''Not logged in; run devin auth login\n'\'' >&2; exit 7 ;;' \
+  '  interrupt)' \
+  '    trap '\'''\'' TERM' \
+  '    sleep 60 &' \
+  '    printf '\''%s\n'\'' "$!" > "$PLX_DEVIN_CHILD_FILE"' \
+  '    printf '\''ready\n'\'' > "$PLX_DEVIN_READY_FILE"' \
+  '    wait ;;' \
+  'esac' \
+  'exit 9' \
+  > "$fake_bin/devin"
+chmod +x "$fake_bin/devin"
+
+: > "$fake_devin_args"
+PATH="$fake_bin:$PATH" PLX_DEVIN_ARGS_FILE="$fake_devin_args" \
+  PLX_DEVIN_PROMPT_FILE="$fake_devin_prompt" \
+  PLX_DEVIN_CONFIG_FILE="$fake_devin_config" \
+  PLX_DEVIN_SANDBOX_ENV_FILE="$fake_devin_sandbox_env" \
+  DEVIN_SANDBOX=1 \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine devin --mode full-access --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
+rc=$?
+if [ "$rc" -eq 0 ] && [ "$(cat "$fake_out")" = FINAL_OK ]; then
+  _pass "Devin default invocation emits only the terminal agent response"
+else
+  _fail "Devin default invocation expected FINAL_OK, got exit $rc"
+fi
+assert_contains "swe-2-medium" "$fake_devin_args" "Devin model defaults to SWE-2 Medium"
+assert_contains "dangerous" "$fake_devin_args" "Devin uses documented full-access permission mode"
+assert_contains "unset" "$fake_devin_sandbox_env" "Devin ignores inherited DEVIN_SANDBOX"
+if grep -qx -- '--sandbox' "$fake_devin_args" ||
+   grep -qxE -- '-r|--resume|-c|--continue' "$fake_devin_args" ||
+   grep -qx -- '--respect-workspace-trust' "$fake_devin_args"; then
+  _fail "Devin invocation includes sandbox, resume, or trust-bypass flags"
+else
+  _pass "Devin invocation has no sandbox, resume, or trust-bypass flags"
+fi
+if python3 - "$fake_prompt" "$fake_devin_prompt" <<'PY'
+from pathlib import Path
+import sys
+source, effective = (Path(path).read_bytes() for path in sys.argv[1:])
+assert effective.startswith(source)
+PY
+then
+  _pass "Devin preserves the prompt bytes before its runtime boundary"
+else
+  _fail "Devin prompt prefix fidelity drift"
+fi
+for guidance in nested/CLAUDE.md nested/.devin/rules/native.md \
+  nested/.devin/skills/local/SKILL.md ignored/AGENTS.md; do
+  assert_contains "$guidance" "$fake_devin_prompt" \
+    "Devin effective prompt lists $guidance"
+done
+assert_contains "Devin has full host access" "$fake_devin_prompt" \
+  "Devin effective prompt states the transport boundary"
+if grep -Fq '"subagents_enabled": false' "$fake_devin_config" &&
+   grep -Fq '"auto_update": false' "$fake_devin_config" &&
+   grep -Fq '"claude": false' "$fake_devin_config"; then
+  _pass "Devin generated config disables supported ambient behavior"
+else
+  _fail "Devin generated config does not minimize supported ambient behavior"
+fi
+assert_contains "PROGRESS_STDOUT" "$fake_log" "Devin print progress stays in the log"
+if grep -Fq 'INTERMEDIATE' "$fake_out" || grep -Fq 'PRIVATE' "$fake_out"; then
+  _fail "Devin output leaked intermediate or reasoning content"
+else
+  _pass "Devin output excludes intermediate and reasoning content"
+fi
+
+PATH="$fake_bin:$PATH" PLX_DEVIN_ARGS_FILE="$fake_devin_args" \
+  PLX_DEVIN_PROMPT_FILE="$fake_devin_prompt" \
+  PLX_DEVIN_CONFIG_FILE="$fake_devin_config" \
+  PLX_DEVIN_SANDBOX_ENV_FILE="$fake_devin_sandbox_env" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine devin --mode full-access --repo "$REPO" \
+  --prompt-file "$fake_prompt" --model custom-devin-model \
+  --out "$fake_out" --log "$fake_log" >/dev/null
+rc=$?
+if [ "$rc" -eq 0 ] && grep -qx custom-devin-model "$fake_devin_args"; then
+  _pass "Devin exact model overrides pass through"
+else
+  _fail "Devin exact model override failed (exit $rc)"
+fi
+
+PATH="$fake_bin:$PATH" PLX_DEVIN_FAKE_CASE=success-auth-text \
+  PLX_DEVIN_ARGS_FILE="$fake_devin_args" \
+  PLX_DEVIN_PROMPT_FILE="$fake_devin_prompt" \
+  PLX_DEVIN_CONFIG_FILE="$fake_devin_config" \
+  PLX_DEVIN_SANDBOX_ENV_FILE="$fake_devin_sandbox_env" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine devin --mode full-access --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
+rc=$?
+if [ "$rc" -eq 0 ] && grep -Fq 'devin auth login' "$fake_out"; then
+  _pass "Devin successful final text cannot be misclassified as an auth failure"
+else
+  _fail "Devin successful auth-related answer was misclassified (exit $rc)"
+fi
+
+"$PLUGIN_ROOT/bin/plx-engine" --engine devin --mode full-access --repo "$REPO" \
+  --prompt-file "$fake_prompt" --effort high --out "$fake_out" --log "$fake_log" \
+  >/dev/null 2> "$WORK/devin-effort-error.txt"
+rc=$?
+if [ "$rc" -eq 2 ] && grep -Fq 'does not support --effort' "$WORK/devin-effort-error.txt"; then
+  _pass "Devin rejects unsupported effort values"
+else
+  _fail "Devin effort rejection expected exit 2, got $rc"
+fi
+
+for invalid_pair in 'devin ro' 'grok full-access'; do
+  set -- $invalid_pair
+  "$PLUGIN_ROOT/bin/plx-engine" --engine "$1" --mode "$2" --repo "$REPO" \
+    --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+  rc=$?
+  if [ "$rc" -eq 2 ]; then
+    _pass "$1 rejects mode $2"
+  else
+    _fail "$1 mode $2 expected exit 2, got $rc"
+  fi
+done
+
+for fake_case in incomplete malformed native-fail; do
+  printf '%s\n' STALE > "$fake_out"
+  PATH="$fake_bin:$PATH" PLX_DEVIN_FAKE_CASE="$fake_case" \
+    PLX_DEVIN_ARGS_FILE="$fake_devin_args" \
+    PLX_DEVIN_PROMPT_FILE="$fake_devin_prompt" \
+    PLX_DEVIN_CONFIG_FILE="$fake_devin_config" \
+    PLX_DEVIN_SANDBOX_ENV_FILE="$fake_devin_sandbox_env" \
+    "$PLUGIN_ROOT/bin/plx-engine" --engine devin --mode full-access --repo "$REPO" \
+    --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" \
+    >/dev/null 2> "$WORK/devin-$fake_case-error.txt"
+  rc=$?
+  if [ "$rc" -eq 1 ] && [ ! -s "$fake_out" ]; then
+    _pass "Devin $fake_case fails closed and clears stale output"
+  else
+    _fail "Devin $fake_case expected empty output and exit 1, got $rc"
+  fi
+done
+
+PATH="$fake_bin:$PATH" PLX_DEVIN_FAKE_CASE=auth-fail \
+  PLX_DEVIN_ARGS_FILE="$fake_devin_args" \
+  PLX_DEVIN_PROMPT_FILE="$fake_devin_prompt" \
+  PLX_DEVIN_CONFIG_FILE="$fake_devin_config" \
+  PLX_DEVIN_SANDBOX_ENV_FILE="$fake_devin_sandbox_env" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine devin --mode full-access --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" \
+  >/dev/null 2> "$WORK/devin-auth-error.txt"
+rc=$?
+if [ "$rc" -eq 3 ] && grep -Fq 'devin auth login' "$WORK/devin-auth-error.txt"; then
+  _pass "Devin missing authentication exits 3 with recovery guidance"
+else
+  _fail "Devin auth failure expected exit 3, got $rc"
+fi
+
+PATH="$fake_bin:$PATH" PLX_DEVIN_FAKE_CASE=native-auth-fail \
+  PLX_DEVIN_ARGS_FILE="$fake_devin_args" \
+  PLX_DEVIN_PROMPT_FILE="$fake_devin_prompt" \
+  PLX_DEVIN_CONFIG_FILE="$fake_devin_config" \
+  PLX_DEVIN_SANDBOX_ENV_FILE="$fake_devin_sandbox_env" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine devin --mode full-access --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" \
+  >/dev/null 2> "$WORK/devin-native-auth-error.txt"
+rc=$?
+if [ "$rc" -eq 3 ]; then
+  _pass "Devin failed native invocation classifies genuine auth diagnostics"
+else
+  _fail "Devin native auth failure expected exit 3, got $rc"
+fi
+
+rm -f "$fake_devin_ready" "$fake_devin_child"
+PATH="$fake_bin:$PATH" PLX_DEVIN_FAKE_CASE=interrupt \
+  PLX_DEVIN_ARGS_FILE="$fake_devin_args" \
+  PLX_DEVIN_PROMPT_FILE="$fake_devin_prompt" \
+  PLX_DEVIN_CONFIG_FILE="$fake_devin_config" \
+  PLX_DEVIN_SANDBOX_ENV_FILE="$fake_devin_sandbox_env" \
+  PLX_DEVIN_CHILD_FILE="$fake_devin_child" \
+  PLX_DEVIN_READY_FILE="$fake_devin_ready" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine devin --mode full-access --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" \
+  >/dev/null 2> "$WORK/devin-interrupt-error.txt" &
+devin_wrapper_pid=$!
+tries=0
+while [ ! -s "$fake_devin_ready" ] && [ "$tries" -lt 100 ]; do
+  sleep 0.05
+  tries=$((tries + 1))
+done
+if [ -s "$fake_devin_ready" ]; then
+  kill -TERM "$devin_wrapper_pid"
+fi
+wait "$devin_wrapper_pid"
+rc=$?
+devin_child_pid="$(cat "$fake_devin_child" 2>/dev/null || true)"
+if [ "$rc" -eq 1 ] && [ -n "$devin_child_pid" ] && \
+   ! kill -0 "$devin_child_pid" 2>/dev/null && \
+   grep -Fq 'process tree was stopped' "$WORK/devin-interrupt-error.txt"; then
+  _pass "Devin interruption stops the owned process group without retry"
+else
+  _fail "Devin interruption left a child or returned the wrong status (exit $rc)"
+  [ -z "$devin_child_pid" ] || kill -TERM "$devin_child_pid" 2>/dev/null || true
+fi
+
+PATH="/usr/bin:/bin" "$PLUGIN_ROOT/bin/plx-engine" \
+  --engine devin --mode full-access --repo "$REPO" --prompt-file "$fake_prompt" \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2> "$WORK/devin-missing-error.txt"
+rc=$?
+if [ "$rc" -eq 1 ] && grep -Fq 'Devin CLI not found' "$WORK/devin-missing-error.txt"; then
+  _pass "missing Devin CLI fails before invocation"
+else
+  _fail "missing Devin CLI expected exit 1, got $rc"
+fi
+rm "$REPO/nested/CLAUDE.md" "$REPO/ignored/AGENTS.md"
+
 if "$PLUGIN_ROOT/bin/plx-engine" --print-rubric no-such-rubric >/dev/null 2>&1; then
   _fail "should reject unknown rubric"
 else
@@ -555,11 +820,11 @@ for prompt, trace, output, digest, exit_code in lanes:
     assert output == "OK\n"
     assert digest == hashlib.sha256(trace.encode()).hexdigest()
     assert exit_code == 0
-assert con.execute("pragma user_version").fetchone()[0] == 1
+assert con.execute("pragma user_version").fetchone()[0] == 2
 assert con.execute("pragma integrity_check").fetchone()[0] == "ok"
 PY
 then
-  _pass "schema v1 stores complete task, prompt, trace, output, and digest"
+  _pass "schema v2 stores complete task, prompt, trace, output, and digest"
 else
   _fail "grouped database content is incorrect"
 fi
@@ -686,11 +951,85 @@ else
   _fail "doctor failed on a valid database"
 fi
 
+legacy_db="$WORK/legacy-schema.db"
+invalid_legacy_db="$WORK/invalid-legacy-schema.db"
+cp "$trace_db" "$legacy_db"
+python3 - "$legacy_db" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+schema = con.execute("select sql from sqlite_schema where name='lanes'").fetchone()[0]
+legacy_schema = schema.replace(", 'full-access'", "")
+assert "full-access" not in legacy_schema
+con.execute("drop index lanes_run_id_idx")
+con.execute("alter table lanes rename to lanes_v2_seed")
+con.execute(legacy_schema)
+con.execute("insert into lanes select * from lanes_v2_seed")
+con.execute("drop table lanes_v2_seed")
+con.execute("create index lanes_run_id_idx on lanes(run_id)")
+con.execute("pragma user_version=1")
+con.commit()
+PY
+cp "$legacy_db" "$invalid_legacy_db"
+python3 - "$invalid_legacy_db" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+con.execute("pragma foreign_keys=off")
+con.execute(
+    "insert into lanes(id,run_id,role,engine,model,effort,mode,started_at) "
+    "values('orphan','missing','r','grok','m','e','ro','now')"
+)
+con.commit()
+PY
+
+PLX_TRACE_DB="$legacy_db" "$PLUGIN_ROOT/bin/plx-eval" doctor >/dev/null 2>&1
+legacy_rc=$?
+if [ "$legacy_rc" -eq 0 ] && python3 - "$legacy_db" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+assert con.execute("pragma user_version").fetchone()[0] == 2
+assert "'full-access'" in con.execute(
+    "select sql from sqlite_schema where name='lanes'"
+).fetchone()[0]
+before = con.execute("select count(*) from lanes").fetchone()[0]
+run_id = con.execute("select id from runs limit 1").fetchone()[0]
+con.execute(
+    "insert into lanes(id,run_id,role,engine,model,effort,mode,started_at) "
+    "values('devin-v2',?,'worker','devin','swe-2-medium','','full-access','now')",
+    (run_id,),
+)
+con.commit()
+assert con.execute("select count(*) from lanes").fetchone()[0] == before + 1
+assert con.execute("pragma foreign_key_check").fetchall() == []
+PY
+then
+  _pass "schema v1 migrates in place and accepts Devin full-access lanes"
+else
+  _fail "schema v1 migration failed or lost lane data"
+fi
+
+PLX_TRACE_DB="$invalid_legacy_db" "$PLUGIN_ROOT/bin/plx-eval" doctor >/dev/null 2>&1
+invalid_legacy_rc=$?
+if [ "$invalid_legacy_rc" -eq 1 ] && python3 - "$invalid_legacy_db" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+assert con.execute("pragma user_version").fetchone()[0] == 1
+assert con.execute("select count(*) from sqlite_schema where type='table' and name='lanes'").fetchone()[0] == 1
+assert con.execute("select count(*) from sqlite_schema where type='table' and name='lanes_v2'").fetchone()[0] == 0
+assert "full-access" not in con.execute(
+    "select sql from sqlite_schema where name='lanes'"
+).fetchone()[0]
+PY
+then
+  _pass "schema migration validation rolls back invalid legacy data"
+else
+  _fail "invalid schema v1 migration did not fail and roll back"
+fi
+
 future_db="$WORK/future-schema.db"
 python3 - "$future_db" <<'PY'
 import sqlite3, sys
 con = sqlite3.connect(sys.argv[1])
-con.execute("pragma user_version=2")
+con.execute("pragma user_version=3")
 con.commit()
 PY
 PLX_TRACE_DB="$future_db" "$PLUGIN_ROOT/bin/plx-eval" doctor >/dev/null 2>&1

@@ -27,11 +27,12 @@ Config supplies engine bindings for `plan`, `simplify`, `dev`, and `goal-spec`; 
 skill owns its shape and override rules. Standalone Review defines Grok defaults and
 whole-round overrides in its skill. Keep composed review bindings under `dev`.
 
-Keep full access confined to the single standalone Build worker. Codex
+Keep pipeline full access confined to the single standalone Build worker. Codex
 `danger-full-access` and Claude's sandbox-disabled permission bypass are transport
 requirements for Git metadata and packaged review launches; they do not belong in review
-lanes or expand task/publication authority. Keep Codex's combined approvals-and-sandbox
-bypass and `--yolo` prohibited.
+lanes or expand task/publication authority. The standalone Devin passthrough separately
+uses explicit full access and never joins a pipeline. Keep Codex's combined
+approvals-and-sandbox bypass and `--yolo` prohibited.
 
 ## Verification
 

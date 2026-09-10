@@ -16,7 +16,7 @@ scripts/sync-shared.sh
 ```
 
 Both manifests use plugin name `plx` and version `0.5.26`. Both marketplaces use
-`parallax-marketplace` and point to their platform package. Each package contains twelve
+`parallax-marketplace` and point to their platform package. Each package contains thirteen
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
 ## Package contracts
@@ -29,6 +29,9 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
   `agents/openai.yaml` with `allow_implicit_invocation: false`.
 - The Codex opposite-host passthrough is `$plx:claude`; the Claude opposite-host
   passthrough is `plx:codex`.
+- Both packages expose a standalone `devin` passthrough. It defaults to
+  `swe-2-medium`, accepts exact model overrides, rejects generic effort, and uses the
+  explicit `full-access` wrapper mode without changing pipeline routing.
 - Claude `/plx:codex` is ephemeral by default and may start or resume a persistent
   app-server thread only for explicit continuation or material multi-turn reuse. It
   returns the thread ID and keeps no Parallax thread registry.
@@ -76,6 +79,15 @@ deliberate exception: an `rw` `worker`/`build-worker` Codex or Claude lane recei
 host access for repository Git metadata and packaged review launches. That transport does
 not expand task, target, external-system, or publication authority.
 
+The standalone Devin passthrough is a separate deliberate full-access transport. It
+uses dangerous permission mode without an OS sandbox, validates the exported terminal
+ATIF response, stops its owned process group on interruption, and never retries or
+falls back. The generated user config disables supported imports, updates, and
+subagents; repository-native Devin hooks, MCP servers, rules, and skills may still load.
+The effective prompt lists ignored, untracked, and nested repository guidance. Questions,
+plans, and reviews carry an explicit no-edit instruction, but this is not enforced by a
+sandbox. External actions still require exact user authorization.
+
 Claude lanes ignore ambient customization, do not persist sessions, and fail closed if
 their normal sandbox is unavailable. Because safe mode disables instruction discovery,
 the wrapper lists physical source-tree guidance, including ignored, untracked, symlinked,
@@ -89,8 +101,9 @@ target-local artifacts required by an accepted spec are allowed.
 Persistent Codex access is passthrough-only and derives read or write scope for each
 turn; every pipeline lane remains isolated and ephemeral.
 
-Optional `PLX_TRACE_DB` collection writes local schema-v1 SQLite traces via `plx-eval`.
-The eleven operational skills close a run; the context-only KISS principles skill does
+Optional `PLX_TRACE_DB` collection writes local schema-v2 SQLite traces via `plx-eval`
+and migrates version 1 databases in place. The twelve operational skills close a run;
+the context-only KISS principles skill does
 not. `plx-engine` captures complete prompts, traces, outputs, and lane metadata, with
 grouped and standalone behavior. Recording failures never change engine results. When
 the process variable is unset, a deterministic
@@ -101,7 +114,7 @@ state.
 ## Acceptance
 
 `bash tests/run.sh` must validate both manifests and marketplaces, version agreement,
-twelve-skill inventories, explicit-only platform metadata, engine polarity, Simplify
+thirteen-skill inventories, explicit-only platform metadata, engine polarity, Simplify
 shape, the KISS principles contract, fallback and security bindings, executable wrappers,
 rubric resolution, shared-copy agreement, fake-engine safety flags and current result
 envelopes, cleanup confinement, optional eval recorder contracts, and isolated

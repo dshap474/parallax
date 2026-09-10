@@ -21,7 +21,7 @@ plx-eval — optional local SQLite trace capture for Parallax runs
 
 Usage:
   plx-eval lane --repo <abs> --run-dir <abs> --engine <e> --model <m> \
-    --effort <e> --mode <ro|rw> --role <r> --started-at <iso> \
+    --effort <e> --mode <ro|rw|full-access> --role <r> --started-at <iso> \
     --started-ns <integer> --exit-code <integer> --prompt-file <abs> \
     [--rubric <name>] [--out <abs>] [--log <abs>]
   plx-eval finish --skill <name> --host <claude|codex|grok|unknown> \
@@ -34,7 +34,8 @@ What it does:
   Recording is enabled only when PLX_TRACE_DB names an absolute database path.
   When unset, commands succeed without writing. Lane records contain the complete
   effective prompt, engine log, and final output. Finish closes or creates the
-  containing skill run. The database uses the locked schema at user_version 1.
+  containing skill run. The database uses schema user_version 2 and migrates
+  existing version 1 databases in place.
 
 Environment:
   PLX_TRACE_DB           absolute SQLite database path; explicit value wins
@@ -133,7 +134,7 @@ while [[ $# -gt 0 ]]; do
     --host-model) need_value "$1" "${2:-}"; HOST_MODEL="$2"; shift 2 ;;
     --engine) need_value "$1" "${2:-}"; ENGINE="$2"; shift 2 ;;
     --model) need_value "$1" "${2:-}"; MODEL="$2"; shift 2 ;;
-    --effort) need_value "$1" "${2:-}"; EFFORT="$2"; shift 2 ;;
+    --effort) [[ $# -ge 2 ]] || { echo "missing value for $1" >&2; exit 2; }; EFFORT="$2"; shift 2 ;;
     --mode) need_value "$1" "${2:-}"; MODE="$2"; shift 2 ;;
     --role) need_value "$1" "${2:-}"; ROLE="$2"; shift 2 ;;
     --rubric) need_value "$1" "${2:-}"; RUBRIC="$2"; shift 2 ;;
@@ -163,10 +164,10 @@ elif [[ "$CMD" == "lane" ]]; then
   [[ -d "$REPO" ]] || { echo "repo not found: $REPO" >&2; exit 2; }
   [[ -d "$RUN_DIR" ]] || { echo "run directory not found: $RUN_DIR" >&2; exit 2; }
   [[ -f "$PROMPT_FILE" ]] || { echo "prompt file not found: $PROMPT_FILE" >&2; exit 2; }
-  case "$ENGINE" in codex|grok|claude) ;; *) echo "--engine must be codex|grok|claude" >&2; exit 2 ;; esac
-  case "$MODE" in ro|rw) ;; *) echo "--mode must be ro|rw" >&2; exit 2 ;; esac
+  case "$ENGINE" in codex|grok|claude|devin) ;; *) echo "--engine must be codex|grok|claude|devin" >&2; exit 2 ;; esac
+  case "$MODE" in ro|rw|full-access) ;; *) echo "--mode must be ro|rw|full-access" >&2; exit 2 ;; esac
   [[ -n "$MODEL" ]] || { echo "--model required" >&2; exit 2; }
-  [[ -n "$EFFORT" ]] || { echo "--effort required" >&2; exit 2; }
+  [[ -n "$EFFORT" || "$ENGINE" == "devin" ]] || { echo "--effort required" >&2; exit 2; }
   [[ -n "$ROLE" ]] || { echo "--role required" >&2; exit 2; }
   [[ -n "$STARTED_AT" ]] || { echo "--started-at required" >&2; exit 2; }
   [[ "$STARTED_NS" =~ ^[0-9]+$ ]] || { echo "--started-ns must be an integer" >&2; exit 2; }
@@ -259,7 +260,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 RUN_DIR_RE = re.compile(r"^plx-([a-z0-9][a-z0-9-]{0,63})\.([A-Za-z0-9]{6,})$")
 
 
@@ -340,7 +341,7 @@ SCHEMA_STATEMENTS = (
     engine TEXT NOT NULL,
     model TEXT NOT NULL,
     effort TEXT NOT NULL,
-    mode TEXT NOT NULL CHECK (mode IN ('ro', 'rw')),
+    mode TEXT NOT NULL CHECK (mode IN ('ro', 'rw', 'full-access')),
     routing_reason TEXT,
     candidates_json TEXT CHECK (candidates_json IS NULL OR json_valid(candidates_json)),
     started_at TEXT NOT NULL,
@@ -355,6 +356,44 @@ SCHEMA_STATEMENTS = (
 )""",
     "CREATE INDEX lanes_run_id_idx ON lanes(run_id)",
 )
+
+LANES_COLUMNS = (
+    "id", "run_id", "role", "engine", "model", "effort", "mode",
+    "routing_reason", "candidates_json", "started_at", "ended_at",
+    "duration_ms", "exit_code", "prompt", "trace", "final_output",
+    "evaluation_json", "trace_sha256",
+)
+
+
+def migrate_v1_to_v2(connection):
+    """Widen the lane mode constraint while preserving every version 1 row."""
+    connection.execute("PRAGMA foreign_keys = OFF")
+    connection.execute("BEGIN IMMEDIATE")
+    try:
+        version = connection.execute("PRAGMA user_version").fetchone()[0]
+        if version == 1:
+            connection.execute(SCHEMA_STATEMENTS[1].replace("lanes (", "lanes_v2 (", 1))
+            columns = ", ".join(LANES_COLUMNS)
+            connection.execute(
+                f"INSERT INTO lanes_v2 ({columns}) SELECT {columns} FROM lanes"
+            )
+            connection.execute("DROP TABLE lanes")
+            connection.execute("ALTER TABLE lanes_v2 RENAME TO lanes")
+            connection.execute(SCHEMA_STATEMENTS[2])
+            connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+        elif version != SCHEMA_VERSION:
+            raise RuntimeError(
+                f"unsupported schema user_version={version}; expected {SCHEMA_VERSION}"
+            )
+        violations = connection.execute("PRAGMA foreign_key_check").fetchall()
+        if violations:
+            raise RuntimeError("schema migration produced foreign-key violations")
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.execute("PRAGMA foreign_keys = ON")
 
 
 def connect():
@@ -400,6 +439,14 @@ def connect():
             connection.commit()
         except Exception:
             connection.rollback()
+            connection.close()
+            raise
+
+    if version == 1:
+        try:
+            migrate_v1_to_v2(connection)
+            version = SCHEMA_VERSION
+        except Exception:
             connection.close()
             raise
 

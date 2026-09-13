@@ -13,6 +13,8 @@ bash "$HERE/check-plugin.sh" || rc=1
 PLX_PACKAGE=claude bash "$HERE/smoke-scripts.sh" "$@" || rc=1
 PLX_PACKAGE=codex bash "$HERE/smoke-scripts.sh" "$@" || rc=1
 
+bash "$HERE/gemini.sh" || rc=1
+
 bash "$HERE/client.sh" || rc=1
 
 echo

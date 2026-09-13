@@ -41,6 +41,7 @@ Start a new Codex session, then use `$plx:dev`.
 | Autonomous goal spec | `/plx:goal-spec` | `$plx:goal-spec` |
 | Opposite-engine passthrough | `/plx:codex` | `$plx:claude` |
 | Grok passthrough | `/plx:grok` | `$plx:grok` |
+| Gemini passthrough | `/plx:gemini` | `$plx:gemini` |
 | Devin passthrough | `/plx:devin` | `$plx:devin` |
 | Session primer | `/plx:init` | `$plx:init` |
 | Repository setup | `/plx:agents-memory` | `$plx:agents-memory` |
@@ -61,6 +62,12 @@ The one standalone Build worker intentionally receives full host access so it ca
 repository Git metadata and launch its packaged review lanes. That transport is limited
 to the Build worker and does not expand the accepted spec or authorize publication;
 review lanes and the separate `dev` writers keep their read-only or workspace sandboxes.
+
+`PLX::Gemini` uses Gemini CLI with `auto` model routing or an explicit model.
+Install `@google/gemini-cli` and authenticate with `gemini` before use. It supports
+read-only questions and sandboxed file edits; shell/test execution is disabled.
+This transport currently requires macOS Seatbelt. See the
+[Gemini CLI documentation](https://geminicli.com/docs/) for authentication and availability.
 
 `PLX::Devin` is a separate one-shot passthrough. It uses SWE-2 High by default and
 explicitly gives Devin full host access; questions and reviews carry a no-edit

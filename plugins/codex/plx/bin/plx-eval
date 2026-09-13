@@ -164,10 +164,10 @@ elif [[ "$CMD" == "lane" ]]; then
   [[ -d "$REPO" ]] || { echo "repo not found: $REPO" >&2; exit 2; }
   [[ -d "$RUN_DIR" ]] || { echo "run directory not found: $RUN_DIR" >&2; exit 2; }
   [[ -f "$PROMPT_FILE" ]] || { echo "prompt file not found: $PROMPT_FILE" >&2; exit 2; }
-  case "$ENGINE" in codex|grok|claude|devin) ;; *) echo "--engine must be codex|grok|claude|devin" >&2; exit 2 ;; esac
+  case "$ENGINE" in codex|grok|claude|devin|gemini) ;; *) echo "--engine must be codex|grok|claude|devin|gemini" >&2; exit 2 ;; esac
   case "$MODE" in ro|rw|full-access) ;; *) echo "--mode must be ro|rw|full-access" >&2; exit 2 ;; esac
   [[ -n "$MODEL" ]] || { echo "--model required" >&2; exit 2; }
-  [[ -n "$EFFORT" || "$ENGINE" == "devin" ]] || { echo "--effort required" >&2; exit 2; }
+  [[ -n "$EFFORT" || "$ENGINE" == "devin" || "$ENGINE" == "gemini" ]] || { echo "--effort required" >&2; exit 2; }
   [[ -n "$ROLE" ]] || { echo "--role required" >&2; exit 2; }
   [[ -n "$STARTED_AT" ]] || { echo "--started-at required" >&2; exit 2; }
   [[ "$STARTED_NS" =~ ^[0-9]+$ ]] || { echo "--started-ns must be an integer" >&2; exit 2; }

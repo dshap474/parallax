@@ -1,6 +1,6 @@
 # Engines — Parallax routing guide
 
-Parallax gives the host three headless engines and focused lane rubrics. Choose the
+Parallax gives the host headless engines and focused lane rubrics. Choose the
 smallest shape that can deliver a verified outcome. Skills define workflow ownership;
 this guide defines routing, safety, and scaling.
 
@@ -9,7 +9,7 @@ this guide defines routing, safety, and scaling.
 Use the package-local wrapper exactly as the loaded skill specifies:
 
 ```text
-<plx-engine> --engine codex|grok|claude --mode ro|rw --repo <abs-path> \
+<plx-engine> --engine codex|grok|claude|gemini --mode ro|rw --repo <abs-path> \
   --prompt-file <brief> [--rubric <name>] [--model <model>] [--effort <level>] \
   (--stdout | --out <file> --log <file>)
 ```
@@ -134,3 +134,9 @@ Within `dev`, assign one writer per genuinely disjoint path set. Briefs name own
 and concurrent edits. Shared files, lockfiles, exports, and configs usually make the work
 one writer's job. The sandbox is repo-wide, so ownership is a workflow contract rather
 than an enforced path boundary. Run verification only after all writers finish.
+
+## Gemini passthrough
+
+`gemini` defaults to `auto` model routing and accepts an explicit `--model`, but no
+`--effort`. It exposes read tools in `ro` and file-edit tools in `rw`; shell execution,
+MCP, extensions, and hooks are disabled. macOS Seatbelt sandbox startup is required. The standalone `gemini` skill does not change pipeline defaults.

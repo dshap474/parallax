@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Parallax engine API — the ONE wrapper that drives all engines headless.
 # Usage:
-#   plx-engine --engine codex|grok|claude --mode ro|rw --repo <abs-path> \
+#   plx-engine --engine codex|grok|claude|gemini --mode ro|rw --repo <abs-path> \
 #     --prompt-file <file> --stdout
 #   plx-engine --engine devin --mode full-access --repo <abs-path> \
 #     --prompt-file <file> --stdout
@@ -23,6 +23,8 @@
 #            ro = read-only tools, rw = sandboxed Bash without direct write
 #            tools; the standalone Build writer may explicitly disable the
 #            sandbox so it can create required local commits
+#   gemini : auto model routing, sandbox enabled, extensions/MCP/hooks disabled;
+#            ro = read tools only, rw = auto_edit with file tools, no shell tools
 #   devin  : SWE-2 High by default, non-interactive print mode, generated
 #            config with automatic imports/updates/subagents disabled, and the
 #            documented dangerous permission mode with no OS sandbox. Devin
@@ -44,7 +46,7 @@ usage() {
 plx-engine — run a coding engine headless against a repo (Parallax engine API)
 
 Usage:
-  plx-engine --engine codex|grok|claude --mode ro|rw --repo <abs-path> \
+  plx-engine --engine codex|grok|claude|gemini --mode ro|rw --repo <abs-path> \
     --prompt-file <file> [--rubric <name>] [--model <m>] [--effort <e>] --stdout
   plx-engine --engine devin --mode full-access --repo <abs-path> \
     --prompt-file <file> [--rubric <name>] [--model <m>] --stdout
@@ -63,8 +65,8 @@ What it does:
   Only the engine's FINAL message is emitted; progress/noise goes to the log.
 
 Flags:
-  --engine <e>          codex | grok | claude | devin (required)
-  --mode <m>            ro | rw for codex/grok/claude; full-access for Devin
+  --engine <e>          codex | grok | claude | devin | gemini (required)
+  --mode <m>            ro | rw for codex/grok/claude/gemini; full-access for Devin
   --repo <dir>          absolute path to the target repo (required)
   --prompt-file <file>  file containing the brief/spec (required)
   --rubric <name>       lane rubric to inject (a file name under prompts/, no .md)
@@ -72,11 +74,11 @@ Flags:
                         allow one rw worker/build-worker-rubric Codex/Claude lane to write
                         Git metadata; invalid for ro, Grok, or other rubrics
   --model <m>           codex: default gpt-5.6-sol · claude: default opus ·
-                        grok: default grok-4.6 · devin: default swe-2-high
+                        grok: default grok-4.6 · devin: default swe-2-high · gemini: auto
   --effort <e>          codex: default medium · claude: default high ·
                         grok-4.6: always medium · other Grok models: default medium
                         Explicit values pass through except that grok-4.6 is pinned
-                        to medium. Devin has no effort flag; a nonempty value is
+                        to medium. Gemini and Devin have no effort flag; a nonempty value is
                         rejected—choose a model variant instead.
   --stdout              print the final message to stdout; temp files auto-cleaned
   --out <f> --log <f>   instead of --stdout: write final message / full log to files
@@ -88,6 +90,8 @@ Caller notes:
     session with --out/--log rather than relying on a foreground timeout.
   * claude/grok: the host may require narrowly scoped approval for network/keychain
     access. The engine's own sandbox remains the confinement boundary.
+  * gemini: read/file-edit tools only; no shell, MCP, hooks, or extensions.
+    Gemini currently requires macOS Seatbelt. No effort flag.
   * grok only: TRUST THE EXIT CODE, not stderr — grok prints non-fatal
     `worker quit ... AuthorizationRequired` lines to stderr even on success.
   * rw mode: inspect what changed with `git -C <repo> status --short` / `diff`.
@@ -202,7 +206,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-case "$ENGINE" in codex|grok|claude|devin) ;; *) echo "--engine must be codex|grok|claude|devin" >&2; exit 2 ;; esac
+case "$ENGINE" in codex|grok|claude|devin|gemini) ;; *) echo "--engine must be codex|grok|claude|devin|gemini" >&2; exit 2 ;; esac
 case "$MODE" in ro|rw|full-access) ;; *) echo "--mode must be ro|rw|full-access" >&2; exit 2 ;; esac
 if [[ "$ENGINE" == "devin" ]]; then
   [[ "$MODE" == "full-access" ]] || {
@@ -213,6 +217,9 @@ if [[ "$ENGINE" == "devin" ]]; then
     echo "Devin does not support --effort; choose an exact model variant such as swe-2-medium, swe-2-high, or swe-2-max" >&2
     exit 2
   }
+elif [[ "$ENGINE" == "gemini" && -n "$EFFORT" ]]; then
+  echo "Gemini does not support --effort; use --model instead" >&2
+  exit 2
 elif [[ "$MODE" == "full-access" ]]; then
   echo "--mode full-access supports only Devin" >&2
   exit 2
@@ -252,6 +259,8 @@ elif [[ "$ENGINE" == "codex" ]]; then
 elif [[ "$ENGINE" == "claude" ]]; then
   [[ -n "$MODEL" ]] || MODEL="opus"
   [[ -n "$EFFORT" ]] || EFFORT="high"
+elif [[ "$ENGINE" == "gemini" ]]; then
+  [[ -n "$MODEL" ]] || MODEL="auto"
 else
   [[ -n "$MODEL" ]] || MODEL="swe-2-high"
 fi
@@ -699,6 +708,100 @@ except Exception:
     pass' "$raw" "$REPO" || true
 }
 
+# --------------------------------------------------------------------------- #
+# Gemini transport
+# --------------------------------------------------------------------------- #
+
+run_gemini() {
+  local settings raw rc approval sandbox
+  : > "$OUT"
+  command -v gemini >/dev/null 2>&1 || {
+    echo "plx-engine: Gemini CLI not found; install @google/gemini-cli and authenticate with gemini" >&2
+    exit 1
+  }
+  settings="$TMP_DIR/gemini-settings.json"
+  raw="$TMP_DIR/gemini-response.json"
+  approval="default"
+  [[ "$MODE" == "rw" ]] && approval="auto_edit"
+  case "$(uname -s)" in
+    Darwin) sandbox="sandbox-exec" ;;
+    *) echo "plx-engine: Gemini transport currently requires macOS Seatbelt" >&2; exit 1 ;;
+  esac
+  # System settings override user/project customization without replacing auth.
+  # Reject inherited extra workspace roots; Gemini concatenates these settings.
+  python3 - "$settings" "$MODE" "$REPO" <<'PY_SETTINGS'
+import json
+import sys
+from pathlib import Path
+
+for source in [Path.home() / ".gemini/settings.json", Path(sys.argv[3]) / ".gemini/settings.json"]:
+    if source.exists():
+        try:
+            existing = json.loads(source.read_text())
+        except (ValueError, OSError):
+            raise SystemExit(f"plx-engine: cannot validate Gemini workspace roots in {source}; plain JSON settings required")
+        if existing.get("includeDirectories") or (existing.get("context") or {}).get("includeDirectories"):
+            raise SystemExit(f"plx-engine: Gemini extra includeDirectories are unsupported: {source}")
+core = ["read_file", "read_many_files", "list_directory", "glob", "search_file_content"]
+if sys.argv[2] == "rw":
+    core += ["replace", "write_file"]
+Path(sys.argv[1]).write_text(json.dumps({
+    "tools": {"core": core, "allowed": [], "sandbox": True,
+              "discoveryCommand": "", "callCommand": "", "enableHooks": False},
+    "context": {"includeDirectories": []}, "mcpServers": {},
+    "mcp": {"serverCommand": "", "allowed": ["plx-disabled-" + Path(sys.argv[1]).parent.name]},
+    "skills": {"enabled": False}, "hooksConfig": {"enabled": False},
+    "admin": {"mcp": {"enabled": False}, "extensions": {"enabled": False}},
+    "experimental": {"enableAgents": False},
+    "general": {"enableAutoUpdate": False},
+    "telemetry": {"enabled": False}, "privacy": {"usageStatisticsEnabled": False}
+}))
+PY_SETTINGS
+  set +e
+  (
+    cd "$REPO" || exit 1
+    unset SANDBOX SANDBOX_FLAGS SANDBOX_MOUNTS SANDBOX_ENV BUILD_SANDBOX
+    unset GEMINI_SANDBOX_PROXY_COMMAND GEMINI_SYSTEM_MD
+    export GEMINI_CLI_SYSTEM_SETTINGS_PATH="$settings" GEMINI_CLI_SYSTEM_DEFAULTS_PATH="$settings"
+    export GEMINI_SANDBOX="$sandbox" SEATBELT_PROFILE="permissive-open"
+    gemini --sandbox --extensions none --approval-mode "$approval" \
+      --model "$MODEL" --output-format json < "$EXEC_PROMPT"
+  ) > "$raw" 2> "$LOG"
+  rc=$?
+  set -e
+  cat "$raw" >> "$LOG"
+  if [[ "$rc" -ne 0 ]]; then
+    if grep -qiE 'Please set an Auth method|Please set.*GEMINI_API_KEY|not authenticated|invalid API key|API key not valid|authentication required|ProjectIdRequiredError|Error authenticating' "$LOG"; then
+      echo "plx-engine: Gemini authentication unavailable; run gemini to sign in or configure GEMINI_API_KEY" >&2
+      tail -20 "$LOG" >&2
+      exit 3
+    fi
+    echo "plx-engine: Gemini invocation failed (exit $rc); see log: $LOG" >&2
+    tail -20 "$LOG" >&2
+    exit 1
+  fi
+  if ! python3 - "$raw" "$OUT" <<'PY_RESPONSE'
+import json
+import sys
+from pathlib import Path
+
+try:
+    data = json.loads(Path(sys.argv[1]).read_text())
+    if not isinstance(data, dict) or data.get("error"):
+        raise ValueError("Gemini returned an error envelope")
+    response = data.get("response")
+    if not isinstance(response, str) or not response.strip():
+        raise ValueError("Gemini returned no final response")
+    Path(sys.argv[2]).write_text(response.rstrip() + "\n")
+except (ValueError, OSError) as error:
+    print(f"plx-engine: invalid Gemini response: {error}", file=sys.stderr)
+    sys.exit(1)
+PY_RESPONSE
+  then
+    exit 1
+  fi
+}
+
 # Arm only after the effective prompt exists. The exit trap records every engine
 # completion, including authentication and invocation failures.
 EVAL_STARTED_AT="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z" 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%SZ")"
@@ -712,6 +815,7 @@ case "$ENGINE" in
   claude) run_claude ;;
   devin) run_devin ;;
   grok) run_grok ;;
+  gemini) run_gemini ;;
 esac
 
 if [[ "$STDOUT" -eq 1 ]]; then

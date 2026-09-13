@@ -41,11 +41,11 @@ fi
 # Skill surfaces and polarity
 # --------------------------------------------------------------------------- #
 
-_head "Thirteen host-native skills per package"
+_head "Fourteen host-native skills per package"
 claude_count="$(find "$PLX_CLAUDE/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
 codex_count="$(find "$PLX_CODEX/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
-[ "$claude_count" = 13 ] && _pass "Claude skills: 13" || _fail "Claude skills: $claude_count"
-[ "$codex_count" = 13 ] && _pass "Codex skills: 13" || _fail "Codex skills: $codex_count"
+[ "$claude_count" = 14 ] && _pass "Claude skills: 14" || _fail "Claude skills: $claude_count"
+[ "$codex_count" = 14 ] && _pass "Codex skills: 14" || _fail "Codex skills: $codex_count"
 
 for skill in "$PLX_CLAUDE"/skills/*/SKILL.md; do
   name="$(basename "$(dirname "$skill")")"
@@ -80,6 +80,7 @@ for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
     agents-memory) display_name="PLX::AgentsMemory" ;;
     build) display_name="PLX::Build" ;;
     claude) display_name="PLX::Claude" ;;
+    gemini) display_name="PLX::Gemini" ;;
     devin) display_name="PLX::Devin" ;;
     dev) display_name="PLX::Dev" ;;
     goal-spec) display_name="PLX::GoalSpec" ;;

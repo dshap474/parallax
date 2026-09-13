@@ -119,3 +119,10 @@ shape, the KISS principles contract, fallback and security bindings, executable 
 rubric resolution, shared-copy agreement, fake-engine safety flags and current result
 envelopes, cleanup confinement, optional eval recorder contracts, and isolated
 `plx-link-claude` behavior. Official Claude and Codex validators must also pass.
+
+## Gemini engine
+
+Both packages expose a standalone `gemini` passthrough through `plx-engine`.
+It defaults to `auto`, accepts `--model`, rejects `--effort`, and supports `ro`
+read tools or `rw` file-edit tools with a required sandbox. Shell execution,
+extensions, MCP, and hooks are disabled. Existing pipeline defaults are unchanged.

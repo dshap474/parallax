@@ -191,6 +191,7 @@ if [ -n "$ONLY" ]; then
 else
   for s in init kiss unknown-unknowns plan build review dev simplify agents-memory; do run_skill "$s"; done
   if [ "$HOST" = codex ]; then run_skill claude; else run_skill codex; fi
+  run_skill gemini
   if [ "$WITH_GROK" -eq 1 ]; then run_skill grok; else _head "/plx:grok"; _skip "skipped (pass --with-grok)"; smoke_summary_row "$RUNDIR" L2 grok SKIP "no --with-grok"; fi
   goal_spec_note
 fi

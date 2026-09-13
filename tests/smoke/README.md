@@ -57,6 +57,7 @@ engine turns) — run it from a terminal, or via background Bash from an agent s
 | `review` | review the buggy calc.py | exit 0 · a finding names the empty-list / `ZeroDivisionError` bug · **the fix is applied** (`average([]) == 0.0`) |
 | `codex` | guard `average([])` | exit 0 · calc.py edited · `average([]) == 0.0` |
 | `grok` | same (with `--with-grok`) | same |
+| `gemini` | guard `average([])` using file tools | same functional checks; missing Gemini authentication fails the scenario |
 | `agents-memory` | run in a bare repo | exit 0 · `AGENTS.md` created · `CLAUDE.md` symlink |
 | `init` | load routing | exit 0 · no tracked or untracked changes · final answer confirms routing |
 | `kiss` | load principles | exit 0 · no tracked or untracked changes |

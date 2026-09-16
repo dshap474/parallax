@@ -28,7 +28,7 @@ version_of() {
 claude_version="$(version_of "$PLX_CLAUDE/.claude-plugin/plugin.json")"
 codex_version="$(version_of "$PLX_CODEX/.codex-plugin/plugin.json")"
 market_version="$(version_of "$PLX_ROOT/.claude-plugin/marketplace.json")"
-if [ "$claude_version" = "0.5.27" ] && [ "$claude_version" = "$codex_version" ] &&
+if [ "$claude_version" = "0.5.28" ] && [ "$claude_version" = "$codex_version" ] &&
    [ "$claude_version" = "$market_version" ] &&
    grep -qx "v$claude_version" "$PLX_ROOT/README.md" &&
    grep -qx "Status: v$claude_version" "$PLX_ROOT/docs/SPEC.md"; then
@@ -169,6 +169,17 @@ for skill in \
   grep -Fq 'full host access' "$skill" || passthrough_overrides_ok=0
   grep -Fq 'Repository-native Devin hooks, MCP servers, rules, and skills can' "$skill" ||
     passthrough_overrides_ok=0
+  grep -Fq 'Only exit 4 allows automatic recovery: at most two retries' "$skill" ||
+    passthrough_overrides_ok=0
+  grep -Fq 'If a side effect is ambiguous or replay could duplicate an action, stop' "$skill" ||
+    passthrough_overrides_ok=0
+  grep -Fq 'A failed reconciliation command stops recovery.' "$skill" ||
+    passthrough_overrides_ok=0
+  grep -Fq -- '--out <tmp>/attempt-1.out --log <tmp>/attempt-1.log' "$skill" ||
+    passthrough_overrides_ok=0
+  if grep -Fq 'A nonzero exit ends this skill. Do not retry' "$skill"; then
+    passthrough_overrides_ok=0
+  fi
 done
 if [ "$passthrough_overrides_ok" -eq 1 ]; then
   _pass "single-engine passthroughs preserve overrides and Devin uses explicit full access"

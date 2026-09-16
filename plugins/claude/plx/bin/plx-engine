@@ -107,6 +107,7 @@ Exit codes:
   1  engine or wrapper failure — details on stderr / in the log
   2  usage error — bad flags or missing/empty inputs
   3  not signed in — tell the user to log in (codex login / grok login / claude /login / devin auth login)
+  4  Devin explicitly retryable internal protocol failure — reconcile partial work before retry
 EOF
 }
 
@@ -421,7 +422,7 @@ run_claude() {
 
 run_devin() {
   local -a guidance_paths
-  local config export_file raw auth_log parser_log devin_prompt path auth_rc rc
+  local config export_file raw auth_log parser_log devin_prompt path auth_rc rc retryable=0 auth_failure=0
 
   # Never preserve a prior successful answer when any validation or invocation
   # step fails, including missing binary and authentication checks.
@@ -540,14 +541,49 @@ JSON
   trap - INT TERM
   set -e
 
+  # Only native stderr can classify a retry. Model stdout and exported answers
+  # may quote errors. Require the exact provider diagnostic and JSON boolean.
+  if [[ $rc -ne 0 && $rc -lt 128 ]] && python3 - "$LOG" <<'PY_RETRY'
+import json
+import re
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(errors="replace")
+matches = list(re.finditer(
+    r"^Error: Agent error: Client error: Protocol error \(invalid_argument\): "
+    r"an internal error occurred \(trace ID: [0-9a-f]+\): ",
+    text, re.MULTILINE,
+))
+try:
+    # Repeated copies are allowed; trailing errors or hints still fail closed.
+    detail = json.loads(text[matches[-1].end():]) if matches else {}
+except json.JSONDecodeError:
+    detail = {}
+sys.exit(0 if isinstance(detail, dict)
+         and detail.get("cognition.ai/errorKind") == "internal"
+         and detail.get("cognition.ai/retryable") is True else 1)
+PY_RETRY
+  then
+    retryable=1
+  fi
+  if grep -qiE 'not logged in|please log in|authentication required|no credentials|devin auth login' "$LOG"; then
+    auth_failure=1
+  fi
+
   if [[ -s "$raw" ]]; then
     printf '\n%s\n' '--- Devin print stdout ---' >> "$LOG"
     cat "$raw" >> "$LOG"
   fi
   if [[ $rc -ne 0 ]]; then
-    if grep -qiE 'not logged in|please log in|authentication required|no credentials|devin auth login' "$LOG" "$raw"; then
+    if [[ "$auth_failure" -eq 1 ]]; then
       echo "plx-engine: Devin not authenticated — run \`devin auth login\`, then retry." >&2
       exit 3
+    fi
+    if [[ "$retryable" -eq 1 ]]; then
+      echo "plx-engine: Devin retryable internal protocol failure (exit $rc); inspect partial work before a bounded retry" >&2
+      [[ -s "$LOG" ]] && sed -n '1,40p' "$LOG" >&2
+      exit 4
     fi
     echo "Devin invocation failed (exit $rc)" >&2
     [[ -s "$LOG" ]] && sed -n '1,40p' "$LOG" >&2

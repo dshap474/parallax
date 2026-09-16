@@ -223,6 +223,11 @@ printf '%s\n' '#!/usr/bin/env bash' \
   'printf '\''PROGRESS_STDOUT\n'\''' \
   'printf '\''PROGRESS_STDERR\n'\'' >&2' \
   'case "${PLX_DEVIN_FAKE_CASE:-success}" in' \
+  '  diagnostic)' \
+  '    cat "$PLX_DEVIN_DIAGNOSTIC_STDERR" >&2' \
+  '    cat "$PLX_DEVIN_DIAGNOSTIC_STDOUT"' \
+  '    printf '\''%s\n'\'' '\''{"schema_version":"ATIF-v1.7","steps":[{"source":"agent","message":"FINAL_OK"}]} '\'' > "$export_file"' \
+  '    exit "$PLX_DEVIN_NATIVE_RC" ;;' \
   '  success)' \
   '    printf '\''%s\n'\'' '\''{"schema_version":"ATIF-v1.7","steps":[{"source":"agent","message":"INTERMEDIATE","reasoning_content":"SECRET","tool_calls":[{"function_name":"read"}]},{"source":"agent","message":"FINAL_OK","reasoning_content":"PRIVATE","tool_calls":[]}]} '\'' > "$export_file"' \
   '    exit 0 ;;' \
@@ -354,6 +359,73 @@ for invalid_pair in 'devin ro' 'grok full-access'; do
     _fail "$1 mode $2 expected exit 2, got $rc"
   fi
 done
+
+_head "Devin retry classification is narrow and never replays inside the wrapper"
+python3 - "$WORK" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+header = ("Error: Agent error: Client error: Protocol error (invalid_argument): "
+          "an internal error occurred (trace ID: b52ca2c46092fccc753fe7eb165cb5f2): ")
+detail = {"cognition.ai/errorKind": "internal", "cognition.ai/retryable": True}
+diagnostic = header + json.dumps(detail, indent=2) + "\n"
+cases = [
+    ("retryable", diagnostic, "", 1, 4),
+    ("retryable-seven", diagnostic, "", 7, 4),
+    ("double-diagnostic", diagnostic + diagnostic, "", 1, 4),
+    ("stdout-quote", "", diagnostic, 1, 1),
+    ("stdout-auth-quote", diagnostic, "Documentation: devin auth login\n", 1, 4),
+    ("stdout-auth-only", "", "Documentation: devin auth login\n", 1, 1),
+    ("success-quote", diagnostic, "", 0, 0),
+    ("signal", diagnostic, "", 143, 1),
+    ("auth-priority", "Not logged in; run devin auth login\n" + diagnostic, "", 7, 3),
+    ("trailing-error", diagnostic + "Error: another failure\n", "", 1, 1),
+    ("embedded-quote", "Quoted example: " + diagnostic, "", 1, 1),
+    ("malformed-detail", header + "{bad json}\n", "", 1, 1),
+    ("array-detail", header + "[]\n", "", 1, 1),
+    ("scalar-detail", header + "true\n", "", 1, 1),
+    ("generic-retryable", json.dumps(detail), "", 1, 1),
+    ("wrong-protocol", diagnostic.replace("invalid_argument", "permission_denied"), "", 1, 1),
+]
+for value in (False, "true", 1, None):
+    altered = dict(detail, **{"cognition.ai/retryable": value})
+    cases.append(("value-" + str(value), header + json.dumps(altered), "", 1, 1))
+for name, altered in (("missing", {"cognition.ai/errorKind": "internal"}),
+                      ("quota", dict(detail, **{"cognition.ai/errorKind": "resource_exhausted"})),
+                      ("unavailable", dict(detail, **{"cognition.ai/errorKind": "unavailable"})),
+                      ("wrong-kind", dict(detail, **{"cognition.ai/errorKind": "auth"}))):
+    cases.append((name, header + json.dumps(altered), "", 1, 1))
+with (root / "devin-diagnostic-cases").open("w") as manifest:
+    for name, stderr, stdout, native_rc, expected in cases:
+        (root / (name + ".stderr")).write_text(stderr)
+        (root / (name + ".stdout")).write_text(stdout)
+        manifest.write(f"{name} {native_rc} {expected}\n")
+PY
+while read -r diagnostic_case native_rc expected; do
+  printf '%s\n' STALE > "$fake_out"
+  : > "$fake_devin_args"
+  PATH="$fake_bin:$PATH" PLX_DEVIN_FAKE_CASE=diagnostic \
+    PLX_DEVIN_DIAGNOSTIC_STDERR="$WORK/$diagnostic_case.stderr" \
+    PLX_DEVIN_DIAGNOSTIC_STDOUT="$WORK/$diagnostic_case.stdout" \
+    PLX_DEVIN_NATIVE_RC="$native_rc" \
+    PLX_DEVIN_ARGS_FILE="$fake_devin_args" \
+    PLX_DEVIN_PROMPT_FILE="$fake_devin_prompt" \
+    PLX_DEVIN_CONFIG_FILE="$fake_devin_config" \
+    PLX_DEVIN_SANDBOX_ENV_FILE="$fake_devin_sandbox_env" \
+    "$PLUGIN_ROOT/bin/plx-engine" --engine devin --mode full-access --repo "$REPO" \
+    --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" \
+    > /dev/null 2> "$WORK/devin-diagnostic-error.txt"
+  rc=$?
+  if [ "$rc" -eq "$expected" ] && [ "$(grep -c '^CALL$' "$fake_devin_args")" -eq 2 ] &&
+     { { [ "$rc" -eq 0 ] && grep -qx FINAL_OK "$fake_out"; } ||
+       { [ "$rc" -ne 0 ] && [ ! -s "$fake_out" ]; }; }; then
+    _pass "Devin $diagnostic_case classifies exit $expected with one invocation and clean output"
+  else
+    _fail "Devin $diagnostic_case expected exit $expected with one invocation, got $rc"
+  fi
+done < "$WORK/devin-diagnostic-cases"
 
 for fake_case in incomplete malformed native-fail; do
   printf '%s\n' STALE > "$fake_out"

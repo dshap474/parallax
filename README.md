@@ -69,12 +69,13 @@ read-only questions and sandboxed file edits; shell/test execution is disabled.
 This transport currently requires macOS Seatbelt. See the
 [Gemini CLI documentation](https://geminicli.com/docs/) for authentication and availability.
 
-`PLX::Devin` is a separate one-shot passthrough. It uses SWE-2 High by default and
+`PLX::Devin` is a separate single-engine passthrough. It uses SWE-2 High by default and
 explicitly gives Devin full host access; questions and reviews carry a no-edit
 instruction, but no sandbox enforces it. Repository-native Devin hooks, MCP servers,
 rules, and skills may load. The user request and repository guidance remain the authority
 boundary, and deployment, publication, credential changes, or external mutations require
-exact user authorization.
+exact user authorization. Explicitly retryable internal protocol failures allow up to
+two fresh retries after partial work is reconciled; other failures stop immediately.
 
 Claude's `/plx:codex` remains one-shot by default, but it may start or explicitly
 resume a persistent Codex app-server thread when later continuation will materially
@@ -103,7 +104,7 @@ See [Architecture](docs/ARCHITECTURE.md), [Commands](docs/COMMANDS.md),
 
 ## Status
 
-v0.5.27
+v0.5.28
 
 ## License
 

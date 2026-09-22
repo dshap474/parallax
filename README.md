@@ -59,6 +59,17 @@ static `kiss` skill loads the user-authored KISS principles into the current con
 `orchestrate` loads a context-only planner posture with native subagent workers; it starts
 no task or pipeline.
 
+## Explicit model choices
+
+Parallax accepts exact model IDs in an explicit model request. Current choices include
+`claude-opus-5-5` for Claude lanes and `gpt-6-sol` or `gpt-6-luna` for Codex lanes.
+For example, use `$plx:claude use claude-opus-5-5 at medium for <task>` in Codex,
+or `/plx:codex use gpt-6-sol at high for <task>` in Claude Code. Ask for
+`gpt-6-luna` on a focused Codex task. The existing defaults still apply when no model
+is named, and the selected CLI must have access to the requested model. See the
+[Claude model list](https://platform.claude.com/docs/en/models/overview) and
+[Codex model list](https://learn.chatgpt.com/docs/models).
+
 The one standalone Build worker intentionally receives full host access so it can write
 repository Git metadata and launch its packaged review lanes. That transport is limited
 to the Build worker and does not expand the accepted spec or authorize publication;

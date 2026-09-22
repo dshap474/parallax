@@ -19,8 +19,8 @@ Resolve the model and effort from the user's request before writing the brief:
 - Defaults: `model=opus`, `effort=medium`. Use `high` or `xhigh` instead only for
   concrete cross-file or high-risk work.
 - An explicit user model or effort always replaces that setting's default. Natural
-  wording is enough: `ask fable medium for <task>`, `use opus at max`, and
-  `model=fable effort=low` all set real launch flags.
+  wording is enough: `use claude-opus-5-5 at medium for <task>`, `use opus at max`,
+  and `model=fable effort=low` all set real launch flags.
 - Treat `reasoning`, `reasoning level`, and `effort` as names for the same launch
   setting.
 - Do not infer an override from model names discussed only as task content. Do not

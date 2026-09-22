@@ -605,15 +605,28 @@ fi
 
 PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode ro --repo "$REPO" \
-  --prompt-file "$fake_prompt" --model gpt-5.5 --effort xhigh \
+  --prompt-file "$fake_prompt" --model gpt-6-sol --effort xhigh \
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
 rc=$?
 if [ "$rc" -eq 0 ] &&
-   grep -qx "gpt-5.5" "$fake_codex_args" &&
+   grep -qx "gpt-6-sol" "$fake_codex_args" &&
    grep -qx "model_reasoning_effort=xhigh" "$fake_codex_args"; then
-  _pass "Codex model and effort overrides pass through"
+  _pass "GPT-6 Sol model and effort override passes through"
 else
-  _fail "Codex overrides did not pass through (exit $rc)"
+  _fail "GPT-6 Sol override did not pass through (exit $rc)"
+fi
+
+PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --model gpt-6-luna --effort low \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] &&
+   grep -qx "gpt-6-luna" "$fake_codex_args" &&
+   grep -qx "model_reasoning_effort=low" "$fake_codex_args"; then
+  _pass "GPT-6 Luna model and effort override passes through"
+else
+  _fail "GPT-6 Luna override did not pass through (exit $rc)"
 fi
 
 if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
@@ -689,15 +702,15 @@ chmod +x "$fake_bin/claude"
 PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
   PLX_CLAUDE_PROMPT_FILE="$fake_claude_prompt" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode ro --repo "$REPO" \
-  --prompt-file "$fake_prompt" --model sonnet --effort max \
+  --prompt-file "$fake_prompt" --model claude-opus-5-5 --effort max \
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
 rc=$?
 if [ "$rc" -eq 0 ] &&
-   grep -qx "sonnet" "$fake_claude_args" &&
+   grep -qx "claude-opus-5-5" "$fake_claude_args" &&
    grep -qx "max" "$fake_claude_args"; then
-  _pass "Claude model and effort overrides pass through"
+  _pass "Claude Opus 5.5 model and effort override passes through"
 else
-  _fail "Claude overrides did not pass through (exit $rc)"
+  _fail "Claude Opus 5.5 override did not pass through (exit $rc)"
 fi
 for flag in --safe-mode --no-session-persistence --strict-mcp-config --mcp-config; do
   assert_contains "$flag" "$fake_claude_args" "Claude ro receives $flag"

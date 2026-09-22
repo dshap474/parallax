@@ -20,8 +20,8 @@ Resolve the model and effort from the user's request before writing the brief:
 - Defaults: `model=gpt-5.6-sol`, `effort=medium`. Use `high` or `xhigh` instead
   only when concrete complexity or risk warrants it.
 - An explicit user model or effort always replaces that setting's default. Natural
-  wording is enough: `ask gpt-5.6-terra low for <task>`, `use gpt-5.6-sol at
-  xhigh`, and `model=gpt-5.6-sol effort=medium` all set real launch flags.
+  wording is enough: `ask gpt-6-luna low for <task>`, `use gpt-6-sol at xhigh`,
+  and `model=gpt-6-sol effort=medium` all set real launch flags.
 - Treat `reasoning`, `reasoning level`, and `effort` as names for the same launch
   setting.
 - Do not infer an override from model names discussed only as task content. Do not

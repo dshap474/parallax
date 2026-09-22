@@ -59,6 +59,13 @@ Package config supplies defaults, not restrictions. An explicit current-message 
 effort request wins, except `grok-4.6` always runs at medium. Escalate model or effort
 when the first result is materially inadequate; this never expands scope or authority.
 
+Current explicit model choices include Claude `claude-opus-5-5` for long-running
+coding and knowledge work, Codex `gpt-6-sol` for complex coding, and Codex
+`gpt-6-luna` for focused tasks. Pass these exact IDs with `--model`; provider and
+account availability still determine whether a call succeeds. See the
+[Claude model list](https://platform.claude.com/docs/en/models/overview) and
+[Codex model list](https://learn.chatgpt.com/docs/models) for current availability.
+
 - `dev` prefers Grok 4.6 medium for implementation. Probe its workspace sandbox before
   mutation. If optional preflight fails, use the configured Codex fallback for the whole
   writer turn and report the substitution. Explicit engine selection disables fallback.

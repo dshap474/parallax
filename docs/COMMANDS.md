@@ -9,6 +9,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Review | `/plx:review` | `$plx:review` | Three Grok 4.6 Medium review lanes by default, synthesis, and one host-applied fix round |
 | Simplify | `/plx:simplify` | `$plx:simplify` | Four Grok 4.6 Medium lanes simplify a plan or code; the host applies safe improvements |
 | KISS | `/plx:kiss` | `$plx:kiss` | Load the user-authored KISS principles into the current context |
+| Orchestrate | `/plx:orchestrate` | `$plx:orchestrate` | Set a planner and worker-delegation posture without starting work |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Claude may persist Codex context |
 | Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; Grok 4.6 always uses medium effort |
@@ -42,6 +43,8 @@ or Codex `gpt-5.6-sol` High, with no fallback or second writer. Simplify
 always runs reuse, simplification, efficiency, and altitude once each on Grok 4.6 Medium. A
 current-message instruction may replace the engine for the whole round.
 KISS is a context-only principles skill and launches no engine lanes.
+Orchestrate is also context-only. When invoked, it guides the host to plan and use
+native subagents for execution; it does not launch workers itself or change pipeline routing.
 Standalone Build may create local commits when its accepted spec or the target
 repository's instructions explicitly require or authorize them. It stages only
 Build-owned work and reports every commit. Other skills retain their documented Git

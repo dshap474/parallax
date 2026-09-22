@@ -56,7 +56,8 @@ accepted spec and delegates it to one fresh same-host build worker that implemen
 three Grok review lanes, fixes confirmed findings, and finishes with the complete
 relevant verification suite; the host bootstraps and gate-checks.
 `simplify` simplifies a plan or code. `kiss` loads the user-authored KISS principles into
-the host context.
+the host context. `orchestrate` loads a planner and native-worker posture without running
+tools or changing the packaged pipelines.
 
 Inside `dev`, the host declares task sizing before launching anything:
 

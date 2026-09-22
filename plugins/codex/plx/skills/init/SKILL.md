@@ -50,6 +50,7 @@ one, recommend it by name and let the user invoke it.
 | `$plx:review` | Changes need review — three read-only Grok lanes by default, synthesis, then you apply confirmed fixes yourself ("report only" skips fixes). |
 | `$plx:simplify` | A plan or code needs simplification — four read-only dimensions, then host-applied improvements. |
 | `$plx:kiss` | Load the user's KISS principles into context without starting a workflow. |
+| `$plx:orchestrate` | Set a planner and native-worker posture without starting work. |
 | `$plx:dev` | The full run: plan → build → review/fix → your final gate. |
 | `$plx:claude` | A one-off Claude passthrough (question, plan, or explicit implementation). |
 | `$plx:grok` | A one-off Grok 4.6 passthrough. |

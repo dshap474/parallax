@@ -1,0 +1,6 @@
+interface:
+  display_name: "PLX::Orchestrate"
+  short_description: "Set a planner and worker delegation posture"
+  default_prompt: "Use $plx:orchestrate to set my orchestration posture for this task."
+policy:
+  allow_implicit_invocation: false

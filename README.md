@@ -37,6 +37,7 @@ Start a new Codex session, then use `$plx:dev`.
 | Review and fix | `/plx:review` | `$plx:review` |
 | Simplify and fix | `/plx:simplify` | `$plx:simplify` |
 | KISS principles | `/plx:kiss` | `$plx:kiss` |
+| Orchestrator posture | `/plx:orchestrate` | `$plx:orchestrate` |
 | Full pipeline | `/plx:dev` | `$plx:dev` |
 | Opposite-engine passthrough | `/plx:codex` | `$plx:claude` |
 | Grok passthrough | `/plx:grok` | `$plx:grok` |
@@ -55,6 +56,8 @@ default; the opposite host engine supplies its plan critics and review lanes. Di
 `review` runs three Grok 4.6 Medium lanes by default. `simplify` runs four Grok 4.6
 Medium lanes over a plan or code; the host applies confirmed improvements itself. The
 static `kiss` skill loads the user-authored KISS principles into the current context.
+`orchestrate` loads a context-only planner posture with native subagent workers; it starts
+no task or pipeline.
 
 The one standalone Build worker intentionally receives full host access so it can write
 repository Git metadata and launch its packaged review lanes. That transport is limited

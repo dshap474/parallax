@@ -60,6 +60,7 @@ engine turns) — run it from a terminal, or via background Bash from an agent s
 | `gemini` | guard `average([])` using file tools | same functional checks; missing Gemini authentication fails the scenario |
 | `init` | load routing | exit 0 · no tracked or untracked changes · final answer confirms routing |
 | `kiss` | load principles | exit 0 · no tracked or untracked changes |
+| `orchestrate` | load planner posture | exit 0 · no tracked or untracked changes |
 | `unknown-unknowns` | chat-only calculator blindspot pass | exit 0 · no changes · final answer identifies empty-input failure |
 | `simplify` | remove redundant collections | exit 0 · code changes · empty, negative, fractional and generator cases retain results |
 | `claude` | guard `average([])` (Codex host only) | same functional checks as `codex` |

@@ -41,11 +41,11 @@ fi
 # Skill surfaces and polarity
 # --------------------------------------------------------------------------- #
 
-_head "Twelve host-native skills per package"
+_head "Thirteen host-native skills per package"
 claude_count="$(find "$PLX_CLAUDE/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
 codex_count="$(find "$PLX_CODEX/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
-[ "$claude_count" = 12 ] && _pass "Claude skills: 12" || _fail "Claude skills: $claude_count"
-[ "$codex_count" = 12 ] && _pass "Codex skills: 12" || _fail "Codex skills: $codex_count"
+[ "$claude_count" = 13 ] && _pass "Claude skills: 13" || _fail "Claude skills: $claude_count"
+[ "$codex_count" = 13 ] && _pass "Codex skills: 13" || _fail "Codex skills: $codex_count"
 
 for skill in "$PLX_CLAUDE"/skills/*/SKILL.md; do
   name="$(basename "$(dirname "$skill")")"
@@ -87,6 +87,7 @@ for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
     plan) display_name="PLX::Plan" ;;
     review) display_name="PLX::Review" ;;
     kiss) display_name="PLX::KISS" ;;
+    orchestrate) display_name="PLX::Orchestrate" ;;
     simplify) display_name="PLX::Simplify" ;;
     unknown-unknowns) display_name="PLX::UnknownUnknowns" ;;
     *) display_name="" ;;
@@ -254,6 +255,14 @@ else
   _fail "KISS principles contract drift"
 fi
 
+if grep -Eq 'plx-engine|plx-eval|--mode (ro|rw)' \
+     "$PLX_CLAUDE/skills/orchestrate/SKILL.md" \
+     "$PLX_CODEX/skills/orchestrate/SKILL.md"; then
+  _fail "Orchestrate must remain context-only"
+else
+  _pass "Orchestrate is context-only"
+fi
+
 if grep -qE 'fable-5|Codex review lanes|Standalone Codex plan critics|implementation critic \(codex' \
   "$PLX_ROOT/shared/prompts/engines.md"; then
   _fail "shared engine guidance contains Claude-host assumptions"
@@ -297,7 +306,7 @@ for package_host in "$PLX_CLAUDE:claude" "$PLX_CODEX:codex"; do
   host="${package_host##*:}"
   for skill in "$package"/skills/*/SKILL.md; do
     skill_name="$(basename "$(dirname "$skill")")"
-    if [ "$skill_name" = kiss ]; then
+    if [ "$skill_name" = kiss ] || [ "$skill_name" = orchestrate ]; then
       ! grep -Fq 'plx-eval finish' "$skill" || eval_contract_ok=0
       continue
     fi
@@ -498,10 +507,12 @@ else
   _fail "persistent Codex runtime packaging drift"
 fi
 
-if grep -RqiE 'use subagents|spawn (a |an )?subagent' "$PLX_ROOT/plugins"; then
-  _fail "a skill still instructs subagent orchestration"
+if find "$PLX_CLAUDE/skills" "$PLX_CODEX/skills" -name SKILL.md \
+     ! -path '*/skills/orchestrate/SKILL.md' -print0 |
+     xargs -0 grep -Eqi 'use subagents|spawn (a |an )?subagent'; then
+  _fail "a skill besides Orchestrate instructs subagent orchestration"
 else
-  _pass "no skill instructs subagent orchestration"
+  _pass "subagent orchestration is isolated to Orchestrate"
 fi
 if find "$PLX_ROOT/plugins" -type d -name .parallax | grep -q .; then
   _fail "repo-local runtime state exists"

@@ -1,6 +1,6 @@
 ---
 name: build
-description: Build an accepted spec through one fresh Codex gpt-5.6-sol High worker. The worker owns implementation, Grok review, confirmed fixes, and full relevant verification; the host bootstraps and gate-checks.
+description: Build an accepted spec through one fresh Codex gpt-6-sol High worker. The worker owns implementation, Grok review, confirmed fixes, and full relevant verification; the host bootstraps and gate-checks.
 argument-hint: "<accepted spec path, or omit when an accepted spec is already in this conversation>"
 ---
 
@@ -8,7 +8,7 @@ argument-hint: "<accepted spec path, or omit when an accepted spec is already in
 
 Build an accepted spec through exactly one fresh Codex worker. The worker owns
 implementation, review, fixes, and verification. The host bootstraps, gate-checks,
-records, and reports. Use `gpt-5.6-sol` at `high` unless the current request overrides it.
+records, and reports. Use `gpt-6-sol` at `high` unless the current request overrides it.
 
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
 `/skills/build/SKILL.md`. Use the packaged helpers in `<plugin-root>/bin/`.
@@ -99,7 +99,7 @@ files. Apply explicit whole-round review model/effort overrides; `grok-4.6` stay
 ```
 <plugin-root>/bin/plx-engine --engine codex --mode rw --repo <repo> \
   --prompt-file <tmp>/writer-brief.md --rubric build-worker \
-  --build-writer-full-access --model gpt-5.6-sol --effort high \
+  --build-writer-full-access --model gpt-6-sol --effort high \
   --out <tmp>/writer.md --log <tmp>/writer.log
 ```
 

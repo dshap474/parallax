@@ -28,7 +28,7 @@ version_of() {
 claude_version="$(version_of "$PLX_CLAUDE/.claude-plugin/plugin.json")"
 codex_version="$(version_of "$PLX_CODEX/.codex-plugin/plugin.json")"
 market_version="$(version_of "$PLX_ROOT/.claude-plugin/marketplace.json")"
-if [ "$claude_version" = "0.5.29" ] && [ "$claude_version" = "$codex_version" ] &&
+if [ "$claude_version" = "0.5.30" ] && [ "$claude_version" = "$codex_version" ] &&
    [ "$claude_version" = "$market_version" ] &&
    grep -qx "v$claude_version" "$PLX_ROOT/README.md" &&
    grep -qx "Status: v$claude_version" "$PLX_ROOT/docs/SPEC.md"; then
@@ -116,7 +116,7 @@ passthrough_overrides_ok=1
 for skill in \
   "$PLX_CLAUDE/skills/codex/SKILL.md" \
   "$PLX_CODEX/skills/claude/SKILL.md"; do
-  grep -Fq "An explicit user model or effort always replaces" "$skill" ||
+  grep -Fq "An explicit user model or effort replaces" "$skill" ||
     passthrough_overrides_ok=0
   grep -Fq -- "--model <model> --effort <effort>" "$skill" ||
     passthrough_overrides_ok=0
@@ -163,9 +163,9 @@ if [ "$passthrough_overrides_ok" -eq 1 ]; then
 else
   _fail "single-engine passthrough override contract drift"
 fi
-if grep -Fq 'Defaults: `model=opus`, `effort=medium`.' \
+if grep -Fq 'Defaults: `model=claude-opus-5-5`, `effort=medium`.' \
      "$PLX_CODEX/skills/claude/SKILL.md"; then
-  _pass "Codex-hosted Claude passthrough defaults Opus effort to medium"
+  _pass "Codex-hosted Claude passthrough defaults Opus 5.5 effort to medium"
 else
   _fail "Codex-hosted Claude passthrough default effort drift"
 fi
@@ -332,7 +332,7 @@ from pathlib import Path
 
 root = Path(sys.argv[1])
 errors = []
-for host, model, effort in (("claude", "opus", "medium"), ("codex", "gpt-5.6-sol", "high")):
+for host, model, effort in (("claude", "claude-opus-5-5", "medium"), ("codex", "gpt-6-sol", "high")):
     package = root / "plugins" / host / "plx"
     build = (package / "skills/build/SKILL.md").read_text()
     commands = [" ".join(block.replace("\\\n", " ").split())
@@ -363,7 +363,7 @@ for name in ("build", "dev", "plan", "review", "unknown-unknowns"):
         body = re.sub(r"For Grok (?:calls and preflight|preflight and review calls),.*?active\.", "HOST_BOUNDARY", body, flags=re.S)
         body = body.replace("<plugin-root>/bin/", "").replace("$plx:", "/plx:")
         if name == "build":
-            body = body.replace("gpt-5.6-sol", "opus").replace("high", "medium")
+            body = body.replace("gpt-6-sol", "claude-opus-5-5").replace("high", "medium")
             body = body.replace("Codex", "Claude").replace("codex", "claude")
         else:
             body = body.replace(f"--host {host}", "--host HOST")

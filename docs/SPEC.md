@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.29
+Status: v0.5.30
 
 ## Required tree
 
@@ -15,7 +15,7 @@ shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.29`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.30`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains thirteen
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
@@ -46,7 +46,7 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
   the current context. It launches no engine or runtime tooling.
 - Standalone Review runs three read-only Grok 4.6 Medium lanes by default. Standalone
   Build requires an accepted spec and delegates it to exactly one fresh same-host build
-  worker: Codex `gpt-5.6-sol` High from Codex, or Claude Opus Medium from Claude. That
+  worker: Codex `gpt-6-sol` High from Codex, or Claude Opus 5.5 Medium from Claude. That
   worker implements, launches three read-only Grok 4.6 Medium review lanes itself, fixes
   confirmed findings itself, and runs the complete relevant verification suite; the host
   bootstraps and gate-checks. There is no fallback or second writer. Build may

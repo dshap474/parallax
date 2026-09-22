@@ -17,16 +17,18 @@ Use the packaged helpers on PATH.
 
 Resolve the model and effort from the user's request before writing the brief:
 
-- Defaults: `model=gpt-5.6-sol`, `effort=medium`. Use `high` or `xhigh` instead
+- Defaults: `model=gpt-6-sol`, `effort=medium`. Use `high` or `xhigh` instead
   only when concrete complexity or risk warrants it.
-- An explicit user model or effort always replaces that setting's default. Natural
-  wording is enough: `ask gpt-6-luna low for <task>`, `use gpt-6-sol at xhigh`,
+- An explicit user model or effort replaces that setting's default unless the model
+  is retired in Parallax. Natural wording is enough: `ask gpt-6-luna low for <task>`,
+  `use gpt-6-sol at xhigh`,
   and `model=gpt-6-sol effort=medium` all set real launch flags.
 - Treat `reasoning`, `reasoning level`, and `effort` as names for the same launch
   setting.
-- Do not infer an override from model names discussed only as task content. Do not
-  normalize, forbid, or silently replace an explicit value. If Codex rejects it,
-  surface that error.
+- Do not infer an override from model names discussed only as task content. Retired
+  Opus 5 and GPT-5.6 Sol/Luna IDs and aliases are rejected by the launcher. Do not
+  normalize or silently replace an explicit value. If Codex rejects it, surface
+  that error.
 
 Always pass both resolved values as `--model <model> --effort <effort>`, including
 on the persistent path.

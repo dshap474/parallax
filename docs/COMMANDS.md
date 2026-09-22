@@ -38,8 +38,8 @@ Review owns its three Grok core lanes, risk-triggered security lane, and explici
 current-message whole-round engine override in its skill; it does not read YAML
 review bindings. Declare the chosen shape before launching.
 
-Standalone Build always uses one fresh same-host build worker that owns implementation, Grok review, fixes, and verification: Claude Opus Medium
-or Codex `gpt-5.6-sol` High, with no fallback or second writer. Simplify
+Standalone Build always uses one fresh same-host build worker that owns implementation, Grok review, fixes, and verification: Claude Opus 5.5 Medium
+or Codex `gpt-6-sol` High, with no fallback or second writer. Simplify
 always runs reuse, simplification, efficiency, and altitude once each on Grok 4.6 Medium. A
 current-message instruction may replace the engine for the whole round.
 KISS is a context-only principles skill and launches no engine lanes.

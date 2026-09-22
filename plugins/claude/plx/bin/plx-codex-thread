@@ -3,9 +3,9 @@
 #
 # Usage:
 #   plx-codex-thread start --repo /abs/repo --mode ro|rw --prompt-file /abs/prompt.md \
-#     --model gpt-5.6-sol --effort medium
+#     --model gpt-6-sol --effort medium
 #   plx-codex-thread resume --thread ID --repo /abs/repo --mode ro|rw \
-#     --prompt-file /abs/prompt.md --model gpt-5.6-sol --effort medium
+#     --prompt-file /abs/prompt.md --model gpt-6-sol --effort medium
 set -euo pipefail
 
 # --------------------------------------------------------------------------- #
@@ -24,7 +24,7 @@ Usage:
 
 The command emits the codex-app-client JSON result on stdout. It stores resumable
 Codex transcripts in the normal Codex session store and no Parallax thread registry.
-Model defaults to gpt-5.6-sol and effort defaults to medium. Explicit values pass
+Model defaults to gpt-6-sol and effort defaults to medium. Explicit values pass
 through to Codex.
 EOF
 }
@@ -54,7 +54,7 @@ THREAD=""
 REPO=""
 MODE=""
 PROMPT=""
-MODEL="gpt-5.6-sol"
+MODEL="gpt-6-sol"
 EFFORT="medium"
 
 while [[ $# -gt 0 ]]; do
@@ -69,6 +69,11 @@ while [[ $# -gt 0 ]]; do
     *) fail_usage "unknown argument: $1" ;;
   esac
 done
+
+case "$MODEL" in
+  opus|opus-5|claude-opus-5|gpt-5.6|gpt-5.6-sol|gpt-5.6-luna)
+    fail_usage "model $MODEL is retired in Parallax; use gpt-6-sol or gpt-6-luna" ;;
+esac
 
 [[ "$REPO" = /* ]] || fail_usage "--repo must be an absolute path"
 [[ -d "$REPO" ]] || fail_usage "repo not found: $REPO"

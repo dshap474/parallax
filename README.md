@@ -48,7 +48,7 @@ Start a new Codex session, then use `$plx:dev`.
 
 Claude is the host orchestrator in the Claude package. Codex is the host orchestrator
 in the Codex package. In standalone `build`, the host delegates an accepted spec to one
-fresh same-host build worker—Claude Opus Medium or Codex `gpt-5.6-sol` High—which
+fresh same-host build worker—Claude Opus 5.5 Medium or Codex `gpt-6-sol` High—which
 implements it, runs three Grok 4.6 Medium review lanes itself, fixes confirmed findings
 itself, and runs the full relevant verification suite; the host bootstraps and
 gate-checks. The separate `dev` pipeline uses isolated Grok 4.6 writers by
@@ -61,12 +61,13 @@ no task or pipeline.
 
 ## Explicit model choices
 
-Parallax accepts exact model IDs in an explicit model request. Current choices include
-`claude-opus-5-5` for Claude lanes and `gpt-6-sol` or `gpt-6-luna` for Codex lanes.
+Parallax defaults to `claude-opus-5-5` for Claude lanes and `gpt-6-sol` for Codex
+lanes.
 For example, use `$plx:claude use claude-opus-5-5 at medium for <task>` in Codex,
 or `/plx:codex use gpt-6-sol at high for <task>` in Claude Code. Ask for
-`gpt-6-luna` on a focused Codex task. The existing defaults still apply when no model
-is named, and the selected CLI must have access to the requested model. See the
+`gpt-6-luna` on a focused Codex task. Parallax rejects retired Opus 5 and GPT-5.6
+Sol/Luna IDs, including the unpinned `opus` and `gpt-5.6` aliases. The selected CLI
+must have access to the requested model. See the
 [Claude model list](https://platform.claude.com/docs/en/models/overview) and
 [Codex model list](https://learn.chatgpt.com/docs/models).
 
@@ -116,7 +117,7 @@ See [Architecture](docs/ARCHITECTURE.md), [Commands](docs/COMMANDS.md),
 
 ## Status
 
-v0.5.29
+v0.5.30
 
 ## License
 

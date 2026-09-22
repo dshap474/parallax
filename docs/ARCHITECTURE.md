@@ -25,7 +25,7 @@ lanes on Grok by default, with security added when triggered and an explicit
 current-message engine override applied to the whole round. Its skill owns that
 routing; the package config supplies the separate `pipelines.dev` review bindings.
 Standalone Build delegates the whole build to one fresh
-same-host worker (Codex `gpt-5.6-sol` High or Claude Opus Medium) that implements, runs
+same-host worker (Codex `gpt-6-sol` High or Claude Opus 5.5 Medium) that implements, runs
 its three Grok 4.6 Medium review lanes, and fixes confirmed findings itself; the host
 bootstraps and gate-checks. The separate `dev` pipeline prefers Grok
 4.6 for implementation, deterministically falls back to Codex only when Grok fails
@@ -83,18 +83,19 @@ It complements rather than replaces correctness review.
 
 Pipeline lanes and default passthroughs use `plx-engine`. It pins:
 
-- Codex: `gpt-5.6-sol`, user config ignored, approval policy `never`, ephemeral session,
+- Codex: `gpt-6-sol`, user config ignored, approval policy `never`, ephemeral session,
   and an explicit filesystem sandbox;
-- Claude: Opus, safe mode, no session persistence, strict MCP/network isolation,
+- Claude: `claude-opus-5-5`, safe mode, no session persistence, strict MCP/network isolation,
   read-only tools or repo-confined sandboxed Bash;
 - Grok: `grok-4.6` at medium reasoning, unattended tool approval, no
   planning/subagent/memory features, and an explicit read-only or workspace sandbox;
 - Devin: `swe-2-high`, one-shot print mode, generated config with supported imports,
   updates, and subagents disabled, dangerous permission mode, and no OS sandbox.
 
-These models are defaults, not restrictions. Explicit user-requested model and effort
-values pass through to the selected engine except that `grok-4.6` is always normalized
-to medium reasoning. The selected engine remains responsible for validating other values.
+These models are defaults. Explicit user-requested model and effort values pass through
+to the selected engine except that `grok-4.6` is always normalized to medium reasoning
+and retired Opus 5 and GPT-5.6 Sol/Luna IDs and aliases are rejected. The selected
+engine remains responsible for validating other values.
 Normal lanes use read-only or workspace-constrained execution. The one standalone Build
 writer intentionally uses full host access: Codex `danger-full-access`, or Claude with
 its sandbox disabled and `--dangerously-skip-permissions`. The wrapper accepts that mode

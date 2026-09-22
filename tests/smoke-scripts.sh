@@ -524,7 +524,7 @@ else
   _pass "non-zero exit on unknown rubric"
 fi
 
-_head "plx-engine defaults Codex to GPT-5.6 Sol at medium effort"
+_head "plx-engine defaults Codex to GPT-6 Sol at medium effort"
 fake_codex_args="$WORK/codex-args.txt"
 printf '%s\n' '#!/usr/bin/env bash' \
   '# Fake Codex CLI — records argv and writes the requested final output.' \
@@ -542,10 +542,23 @@ PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
   --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
 rc=$?
 if [ "$rc" -eq 0 ]; then _pass "Codex default invocation exits 0"; else _fail "Codex default invocation exits $rc"; fi
-assert_contains "gpt-5.6-sol" "$fake_codex_args" "Codex model defaults to GPT-5.6 Sol"
+assert_contains "gpt-6-sol" "$fake_codex_args" "Codex model defaults to GPT-6 Sol"
 assert_contains "model_reasoning_effort=medium" "$fake_codex_args" "Codex effort defaults to medium"
 assert_contains "approval_policy=never" "$fake_codex_args" "Codex headless approval policy is explicit"
 assert_contains "workspace-write" "$fake_codex_args" "Codex rw uses workspace-write sandbox"
+
+for retired_model in gpt-5.6 gpt-5.6-sol gpt-5.6-luna opus opus-5 claude-opus-5; do
+  PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
+    "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode ro --repo "$REPO" \
+    --prompt-file "$fake_prompt" --model "$retired_model" \
+    --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+  rc=$?
+  if [ "$rc" -eq 2 ]; then
+    _pass "retired model $retired_model is rejected"
+  else
+    _fail "retired model $retired_model expected exit 2, got $rc"
+  fi
+done
 
 PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode rw --repo "$REPO" \
@@ -654,7 +667,7 @@ if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
   if [ "$rc" -eq 0 ]; then _pass "persistent start exits 0"; else _fail "persistent start exits $rc"; fi
   assert_contains "--persistent" "$cxa_args" "start requests a persistent thread"
   assert_contains "inspect" "$cxa_args" "ro maps to inspect"
-  assert_contains "gpt-5.6-sol" "$cxa_args" "persistent Codex model defaults to GPT-5.6 Sol"
+  assert_contains "gpt-6-sol" "$cxa_args" "persistent Codex model defaults to GPT-6 Sol"
   assert_contains "medium" "$cxa_args" "persistent Codex effort defaults to medium"
   assert_contains "$PLUGIN_ROOT/bin/../tools/codex-app-client" "$cxa_args" "uses the packaged app client"
   assert_contains "$WORK/cache/parallax/codex-app-client" "$cxa_env" "uv environment stays outside the plugin"
@@ -672,6 +685,14 @@ if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
   assert_contains "edit" "$cxa_args" "rw maps to edit"
   assert_contains "gpt-5.6-terra" "$cxa_args" "persistent model override passes through"
   assert_contains "low" "$cxa_args" "persistent effort override passes through"
+  "$PLUGIN_ROOT/bin/plx-codex-thread" start --repo "$REPO" --mode ro \
+    --prompt-file "$fake_prompt" --model gpt-5.6-sol >/dev/null 2>&1
+  rc=$?
+  if [ "$rc" -eq 2 ]; then
+    _pass "persistent Codex rejects retired model"
+  else
+    _fail "persistent Codex retired model expected exit 2, got $rc"
+  fi
   if grep -qx -- '--persistent' "$cxa_args"; then
     _fail "resume unexpectedly requests a new persistent thread"
   else
@@ -698,6 +719,17 @@ printf '%s\n' '#!/usr/bin/env bash' \
   'printf '\''OK\n'\''' \
   > "$fake_bin/claude"
 chmod +x "$fake_bin/claude"
+
+PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
+  PLX_CLAUDE_PROMPT_FILE="$fake_claude_prompt" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode ro --repo "$REPO" \
+  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] && grep -qx "claude-opus-5-5" "$fake_claude_args"; then
+  _pass "Claude defaults to pinned Opus 5.5"
+else
+  _fail "Claude pinned default failed (exit $rc)"
+fi
 
 PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
   PLX_CLAUDE_PROMPT_FILE="$fake_claude_prompt" \

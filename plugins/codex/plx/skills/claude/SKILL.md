@@ -16,16 +16,18 @@ Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
 
 Resolve the model and effort from the user's request before writing the brief:
 
-- Defaults: `model=opus`, `effort=medium`. Use `high` or `xhigh` instead only for
+- Defaults: `model=claude-opus-5-5`, `effort=medium`. Use `high` or `xhigh` instead only for
   concrete cross-file or high-risk work.
-- An explicit user model or effort always replaces that setting's default. Natural
-  wording is enough: `use claude-opus-5-5 at medium for <task>`, `use opus at max`,
+- An explicit user model or effort replaces that setting's default unless the model
+  is retired in Parallax. Examples: `use claude-opus-5-5 at medium for <task>`,
+  `use claude-opus-5-5 at max`,
   and `model=fable effort=low` all set real launch flags.
 - Treat `reasoning`, `reasoning level`, and `effort` as names for the same launch
   setting.
-- Do not infer an override from model names discussed only as task content. Do not
-  normalize, forbid, or silently replace an explicit value. If Claude rejects it,
-  surface that error.
+- Do not infer an override from model names discussed only as task content. Retired
+  Opus 5 and GPT-5.6 Sol/Luna IDs and aliases are rejected by the launcher. Do not
+  normalize or silently replace an explicit value. If Claude rejects it, surface
+  that error.
 
 Always pass both resolved values as `--model <model> --effort <effort>`.
 

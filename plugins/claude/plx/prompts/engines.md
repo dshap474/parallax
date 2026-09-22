@@ -49,15 +49,17 @@ contract. State each rule once.
 
 | Model | Default role |
 | --- | --- |
-| Codex `gpt-5.6-sol` | plan/review judgment and `dev` fallback |
+| Codex `gpt-6-sol` | plan/review judgment and `dev` fallback |
 | Codex `gpt-5.6-terra` low | official-document lookup |
 | Grok `grok-4.6` medium | `dev` implementation and Grok review lanes |
-| Claude `opus` | planning, review, and taste-heavy judgment |
+| Claude `claude-opus-5-5` | planning, review, and taste-heavy judgment |
 | Host orchestrator | plan authorship, synthesis, targeted fixes, and final gate |
 
-Package config supplies defaults, not restrictions. An explicit current-message model or
-effort request wins, except `grok-4.6` always runs at medium. Escalate model or effort
-when the first result is materially inadequate; this never expands scope or authority.
+Package config supplies defaults. An explicit current-message model or effort request
+wins, except `grok-4.6` always runs at medium and retired Opus 5 and GPT-5.6 Sol/Luna
+IDs are rejected. The unpinned `opus` and `gpt-5.6` aliases are also rejected.
+Escalate model or effort when the first result is materially inadequate; this never
+expands scope or authority.
 
 Current explicit model choices include Claude `claude-opus-5-5` for long-running
 coding and knowledge work, Codex `gpt-6-sol` for complex coding, and Codex
@@ -88,8 +90,8 @@ account availability still determine whether a call succeeds. See the
 Build has a fixed shape and does not use the `dev` sizing ladder. One fresh same-host
 worker receives the accepted spec:
 
-- Codex host: `gpt-5.6-sol` high;
-- Claude host: `opus` medium.
+- Codex host: `gpt-6-sol` high;
+- Claude host: `claude-opus-5-5` medium.
 
 That worker implements, launches three read-only Grok 4.6 Medium review lanes, validates
 and fixes confirmed findings once, and runs the complete relevant verification suite.

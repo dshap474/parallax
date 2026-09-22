@@ -30,7 +30,7 @@ its fixes. Route other work by outcome:
   --mode ro`). Use higher effort only when synthesis or judgment is required. Read only
   the repository evidence needed for the decision.
 - In `dev`, implementation uses direct headless `plx-engine` `rw` lanes. Grok 4.6 Medium is the
-  default writer; Codex GPT-5.6 Sol is the reported fallback; Claude `opus` supplies
+  default writer; Codex GPT-6 Sol is the reported fallback; Claude `claude-opus-5-5` supplies
   plan/review judgment and user-facing taste. Assign one writer per disjoint path set.
 - Plan critics and composed `dev` reviewers default to read-only Claude lanes.
   Standalone Review uses Grok by default; standalone Build uses one same-host worker

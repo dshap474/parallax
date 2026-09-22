@@ -8,7 +8,7 @@
 #   plx-engine --print-rubric <name>
 #
 # Safety flags are pinned here per engine, not decided by callers:
-#   codex  : gpt-5.6-sol, effort medium by default, --ignore-user-config,
+#   codex  : gpt-6-sol, effort medium by default, --ignore-user-config,
 #            approval_policy=never, --ephemeral, sandbox read-only |
 #            workspace-write; the standalone Build writer may explicitly
 #            request danger-full-access so it can write repository Git metadata
@@ -73,13 +73,14 @@ Flags:
   --build-writer-full-access
                         allow one rw worker/build-worker-rubric Codex/Claude lane to write
                         Git metadata; invalid for ro, Grok, or other rubrics
-  --model <m>           codex: default gpt-5.6-sol · claude: default opus ·
+  --model <m>           codex: default gpt-6-sol · claude: default claude-opus-5-5 ·
                         grok: default grok-4.6 · devin: default swe-2-high · gemini: auto
   --effort <e>          codex: default medium · claude: default high ·
                         grok-4.6: always medium · other Grok models: default medium
                         Explicit values pass through except that grok-4.6 is pinned
-                        to medium. Gemini and Devin have no effort flag; a nonempty value is
-                        rejected—choose a model variant instead.
+                        to medium. Retired model IDs and the unpinned opus alias are
+                        rejected. Gemini and Devin have no effort flag; a nonempty
+                        value is rejected—choose a model variant instead.
   --stdout              print the final message to stdout; temp files auto-cleaned
   --out <f> --log <f>   instead of --stdout: write final message / full log to files
   --print-rubric <n>    print the named rubric (e.g. reviewer-correctness, engines)
@@ -255,16 +256,22 @@ if [[ "$ENGINE" == "grok" ]]; then
   [[ -n "$MODEL" ]] || MODEL="grok-4.6"
   [[ -n "$EFFORT" ]] || EFFORT="medium"
 elif [[ "$ENGINE" == "codex" ]]; then
-  [[ -n "$MODEL" ]] || MODEL="gpt-5.6-sol"
+  [[ -n "$MODEL" ]] || MODEL="gpt-6-sol"
   [[ -n "$EFFORT" ]] || EFFORT="medium"
 elif [[ "$ENGINE" == "claude" ]]; then
-  [[ -n "$MODEL" ]] || MODEL="opus"
+  [[ -n "$MODEL" ]] || MODEL="claude-opus-5-5"
   [[ -n "$EFFORT" ]] || EFFORT="high"
 elif [[ "$ENGINE" == "gemini" ]]; then
   [[ -n "$MODEL" ]] || MODEL="auto"
 else
   [[ -n "$MODEL" ]] || MODEL="swe-2-high"
 fi
+
+case "$MODEL" in
+  opus|opus-5|claude-opus-5|gpt-5.6|gpt-5.6-sol|gpt-5.6-luna)
+    echo "model $MODEL is retired in Parallax; use claude-opus-5-5, gpt-6-sol, or gpt-6-luna" >&2
+    exit 2 ;;
+esac
 
 # Grok 4.6 is tuned and validated only at medium reasoning in Parallax. Keep
 # this invariant at the execution boundary so every pipeline and passthrough

@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Explicit Parallax planning for Codex. Codex authors the plan and two Claude Opus critics red-team implementation feasibility and system design without writing code.
+description: Explicit Parallax planning for Codex. Codex authors the plan and two Claude Opus 5.5 critics red-team implementation feasibility and system design without writing code.
 argument-hint: "<task to plan>"
 ---
 
@@ -23,7 +23,7 @@ critic dimension must resolve to exactly one supported engine. Stop on missing,
 unsupported, or multiple bindings. Skip or substitute a dimension only on explicit
 user instruction. Defaults are two `claude` critics. Resolve flags as follows:
 
-- Codex: `--model gpt-5.6-sol --effort xhigh`.
+- Codex: `--model gpt-6-sol --effort xhigh`.
 - Claude: configured/default model with `--effort xhigh`.
 - Grok: `--model grok-4.6 --effort medium`.
 

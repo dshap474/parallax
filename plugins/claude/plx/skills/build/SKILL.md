@@ -1,6 +1,6 @@
 ---
 name: build
-description: Build an accepted spec through one fresh Claude Opus Medium worker. The worker owns implementation, Grok review, confirmed fixes, and full relevant verification; the host bootstraps and gate-checks.
+description: Build an accepted spec through one fresh Claude Opus 5.5 Medium worker. The worker owns implementation, Grok review, confirmed fixes, and full relevant verification; the host bootstraps and gate-checks.
 argument-hint: "<accepted spec path, or omit when an accepted spec is already in this conversation>"
 disable-model-invocation: true
 user-invocable: true
@@ -10,7 +10,7 @@ user-invocable: true
 
 Build an accepted spec through exactly one fresh Claude worker. The worker owns
 implementation, review, fixes, and verification. The host bootstraps, gate-checks,
-records, and reports. Use `opus` at `medium` unless the current request overrides it.
+records, and reports. Use `claude-opus-5-5` at `medium` unless the current request overrides it.
 
 Use the packaged helpers on PATH.
 
@@ -100,7 +100,7 @@ files. Apply explicit whole-round review model/effort overrides; `grok-4.6` stay
 ```
 plx-engine --engine claude --mode rw --repo <repo> \
   --prompt-file <tmp>/writer-brief.md --rubric build-worker \
-  --build-writer-full-access --model opus --effort medium \
+  --build-writer-full-access --model claude-opus-5-5 --effort medium \
   --out <tmp>/writer.md --log <tmp>/writer.log
 ```
 

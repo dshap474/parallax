@@ -179,7 +179,7 @@ Omit `--model` to use the current Codex default. To request a specific model:
 uv run cxa run \
   --cwd /absolute/path/to/project \
   --mode inspect \
-  --model gpt-5.6-sol \
+  --model gpt-6-sol \
   --ephemeral \
   --prompt "Reply with exactly: OK"
 ```
@@ -260,7 +260,7 @@ with Client() as client:
         sandbox="read-only",
         approvals="deny-all",
         instructions="headless",
-        model="gpt-5.6-sol",
+        model="gpt-6-sol",
         ephemeral=True,
     )
     result = session.run(
@@ -289,7 +289,7 @@ For a minimal live smoke test:
 uv run cxa run \
   --cwd /absolute/path/to/project \
   --mode inspect \
-  --model gpt-5.6-sol \
+  --model gpt-6-sol \
   --ephemeral \
   --timeout 120 \
   --prompt "Reply with exactly: OK"
@@ -359,7 +359,7 @@ with Client() as client:
         sandbox="read-only",
         approvals="deny-all",
         instructions="native",
-        model="gpt-5.6-sol",
+        model="gpt-6-sol",
         ephemeral=True,
     )
     result = session.run(

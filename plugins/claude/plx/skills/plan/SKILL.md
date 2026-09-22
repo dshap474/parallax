@@ -1,6 +1,6 @@
 ---
 name: plan
-description: "Fable authors a plan, then parallel implementation and system critics red-team it against the task contract. Defaults: two GPT-5.6 Sol xhigh critics. No code is written."
+description: "Fable authors a plan, then parallel implementation and system critics red-team it against the task contract. Defaults: two GPT-6 Sol xhigh critics. No code is written."
 argument-hint: "<task to plan>"
 disable-model-invocation: true
 user-invocable: true
@@ -24,7 +24,7 @@ critic dimension must resolve to exactly one supported engine. Stop on missing,
 unsupported, or multiple bindings. Skip or substitute a dimension only on explicit
 user instruction. Defaults are two `codex` critics. Resolve flags as follows:
 
-- Codex: `--model gpt-5.6-sol --effort xhigh`.
+- Codex: `--model gpt-6-sol --effort xhigh`.
 - Claude: configured/default model with `--effort xhigh`.
 - Grok: `--model grok-4.6 --effort medium`.
 

@@ -36,15 +36,15 @@ def test_run_accepts_explicit_model_and_effort() -> None:
         [
             "run",
             "--model",
-            "gpt-5.6-terra",
+            "gpt-6-luna",
             "--effort",
-            "low",
+            "max",
             "--prompt",
             "hello",
         ]
     )
-    assert args.model == "gpt-5.6-terra"
-    assert args.effort == "low"
+    assert args.model == "gpt-6-luna"
+    assert args.effort == "max"
 
 
 def test_exit_from_status() -> None:

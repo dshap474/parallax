@@ -3,4 +3,4 @@ NEEDS:
 FIXTURE: calc
 TASK:
 EXPECT_EMPTY_DIFF: true
-EXPECT_OUTPUT: routing|posture|skill map
+EXPECT_OUTPUT: Parallax

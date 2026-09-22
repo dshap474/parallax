@@ -678,13 +678,13 @@ if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
     XDG_CACHE_HOME="$WORK/cache" \
     "$PLUGIN_ROOT/bin/plx-codex-thread" resume --thread thread-123 \
     --repo "$REPO" --mode rw --prompt-file "$fake_prompt" \
-    --model gpt-5.6-terra --effort low > "$WORK/cxa-resume.json"
+    --model gpt-6-luna --effort max > "$WORK/cxa-resume.json"
   rc=$?
   if [ "$rc" -eq 0 ]; then _pass "persistent resume exits 0"; else _fail "persistent resume exits $rc"; fi
   assert_contains "thread-123" "$cxa_args" "resume passes the thread ID"
   assert_contains "edit" "$cxa_args" "rw maps to edit"
-  assert_contains "gpt-5.6-terra" "$cxa_args" "persistent model override passes through"
-  assert_contains "low" "$cxa_args" "persistent effort override passes through"
+  assert_contains "gpt-6-luna" "$cxa_args" "persistent model override passes through"
+  assert_contains "max" "$cxa_args" "persistent effort override passes through"
   "$PLUGIN_ROOT/bin/plx-codex-thread" start --repo "$REPO" --mode ro \
     --prompt-file "$fake_prompt" --model gpt-5.6-sol >/dev/null 2>&1
   rc=$?

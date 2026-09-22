@@ -295,7 +295,7 @@ for package_host in "$PLX_CLAUDE:claude" "$PLX_CODEX:codex"; do
   host="${package_host##*:}"
   for skill in "$package"/skills/*/SKILL.md; do
     skill_name="$(basename "$(dirname "$skill")")"
-    if [ "$skill_name" = kiss ] || [ "$skill_name" = orchestrate ]; then
+    if [ "$skill_name" = kiss ] || [ "$skill_name" = orchestrate ] || [ "$skill_name" = init ]; then
       ! grep -Fq 'plx-eval finish' "$skill" || eval_contract_ok=0
       continue
     fi

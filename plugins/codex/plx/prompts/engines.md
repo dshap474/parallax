@@ -69,8 +69,8 @@ account availability still determine whether a call succeeds. See the
   deserialization, or another trust boundary. Otherwise report `Security: not run`.
 - Simplify always runs reuse, simplification, efficiency, and altitude on Grok 4.6 Medium,
   unless the current request replaces the whole round with one engine.
-- Official-document lookup defaults to Terra low. Use higher effort only when the work
-  needs synthesis or judgment, not simple retrieval.
+- Web research and documentation lookup use read-only GPT-6 Luna Max (`gpt-6-luna`,
+  `max`) in Codex, or Sonnet Low (`sonnet`, `low`) in Claude Code.
 - Apply confirmed, small review fixes in the host after all lanes return. A build-sized or
   behavior-changing remedy needs a writer or user decision.
 

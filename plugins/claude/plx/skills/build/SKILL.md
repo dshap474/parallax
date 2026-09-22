@@ -17,7 +17,7 @@ Use the packaged helpers on PATH.
 ## Accept the spec
 
 Use the supplied spec path or an explicitly accepted spec in this conversation.
-If neither exists, direct the user to `/plx:plan` or `/plx:goal-spec`.
+If neither exists, direct the user to `/plx:plan`.
 Ask for any missing file or material behavior decision. Do not plan inside Build or
 weaken the accepted spec. Identify the relevant repository verification commands.
 

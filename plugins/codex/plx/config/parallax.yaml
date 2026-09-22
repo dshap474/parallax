@@ -24,7 +24,3 @@ pipelines:
     review-cleanup: [claude]
     review-structural: [claude]
     review-security: [claude]
-
-  goal-spec:
-    plan-critic-implementation: [claude]
-    plan-critic-system: [claude]

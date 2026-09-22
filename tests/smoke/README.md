@@ -58,13 +58,11 @@ engine turns) — run it from a terminal, or via background Bash from an agent s
 | `codex` | guard `average([])` | exit 0 · calc.py edited · `average([]) == 0.0` |
 | `grok` | same (with `--with-grok`) | same |
 | `gemini` | guard `average([])` using file tools | same functional checks; missing Gemini authentication fails the scenario |
-| `agents-memory` | run in a bare repo | exit 0 · `AGENTS.md` created · `CLAUDE.md` symlink |
 | `init` | load routing | exit 0 · no tracked or untracked changes · final answer confirms routing |
 | `kiss` | load principles | exit 0 · no tracked or untracked changes |
 | `unknown-unknowns` | chat-only calculator blindspot pass | exit 0 · no changes · final answer identifies empty-input failure |
 | `simplify` | remove redundant collections | exit 0 · code changes · empty, negative, fractional and generator cases retain results |
 | `claude` | guard `average([])` (Codex host only) | same functional checks as `codex` |
-| `goal-spec` | — | **manual** (see below) |
 
 Scenarios live in `scenarios/<skill>.txt` — edit the `TASK:` / `EXPECT_*:` lines there;
 no code change needed to retune a check.
@@ -95,20 +93,9 @@ outputs can be cleaned up by skills and are not guaranteed to be captured in ful
 The lanes' own outputs land in the run's temp dir, which the skill
 cleans up — the transcript is the durable record.
 
-## goal-spec is a manual check
-
-`/plx:goal-spec` runs a Socratic interview (`AskUserQuestion`) and a mandatory approval
-gate, so it can't run under `claude -p` (no human to answer). It's marked `SKIP` in the
-automated run. To smoke it by hand:
-
-1. Copy a fixture: `cp -R tests/fixture /tmp/plx-pg && (cd /tmp/plx-pg && git init -q && git add -A && git commit -qm init)`
-2. From that dir, run `/plx:goal-spec add a small stats module to calc.py` in an interactive Claude Code session.
-3. Confirm: it interviews you, locks the goal at an approval gate, runs the planner and critic lanes, and writes **one** `/goal`-ready spec under `.project/builds/<thread>/`, then prints a paste-ready `/goal` condition pointing at it.
-
 ## Fixtures
 
 - `tests/fixture/` (shared) — `calc.py` with the seeded empty-list bug; used by plan/build/dev/review/codex/grok and the L1 engine lanes.
 - `tests/smoke/fixtures/redundant/` — sums of squares with redundant collections; used by simplify.
-- `tests/smoke/fixtures/bare/` — a 1-file repo with no `AGENTS.md`; used by agents-memory.
 
 Each is copied to a fresh `mktemp` + `git init` per run; the templates are never edited.

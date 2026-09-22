@@ -41,11 +41,11 @@ fi
 # Skill surfaces and polarity
 # --------------------------------------------------------------------------- #
 
-_head "Fourteen host-native skills per package"
+_head "Twelve host-native skills per package"
 claude_count="$(find "$PLX_CLAUDE/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
 codex_count="$(find "$PLX_CODEX/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
-[ "$claude_count" = 14 ] && _pass "Claude skills: 14" || _fail "Claude skills: $claude_count"
-[ "$codex_count" = 14 ] && _pass "Codex skills: 14" || _fail "Codex skills: $codex_count"
+[ "$claude_count" = 12 ] && _pass "Claude skills: 12" || _fail "Claude skills: $claude_count"
+[ "$codex_count" = 12 ] && _pass "Codex skills: 12" || _fail "Codex skills: $codex_count"
 
 for skill in "$PLX_CLAUDE"/skills/*/SKILL.md; do
   name="$(basename "$(dirname "$skill")")"
@@ -77,13 +77,11 @@ for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
     _fail "Codex $name missing explicit-only metadata"
   fi
   case "$name" in
-    agents-memory) display_name="PLX::AgentsMemory" ;;
     build) display_name="PLX::Build" ;;
     claude) display_name="PLX::Claude" ;;
     gemini) display_name="PLX::Gemini" ;;
     devin) display_name="PLX::Devin" ;;
     dev) display_name="PLX::Dev" ;;
-    goal-spec) display_name="PLX::GoalSpec" ;;
     grok) display_name="PLX::Grok" ;;
     init) display_name="PLX::Init" ;;
     plan) display_name="PLX::Plan" ;;
@@ -104,28 +102,6 @@ for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
     _fail "Codex $name default prompt does not use \$plx:$name"
   fi
 done
-
-agents_memory_template="$PLX_CODEX/skills/agents-memory/references/AGENTS.template.md"
-claude_agents_memory_template="$PLX_CLAUDE/skills/agents-memory/references/AGENTS.template.md"
-if grep -Fq 'Use `.project/` only when it will prevent meaningful rediscovery' "$agents_memory_template" &&
-   grep -Fq '`builds/` — optional working records' "$agents_memory_template" &&
-   grep -Fq '`adr/` — decisions that durably change system boundaries' "$agents_memory_template" &&
-   grep -Fq '`architecture/` — current-state explanations of larger systems' "$agents_memory_template" &&
-   grep -Fq '`VISION.md` — user-owned and read-only' "$agents_memory_template" &&
-   ! grep -Fq 'one thread per session' "$agents_memory_template" &&
-   ! grep -Fq 'keep a `README.md` index' "$agents_memory_template" &&
-   ! grep -Fq 'security/threat-model.md' "$agents_memory_template"; then
-  _pass "Codex agents-memory uses the selective project-docs contract"
-else
-  _fail "Codex agents-memory project-docs contract drift"
-fi
-if cmp -s "$agents_memory_template" "$claude_agents_memory_template" &&
-   grep -Fq 'Never create `.project/` directories or documents' \
-     "$PLX_CLAUDE/skills/agents-memory/SKILL.md"; then
-  _pass "Claude and Codex agents-memory governance is identical"
-else
-  _fail "Claude and Codex agents-memory governance drift"
-fi
 
 if [ -f "$PLX_CLAUDE/skills/codex/SKILL.md" ] &&
    [ -f "$PLX_CODEX/skills/claude/SKILL.md" ] &&
@@ -194,7 +170,7 @@ else
 fi
 
 claude_host_boundary_ok=1
-for skill in claude dev goal-spec plan review simplify; do
+for skill in claude dev plan review simplify; do
   grep -Fq 'narrowly scoped host approval' \
     "$PLX_CODEX/skills/$skill/SKILL.md" || claude_host_boundary_ok=0
 done
@@ -211,7 +187,7 @@ if grep -q 'Default to the existing \*\*ephemeral\*\*' "$PLX_CLAUDE/skills/codex
    grep -q 'thread_id' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
    ! grep -Rqi 'plx-codex-thread' \
      "$PLX_CLAUDE/skills/build" "$PLX_CLAUDE/skills/dev" \
-     "$PLX_CLAUDE/skills/goal-spec" "$PLX_CLAUDE/skills/plan" \
+     "$PLX_CLAUDE/skills/plan" \
      "$PLX_CLAUDE/skills/review" "$PLX_CLAUDE/skills/simplify" \
      "$PLX_CLAUDE/skills/kiss"; then
   _pass "persistent Codex is explicit, resumable, and passthrough-only"
@@ -235,8 +211,8 @@ if [ "$(grep -c '^    code: grok$' "$PLX_CODEX/config/parallax.yaml")" -eq 1 ] &
    [ "$(grep -c '^    review-security: \[codex\]$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 1 ] &&
    ! grep -q '^    fix:' "$PLX_CODEX/config/parallax.yaml" &&
    ! grep -q '^    fix:' "$PLX_CLAUDE/config/parallax.yaml" &&
-   [ "$(grep -c '\[claude\]' "$PLX_CODEX/config/parallax.yaml")" -eq 10 ] &&
-   [ "$(grep -c '\[codex\]' "$PLX_CLAUDE/config/parallax.yaml")" -eq 10 ] &&
+   [ "$(grep -c '\[claude\]' "$PLX_CODEX/config/parallax.yaml")" -eq 8 ] &&
+   [ "$(grep -c '\[codex\]' "$PLX_CLAUDE/config/parallax.yaml")" -eq 8 ] &&
    [ "$simplify_defaults_ok" -eq 1 ] &&
    ! grep -q '^    plan:' "$PLX_CODEX/config/parallax.yaml" &&
    ! grep -q '^    plan:' "$PLX_CLAUDE/config/parallax.yaml"; then
@@ -329,7 +305,7 @@ for package_host in "$PLX_CLAUDE:claude" "$PLX_CODEX:codex"; do
     ! grep -Fq 'plx-eval begin' "$skill" || eval_contract_ok=0
     ! grep -Fq '.plx-eval-run' "$skill" || eval_contract_ok=0
   done
-  for pipeline in plan build dev review simplify goal-spec; do
+  for pipeline in plan build dev review simplify; do
     skill="$package/skills/$pipeline/SKILL.md"
     grep -Fq -- '--run-dir <tmp>' "$skill" || eval_contract_ok=0
   done
@@ -369,7 +345,7 @@ for host, model, effort in (("claude", "opus", "medium"), ("codex", "gpt-5.6-sol
 # These workflows differ only in native invocation, model polarity, and host transport.
 # Compare normalized bodies to catch a change shipped to only one host, independently
 # of headings, line wrapping, or the particular wording chosen for shared instructions.
-for name in ("build", "dev", "plan", "goal-spec", "review", "unknown-unknowns"):
+for name in ("build", "dev", "plan", "review", "unknown-unknowns"):
     bodies = []
     for host in ("claude", "codex"):
         body = (root / f"plugins/{host}/plx/skills/{name}/SKILL.md").read_text().split("---", 2)[2]
@@ -431,12 +407,11 @@ for host in claude codex; do
       "$package/skills/plan/references/spec-template.md"; then
     prompt_constraints_ok=0
   fi
-  for skill in plan dev goal-spec; do
+  for skill in plan dev; do
     for field in '## Draft plan' '### Original request' '### Confirmed decisions' '### Candidate plan'; do
       grep -Fq "$field" "$package/skills/$skill/SKILL.md" || prompt_constraints_ok=0
     done
   done
-  ! grep -q -- '--rubric planner' "$package/skills/goal-spec/SKILL.md" || prompt_constraints_ok=0
 done
 if [ "$prompt_constraints_ok" -eq 1 ]; then
   _pass "neutral critic briefs remain structured while host mechanics and reports stay flexible"

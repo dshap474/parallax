@@ -1,6 +1,6 @@
 ---
 name: unknown-unknowns
-description: Surface the user's unknowns — blindspot passes, brainstorms and throwaway prototypes, reference extraction, implementation notes, pitch/explainer docs, and comprehension quizzes — picking the technique(s) that fit where the user is in the work. Pure orchestrator work with no engine lanes; full interviews and implementation plans hand off to $plx:goal-spec and $plx:plan.
+description: Surface the user's unknowns — blindspot passes, brainstorms and throwaway prototypes, reference extraction, implementation notes, pitch/explainer docs, and comprehension quizzes — picking the technique(s) that fit where the user is in the work. Pure orchestrator work with no engine lanes; implementation plans hand off to $plx:plan.
 argument-hint: "<what you're working on, and where you are with it>"
 ---
 
@@ -30,14 +30,13 @@ and choose the useful techniques below, usually one or two.
 | New to the domain or codebase | Blindspot pass |
 | Scope or taste needs exploration | Brainstorm or prototype |
 | An existing example gets it right | Reference extraction |
-| Material goal ambiguity or an autonomous run | Hand off to `$plx:goal-spec` |
 | A design ready for implementation and critique | Hand off to `$plx:plan` |
 | A settled plan entering implementation | Implementation notes |
 | Completed work needing stakeholder understanding | Pitch and explainer |
 | Uncertainty about what changed | Quiz |
 
 For a handoff, supply a paste-ready invocation carrying the relevant discoveries.
-Leave the full interview and implementation plan to their owning skills.
+Leave the implementation plan to its owning skill.
 
 ## Techniques
 

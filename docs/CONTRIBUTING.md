@@ -23,7 +23,7 @@ Codex skills use bare capability names (such as `plan`) and `agents/openai.yaml`
 disabled. Claude skills use `/plx:*` namespaced commands and explicit-only frontmatter
 (`disable-model-invocation: true`, `user-invocable: true`). Equivalent capability does
 not mean identical prose: preserve host-native tools and configured review polarity.
-Config supplies engine bindings for `plan`, `simplify`, `dev`, and `goal-spec`; each
+Config supplies engine bindings for `plan`, `simplify`, and `dev`; each
 skill owns its shape and override rules. Standalone Review defines Grok defaults and
 whole-round overrides in its skill. Keep composed review bindings under `dev`.
 

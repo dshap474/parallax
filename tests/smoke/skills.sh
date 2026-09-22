@@ -38,12 +38,6 @@ echo "L2 skill smoke — run dir: $RUNDIR"
 # field <scenario-file> <KEY> -> value after "KEY:" (empty if absent/blank).
 field() { sed -n "s/^$2:[[:space:]]*//p" "$1" | head -1; }
 
-goal_spec_note() {
-  _head "/plx:goal-spec"
-  _skip "interactive (AskUserQuestion interview + approval gate) — not runnable headlessly; see tests/smoke/README.md for the manual check"
-  smoke_summary_row "$RUNDIR" L2 goal-spec SKIP "interactive — manual check"
-}
-
 # --------------------------------------------------------------------------- #
 # Scenario execution and observable assertions
 # --------------------------------------------------------------------------- #
@@ -187,13 +181,12 @@ ANSWER
 # --------------------------------------------------------------------------- #
 
 if [ -n "$ONLY" ]; then
-  if [ "$ONLY" = "goal-spec" ]; then goal_spec_note; else run_skill "$ONLY"; fi
+  run_skill "$ONLY"
 else
-  for s in init kiss unknown-unknowns plan build review dev simplify agents-memory; do run_skill "$s"; done
+  for s in init kiss unknown-unknowns plan build review dev simplify; do run_skill "$s"; done
   if [ "$HOST" = codex ]; then run_skill claude; else run_skill codex; fi
   run_skill gemini
   if [ "$WITH_GROK" -eq 1 ]; then run_skill grok; else _head "/plx:grok"; _skip "skipped (pass --with-grok)"; smoke_summary_row "$RUNDIR" L2 grok SKIP "no --with-grok"; fi
-  goal_spec_note
 fi
 
 echo; echo "transcripts + diffs under: $RUNDIR/skills/"

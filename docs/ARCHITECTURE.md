@@ -56,7 +56,7 @@ accepted spec and delegates it to one fresh same-host build worker that implemen
 three Grok review lanes, fixes confirmed findings, and finishes with the complete
 relevant verification suite; the host bootstraps and gate-checks.
 `simplify` simplifies a plan or code. `kiss` loads the user-authored KISS principles into
-the host context. `goal-spec` prepares a self-contained autonomous goal.
+the host context.
 
 Inside `dev`, the host declares task sizing before launching anything:
 
@@ -143,4 +143,4 @@ their enclosing passthrough skill run is recorded.
 As a narrow exception, `/plx:codex` may use `plx-codex-thread` to start or resume a
 Codex app-server session. It is ephemeral by default, keeps no Parallax registry,
 returns the thread ID to the user, and re-derives `inspect` or `edit` access on every
-turn. Plan, build, goal-spec, dev, review, and Simplify lanes never use this path.
+turn. Plan, build, dev, review, and Simplify lanes never use this path.

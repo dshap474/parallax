@@ -1,6 +1,6 @@
 # Parallax engine configuration
 #
-# Binds roles for plan, simplify, dev, and goal-spec. Each owning skill resolves
+# Binds roles for plan, simplify, and dev. Each owning skill resolves
 # its package-local key and defines its workflow shape and allowed overrides.
 # Standalone review owns its Grok defaults and whole-round overrides in SKILL.md;
 # composed dev review uses only the review-* bindings under dev below.
@@ -64,7 +64,3 @@ pipelines:
     review-cleanup: [codex]
     review-structural: [codex]
     review-security: [codex]
-
-  goal-spec:
-    plan-critic-implementation: [codex]
-    plan-critic-system: [codex]

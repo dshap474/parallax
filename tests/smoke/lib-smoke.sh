@@ -17,7 +17,6 @@ fixture_dir() {
   case "$1" in
     calc) printf '%s\n' "$PLX_ROOT/tests/fixture" ;;
     redundant) printf '%s\n' "$SMOKE_DIR/fixtures/redundant" ;;
-    bare) printf '%s\n' "$SMOKE_DIR/fixtures/bare" ;;
     *) echo "unknown fixture: $1" >&2; return 2 ;;
   esac
 }

@@ -1,6 +1,6 @@
 ---
 name: init
-description: Prime the session with Parallax routing — keep judgment in the host and use direct headless lanes for research, implementation, and review. Loads context only; writes and launches nothing. For AGENTS.md/docs bootstrap use $plx:agents-memory.
+description: Prime the session with Parallax routing — keep judgment in the host and use direct headless lanes for research, implementation, and review. Loads context only; writes and launches nothing.
 argument-hint: ""
 ---
 
@@ -51,10 +51,8 @@ one, recommend it by name and let the user invoke it.
 | `$plx:simplify` | A plan or code needs simplification — four read-only dimensions, then host-applied improvements. |
 | `$plx:kiss` | Load the user's KISS principles into context without starting a workflow. |
 | `$plx:dev` | The full run: plan → build → review/fix → your final gate. |
-| `$plx:goal-spec` | A long-running goal needs an interview-locked, red-teamed, self-contained spec. No code. |
 | `$plx:claude` | A one-off Claude passthrough (question, plan, or explicit implementation). |
 | `$plx:grok` | A one-off Grok 4.6 passthrough. |
-| `$plx:agents-memory` | A repo's `AGENTS.md` / `CLAUDE.md` / `.project/` docs setup needs bootstrap or repair. |
 | `$plx:unknown-unknowns` | The user wants blindspot passes, brainstorms, or comprehension checks — host-only. |
 
 `<plugin-root>/bin/plx-skill <name>` prints any of these skill files;

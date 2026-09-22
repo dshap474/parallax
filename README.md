@@ -38,13 +38,11 @@ Start a new Codex session, then use `$plx:dev`.
 | Simplify and fix | `/plx:simplify` | `$plx:simplify` |
 | KISS principles | `/plx:kiss` | `$plx:kiss` |
 | Full pipeline | `/plx:dev` | `$plx:dev` |
-| Autonomous goal spec | `/plx:goal-spec` | `$plx:goal-spec` |
 | Opposite-engine passthrough | `/plx:codex` | `$plx:claude` |
 | Grok passthrough | `/plx:grok` | `$plx:grok` |
 | Gemini passthrough | `/plx:gemini` | `$plx:gemini` |
 | Devin passthrough | `/plx:devin` | `$plx:devin` |
 | Session primer | `/plx:init` | `$plx:init` |
-| Repository setup | `/plx:agents-memory` | `$plx:agents-memory` |
 | Blindspot work | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` |
 
 Claude is the host orchestrator in the Claude package. Codex is the host orchestrator

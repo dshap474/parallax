@@ -10,12 +10,10 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Simplify | `/plx:simplify` | `$plx:simplify` | Four Grok 4.6 Medium lanes simplify a plan or code; the host applies safe improvements |
 | KISS | `/plx:kiss` | `$plx:kiss` | Load the user-authored KISS principles into the current context |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
-| Goal spec | `/plx:goal-spec` | `$plx:goal-spec` | Interview, host-authored plan, red-team, and autonomous-ready spec |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Claude may persist Codex context |
 | Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; Grok 4.6 always uses medium effort |
 | Devin | `/plx:devin` | `$plx:devin` | One full-access Devin passthrough; SWE-2 High by default; no generic effort flag |
 | Init | `/plx:init` | `$plx:init` | Prime the orchestrator: delegation posture + plx skill map; no repository writes |
-| Agents memory | `/plx:agents-memory` | `$plx:agents-memory` | Bootstrap root `AGENTS.md`, `CLAUDE.md`, and `.project/` policy |
 | Unknowns | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` | Host-only blindspot and comprehension work |
 
 All skills are explicit-only so an expensive pipeline never starts merely because a
@@ -32,7 +30,7 @@ those settings into engine launch flags; omitted settings retain their defaults.
 high, and max map to `swe-2-medium`, `swe-2-high`, and `swe-2-max`; a separate effort
 value is rejected.
 
-`plan`, `simplify`, `dev`, and `goal-spec` read engine bindings from their package-local
+`plan`, `simplify`, and `dev` read engine bindings from their package-local
 `config/parallax.yaml`; each skill owns its workflow shape and allowed overrides.
 `dev` scales stages with task size and reads its own review bindings. Standalone
 Review owns its three Grok core lanes, risk-triggered security lane, and explicit

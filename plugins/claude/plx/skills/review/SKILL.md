@@ -35,7 +35,7 @@ lockfiles, CI, deserialization, or another trust boundary. Otherwise report
 `Security: not run`.
 
 Declare the roles, engines, effort, and host-owned fixes; save to `<tmp>/shape.txt`.
-Run `plx-preflight --repo <repo> --require-<engine>` for the selected engine.
+Run `plx-preflight --repo <repo> --require-<engine> --model <model>` for the selected engine.
 For Grok calls and preflight, disable the Bash sandbox (`dangerouslyDisableSandbox: true`); keep Grok's kernel sandbox active.
 
 ## Launch

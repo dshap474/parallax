@@ -13,23 +13,15 @@ Claude Code host                         Codex host
 
 ## Host responsibilities
 
-The current host authors plans, orchestrates standalone Build, synthesizes review
-findings, applies confirmed fixes, and performs the final gate. Headless lanes read
-broadly, implement in standalone Build or the separate `dev` pipeline, or return
-independent judgment. Every lane is one isolated `plx-engine` process.
+The current host authors plans, delegates Build, synthesizes Review findings, applies
+confirmed fixes, and performs the final gate. Each headless lane is one isolated
+`plx-engine` process.
 
-The Claude package keeps Claude as host and defaults plan critics and composed `dev`
-review lanes to Codex. The Codex package flips that judgment polarity: Codex remains
-host while Claude supplies those lanes. Direct `review` instead runs all three core
-lanes on Grok by default, with security added when triggered and an explicit
-current-message engine override applied to the whole round. Its skill owns that
-routing; the package config supplies the separate `pipelines.dev` review bindings.
-Standalone Build delegates the whole build to one fresh
-same-host worker (Codex `gpt-6-sol` High or Claude Opus 5.5 Medium) that implements, runs
-its three Grok 4.6 Medium review lanes, and fixes confirmed findings itself; the host
-bootstraps and gate-checks. The separate `dev` pipeline prefers Grok
-4.6 for implementation, deterministically falls back to Codex only when Grok fails
-preflight, and keeps targeted review fixes with the host.
+Plan uses Astra as author and Fable 5.1 as its single reviewer in Codex. In Claude Code,
+Fable 5.1 authors and Astra reviews. Build uses one same-host worker: GPT-6 Sol High in
+Codex or Opus 5.5 Medium in Claude Code. Review runs Grok 4.5 Medium correctness,
+cleanup, and structural lanes in parallel, adding security when triggered. Dev calls
+Plan, Build, and Review in sequence using those defaults.
 
 ## Package boundaries
 
@@ -50,30 +42,17 @@ one Claude-only wrapper.
 
 ## Pipeline
 
-`plan`, `build`, `review`, and `dev` are separate workflows. `dev` is self-contained; it
-does not invoke the standalone Build or Review skills. Standalone Build requires an
-accepted spec and delegates it to one fresh same-host build worker that implements, runs
-three Grok review lanes, fixes confirmed findings, and finishes with the complete
-relevant verification suite; the host bootstraps and gate-checks.
+`plan`, `build`, and `review` are separate workflows. `dev` invokes them in sequence
+and waits for each stage to finish. Build requires an accepted spec and delegates
+implementation and verification to one fresh worker. Review independently checks the
+result and the host applies confirmed fixes.
 `simplify` simplifies a plan or code. `kiss` loads the user-authored KISS principles into
 the host context. `orchestrate` loads a planner and native-worker posture without running
 tools or changing the packaged pipelines.
 
-Inside `dev`, the host declares task sizing before launching anything:
-
-- trivial: one configured writer lane and direct host verification;
-- small: one writer and one correctness reviewer;
-- default: two plan critics, one configured writer, three opposite-engine core review
-  dimensions;
-- large/risky: two critics, file-disjoint writers, the risk-triggered security dimension,
-  and up to two engines per review dimension.
-
-Critic and review lanes are always read-only. `dev` write lanes use one writer per
-disjoint path set. Standalone Build uses exactly one fresh same-host build worker and
-never falls through to another writer or parallel host implementation. In `dev` and
-`review`, confirmed review findings are fixed once by the host; in standalone Build the
-worker fixes them once itself. Behavior-changing or ambiguous findings go back to the
-user.
+Plan and Review lanes are read-only. Build uses one worker and has no fallback writer.
+Review fixes confirmed findings after its lanes return. Behavior-changing or ambiguous
+findings go back to the user.
 
 Simplify runs four independent Grok 4.6 Medium dimensions: reuse, simplification,
 efficiency, and altitude. The host validates their findings and applies the smallest safe changes.
@@ -135,7 +114,7 @@ exit code. Prompt files directly under a `plx-<skill>.<suffix>` temp directory s
 directory basename as their run ID. A direct engine call from any other directory creates
 and closes a standalone run. Every operational skill calls `plx-eval finish` once;
 host-only operational skills therefore produce a useful zero-lane run. The context-only
-KISS principles skill performs no runtime work and creates no trace. An interruption
+Init, KISS, and Orchestrate skills perform no runtime work and create no trace. An interruption
 before `finish` leaves a grouped run incomplete. Connections enable foreign keys, WAL, and a
 five-second busy timeout. Version 1 databases migrate in place to version 2;
 `plx-eval doctor` checks integrity and counts. Parallax ships no host hooks, telemetry daemon, MCP, or target-repo

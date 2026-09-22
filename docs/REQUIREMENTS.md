@@ -2,13 +2,14 @@
 
 Parallax orchestrates local engine CLIs; it does not host or proxy models.
 
-| Host package | Required host | Required default lane engine | Optional |
+| Host package | Required host | Required pipeline engines | Optional |
 | --- | --- | --- | --- |
-| Claude Code | authenticated `claude` | authenticated `codex` | `grok`, `devin` |
-| Codex | authenticated `codex` | authenticated `claude` | `grok`, `devin` |
+| Claude Code | authenticated `claude` | authenticated `codex` and `grok` | `devin` |
+| Codex | authenticated `codex` | authenticated `claude` and `grok` | `devin` |
 
-The Codex CLI and Claude Code CLI must be available on `PATH`. Grok 4.6 requires a
-current Grok CLI and `grok login` or `XAI_API_KEY`.
+The Codex CLI and Claude Code CLI must be available on `PATH`. Review uses Grok 4.5;
+Simplify and the Grok passthrough use Grok 4.6. Grok requires a current CLI and
+`grok login` or `XAI_API_KEY`.
 `/plx:devin` and `$plx:devin` additionally require the Devin CLI and
 `devin auth login`; Devin is not required by existing pipelines or preflight checks.
 
@@ -32,7 +33,8 @@ plx-engine --engine devin --mode full-access --repo <absolute-path> \
 
 Exit codes are `0` success, `1` engine failure, `2` usage error, and `3` authentication
 required. `plx-preflight` sends a minimal real prompt to prove install, authentication,
-model availability, and the selected sandbox profile. Grok writer selection uses
+model availability, and the selected sandbox profile. Pass `--model <id>` when a skill
+selects a specific model so preflight checks that model. Grok writer selection uses
 `--grok-mode rw`, which probes its workspace sandbox against a disposable directory
 rather than the target repository.
 

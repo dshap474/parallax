@@ -1227,6 +1227,12 @@ if [ "$rc" -eq 0 ]; then _pass "exits 0 with no required engines"; else _fail "e
 assert_contains "preflight_ok: yes" "$out" "reports preflight_ok: yes"
 
 _head "plx-preflight probes the requested Grok sandbox mode"
+if "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --model grok-4.5 >/dev/null 2>&1; then
+  _fail "--model without an engine selector should exit 2"
+else
+  rc=$?
+  if [ "$rc" -eq 2 ]; then _pass "--model requires one engine selector"; else _fail "expected exit 2, got $rc"; fi
+fi
 if "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --grok-mode rw >/dev/null 2>&1; then
   _fail "--grok-mode without a Grok selector should exit 2"
 else
@@ -1255,6 +1261,14 @@ if [ "$rc" -eq 0 ] && [ "$ro_probe_repo" = "$REPO" ] &&
   _pass "Grok read-only preflight keeps the requested repository"
 else
   _fail "Grok read-only preflight mode drift"
+fi
+PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
+  "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --require-grok --model grok-4.5 > "$out" 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] && grep -qx "grok-4.5" "$fake_args"; then
+  _pass "Grok preflight probes the selected review model"
+else
+  _fail "Grok preflight did not probe the selected review model"
 fi
 PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
   "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --require-grok --grok-mode rw > "$out" 2>&1

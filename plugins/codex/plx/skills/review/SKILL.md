@@ -34,7 +34,7 @@ lockfiles, CI, deserialization, or another trust boundary. Otherwise report
 `Security: not run`.
 
 Declare the roles, engines, effort, and host-owned fixes; save to `<tmp>/shape.txt`.
-Run `<plugin-root>/bin/plx-preflight --repo <repo> --require-<engine>` for the selected engine.
+Run `<plugin-root>/bin/plx-preflight --repo <repo> --require-<engine> --model <model>` for the selected engine.
 If the host sandbox blocks Claude or Grok network/keychain access, request narrowly scoped host approval for that call; keep the engine sandbox active.
 
 ## Launch

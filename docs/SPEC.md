@@ -35,36 +35,31 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 - Claude `/plx:codex` is ephemeral by default and may start or resume a persistent
   app-server thread only for explicit continuation or material multi-turn reuse. It
   returns the thread ID and keeps no Parallax thread registry.
-- Claude-host defaults: Claude plans, synthesizes, and applies targeted fixes; Codex
-  supplies plan critics and composed `dev` review dimensions plus risk-triggered security.
-- Codex-host defaults: Codex plans, synthesizes, and applies targeted fixes; Claude
-  supplies plan critics and composed `dev` review dimensions plus risk-triggered security.
+- Claude-host Plan: Fable 5.1 authors and one GPT-6 Astra lane reviews.
+- Codex-host Plan: GPT-6 Astra authors and one Fable 5.1 lane reviews.
+- Build: one GPT-6 Sol High worker in Codex or Opus 5.5 Medium worker in Claude Code
+  implements and verifies the accepted spec.
+- Review: three Grok 4.5 Medium lanes run in parallel, with a security lane when
+  triggered. The host verifies findings and applies confirmed fixes.
+- Dev: Plan, Build, then Review run sequentially with those skill defaults.
 - Simplify runs four read-only Grok 4.6 Medium dimensions over a plan or code. An explicit
   whole-round engine request replaces all four. The host applies only confirmed safe
   improvements.
 - KISS is an explicit-only skill that loads the user-authored principles in its body into
   the current context. It launches no engine or runtime tooling.
-- Standalone Review runs three read-only Grok 4.6 Medium lanes by default. Standalone
-  Build requires an accepted spec and delegates it to exactly one fresh same-host build
-  worker: Codex `gpt-6-sol` High from Codex, or Claude Opus 5.5 Medium from Claude. That
-  worker implements, launches three read-only Grok 4.6 Medium review lanes itself, fixes
-  confirmed findings itself, and runs the complete relevant verification suite; the host
-  bootstraps and gate-checks. There is no fallback or second writer. Build may
+- Standalone Build requires an accepted spec and delegates it to exactly one fresh
+  same-host worker. There is no fallback or second writer. Build may
   create local commits required or authorized by the accepted spec or target-repository
   instructions, including ordered preregistration checkpoints, while staging only
   Build-owned work and preserving pre-existing changes.
-- The separate `dev` pipeline prefers Grok for implementation and uses configured Codex
-  fallback only when Grok fails an optional workspace-sandbox preflight before mutation.
-  The workspace probe is confined to a disposable directory. Explicit engine selection
-  disables fallback; a started or dirty writer never falls through to another engine,
-  and an explicit Grok passthrough failure never falls through to host-session work.
+- Web research and documentation lookup use GPT-6 Luna Max in Codex or Sonnet Low in
+  Claude Code.
 - Shared runtime copies must exactly match `shared/`.
 
 ## Runtime contracts
 
 Brief headers are `## Draft plan`, `## Task brief`, `## Review brief`, `## Simplify brief`,
-or `## Spec`, matching the injected rubric. Advisory lanes are
-read-only; `dev` writer lanes are scoped to the target repository and one disjoint path set.
+or `## Spec`, matching the injected rubric. Advisory lanes are read-only.
 Plans carry original request, confirmed decisions, candidate plan, and an observable
 done condition. Worker and host reports may use a compact natural format while retaining
 scope, findings, decisions, and verification evidence. Review hosts may read code to
@@ -102,9 +97,9 @@ Persistent Codex access is passthrough-only and derives read or write scope for 
 turn; every pipeline lane remains isolated and ephemeral.
 
 Optional `PLX_TRACE_DB` collection writes local schema-v2 SQLite traces via `plx-eval`
-and migrates version 1 databases in place. The twelve operational skills close a run;
-the context-only KISS principles skill does
-not. `plx-engine` captures complete prompts, traces, outputs, and lane metadata, with
+and migrates version 1 databases in place. Operational skills close a run;
+the context-only Init, KISS, and Orchestrate skills do not. `plx-engine` captures
+complete prompts, traces, outputs, and lane metadata, with
 grouped and standalone behavior. Recording failures never change engine results. When
 the process variable is unset, a deterministic
 non-executing parser reads the same literal assignment from the standard per-user
@@ -115,7 +110,8 @@ state.
 
 `bash tests/run.sh` must validate both manifests and marketplaces, version agreement,
 thirteen-skill inventories, explicit-only platform metadata, engine polarity, Simplify
-shape, the KISS principles contract, fallback and security bindings, executable wrappers,
+shape, the context-only skill contracts, Plan/Build/Review routing and security triggers,
+executable wrappers,
 rubric resolution, shared-copy agreement, fake-engine safety flags and current result
 envelopes, cleanup confinement, optional eval recorder contracts, and isolated
 `plx-link-claude` behavior. Official Claude and Codex validators must also pass.

@@ -26,7 +26,9 @@ The headline case: Codex reviewing Claude-authored code found a truthiness bug i
 
 ## Takeaway
 
-With a strong writer, the default `dev` pipeline is enough for ordinary work. For broader risk, ambiguity, or high-stakes changes, escalate per `prompts/engines.md`: add a second reviewer engine per dimension and raise effort to `xhigh` where supported — Grok 4.6 remains fixed at medium — because the config is a default, not a limit.
+The current `dev` pipeline uses one plan reviewer, one build worker, and parallel Grok
+4.5 Medium review lanes. This older benchmark supports independent review in general;
+it does not compare the current model choices.
 
 ## Caveats
 

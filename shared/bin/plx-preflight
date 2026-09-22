@@ -12,7 +12,7 @@ plx-preflight — probe external engine availability before a Parallax pipeline 
 Usage:
   plx-preflight --repo <abs-path> [--require-codex] [--require-grok] [--require-claude]
                 [--optional-codex] [--optional-grok] [--optional-claude]
-                [--grok-mode ro|rw]
+                [--grok-mode ro|rw] [--model <id>]
 
 What it does:
   For each requested engine, sends a tiny "reply OK" prompt through
@@ -27,6 +27,7 @@ Flags:
   --require-<engine>   probe the engine; fail preflight if it doesn't pass
   --optional-<engine>  probe the engine; report but don't fail
   --grok-mode <mode>   ro (default) | rw; requires a Grok selector
+  --model <id>         probe this model; requires exactly one engine selector
   --help               this text
 
 Output (stdout):
@@ -47,6 +48,7 @@ REQUIRE_CODEX=0; OPTIONAL_CODEX=0
 REQUIRE_GROK=0;  OPTIONAL_GROK=0
 REQUIRE_CLAUDE=0; OPTIONAL_CLAUDE=0
 GROK_MODE="ro"; GROK_MODE_SET=0
+PROBE_MODEL=""
 
 need_value() { [[ -n "${2:-}" ]] || { echo "missing value for $1" >&2; exit 2; }; }
 
@@ -58,6 +60,7 @@ while [[ $# -gt 0 ]]; do
     --require-grok) REQUIRE_GROK=1; shift ;;
     --optional-grok) OPTIONAL_GROK=1; shift ;;
     --grok-mode) need_value "$1" "${2:-}"; GROK_MODE="$2"; GROK_MODE_SET=1; shift 2 ;;
+    --model) need_value "$1" "${2:-}"; PROBE_MODEL="$2"; shift 2 ;;
     --require-claude) REQUIRE_CLAUDE=1; shift ;;
     --optional-claude) OPTIONAL_CLAUDE=1; shift ;;
     --help|-h) usage; exit 0 ;;
@@ -70,6 +73,10 @@ done
 case "$GROK_MODE" in ro|rw) ;; *) echo "--grok-mode must be ro|rw" >&2; exit 2 ;; esac
 if [[ "$GROK_MODE_SET" -eq 1 && "$REQUIRE_GROK" -eq 0 && "$OPTIONAL_GROK" -eq 0 ]]; then
   echo "--grok-mode requires --require-grok or --optional-grok" >&2
+  exit 2
+fi
+if [[ -n "$PROBE_MODEL" && $((REQUIRE_CODEX + OPTIONAL_CODEX + REQUIRE_GROK + OPTIONAL_GROK + REQUIRE_CLAUDE + OPTIONAL_CLAUDE)) -ne 1 ]]; then
+  echo "--model requires exactly one engine selector" >&2
   exit 2
 fi
 REPO="$(cd "$REPO" && pwd)"
@@ -119,10 +126,10 @@ probe() {
         > "$TMP_DIR/prompts/$engine-probe.md"
     fi
   fi
-  # Keep non-Grok probes cheap. Grok omits the flag so preflight validates its
-  # pinned grok-4.6 / medium effort. Bash 3.2 + set -u needs the guard idiom.
+  # Keep non-Grok probes cheap. Bash 3.2 + set -u needs the guard idiom.
   local -a extra
   [[ "$engine" != "grok" ]] && extra=(--effort low)
+  [[ -n "$PROBE_MODEL" ]] && extra+=(--model "$PROBE_MODEL")
   if "$BIN_DIR/plx-engine" --engine "$engine" --mode "$mode" \
     --repo "$probe_repo" \
     --prompt-file "$TMP_DIR/prompts/$engine-probe.md" \

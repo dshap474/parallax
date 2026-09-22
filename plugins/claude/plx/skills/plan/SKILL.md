@@ -16,7 +16,7 @@ Use one read-only opposite-host reviewer. Do not build, commit, or publish.
 Resolve `<repo>` with `git rev-parse --show-toplevel` and note existing changes.
 Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-plan.XXXXXX"`.
 Save the original request to `<tmp>/task.md` and the author/reviewer model choices to
-`<tmp>/shape.txt`. Run `plx-preflight --repo <repo> --require-codex`.
+`<tmp>/shape.txt`. Run `plx-preflight --repo <repo> --require-codex --model gpt-6-astra`.
 
 Read relevant repository guidance, code, and tests. Ask only questions that materially
 change the plan. State scope, the proposed approach, and concrete `Done means:` checks.

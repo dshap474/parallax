@@ -19,7 +19,7 @@ Resolve `<repo>` with `git rev-parse --show-toplevel`. Create `<tmp>` with
 `mktemp -d "${TMPDIR:-/tmp}/plx-build.XXXXXX"`. Save the baseline commit, Git status,
 and staged/unstaged diffs there. Preserve pre-existing work.
 Write the spec verbatim to `<tmp>/task.md` and the worker model/effort to
-`<tmp>/shape.txt`. Run `plx-preflight --repo <repo> --require-claude`.
+`<tmp>/shape.txt`. Run `plx-preflight --repo <repo> --require-claude --model claude-opus-5-5`.
 
 Write `<tmp>/writer-brief.md` containing:
 

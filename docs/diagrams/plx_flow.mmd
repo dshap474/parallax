@@ -8,21 +8,12 @@ flowchart TD
     C --> W{Workflow}
     X --> W
 
-    W -->|dev| P[Plan authoring]
-    P --> CR[Read-only opposite-engine critics]
-    CR --> PF{Grok preflight passes?}
-    PF -->|yes| B[File-disjoint Grok 4.6 Medium writer lanes]
-    PF -->|no, before mutation| CF[File-disjoint Codex fallback writer lanes]
-    B --> R[Read-only core review + risk-triggered security]
-    CF --> R
-    R --> S[Host synthesis]
-    S --> F[One targeted host fix round]
-    F --> G[Host final gate and verification]
-
-    W -->|build with accepted spec| BW[One full-access same-host Build worker]
-    BW --> BR[Worker launches three read-only Grok 4.6 Medium reviews]
-    BR --> BF[Worker fixes confirmed findings and runs full verification]
-    BF --> BG[Host gate-check]
+    W -->|dev| P[Host plans]
+    P --> CR[One opposite-host plan review]
+    CR --> B[One same-host Build worker]
+    B --> V[Worker implements and verifies]
+    V --> R[Parallel Grok 4.5 Medium review lanes]
+    R --> S[Host verifies findings and fixes confirmed issues]
 
     SB[(shared/bin + shared/prompts)] -. synchronized copies .-> C
     SB -. synchronized copies .-> X
@@ -31,5 +22,5 @@ flowchart TD
     classDef lane fill:#243447,stroke:#9ab6d3,color:#fff
     classDef shared fill:#174c45,stroke:#6de0c9,color:#fff
     class C,X host
-    class P,CR,B,R,S,F,G,BW,BR,BF,BG lane
+    class P,CR,B,V,R,S lane
     class SB shared

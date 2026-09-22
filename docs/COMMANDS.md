@@ -4,9 +4,9 @@ Both packages expose the same core capabilities with platform-native invocation 
 
 | Capability | Claude Code | Codex | Behavior |
 | --- | --- | --- | --- |
-| Plan | `/plx:plan` | `$plx:plan` | Host authors; implementation and system critics red-team; no code |
-| Build | `/plx:build` | `$plx:build` | One fresh same-host build worker implements an accepted spec → runs Grok 4.6 Medium reviews → fixes → full relevant verification; host bootstraps and gate-checks |
-| Review | `/plx:review` | `$plx:review` | Three Grok 4.6 Medium review lanes by default, synthesis, and one host-applied fix round |
+| Plan | `/plx:plan` | `$plx:plan` | Host authors; one opposite-host reviewer checks the plan; no code |
+| Build | `/plx:build` | `$plx:build` | One GPT-6 Sol High worker in Codex or Opus 5.5 Medium worker in Claude Code implements and verifies an accepted spec |
+| Review | `/plx:review` | `$plx:review` | Three Grok 4.5 Medium review lanes by default, synthesis, and one host-applied fix round |
 | Simplify | `/plx:simplify` | `$plx:simplify` | Four Grok 4.6 Medium lanes simplify a plan or code; the host applies safe improvements |
 | KISS | `/plx:kiss` | `$plx:kiss` | Load the user-authored KISS principles into the current context |
 | Orchestrate | `/plx:orchestrate` | `$plx:orchestrate` | Set a planner and worker-delegation posture without starting work |
@@ -14,7 +14,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Claude may persist Codex context |
 | Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; Grok 4.6 always uses medium effort |
 | Devin | `/plx:devin` | `$plx:devin` | One full-access Devin passthrough; SWE-2 High by default; no generic effort flag |
-| Init | `/plx:init` | `$plx:init` | Prime the orchestrator: delegation posture + plx skill map; no repository writes |
+| Init | `/plx:init` | `$plx:init` | Load the Parallax skill map and research defaults into context |
 | Unknowns | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` | Host-only blindspot and comprehension work |
 
 All skills are explicit-only so an expensive pipeline never starts merely because a
@@ -31,15 +31,14 @@ those settings into engine launch flags; omitted settings retain their defaults.
 high, and max map to `swe-2-medium`, `swe-2-high`, and `swe-2-max`; a separate effort
 value is rejected.
 
-`plan`, `simplify`, and `dev` read engine bindings from their package-local
-`config/parallax.yaml`; each skill owns its workflow shape and allowed overrides.
-`dev` scales stages with task size and reads its own review bindings. Standalone
-Review owns its three Grok core lanes, risk-triggered security lane, and explicit
-current-message whole-round engine override in its skill; it does not read YAML
-review bindings. Declare the chosen shape before launching.
+Plan, Build, and Review own their model defaults in their skills. Dev calls them
+sequentially. Simplify alone reads engine bindings from `config/parallax.yaml`.
+Review runs its core lanes in parallel and accepts an explicit whole-round engine
+override.
 
-Standalone Build always uses one fresh same-host build worker that owns implementation, Grok review, fixes, and verification: Claude Opus 5.5 Medium
-or Codex `gpt-6-sol` High, with no fallback or second writer. Simplify
+Standalone Build always uses one fresh same-host worker for implementation and
+verification: Claude Opus 5.5 Medium or Codex `gpt-6-sol` High, with no fallback or
+second writer. Simplify
 always runs reuse, simplification, efficiency, and altitude once each on Grok 4.6 Medium. A
 current-message instruction may replace the engine for the whole round.
 KISS is a context-only principles skill and launches no engine lanes.
@@ -54,8 +53,8 @@ required by an accepted spec are allowed.
 
 The standalone Build worker uses full access. Codex uses
 `danger-full-access`; Claude disables its sandbox and uses its explicit permission
-bypass. Review lanes and `dev` writers keep their configured read-only or workspace
-sandbox, and full access never expands the accepted task or publication authority.
+bypass. Plan and Review lanes stay read-only; full access never expands the accepted
+task or publication authority.
 The standalone Devin passthrough is also explicitly full access, using Devin's dangerous
 permission mode without its OS sandbox. It is not a Build, review, or fallback lane and
 does not change any pipeline routing.

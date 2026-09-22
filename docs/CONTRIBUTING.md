@@ -23,14 +23,14 @@ traversal, repo-local runtime state, hooks, telemetry services, or publishing be
 Codex skills use bare capability names (such as `plan`) and `agents/openai.yaml` with implicit invocation
 disabled. Claude skills use `/plx:*` namespaced commands and explicit-only frontmatter
 (`disable-model-invocation: true`, `user-invocable: true`). Equivalent capability does
-not mean identical prose: preserve host-native tools and configured review polarity.
-Config supplies engine bindings for `plan`, `simplify`, and `dev`; each
-skill owns its shape and override rules. Standalone Review defines Grok defaults and
-whole-round overrides in its skill. Keep composed review bindings under `dev`.
+not mean identical prose: preserve host-native tools and Plan review polarity.
+Plan, Build, and Review define their model defaults in their skills; Dev calls those
+skills in sequence. Config supplies only Simplify's engine bindings. Review defines
+Grok defaults and whole-round overrides in its skill.
 
 Keep pipeline full access confined to the single standalone Build worker. Codex
 `danger-full-access` and Claude's sandbox-disabled permission bypass are transport
-requirements for Git metadata and packaged review launches; they do not belong in review
+requirements for Git metadata; they do not belong in review
 lanes or expand task/publication authority. The standalone Devin passthrough separately
 uses explicit full access and never joins a pipeline. Keep Codex's combined
 approvals-and-sandbox bypass and `--yolo` prohibited.

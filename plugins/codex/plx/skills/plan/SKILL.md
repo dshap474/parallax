@@ -1,97 +1,58 @@
 ---
 name: plan
-description: Explicit Parallax planning for Codex. Codex authors the plan and two Claude Opus 5.5 critics red-team implementation feasibility and system design without writing code.
+description: Author a plan in the host and review it once with claude-fable-5-1. Write no code.
 argument-hint: "<task to plan>"
 ---
 
 # $plx:plan
 
-Author the plan yourself. Use two independent read-only critics for implementation
-feasibility and system design. Write no code and do not build, commit, or publish.
-
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
 `/skills/plan/SKILL.md`. Use the packaged helpers in `<plugin-root>/bin/`.
 
-## Prepare
+The host authors the plan: Astra in Codex, Fable 5.1 in Claude Code.
+Use one read-only opposite-host reviewer. Do not build, commit, or publish.
 
 Resolve `<repo>` with `git rev-parse --show-toplevel` and note existing changes.
-Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-plan.XXXXXX"` and write the
-user's request verbatim to `<tmp>/task.md`. Keep all lane prompts directly in `<tmp>`.
+Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-plan.XXXXXX"`.
+Save the original request to `<tmp>/task.md` and the author/reviewer model choices to
+`<tmp>/shape.txt`. Run `<plugin-root>/bin/plx-preflight --repo <repo> --require-claude`.
 
-Read `<plugin-root>/bin/plx-config`, key `plan`. After current-message overrides, each required
-critic dimension must resolve to exactly one supported engine. Stop on missing,
-unsupported, or multiple bindings. Skip or substitute a dimension only on explicit
-user instruction. Defaults are two `claude` critics. Resolve flags as follows:
+Read relevant repository guidance, code, and tests. Ask only questions that materially
+change the plan. State scope, the proposed approach, and concrete `Done means:` checks.
+Keep the plan in the conversation unless persistence is useful; for a persisted spec,
+use `<plugin-root>/bin/plx-skill --ref plan/spec-template`. Never edit `.project/VISION.md`.
 
-- Codex: `--model gpt-6-sol --effort xhigh`.
-- Claude: configured/default model with `--effort xhigh`.
-- Grok: `--model grok-4.6 --effort medium`.
-
-Honor explicit model/effort settings except `grok-4.6` always uses `medium`.
-Declare the resolved shape, save it to `<tmp>/shape.txt`, and run
-`<plugin-root>/bin/plx-preflight --repo <repo> --require-<engine>` once per distinct engine.
-If the host sandbox blocks Claude or Grok network/keychain access, request narrowly scoped host approval for that call; keep the engine sandbox active.
-
-## Author
-
-Ask at most three questions in one round if the answers would materially change the
-plan. Read relevant repository guidance, code, callers, and tests. When external facts
-matter, run a read-only documentation lookup with `<plugin-root>/bin/plx-engine --engine codex
---model gpt-5.6-terra --effort low --mode ro` and a focused brief while reading the repo.
-
-Pin intent, success criteria, invariants, suggested path, and validation. Leave local
-implementation choices to the builder. End with `Done means:` and concrete commands
-or observable behavior that prove completion. Plan in chat by default; persist large,
-risky, or multi-session plans in the build thread using
-`<plugin-root>/bin/plx-skill --ref plan/spec-template`. Never edit `.project/VISION.md`.
-
-## Critique and revise
-
-Write one neutral `<tmp>/critic-brief.md` for both critics:
+Write `<tmp>/critic-brief.md` with:
 
 ```markdown
 ## Draft plan
-
 ### Original request
-<$ARGUMENTS verbatim>
-
+<original request verbatim>
 ### Confirmed decisions
-<material user clarifications, or none>
-
+<user clarifications, or none>
 ### Candidate plan
-<candidate plan verbatim>
+<draft plan verbatim>
 ```
 
-Use the request and confirmed decisions as the task contract; confirmed decisions
-resolve conflicts. Launch both dimensions in parallel in retained background sessions:
+Run the reviewer and wait for its result:
 
 ```
-<plugin-root>/bin/plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/critic-brief.md \
-  --rubric plan-critic-<dimension> <resolved model/effort flags> \
-  --out <tmp>/critic-<dimension>.md --log <tmp>/critic-<dimension>.log
+<plugin-root>/bin/plx-engine --engine claude --mode ro --repo <repo> \
+  --prompt-file <tmp>/critic-brief.md --rubric plan-critic \
+  --model claude-fable-5-1 --effort high \
+  --out <tmp>/critic.md --log <tmp>/critic.log
 ```
 
 Use packaged wrappers and named rubrics; no raw engine commands, pasted rubrics, or
-subagents. Keep runtime files out of the repository, including `.parallax/`. Never
-`uv run` inside a sandbox.
+subagents. If the host sandbox blocks Claude or Grok network/keychain access, request
+narrowly scoped host approval for that call; keep the engine sandbox active.
 
-On exit 1, inspect the log and retry once on the same binding. Count a terminated stalled
-or repeating lane toward that retry. Correct an exit-2 invocation error once; exit 3
-requires authentication and stops the run. If a required critic still has no result,
-return `[RED-TEAM INCOMPLETE]` with the diagnosis, provisional plan, and surviving findings.
-Degraded completion requires explicit authorization in the current message.
+Verify material findings against the repository and revise the plan. Report unresolved
+issues or a failed reviewer as incomplete; do not silently substitute a model.
+Present the final plan and material review dispositions. Standalone Plan stops here.
+When called by Dev, return the plan and completion status to Dev.
 
-Deduplicate findings, verify material claims against the repo, and adopt or reject each
-with a reason. If a finding invalidates the design, revise once and rerun all required
-critics once. A failed final pass or unresolved Critical finding is `[RED-TEAM INCOMPLETE]`.
-
-## Finish
-
-Present the final plan, any persisted path, and material critique dispositions. Suggest
-`$plx:build` and stop. Use `pass` only for a final fully reviewed plan; verification
-passes only when all required critics completed and `Done means:` is concrete.
-
-Before every handled return, finish the run and then clean up:
+Before every handled return, record the outcome and clean up:
 
 ```
 <plugin-root>/bin/plx-eval finish --skill plan --host codex --repo <repo> --run-dir <tmp> \
@@ -102,8 +63,8 @@ Before every handled return, finish the run and then clean up:
 <plugin-root>/bin/plx-clean-temp <tmp>
 ```
 
-Recorder failure is non-fatal; an interrupted run may remain incomplete.
+Recorder failure is non-fatal. Keep runtime files outside the repository.
 
-Task to plan:
+Request:
 
 $ARGUMENTS

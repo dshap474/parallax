@@ -171,7 +171,7 @@ else
 fi
 
 claude_host_boundary_ok=1
-for skill in claude dev plan review simplify; do
+for skill in claude plan review simplify; do
   grep -Fq 'narrowly scoped host approval' \
     "$PLX_CODEX/skills/$skill/SKILL.md" || claude_host_boundary_ok=0
 done
@@ -204,22 +204,11 @@ for role in reuse simplification efficiency altitude; do
     simplify_defaults_ok=0
 done
 
-if [ "$(grep -c '^    code: grok$' "$PLX_CODEX/config/parallax.yaml")" -eq 1 ] &&
-   [ "$(grep -c '^    code: grok$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 1 ] &&
-   [ "$(grep -c '^    code-fallback: codex$' "$PLX_CODEX/config/parallax.yaml")" -eq 1 ] &&
-   [ "$(grep -c '^    code-fallback: codex$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 1 ] &&
-   [ "$(grep -c '^    review-security: \[claude\]$' "$PLX_CODEX/config/parallax.yaml")" -eq 1 ] &&
-   [ "$(grep -c '^    review-security: \[codex\]$' "$PLX_CLAUDE/config/parallax.yaml")" -eq 1 ] &&
-   ! grep -q '^    fix:' "$PLX_CODEX/config/parallax.yaml" &&
-   ! grep -q '^    fix:' "$PLX_CLAUDE/config/parallax.yaml" &&
-   [ "$(grep -c '\[claude\]' "$PLX_CODEX/config/parallax.yaml")" -eq 8 ] &&
-   [ "$(grep -c '\[codex\]' "$PLX_CLAUDE/config/parallax.yaml")" -eq 8 ] &&
-   [ "$simplify_defaults_ok" -eq 1 ] &&
-   ! grep -q '^    plan:' "$PLX_CODEX/config/parallax.yaml" &&
-   ! grep -q '^    plan:' "$PLX_CLAUDE/config/parallax.yaml"; then
-  _pass "host plans, opposite engine reviews, optional Grok writes, host fixes"
+if [ "$simplify_defaults_ok" -eq 1 ] &&
+   ! grep -Eq '^  (plan|dev):' "$PLX_CODEX/config/parallax.yaml" "$PLX_CLAUDE/config/parallax.yaml"; then
+  _pass "only Simplify uses configured engine bindings"
 else
-  _fail "engine polarity drift"
+  _fail "obsolete Plan or Dev bindings remain"
 fi
 
 simplify_contract_ok=1
@@ -263,7 +252,7 @@ else
   _pass "Orchestrate is context-only"
 fi
 
-if grep -qE 'fable-5|Codex review lanes|Standalone Codex plan critics|implementation critic \(codex' \
+if grep -qE 'Codex review lanes|Standalone Codex plan critics|implementation critic \(codex' \
   "$PLX_ROOT/shared/prompts/engines.md"; then
   _fail "shared engine guidance contains Claude-host assumptions"
 else
@@ -277,7 +266,7 @@ for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   for role in correctness cleanup structural security; do
     grep -Fq "reviewer-$role" "$skill" || review_contract_ok=0
   done
-  for token in '--mode ro' '--model <model> --effort <effort>' 'grok-4.6' 'medium'; do
+  for token in '--mode ro' '--model <model> --effort <effort>' 'grok-4.5' 'medium'; do
     grep -Fq -- "$token" "$skill" || review_contract_ok=0
   done
 done
@@ -342,14 +331,25 @@ for host, model, effort in (("claude", "claude-opus-5-5", "medium"), ("codex", "
                 f"--model {model} --effort {effort}", "--prompt-file <tmp>/writer-brief.md")
     if len(launch) != 1 or not all(flag in launch[0] for flag in required):
         errors.append(f"{host}: standalone Build must launch one configured worker")
-    reviews = [block for block in commands if "--rubric reviewer-correctness" in block]
-    if len(reviews) != 1 or reviews[0].count("--engine grok --mode ro") != 3 or reviews[0].count("--model grok-4.6 --effort medium") != 3:
-        errors.append(f"{host}: Build review command defaults drifted")
-    for field in ("## Spec", "## Build run context", "Engine wrapper: <plx-engine>",
-                  "Baseline commit:", "Baseline snapshots:", "Verification suite:",
-                  "--report-file <tmp>/report.md", f"--require-{host} --require-grok"):
+    if "--rubric reviewer-" in build or "--require-grok" in build:
+        errors.append(f"{host}: Build must not run its own review")
+    for field in ("## Spec", "## Build run context", "Baseline commit:",
+                  "Baseline snapshots:", "Verification suite:", f"--require-{host}"):
         if field not in build:
             errors.append(f"{host}: Build handoff missing {field}")
+    plan = (package / "skills/plan/SKILL.md").read_text()
+    critic = "claude" if host == "codex" else "codex"
+    model = "claude-fable-5-1" if host == "codex" else "gpt-6-astra"
+    commands = [" ".join(block.replace("\\\n", " ").split())
+                for block in re.findall(r"```[^\n]*\n(.*?)```", plan, re.S)]
+    launches = [block for block in commands if "--rubric plan-critic" in block]
+    if len(launches) != 1 or not all(flag in launches[0] for flag in
+        (f"--engine {critic} --mode ro", f"--model {model}", "--rubric plan-critic")):
+        errors.append(f"{host}: Plan must run one opposite-host reviewer")
+    dev = (package / "skills/dev/SKILL.md").read_text()
+    calls = re.findall(r"plx-skill (plan|build|review)\b", dev)
+    if calls != ["plan", "build", "review"] or "plx-engine" in dev:
+        errors.append(f"{host}: Dev must compose Plan, Build, Review in order")
 
 # These workflows differ only in native invocation, model polarity, and host transport.
 # Compare normalized bodies to catch a change shipped to only one host, independently
@@ -370,6 +370,9 @@ for name in ("build", "dev", "plan", "review", "unknown-unknowns"):
             opposite = "claude" if host == "codex" else "codex"
             body = body.replace(f"`{opposite}`", "`OPPOSITE`")
             body = body.replace("request_user_input", "AskUserQuestion")
+            if name == "plan":
+                body = body.replace("claude-fable-5-1", "PLAN_REVIEWER").replace("gpt-6-astra", "PLAN_REVIEWER")
+                body = body.replace(f"--engine {opposite}", "--engine OPPOSITE").replace(f"--require-{opposite}", "--require-OPPOSITE")
             if name == "dev":
                 body = body.replace("`high`", "`REVIEW_EFFORT`") if host == "codex" else body.replace("`xhigh`", "`REVIEW_EFFORT`")
         bodies.append(" ".join(body.split()))
@@ -392,13 +395,11 @@ fi
 grok_sandbox_contract_ok=1
 for host in claude codex; do
   package="$PLX_ROOT/plugins/$host/plx"
-  grep -Fq -- '--require-grok' "$package/skills/build/SKILL.md" || grok_sandbox_contract_ok=0
-  grep -Fq -- '--optional-grok --grok-mode rw' "$package/skills/dev/SKILL.md" || grok_sandbox_contract_ok=0
   grep -Fq '[PLX:GROK FAILED]' "$package/skills/grok/SKILL.md" || grok_sandbox_contract_ok=0
   grep -Fq 'Do not perform the task in the host session' "$package/skills/grok/SKILL.md" || grok_sandbox_contract_ok=0
 done
 if [ "$grok_sandbox_contract_ok" -eq 1 ]; then
-  _pass "Grok writers probe workspace mode and passthroughs fail closed"
+  _pass "Grok passthroughs fail closed"
 else
   _fail "Grok workspace preflight or fail-closed contract drift"
 fi
@@ -416,7 +417,7 @@ for host in claude codex; do
       "$package/skills/plan/references/spec-template.md"; then
     prompt_constraints_ok=0
   fi
-  for skill in plan dev; do
+  for skill in plan; do
     for field in '## Draft plan' '### Original request' '### Confirmed decisions' '### Candidate plan'; do
       grep -Fq "$field" "$package/skills/$skill/SKILL.md" || prompt_constraints_ok=0
     done
@@ -493,7 +494,7 @@ for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   for tool in plx-engine plx-preflight plx-config plx-skill plx-link-claude plx-eval plx-clean-temp; do
     [ -x "$package/bin/$tool" ] && _pass "$label bin/$tool" || _fail "$label bin/$tool"
   done
-  for rubric in engines planner plan-critic-implementation plan-critic-system worker build-worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security simplify-reuse simplify-simplification simplify-efficiency simplify-altitude; do
+  for rubric in engines planner plan-critic worker build-worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security simplify-reuse simplify-simplification simplify-efficiency simplify-altitude; do
     [ -s "$package/prompts/$rubric.md" ] || _fail "$label missing rubric $rubric"
   done
 done
@@ -573,13 +574,13 @@ else
 fi
 
 explain_output="$("$PLX_ROOT/tests/explain-skill.sh" codex dev)"
-if printf '%s\n' "$explain_output" | grep -q 'config key: dev' &&
-   printf '%s\n' "$explain_output" | grep -q 'review-correctness: \[claude\]' &&
-   printf '%s\n' "$explain_output" | grep -q '^preflight: plx-preflight' &&\
-   printf '%s\n' "$explain_output" | grep -q '^## Implement$'; then
-  _pass "skill explanation resolves Codex bindings and preflight"
+if printf '%s\n' "$explain_output" | grep -q 'config key: (none' &&
+   printf '%s\n' "$explain_output" | grep -q 'plx-skill plan' &&
+   printf '%s\n' "$explain_output" | grep -q 'plx-skill build' &&
+   printf '%s\n' "$explain_output" | grep -q 'plx-skill review'; then
+  _pass "skill explanation shows Dev composition"
 else
-  _fail "skill explanation omitted Codex bindings or preflight"
+  _fail "skill explanation omitted Dev composition"
 fi
 
 summary

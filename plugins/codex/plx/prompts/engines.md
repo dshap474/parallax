@@ -32,10 +32,9 @@ contract. State each rule once.
 | Rubric | Outcome | Brief header |
 | --- | --- | --- |
 | `planner` | architecture recommendation | `## Task brief` |
-| `plan-critic-implementation` | execution red-team | `## Draft plan` |
-| `plan-critic-system` | system/design red-team | `## Draft plan` |
-| `worker` | `dev` implementation | `## Spec` |
-| `build-worker` | standalone Build: implement, review, fix, verify | `## Spec` |
+| `plan-critic` | plan feasibility and design review | `## Draft plan` |
+| `worker` | general implementation | `## Spec` |
+| `build-worker` | Build: implement and verify | `## Spec` |
 | `reviewer-correctness` | behavioral-defect review | `## Review brief` |
 | `reviewer-cleanup` | reuse and simplification review | `## Review brief` |
 | `reviewer-structural` | maintainability review | `## Review brief` |
@@ -47,19 +46,16 @@ contract. State each rule once.
 
 ## Defaults and routing
 
-| Model | Default role |
-| --- | --- |
-| Codex `gpt-6-sol` | plan/review judgment and `dev` fallback |
-| Codex `gpt-5.6-terra` low | official-document lookup |
-| Grok `grok-4.6` medium | `dev` implementation and Grok review lanes |
-| Claude `claude-opus-5-5` | planning, review, and taste-heavy judgment |
-| Host orchestrator | plan authorship, synthesis, targeted fixes, and final gate |
+Plan, Build, and Review define their model defaults in their skills. Dev follows
+Plan -> Build -> Review sequentially. Build performs implementation and verification;
+Review owns the parallel review lanes and host-applied fixes. Only Simplify reads
+engine bindings from package config. The wrapper's generic defaults do not override
+explicit model flags supplied by a skill.
 
-Package config supplies defaults. An explicit current-message model or effort request
+An explicit current-message model or effort request
 wins, except `grok-4.6` always runs at medium and retired Opus 5 and GPT-5.6 Sol/Luna
 IDs are rejected. The unpinned `opus` and `gpt-5.6` aliases are also rejected.
-Escalate model or effort when the first result is materially inadequate; this never
-expands scope or authority.
+Follow the selected skill on failure; do not silently substitute another model.
 
 Current explicit model choices include Claude `claude-opus-5-5` for long-running
 coding and knowledge work, Codex `gpt-6-sol` for complex coding, and Codex
@@ -68,13 +64,6 @@ account availability still determine whether a call succeeds. See the
 [Claude model list](https://platform.claude.com/docs/en/models/overview) and
 [Codex model list](https://learn.chatgpt.com/docs/models) for current availability.
 
-- `dev` prefers Grok 4.6 medium for implementation. Probe its workspace sandbox before
-  mutation. If optional preflight fails, use the configured Codex fallback for the whole
-  writer turn and report the substitution. Explicit engine selection disables fallback.
-  Never switch writers after mutation starts or the worktree becomes dirty.
-- Plan critics and composed `dev` reviewers use the opposite engine from the host as
-  defined by package config. Direct Review instead runs the three core Grok 4.6 Medium
-  lanes by default.
 - Add the security lane when requested or when changes touch auth, permissions, secrets,
   shell/subprocess execution, sandboxing, network clients, dependencies, CI,
   deserialization, or another trust boundary. Otherwise report `Security: not run`.
@@ -85,44 +74,14 @@ account availability still determine whether a call succeeds. See the
 - Apply confirmed, small review fixes in the host after all lanes return. A build-sized or
   behavior-changing remedy needs a writer or user decision.
 
-## Standalone Build
+## Build transport
 
-Build has a fixed shape and does not use the `dev` sizing ladder. One fresh same-host
-worker receives the accepted spec:
-
-- Codex host: `gpt-6-sol` high;
-- Claude host: `claude-opus-5-5` medium.
-
-That worker implements, launches three read-only Grok 4.6 Medium review lanes, validates
-and fixes confirmed findings once, and runs the complete relevant verification suite.
-The host only bootstraps, gate-checks, records, and reports. There is no fallback, second
-writer, or parallel host implementation.
-
-This worker is the sole full-access lane. Codex uses `danger-full-access`; Claude disables
-its sandbox and permission prompts. The wrapper accepts this only for an `rw`
-`worker`/`build-worker` rubric. Full access permits repository Git metadata and packaged
-review launches; it does not expand the accepted spec, repository scope, publication
-authority, or external-system authority. Review lanes remain read-only. Never use Codex
-`--dangerously-bypass-approvals-and-sandbox` or `--yolo`.
-
-## Size composed `dev`
-
-Declare the chosen shape before launching lanes. Scale down as readily as up.
-
-| Scale | Plan | Implementation | Review |
-| --- | --- | --- | --- |
-| trivial | host decision | one configured writer | host reads diff and verifies |
-| small | in-context plan | one writer | correctness lane |
-| default | implementation + system critics | one writer | three opposite-engine dimensions |
-| large/risky | persisted spec + both critics | file-disjoint writers only when safe | core dimensions + security when triggered; add a second perspective when proportionate |
-
-Use the larger shapes for cross-file contracts, concurrency, data integrity, money paths,
-wide refactors, high ambiguity, or hard-to-verify behavior. Use the smaller shapes for an
-obvious, low-blast-radius change with strong existing tests. Even a trivial `dev` code
-change keeps one configured writer; it skips advisory fanout, not implementation
-delegation.
-
-Plans stay in conversation unless another session or worker needs a durable artifact.
+Build uses one same-host worker for implementation and verification. This worker may
+use full access for Git metadata: Codex `danger-full-access`, or Claude with its sandbox
+and permission prompts disabled. The wrapper accepts this only for an `rw`
+`worker`/`build-worker` rubric. It does not expand scope or publication authority.
+Review lanes stay read-only. Never use Codex `--dangerously-bypass-approvals-and-sandbox`
+or `--yolo`.
 
 ## Run and failure rules
 
@@ -136,13 +95,6 @@ Plans stay in conversation unless another session or worker needs a durable arti
   according to the skill instead of waiting indefinitely.
 - Grok permission bypass auto-approves tools but does not disable its selected filesystem
   sandbox. A workspace-sandbox startup failure never authorizes host substitution.
-
-## Writer discipline
-
-Within `dev`, assign one writer per genuinely disjoint path set. Briefs name owned paths
-and concurrent edits. Shared files, lockfiles, exports, and configs usually make the work
-one writer's job. The sandbox is repo-wide, so ownership is a workflow contract rather
-than an enforced path boundary. Run verification only after all writers finish.
 
 ## Gemini passthrough
 

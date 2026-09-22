@@ -13,8 +13,8 @@ Usage:
 
 What it does:
   Prints the full parallax.yaml to stdout. Pipelines read their key from it
-  (plan, simplify, dev) to resolve which engine fills each role.
-  Standalone build and review define their routing directly in their skills.
+  (simplify) to resolve which engine fills each role.
+  Plan, Build, and Review define routing in their skills; Dev calls them in sequence.
 
 Exit codes:
   0  printed

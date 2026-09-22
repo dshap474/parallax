@@ -46,16 +46,13 @@ Start a new Codex session, then use `$plx:dev`.
 | Session primer | `/plx:init` | `$plx:init` |
 | Blindspot work | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` |
 
-Claude is the host orchestrator in the Claude package. Codex is the host orchestrator
-in the Codex package. In standalone `build`, the host delegates an accepted spec to one
-fresh same-host build worker—Claude Opus 5.5 Medium or Codex `gpt-6-sol` High—which
-implements it, runs three Grok 4.6 Medium review lanes itself, fixes confirmed findings
-itself, and runs the full relevant verification suite; the host bootstraps and
-gate-checks. The separate `dev` pipeline uses isolated Grok 4.6 writers by
-default; the opposite host engine supplies its plan critics and review lanes. Direct
-`review` runs three Grok 4.6 Medium lanes by default. `simplify` runs four Grok 4.6
-Medium lanes over a plan or code; the host applies confirmed improvements itself. The
-static `kiss` skill loads the user-authored KISS principles into the current context.
+Plan is authored by Astra in Codex or Fable 5.1 in Claude Code, then reviewed by
+one opposite-host model: Fable 5.1 or Astra respectively. Build uses one GPT-6 Sol
+High worker in Codex or Opus 5.5 Medium worker in Claude Code to implement and verify.
+Review runs correctness, cleanup, and structural lanes in parallel with Grok 4.5 Medium,
+adding security when triggered; the host verifies findings and applies targeted fixes.
+Dev calls Plan, then Build, then Review sequentially, using those skills' defaults.
+`simplify` retains four Grok 4.6 Medium lanes; `kiss` loads KISS principles into context.
 `orchestrate` loads a context-only planner posture with native subagent workers; it starts
 no task or pipeline.
 
@@ -72,9 +69,9 @@ must have access to the requested model. See the
 [Codex model list](https://learn.chatgpt.com/docs/models).
 
 The one standalone Build worker intentionally receives full host access so it can write
-repository Git metadata and launch its packaged review lanes. That transport is limited
+repository Git metadata. That transport is limited
 to the Build worker and does not expand the accepted spec or authorize publication;
-review lanes and the separate `dev` writers keep their read-only or workspace sandboxes.
+review lanes remain read-only.
 
 `PLX::Gemini` uses Gemini CLI with `auto` model routing or an explicit model.
 Install `@google/gemini-cli` and authenticate with `gemini` before use. It supports

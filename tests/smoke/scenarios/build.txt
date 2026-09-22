@@ -1,9 +1,9 @@
-# Build: fresh build worker implements, reviews, fixes, verifies, and commits; host gates.
-NEEDS: claude grok
-NEEDS_CODEX: codex grok
+# Build: fresh build worker implements, verifies, and commits; host gates.
+NEEDS: claude
+NEEDS_CODEX: codex
 FIXTURE: calc
 TASK: Accepted spec: update only calc.py so average([]) returns 0.0, preserve existing behavior for non-empty lists, verify both cases with Python assertions, and create one local commit containing only calc.py after verification. Do not push or publish externally.
 EXPECT_DIFF: average
-EXPECT_OUTPUT_ALL: writer.md grok-correctness.md grok-cleanup.md grok-structural.md
+EXPECT_OUTPUT: average
 EXPECT_CHECK: python3 -c "from calc import average; assert average([])==0.0 and average([1,2,3])==2"
 EXPECT_COMMIT: calc.py

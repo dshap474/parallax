@@ -1,66 +1,8 @@
-# Parallax engine configuration
-#
-# Binds roles for plan, simplify, and dev. Each owning skill resolves
-# its package-local key and defines its workflow shape and allowed overrides.
-# Standalone review owns its Grok defaults and whole-round overrides in SKILL.md;
-# composed dev review uses only the review-* bindings under dev below.
-#
-# Config supplies engine bindings, not a universal sizing policy. Dev sizes its
-# stages with the engines rubric; standalone plan and simplify keep their fixed
-# dimensions as documented in their skills. Declare the chosen shape before launch.
-#
-# Every configured role runs as one headless `plx-engine` call made by the
-# orchestrator. Standalone build uses one explicit same-host writer command in its skill,
-# not a configured pipeline role. The listed role determines the rubric and mode:
-#
-#   role                mode  rubric
-#   plan-critic-implementation ro plan-critic-implementation
-#   plan-critic-system  ro    plan-critic-system
-#   code                rw    worker
-#   code-fallback       rw    worker
-#   review-correctness  ro    reviewer-correctness
-#   review-cleanup      ro    reviewer-cleanup
-#   review-structural   ro    reviewer-structural
-#   review-security     ro    reviewer-security
-#   simplify-reuse          ro    simplify-reuse
-#   simplify-simplification ro    simplify-simplification
-#   simplify-efficiency     ro    simplify-efficiency
-#   simplify-altitude       ro    simplify-altitude
-#
-# Rules:
-#   - `code` takes ONE engine. Writers may run in parallel only on
-#     disjoint path sets — one writer per path, always. Targeted post-review
-#     fixes are applied by the host orchestrator directly — there is no fix role.
-#   - plan / plan-critic-* / review-* roles take LISTS and are always read-only
-#     (`--mode ro`), whatever engine fills them. Standalone `plan` is the narrow exception:
-#     each critic role must contain exactly one engine, preserving its fixed two-lane shape.
-#   - Standalone plan runs both critic roles by default. Its shipped Codex bindings use
-#     gpt-6-sol at xhigh; an explicit current-message substitution overrides the configured
-#     engine, and the plan skill applies that engine's supported model/effort flags.
-#   - Simplify always runs its four configured read-only dimensions. An explicit
-#     current-message "all <engine> lanes" substitution replaces all four bindings.
-#   - Plan authoring, review synthesis, and the final gate are always the
-#     orchestrator. Never delegated, not configurable.
-#   - Dev defaults to opposite-host review engines. Standalone review routing
-#     is defined by its skill, independently of these bindings.
-
+# Simplify engine bindings. Plan, Build, and Review own their defaults in SKILL.md.
+# Dev calls those skills sequentially.
 pipelines:
-  plan:
-    plan-critic-implementation: [codex]
-    plan-critic-system: [codex]
-
   simplify:
     simplify-reuse: [grok]
     simplify-simplification: [grok]
     simplify-efficiency: [grok]
     simplify-altitude: [grok]
-
-  dev:
-    plan-critic-implementation: [codex]
-    plan-critic-system: [codex]
-    code: grok
-    code-fallback: codex
-    review-correctness: [codex]
-    review-cleanup: [codex]
-    review-structural: [codex]
-    review-security: [codex]

@@ -114,7 +114,7 @@ See [Architecture](docs/ARCHITECTURE.md), [Commands](docs/COMMANDS.md),
 
 ## Status
 
-v0.5.30
+v0.5.31
 
 ## License
 

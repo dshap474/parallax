@@ -1,6 +1,6 @@
 ---
 name: grok
-description: Single-engine Grok passthrough with overridable model and effort defaults except Grok 4.6 always uses medium, read-only for questions/plans and write-capable only for explicit implementation requests. No multi-model review pipeline.
+description: Send a task directly to Grok. Questions and plans are read-only; explicit implementation requests allow edits.
 argument-hint: "<question, coding task, or plan request>"
 ---
 

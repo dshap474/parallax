@@ -27,6 +27,19 @@ get orphaned.
 
 ## Run it
 
+For a focused check of prompt routing, report-only decisions, and Devin retry decisions:
+
+```bash
+python3 tests/smoke/decisions.py --host codex
+python3 tests/smoke/decisions.py --host claude
+```
+
+These four cases use real host model calls with the current skill text and simulated
+downstream results. They check the proposed prompt or action, including refusal to
+replay an ambiguous remote mutation. They do not execute downstream engines or prove
+end-to-end skill behavior. `--dry-run` writes prompts without model calls. Prompts,
+answers, and logs are retained in the printed temporary directory. Failures exit nonzero.
+
 ```bash
 bash tests/smoke/run-smoke.sh                 # L1 only (cheap default)
 bash tests/smoke/run-smoke.sh --skills        # L1 + every skill end to end (full audit)

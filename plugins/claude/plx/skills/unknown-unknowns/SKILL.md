@@ -1,6 +1,6 @@
 ---
 name: unknown-unknowns
-description: Surface the user's unknowns — blindspot passes, brainstorms and throwaway prototypes, reference extraction, implementation notes, pitch/explainer docs, and comprehension quizzes — picking the technique(s) that fit where the user is in the work. Pure orchestrator work with no engine lanes; implementation plans hand off to /plx:plan.
+description: Explore blind spots, alternatives, and understanding of the current work. Implementation planning belongs to Plan.
 argument-hint: "<what you're working on, and where you are with it>"
 disable-model-invocation: true
 user-invocable: true
@@ -24,50 +24,21 @@ missing and would affect the approach.
 
 Distinguish facts already known, questions the user recognizes, unstated criteria they
 would recognize on sight, and issues they have not considered. Name the gaps you target
-and choose the useful techniques below, usually one or two.
+and choose the useful techniques below. Read only the references for the techniques you
+select. Use the smallest useful response or artifact; honor requested formats.
 
 | Need | Technique |
 | --- | --- |
-| New to the domain or codebase | Blindspot pass |
-| Scope or taste needs exploration | Brainstorm or prototype |
-| An existing example gets it right | Reference extraction |
+| New to the domain or codebase | [Blindspot pass](references/blindspots.md) |
+| Scope or taste needs exploration | [Brainstorm or prototype](references/brainstorm.md) |
+| An existing example gets it right | [Reference extraction](references/reference.md) |
 | A design ready for implementation and critique | Hand off to `/plx:plan` |
-| A settled plan entering implementation | Implementation notes |
-| Completed work needing stakeholder understanding | Pitch and explainer |
-| Uncertainty about what changed | Quiz |
+| A settled plan entering implementation | [Implementation notes](references/implementation-notes.md) |
+| Completed work needing stakeholder understanding | [Pitch and explainer](references/explainer.md) |
+| Uncertainty about what changed | [Quiz](references/quiz.md) |
 
 For a handoff, supply a paste-ready invocation carrying the relevant discoveries.
 Leave the implementation plan to its owning skill.
-
-## Techniques
-
-For a blindspot pass, inspect prior art, relevant modules and conventions, historical
-attempts, and known pitfalls. Explain the concepts needed to judge quality. Rank the
-questions worth asking by their effect on the work and describe what good looks like.
-
-For brainstorming, inspect the repo and offer distinct approaches from cheapest to most
-ambitious, with a recommendation. For visual exploration, build one self-contained HTML
-prototype with fake data and several distinct directions. After the user reacts, record
-the criteria revealed by their choices. Save useful prototypes and criteria in the thread.
-
-For references, read the supplied code, site, docs, or diagram; ask for a pointer if
-missing. Inspect underlying code when available. Extract the desired behavior, structure,
-and edge-case handling into a short contract the user can confirm.
-
-For implementation notes, maintain `implementation-notes.md` in the thread during the
-active implementation session. Under Deviations, record what was planned, what was found,
-and what changed. Continue only for local, reversible choices that preserve scope,
-behavior, and locked invariants; ask about material departures. Review deviations with
-the user at session end.
-
-For a pitch or explainer, create one self-contained Markdown or HTML document in the
-thread. Lead with a demo, explain the decisions from the reader's starting point, and
-cover likely failure questions. Integrate relevant spec, prototype, and implementation
-notes into the explanation.
-
-For a quiz, create an HTML report in the thread. Explain what changed and how it interacts
-with existing code, then quiz the material behavior, edge cases, and interactions with
-answers hidden until revealed. Encourage the user to resolve misunderstandings before merging.
 
 ## Return
 

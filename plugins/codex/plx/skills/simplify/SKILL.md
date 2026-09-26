@@ -1,6 +1,6 @@
 ---
 name: simplify
-description: Simplify plans and code. Run four read-only lanes for reuse, simplification, efficiency, and altitude, then let the host verify and apply the smallest safe improvements. Use while planning, implementing, refactoring, or reviewing; say "report only" to skip fixes.
+description: Simplify a plan or code with independent reviews. Use "report only" to skip edits.
 ---
 
 # $plx:simplify — simplify plans and code

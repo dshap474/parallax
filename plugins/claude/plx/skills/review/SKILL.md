@@ -1,6 +1,6 @@
 ---
 name: review
-description: Standalone multi-lane code review with automatic fixes. Direct invocation runs Grok correctness, cleanup, and structural lanes in parallel by default, adds a Grok security lane when triggered, synthesizes, then applies confirmed fixes as small targeted edits. Explicit whole-round engine overrides win; say "report only" to skip fixes.
+description: Review code through independent model lanes and apply confirmed fixes. Use "report only" for findings without edits.
 argument-hint: "<scope> [with all Codex|Claude|Grok lanes] [at <effort> effort] [report only]"
 disable-model-invocation: true
 user-invocable: true
@@ -82,8 +82,10 @@ remedies only when intent, behavior, scope, or an interface needs a user decisio
 batch those questions. For report-only requests, deliver findings and a repair plan.
 
 Fix directly after every lane has returned. Apply confirmed, unambiguous remedies in
-one bounded fix round, including approved answers. Preserve unrelated edits. Leave
-build-sized remedies and remaining issues as residuals and recommend `/plx:build`.
+one bounded fix round, including approved answers. Correct failures introduced by those
+fixes and rerun affected checks until they pass or a concrete blocker remains. Preserve
+unrelated edits. Leave build-sized remedies and unrelated remaining issues as residuals
+and recommend `/plx:build`.
 Re-read your diff and run the relevant repository checks. Never `uv run` inside a sandbox.
 Follow repository instructions for local commits; this skill grants no publication authority.
 

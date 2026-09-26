@@ -9,7 +9,7 @@ argument-hint: "<task to plan>"
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
 `/skills/plan/SKILL.md`. Use the packaged helpers in `<plugin-root>/bin/`.
 
-The host authors the plan: Astra in Codex, Fable 5.1 in Claude Code.
+The current host authors the plan; one opposite-engine reviewer critiques it.
 Use one read-only opposite-host reviewer. Do not build, commit, or publish.
 
 Resolve `<repo>` with `git rev-parse --show-toplevel` and note existing changes.

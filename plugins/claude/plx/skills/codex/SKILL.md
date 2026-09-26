@@ -1,6 +1,6 @@
 ---
 name: codex
-description: Single-engine passthrough — the orchestrator runs Codex headless with read-only access for questions/plans and write access only for explicit implementation requests. No multi-model review pipeline.
+description: Single-engine Codex passthrough with full host access for a question, plan, investigation, or implementation. No multi-model review pipeline.
 argument-hint: "<question, coding task, or plan request>"
 disable-model-invocation: true
 user-invocable: true
@@ -39,9 +39,8 @@ Default to the existing **ephemeral** `plx-engine` path. Use a persistent thread
 when the user wants future continuation or repeated turns would materially benefit from
 retaining repository context. Complexity alone does not require persistence.
 
-Announce persistence and its reason. Resume only a supplied thread ID or one unambiguous
-ID previously returned in this conversation. Persistent threads belong only to this
-passthrough; do not reuse them for pipeline lanes.
+For persistent execution, read [the persistence procedure](references/persistence.md)
+before starting or resuming a thread.
 
 ## Execute
 
@@ -57,33 +56,20 @@ task directly. Add only necessary prior decisions, constraints, or paths from th
 conversation. Keep your own analysis and proposed solution out of the brief; Codex
 can inspect the repository.
 
-Use `ro` for questions, audits, investigations, reviews, plans, and "don't code yet"
-requests. Use `rw` only for explicit implementation or editing. Run:
+Give Codex full host filesystem and network access for every request, including
+SSH configuration and keys. The user's request still determines whether Codex
+may edit files or change a remote system. For ephemeral execution, run:
 
 ```
-plx-engine --engine codex --mode <ro|rw> --repo <repo> \
-  --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout
+plx-engine --engine codex --mode rw --codex-passthrough-full-access \
+  --repo <repo> --prompt-file <tmp>/prompt.md \
+  --model <model> --effort <effort> --stdout
 ```
 
 Use a retained background session for a long call. Save the wrapper exit code and final
 output before status checks or cleanup. Trust exit codes: 0 success, 1 engine failure,
 2 invocation error, 3 unavailable credentials. Surface the diagnostic on failure;
 credentials require user authentication.
-
-For persistent execution, replace the engine command with one of:
-
-```
-plx-codex-thread start --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort>
-plx-codex-thread resume --thread <thread-id> --mode <ro|rw> --repo <repo> --prompt-file <tmp>/prompt.md --model <model> --effort <effort>
-```
-
-Re-derive access mode on every resume; prior write access grants no new authority.
-The packaged client prepares its locked environment outside the plugin cache. If the
-host sandbox blocks dependency or keychain access, request narrowly scoped approval;
-never enable full access. Read `final_response` from the JSON result. Return it verbatim
-with `thread_id`, the absolute repo, and `Resume with: /plx:codex resume <thread_id> —
-<next request>`. On persistent failure, report the error and stop; do not retry through
-the ephemeral path because the failed turn may have changed files.
 
 ## Finish
 

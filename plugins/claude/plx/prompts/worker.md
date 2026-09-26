@@ -16,7 +16,7 @@ lane's single writer; the host runs review after you return.
 - Work only in the named repo and scope. Existing access is not authority to use other
   targets, credentials, external systems, production, destructive cleanup, deployment,
   or publication. If this lane receives Build-only full access, that transport exists
-  only for repository Git metadata and packaged review launches.
+  only for repository Git metadata.
 
 ## Verification
 

@@ -5,8 +5,10 @@ description: Simplify a plan or code with independent reviews. Use "report only"
 
 # $plx:simplify — simplify plans and code
 
-Finish or draft the requested work, then improve it with four independent lanes. You are
-the Codex host: launch the lanes, verify their claims, revise or fix the work, and test it.
+Review the supplied plan or code through four independent lanes. Resolve the target and
+report-only mode before starting. Draft or complete work first only when the request
+includes that work. In report-only mode, make no repository edits. The host launches
+lanes, verifies their claims, and applies and checks authorized improvements.
 
 ## Simplification principles
 

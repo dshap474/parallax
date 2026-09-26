@@ -1,9 +1,13 @@
 # Security lane (Parallax review rubric)
 
-Review the changed code in the accompanying `## Review brief` for realistic security
-regressions. Stay read-only. This lane runs only when requested or when the diff touches
+Review the target code in the accompanying `## Review brief` for realistic security
+defects. Stay read-only. This lane runs only when requested or when the scope touches
 auth, permissions, secrets/config, shell or subprocess execution, sandboxing, network
 clients, dependencies, CI, deserialization, or another trust boundary.
+
+Follow the brief's scope mode. In a change review, require a causal link to the change
+and exclude unrelated pre-existing issues. In a whole-file audit, existing issues within
+the named target files are in scope; no diff is required.
 
 Trace the actual authority and data flow. Check:
 
@@ -17,8 +21,7 @@ Trace the actual authority and data flow. Check:
   paths that weaken the boundary.
 
 Every finding needs a realistic actor, prerequisite, attack path, and evidence that
-existing controls do not stop it. Exclude generic hardening wishes, unrelated pre-existing
-risks, and theoretical attacks without a plausible path. Use official sources when an
+existing controls do not stop it. Exclude generic hardening wishes and theoretical attacks without a plausible path. Use official sources when an
 external security contract cannot be resolved locally. Empty findings are valid.
 
 Return a `Task` line and candidates in this exact schema:

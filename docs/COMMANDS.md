@@ -11,7 +11,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | KISS | `/plx:kiss` | `$plx:kiss` | Load the user-authored KISS principles into the current context |
 | Orchestrate | `/plx:orchestrate` | `$plx:orchestrate` | Set a planner and worker-delegation posture without starting work |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
-| Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Codex-hosted Claude has full host access |
+| Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough with full host access; default model/effort can be overridden |
 | Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; Grok 4.6 always uses medium effort |
 | Devin | `/plx:devin` | `$plx:devin` | One full-access Devin passthrough; SWE-2 High by default; no generic effort flag |
 | Init | `/plx:init` | `$plx:init` | Load the Parallax skill map and research defaults into context |
@@ -21,9 +21,9 @@ All skills are explicit-only so an expensive pipeline never starts merely becaus
 prompt resembles its description. Codex uses `allow_implicit_invocation: false`; Claude
 uses `disable-model-invocation: true` with `user-invocable: true`.
 
-`/plx:codex` uses the isolated one-shot engine path unless explicit continuation or
+`/plx:codex` uses the one-shot engine path unless explicit continuation or
 likely multi-turn repository rediscovery justifies a persistent app-server thread. A
-resume requires a known thread ID, and every turn derives read or write access anew.
+resume requires a known thread ID, and every turn requests full host access.
 Codex, Claude, and Grok passthroughs accept explicit model and effort requests in natural
 language (for example, `$plx:claude ask fable medium for <task>`). The host converts
 those settings into engine launch flags; omitted settings retain their defaults. Grok
@@ -31,10 +31,10 @@ those settings into engine launch flags; omitted settings retain their defaults.
 high, and max map to `swe-2-medium`, `swe-2-high`, and `swe-2-max`; a separate effort
 value is rejected.
 
-`$plx:claude` gives its Claude call full host filesystem and network access,
-including SSH credentials, using the explicit rubric-free passthrough flag.
-Claude receives its normal tools and user configuration. The request still
-governs edits and remote actions. Pipeline Claude lanes keep their own restrictions.
+Both opposite-host passthroughs give their target engine full host filesystem
+and network access, including SSH credentials. Codex and Claude receive their
+normal user configuration. The request still governs edits and remote actions.
+Pipeline lanes keep their own restrictions.
 
 Plan, Build, and Review own their model defaults in their skills. Dev calls them
 sequentially. Simplify alone reads engine bindings from `config/parallax.yaml`.

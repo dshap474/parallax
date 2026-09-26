@@ -15,7 +15,8 @@ Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
 ## Prepare the round
 
 Resolve `<repo>` with `git rev-parse --show-toplevel`. Establish the requested files,
-change range, and baseline from the user and Git status/diffs. Read enough code to make
+scope mode (change review or whole-file audit), and any change range and baseline
+from the user and Git status/diffs. Read enough code to make
 the scope accurate. Save the status and diffs so fixes preserve existing work.
 
 Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-review.XXXXXX"`. Write the request
@@ -44,9 +45,10 @@ Write one neutral `<tmp>/brief.md`, identical for every lane:
 ```
 ## Review brief
 - Repo: <repo>
-- Files touched: <scope>
+- Scope mode: <change review | whole-file audit>
+- Target files: <exact files in scope>
 - Intended behavior and review focus: <task requirements and review scope>
-- Diff basis: <exact baseline or commit range>
+- Diff basis: <exact baseline or commit range; optional for whole-file audits>
 - Spec source: <task, plan, or doc; otherwise derive from code and tests>
 ```
 
@@ -70,10 +72,11 @@ Missing required lanes make the round partial.
 
 Deduplicate by root cause and try to disprove each material finding against the code.
 Correctness determines which objects belong in scope before cleanup or structural
-remedies. Reject false positives with a reason. Filter unrelated pre-existing issues
-(unless this is a whole-file audit), untouched code without a causal link, linter-only
-style, generic test/doc wishes, speculative unreachable cases, and optimizations without
-material cost. Read further where the reports reveal a gap.
+remedies. Reject false positives with a reason. For change reviews, filter pre-existing
+issues and untouched code without a causal link to the change. Whole-file audits may report existing defects within the named target.
+In either mode, filter out-of-scope issues, linter-only style, generic test/doc wishes,
+speculative unreachable cases, and optimizations without material cost. Read further
+where the reports reveal a gap.
 
 If a core lane finds a concrete security risk, run the security lane if possible or
 retain the risk as a named residual. Rank confirmed findings by severity. Ask about

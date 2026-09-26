@@ -6,6 +6,7 @@
 #     --model gpt-6-sol --effort medium
 #   plx-codex-thread resume --thread ID --repo /abs/repo --mode ro|rw \
 #     --prompt-file /abs/prompt.md --model gpt-6-sol --effort medium
+#   Add --codex-passthrough-full-access to a rw turn for full host access.
 set -euo pipefail
 
 # --------------------------------------------------------------------------- #
@@ -21,6 +22,7 @@ Usage:
     [--model <model>] [--effort <effort>]
   plx-codex-thread resume --thread <id> --repo <absolute-path> --mode ro|rw \
     --prompt-file <file> [--model <model>] [--effort <effort>]
+  Add --codex-passthrough-full-access to a rw turn for full host access.
 
 The command emits the codex-app-client JSON result on stdout. It stores resumable
 Codex transcripts in the normal Codex session store and no Parallax thread registry.
@@ -56,6 +58,7 @@ MODE=""
 PROMPT=""
 MODEL="gpt-6-sol"
 EFFORT="medium"
+CODEX_PASSTHROUGH_FULL_ACCESS=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -65,6 +68,7 @@ while [[ $# -gt 0 ]]; do
     --prompt-file) need_value "$1" "${2:-}"; PROMPT="$2"; shift 2 ;;
     --model) need_value "$1" "${2:-}"; MODEL="$2"; shift 2 ;;
     --effort) need_value "$1" "${2:-}"; EFFORT="$2"; shift 2 ;;
+    --codex-passthrough-full-access) CODEX_PASSTHROUGH_FULL_ACCESS=1; shift ;;
     --help|-h) usage; exit 0 ;;
     *) fail_usage "unknown argument: $1" ;;
   esac
@@ -82,6 +86,9 @@ case "$MODE" in
   rw) CXA_MODE="edit" ;;
   *) fail_usage "--mode must be ro or rw" ;;
 esac
+if [[ "$CODEX_PASSTHROUGH_FULL_ACCESS" -eq 1 && "$MODE" != "rw" ]]; then
+  fail_usage "--codex-passthrough-full-access requires --mode rw"
+fi
 [[ -s "$PROMPT" ]] || fail_usage "prompt file missing or empty: $PROMPT"
 
 if [[ "$ACTION" == "start" && -n "$THREAD" ]]; then
@@ -133,6 +140,10 @@ if [[ "$ACTION" == "start" ]]; then
   ARGS+=(--persistent)
 else
   ARGS+=(--thread "$THREAD")
+fi
+if [[ "$CODEX_PASSTHROUGH_FULL_ACCESS" -eq 1 ]]; then
+  export CODEX_APP_CLIENT_UNSAFE=1
+  ARGS+=(--sandbox full-access --approvals deny-all --unsafe)
 fi
 
 exec uv "${ARGS[@]}" < "$PROMPT"

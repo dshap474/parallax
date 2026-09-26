@@ -1,8 +1,12 @@
 # Correctness lane (Parallax review rubric)
 
-Review the changed code in the accompanying `## Review brief` for material behavioral
+Review the target code in the accompanying `## Review brief` for material behavioral
 defects. Stay read-only. Compare the implementation with its named spec or, if none is
 named, the contract established by the task, types, tests, and surrounding code.
+
+Follow the brief's scope mode. In a change review, require a causal link to the change
+and exclude unrelated pre-existing issues. In a whole-file audit, existing issues within
+the named target files are in scope; no diff is required.
 
 Trace affected callers, callees, state, errors, timing, and operational behavior. Check:
 
@@ -13,15 +17,14 @@ Trace affected callers, callees, state, errors, timing, and operational behavior
 - changed interfaces, return shapes, exceptions, serialization, config, and callsites;
 - async ordering, races, cancellation, timeouts, partial failure, idempotency, and resource
   lifecycle;
-- language/framework footguns actually created by the diff; and
+- language/framework footguns within scope; and
 - changed tests that assert the wrong behavior or no longer protect a known requirement.
 
 Verify external contracts from repository evidence or official documentation, not memory.
 If a concrete security issue appears, report it and label the object
 `security escalation`.
 
-Report only realistic defects a changed line causes or exposes. Exclude unrelated
-pre-existing issues, untouched-code findings, style, deterministic lint/compiler errors,
+Report only realistic defects within scope. Exclude style, deterministic lint/compiler errors,
 generic test wishes, speculative edge cases without a plausible trigger, and
 micro-optimizations. Empty findings are valid.
 

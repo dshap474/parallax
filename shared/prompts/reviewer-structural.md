@@ -1,9 +1,13 @@
 # Structural lane (Parallax review rubric)
 
-Review the changed code in the accompanying `## Review brief` for material
+Review the target code in the accompanying `## Review brief` for material
 maintainability problems. Stay read-only and report findings, not preferences.
 
-Flag a change when it introduces a concrete ownership or future-change cost through:
+Follow the brief's scope mode. In a change review, require a causal link to the change
+and exclude unrelated pre-existing issues. In a whole-file audit, existing issues within
+the named target files are in scope; no diff is required.
+
+Flag concrete ownership or future-change costs within scope through:
 
 - file or concept sprawl that makes the system harder to scan or change;
 - scattered special cases or ad-hoc conditionals;
@@ -31,8 +35,8 @@ Return a `Task` line and candidates in this exact schema:
 - Main-agent instruction: the smallest deletion, reframing, or ownership move
 ```
 
-Exclude pre-existing untouched structure, style/naming nits, broad objections without an
-introduced cost, and preferences dressed as blockers. Use Low confidence only as
+Exclude style/naming nits, broad objections without a
+concrete cost, and preferences dressed as blockers. Use Low confidence only as
 `Action: investigate`. Empty findings are valid. Label concrete security risks
 `security escalation`.
 

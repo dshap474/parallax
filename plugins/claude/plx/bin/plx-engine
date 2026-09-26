@@ -12,7 +12,8 @@
 #            approval_policy=never, --ephemeral, sandbox read-only |
 #            workspace-write; the standalone Build writer may explicitly
 #            request danger-full-access so it can write repository Git metadata
-#            and launch its packaged review lanes
+#            and launch its packaged review lanes; the explicit Claude-hosted
+#            passthrough may request full host access
 #   grok   : grok-4.6, effort always medium,
 #            kernel sandbox read-only | workspace (Seatbelt/Landlock),
 #            bypassPermissions (required for headless completion; the kernel
@@ -32,7 +33,7 @@
 #            therefore has full host access; repository-native Devin config can
 #            still load. ATIF export supplies the validated final response.
 # Full access is accepted for Devin, an rw worker- or build-worker-rubric
-# Codex or Claude lane, and the explicit rubric-free Claude passthrough.
+# Codex or Claude lane, and explicit rubric-free opposite-host passthroughs.
 # Never use Codex's approvals-and-sandbox bypass or --yolo.
 
 # --------------------------------------------------------------------------- #
@@ -77,6 +78,8 @@ Flags:
                         Git metadata; invalid for ro, Grok, or other rubrics
   --claude-passthrough-full-access
                         give one rubric-free rw Claude passthrough full host access
+  --codex-passthrough-full-access
+                        give one rubric-free rw Codex passthrough full host access
   --model <m>           codex: default gpt-6-sol · claude: default claude-opus-5-5 ·
                         grok: default grok-4.6 · devin: default swe-2-high · gemini: auto
   --effort <e>          codex: default medium · claude: default high ·
@@ -105,6 +108,8 @@ Caller notes:
     the writer's complete authority boundary.
   * --claude-passthrough-full-access removes Claude's sandbox and tool limits
     for an explicit passthrough. The user's task still defines its authority.
+  * --codex-passthrough-full-access removes Codex's sandbox and loads its normal
+    user configuration for an explicit passthrough. The user task still defines authority.
   * Devin full-access mode likewise removes filesystem/network confinement and
     uses no OS sandbox. It does not grant publication or external-system authority.
     Repository-native Devin hooks, MCP servers, rules, and skills may still load.
@@ -140,6 +145,7 @@ LOG=""
 STDOUT=0
 BUILD_WRITER_FULL_ACCESS=0
 CLAUDE_PASSTHROUGH_FULL_ACCESS=0
+CODEX_PASSTHROUGH_FULL_ACCESS=0
 TMP_DIR=""
 # SQLite trace capture (opt-in via PLX_TRACE_DB). Armed just before dispatch.
 EVAL_ARMED=0
@@ -206,6 +212,7 @@ while [[ $# -gt 0 ]]; do
     --stdout) STDOUT=1; shift ;;
     --build-writer-full-access) BUILD_WRITER_FULL_ACCESS=1; shift ;;
     --claude-passthrough-full-access) CLAUDE_PASSTHROUGH_FULL_ACCESS=1; shift ;;
+    --codex-passthrough-full-access) CODEX_PASSTHROUGH_FULL_ACCESS=1; shift ;;
     --print-rubric)
       need_value "$1" "${2:-}"
       RF="$PROMPTS_DIR/$2.md"
@@ -251,6 +258,12 @@ fi
 if [[ "$CLAUDE_PASSTHROUGH_FULL_ACCESS" -eq 1 ]]; then
   [[ "$ENGINE" == "claude" && "$MODE" == "rw" && -z "$RUBRIC" && "$BUILD_WRITER_FULL_ACCESS" -eq 0 ]] || {
     echo "--claude-passthrough-full-access requires rubric-free Claude --mode rw" >&2
+    exit 2
+  }
+fi
+if [[ "$CODEX_PASSTHROUGH_FULL_ACCESS" -eq 1 ]]; then
+  [[ "$ENGINE" == "codex" && "$MODE" == "rw" && -z "$RUBRIC" && "$BUILD_WRITER_FULL_ACCESS" -eq 0 ]] || {
+    echo "--codex-passthrough-full-access requires rubric-free Codex --mode rw" >&2
     exit 2
   }
 fi
@@ -326,17 +339,21 @@ EVAL_PROMPT_FILE="$EXEC_PROMPT"
 
 run_codex() {
   local sandbox
-  if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
+  local -a flags
+  if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 || "$CODEX_PASSTHROUGH_FULL_ACCESS" -eq 1 ]]; then
     sandbox="danger-full-access"
   elif [[ "$MODE" == "ro" ]]; then
     sandbox="read-only"
   else
     sandbox="workspace-write"
   fi
-  if ! codex exec --ignore-user-config --sandbox "$sandbox" \
-    -c approval_policy=never --skip-git-repo-check -C "$REPO" \
-    -m "$MODEL" -c model_reasoning_effort="$EFFORT" --ephemeral \
-    -o "$OUT" - < "$EXEC_PROMPT" > "$LOG" 2>&1; then
+  flags=(--sandbox "$sandbox" -c approval_policy=never --skip-git-repo-check
+    -C "$REPO" -m "$MODEL" -c model_reasoning_effort="$EFFORT" --ephemeral
+    -o "$OUT" -)
+  if [[ "$CODEX_PASSTHROUGH_FULL_ACCESS" -eq 0 ]]; then
+    flags=(--ignore-user-config "${flags[@]}")
+  fi
+  if ! codex exec "${flags[@]}" < "$EXEC_PROMPT" > "$LOG" 2>&1; then
     if grep -qiE "not logged in|401 unauthorized|codex login|invalid api key" "$LOG"; then
       echo "plx-engine: codex not authenticated — run \`codex login\` (or set CODEX_API_KEY), then retry." >&2
       exit 3

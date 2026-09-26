@@ -19,9 +19,7 @@ criteria. Follow repository guidance, reuse existing patterns, validate system b
 and add dependencies only when required. Stay within scope and preserve pre-existing work.
 
 Follow the invoking workflow's engine settings and ownership rules. Work directly within
-your assigned scope. A standalone Build worker may launch the named read-only review
-lanes supplied in its run context through the packaged wrapper. Do not delegate
-implementation or launch additional writers or subagents.
+your assigned scope. The host owns review. Do not launch reviewers, additional writers, or subagents.
 
 ## Intent
 

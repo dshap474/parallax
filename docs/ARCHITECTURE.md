@@ -82,6 +82,9 @@ only for an `rw` `worker`/`build-worker` lane. It is a transport requirement for
 metadata and packaged review launches, not permission to expand the accepted spec,
 repository scope, or publication authority. Review lanes remain read-only. Codex never
 uses `--dangerously-bypass-approvals-and-sandbox` or `--yolo`.
+The explicit, rubric-free opposite-host passthroughs also use full host access.
+Persistent `/plx:codex` applies the packaged client full-access gate on each turn.
+This access does not authorize edits or remote actions beyond the user request.
 
 The standalone Devin passthrough is the other explicit full-access path. It does not
 join pipeline routing, retry, fall back, or launch a Parallax review. Its effective prompt

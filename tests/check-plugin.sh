@@ -28,7 +28,7 @@ version_of() {
 claude_version="$(version_of "$PLX_CLAUDE/.claude-plugin/plugin.json")"
 codex_version="$(version_of "$PLX_CODEX/.codex-plugin/plugin.json")"
 market_version="$(version_of "$PLX_ROOT/.claude-plugin/marketplace.json")"
-if [ "$claude_version" = "0.5.32" ] && [ "$claude_version" = "$codex_version" ] &&
+if [ "$claude_version" = "0.5.34" ] && [ "$claude_version" = "$codex_version" ] &&
    [ "$claude_version" = "$market_version" ] &&
    grep -qx "v$claude_version" "$PLX_ROOT/README.md" &&
    grep -qx "Status: v$claude_version" "$PLX_ROOT/docs/SPEC.md"; then
@@ -184,9 +184,10 @@ else
 fi
 
 if grep -q 'Default to the existing \*\*ephemeral\*\*' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
-   grep -q 'plx-codex-thread start' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
-   grep -q 'plx-codex-thread resume' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
-   grep -q 'thread_id' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
+   grep -q 'plx-codex-thread start' "$PLX_CLAUDE/skills/codex/references/persistence.md" &&
+   grep -q 'plx-codex-thread resume' "$PLX_CLAUDE/skills/codex/references/persistence.md" &&
+   grep -Fq -- '--codex-passthrough-full-access' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
+   grep -q 'thread_id' "$PLX_CLAUDE/skills/codex/references/persistence.md" &&
    ! grep -Rqi 'plx-codex-thread' \
      "$PLX_CLAUDE/skills/build" "$PLX_CLAUDE/skills/dev" \
      "$PLX_CLAUDE/skills/plan" \
@@ -277,15 +278,15 @@ else
   _fail "standalone review launch contract drift"
 fi
 
-if grep -Fq 'current change directly makes it obsolete' \
+if grep -Fq 'In change reviews, pre-existing complexity is in scope only when the change directly' \
      "$PLX_ROOT/shared/prompts/reviewer-cleanup.md" &&
-   grep -Fq 'small, behavior-preserving remedy is concrete' \
+   grep -Fq 'concrete, behavior-preserving remedy' \
      "$PLX_ROOT/shared/prompts/reviewer-cleanup.md" &&
    grep -Fq 'unrelated pre-existing issues' \
      "$PLX_ROOT/shared/prompts/reviewer-cleanup.md" &&
-   grep -Fq 'untouched-code findings with no causal link to the change' \
+   grep -Fq 'In a whole-file audit, existing issues within' \
      "$PLX_ROOT/shared/prompts/reviewer-cleanup.md"; then
-  _pass "cleanup review retires only debt made obsolete by the current change"
+  _pass "cleanup review distinguishes change reviews from whole-file audits"
 else
   _fail "cleanup debt-retirement boundary drift"
 fi
@@ -529,6 +530,7 @@ elif [ "$(grep -Fc 'sandbox="danger-full-access"' "$PLX_ROOT/shared/bin/plx-engi
      ! grep -Fq '[[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
      ! grep -Fq '[[ "$RUBRIC" == "worker" || "$RUBRIC" == "build-worker" ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
      ! grep -Fq '[[ "$ENGINE" == "claude" && "$MODE" == "rw" && -z "$RUBRIC" && "$BUILD_WRITER_FULL_ACCESS" -eq 0 ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
+     ! grep -Fq '[[ "$ENGINE" == "codex" && "$MODE" == "rw" && -z "$RUBRIC" && "$BUILD_WRITER_FULL_ACCESS" -eq 0 ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
      find "$PLX_ROOT/shared/bin" -type f ! -name plx-engine -exec \
        grep -El 'danger-full-access|dangerously-skip-permissions' {} + | grep -q .; then
   _fail "explicit full-access runtime boundary drift"
@@ -537,7 +539,7 @@ elif ! grep -Fq -- '--permission-mode dangerous' "$PLX_ROOT/shared/bin/plx-engin
      ! grep -Fq 'elif [[ "$MODE" == "full-access" ]]' "$PLX_ROOT/shared/bin/plx-engine"; then
   _fail "Devin full-access transport boundary drift"
 else
-  _pass "full access is explicit for Build, Claude passthrough, and Devin"
+  _pass "full access is explicit for Build, opposite-host passthroughs, and Devin"
 fi
 if grep -RE '^[[:space:]]*[^#].*rm[[:space:]]+-rf' \
      "$PLX_ROOT/shared/bin" "$PLX_ROOT/plugins/claude/plx/bin" \

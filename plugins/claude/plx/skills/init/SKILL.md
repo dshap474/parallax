@@ -13,7 +13,7 @@ it does not run commands, launch workers, record a run, or change files.
 
 | Skill | Purpose |
 | --- | --- |
-| `/plx:plan` | Fable 5.1 plans; Astra reviews. Produces a reviewed plan without coding. |
+| `/plx:plan` | The current host plans; Astra reviews. Produces a reviewed plan without coding. |
 | `/plx:build` | One Opus 5.5 Medium worker implements and verifies the accepted plan. |
 | `/plx:review` | Parallel Grok 4.5 Medium lanes review correctness, cleanup, and structure; security when relevant. The host verifies findings and fixes confirmed issues. |
 | `/plx:dev` | Runs Plan → Build → Review sequentially. |

@@ -579,6 +579,32 @@ fi
 
 PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode rw --repo "$REPO" \
+  --prompt-file "$fake_prompt" --codex-passthrough-full-access \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] && grep -qx 'danger-full-access' "$fake_codex_args" &&
+   ! grep -qx -- '--ignore-user-config' "$fake_codex_args"; then
+  _pass "Codex passthrough has full host access and normal configuration"
+else
+  _fail "Codex passthrough full access failed (exit $rc)"
+fi
+for invalid in 'claude rw' 'codex ro' 'codex rw worker'; do
+  set -- $invalid
+  invalid_args=(--out "$fake_out" --log "$fake_log")
+  [ -z "${3:-}" ] || invalid_args+=(--rubric "$3")
+  "$PLUGIN_ROOT/bin/plx-engine" --engine "$1" --mode "$2" --repo "$REPO" \
+    --prompt-file "$fake_prompt" --codex-passthrough-full-access \
+    "${invalid_args[@]}" >/dev/null 2>&1
+  rc=$?
+  if [ "$rc" -eq 2 ]; then
+    _pass "Codex passthrough full access rejects $invalid"
+  else
+    _fail "Codex passthrough full access accepted $invalid (exit $rc)"
+  fi
+done
+
+PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode rw --repo "$REPO" \
   --prompt-file "$fake_prompt" --rubric build-worker --build-writer-full-access \
   --out "$fake_out" --log "$fake_log" >/dev/null
 rc=$?
@@ -647,19 +673,21 @@ if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
   cxa_args="$WORK/cxa-args.txt"
   cxa_prompt="$WORK/cxa-prompt.md"
   cxa_env="$WORK/cxa-env.txt"
+  cxa_unsafe="$WORK/cxa-unsafe.txt"
   printf '%s\n' '#!/usr/bin/env bash' \
     '# Fake uv runner for plx-codex-thread smoke tests.' \
     '#' \
     '# Usage: uv <recorded arguments>' \
     'printf '\''%s\n'\'' "$@" > "$PLX_CXA_ARGS_FILE"' \
     'printf '\''%s\n'\'' "$UV_PROJECT_ENVIRONMENT" > "$PLX_CXA_ENV_FILE"' \
+    'printf '\''%s\n'\'' "${CODEX_APP_CLIENT_UNSAFE:-}" > "$PLX_CXA_UNSAFE_FILE"' \
     'cat > "$PLX_CXA_PROMPT_FILE"' \
     'printf '\''{"thread_id":"thread-123","status":"completed","final_response":"OK"}\n'\''' \
     > "$fake_bin/uv"
   chmod +x "$fake_bin/uv"
 
   PATH="$fake_bin:$PATH" PLX_CXA_ARGS_FILE="$cxa_args" \
-    PLX_CXA_PROMPT_FILE="$cxa_prompt" PLX_CXA_ENV_FILE="$cxa_env" \
+    PLX_CXA_PROMPT_FILE="$cxa_prompt" PLX_CXA_ENV_FILE="$cxa_env" PLX_CXA_UNSAFE_FILE="$cxa_unsafe" \
     XDG_CACHE_HOME="$WORK/cache" \
     "$PLUGIN_ROOT/bin/plx-codex-thread" start --repo "$REPO" --mode ro \
     --prompt-file "$fake_prompt" > "$WORK/cxa-start.json"
@@ -674,7 +702,7 @@ if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
   assert_contains "reply OK" "$cxa_prompt" "prompt is sent over stdin"
 
   PATH="$fake_bin:$PATH" PLX_CXA_ARGS_FILE="$cxa_args" \
-    PLX_CXA_PROMPT_FILE="$cxa_prompt" PLX_CXA_ENV_FILE="$cxa_env" \
+    PLX_CXA_PROMPT_FILE="$cxa_prompt" PLX_CXA_ENV_FILE="$cxa_env" PLX_CXA_UNSAFE_FILE="$cxa_unsafe" \
     XDG_CACHE_HOME="$WORK/cache" \
     "$PLUGIN_ROOT/bin/plx-codex-thread" resume --thread thread-123 \
     --repo "$REPO" --mode rw --prompt-file "$fake_prompt" \
@@ -702,6 +730,36 @@ if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
     --prompt-file "$fake_prompt" >/dev/null 2>&1
   rc=$?
   if [ "$rc" -eq 2 ]; then _pass "resume requires a thread ID"; else _fail "missing thread ID expected exit 2, got $rc"; fi
+
+  PATH="$fake_bin:$PATH" PLX_CXA_ARGS_FILE="$cxa_args" \
+    PLX_CXA_PROMPT_FILE="$cxa_prompt" PLX_CXA_ENV_FILE="$cxa_env" PLX_CXA_UNSAFE_FILE="$cxa_unsafe" \
+    XDG_CACHE_HOME="$WORK/cache" \
+    "$PLUGIN_ROOT/bin/plx-codex-thread" start --repo "$REPO" --mode rw \
+    --codex-passthrough-full-access --prompt-file "$fake_prompt" > "$WORK/cxa-full-start.json"
+  rc=$?
+  if [ "$rc" -eq 0 ] && grep -qx 'full-access' "$cxa_args" &&
+     grep -qx -- '--unsafe' "$cxa_args" && grep -qx 'deny-all' "$cxa_args" &&
+     grep -qx '1' "$cxa_unsafe"; then
+    _pass "persistent Codex start requests full host access"
+  else
+    _fail "persistent Codex full-access start failed (exit $rc)"
+  fi
+  PATH="$fake_bin:$PATH" PLX_CXA_ARGS_FILE="$cxa_args" \
+    PLX_CXA_PROMPT_FILE="$cxa_prompt" PLX_CXA_ENV_FILE="$cxa_env" PLX_CXA_UNSAFE_FILE="$cxa_unsafe" \
+    XDG_CACHE_HOME="$WORK/cache" \
+    "$PLUGIN_ROOT/bin/plx-codex-thread" resume --thread thread-123 --repo "$REPO" --mode rw \
+    --codex-passthrough-full-access --prompt-file "$fake_prompt" > "$WORK/cxa-full-resume.json"
+  rc=$?
+  if [ "$rc" -eq 0 ] && grep -qx 'full-access' "$cxa_args" &&
+     grep -qx -- '--unsafe' "$cxa_args" && grep -qx '1' "$cxa_unsafe"; then
+    _pass "persistent Codex resume requests full host access"
+  else
+    _fail "persistent Codex full-access resume failed (exit $rc)"
+  fi
+  "$PLUGIN_ROOT/bin/plx-codex-thread" start --repo "$REPO" --mode ro \
+    --codex-passthrough-full-access --prompt-file "$fake_prompt" >/dev/null 2>&1
+  rc=$?
+  if [ "$rc" -eq 2 ]; then _pass "persistent full access rejects ro"; else _fail "persistent full access accepted ro (exit $rc)"; fi
 fi
 
 fake_claude_args="$WORK/claude-args.txt"

@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.32
+Status: v0.5.34
 
 ## Required tree
 
@@ -15,7 +15,7 @@ shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.32`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.34`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains thirteen
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
@@ -28,9 +28,9 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
   exposes as `$plx:<name>`; every skill has
   `agents/openai.yaml` with `allow_implicit_invocation: false`.
 - The Codex opposite-host passthrough is `$plx:claude`; the Claude opposite-host
-  passthrough is `plx:codex`. The Codex-hosted Claude passthrough has full host
-  access only through `--claude-passthrough-full-access`; it has no rubric and
-  does not change pipeline Claude lanes.
+  passthrough is `plx:codex`. Both passthroughs have full host access through
+  their explicit rubric-free flags; persistent `plx:codex` uses the packaged
+  app client full-access gate on every turn. Pipeline lanes keep their own modes.
 - Both packages expose a standalone `devin` passthrough. It defaults to
   `swe-2-high`, accepts exact model overrides, rejects generic effort, and uses the
   explicit `full-access` wrapper mode without changing pipeline routing.

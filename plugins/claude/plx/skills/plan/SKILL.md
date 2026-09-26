@@ -10,7 +10,7 @@ user-invocable: true
 
 Use the packaged helpers on PATH.
 
-The host authors the plan: Astra in Codex, Fable 5.1 in Claude Code.
+The current host authors the plan; one opposite-engine reviewer critiques it.
 Use one read-only opposite-host reviewer. Do not build, commit, or publish.
 
 Resolve `<repo>` with `git rev-parse --show-toplevel` and note existing changes.

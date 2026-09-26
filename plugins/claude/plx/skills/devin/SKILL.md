@@ -46,10 +46,14 @@ Resolve `<repo>` with `git rev-parse --show-toplevel`. Snapshot Git status and r
 diffs to distinguish existing work. Create `<tmp>` with
 `mktemp -d "${TMPDIR:-/tmp}/plx-devin.XXXXXX"`.
 
-Write `<tmp>/prompt.md` with the user's request verbatim. Add `## Context` only for
-necessary prior decisions, constraints, paths, and the full-access authority boundary
-above. For a question, plan, review, or explanation, add an explicit instruction not to
-edit files or mutate external systems. Keep your own proposed solution out of the brief.
+Write `<tmp>/prompt.md` with the task for Devin, preserving the user's substantive
+wording and constraints. Treat this skill invocation and host-directed wording such as
+"use a Devin agent to ..." as routing already fulfilled; omit that routing wording
+from the brief. In `## Context`, tell Devin it is the requested agent and should do the
+task directly. Add only necessary prior decisions, constraints, paths, and the
+full-access authority boundary above. For a question, plan, review, or explanation,
+instruct Devin not to edit files or mutate external systems. Keep your proposed solution
+out of the brief.
 
 Run one fresh process per attempt (at most three attempts total):
 

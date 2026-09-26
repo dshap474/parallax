@@ -49,9 +49,13 @@ Resolve `<repo>` with `git rev-parse --show-toplevel`. Snapshot Git status and r
 diffs to distinguish existing work. Create `<tmp>` with
 `mktemp -d "${TMPDIR:-/tmp}/plx-codex.XXXXXX"`.
 
-Write `<tmp>/prompt.md` with the user's request verbatim. Add `## Context` only for
-necessary prior decisions, constraints, or paths from the conversation. Keep your own
-analysis and proposed solution out of the brief; the engine can inspect the repository.
+Write `<tmp>/prompt.md` with the task for Codex, preserving the user's substantive
+wording and constraints. Treat this skill invocation and host-directed wording such as
+"use a Codex agent to ..." as routing already fulfilled; omit that routing wording
+from the brief. In `## Context`, tell Codex it is the requested agent and should do the
+task directly. Add only necessary prior decisions, constraints, or paths from the
+conversation. Keep your own analysis and proposed solution out of the brief; Codex
+can inspect the repository.
 
 Use `ro` for questions, audits, investigations, reviews, plans, and "don't code yet"
 requests. Use `rw` only for explicit implementation or editing. Run:

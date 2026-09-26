@@ -13,8 +13,11 @@ Resolve `<plugin-root>` from this file by removing `/skills/gemini/SKILL.md`.
 
 Resolve `<repo>` with `git rev-parse --show-toplevel` and snapshot its status/diffs.
 Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-gemini.XXXXXX"`.
-Write the user's request verbatim to `<tmp>/prompt.md`, adding only necessary prior
-context, constraints, and repository guidance. Do not add your proposed solution.
+Write `<tmp>/prompt.md` with the task for Gemini, preserving the user's substantive
+wording and constraints. Treat this skill invocation and host-directed wording such as
+"use a Gemini agent to ..." as routing already fulfilled; omit that routing wording
+from the brief. Tell Gemini it is the requested agent and should do the task directly.
+Add only necessary prior context and repository guidance, not your proposed solution.
 
 Use `ro` for questions, reviews, and plans; use `rw` only for explicit editing requests.
 The default model is `auto`; pass an explicit user model unchanged. Gemini has no

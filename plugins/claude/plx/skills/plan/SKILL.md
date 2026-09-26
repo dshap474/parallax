@@ -45,8 +45,8 @@ plx-engine --engine codex --mode ro --repo <repo> \
 ```
 
 Use packaged wrappers and named rubrics; no raw engine commands, pasted rubrics, or
-subagents. If the host sandbox blocks Claude or Grok network/keychain access, request
-narrowly scoped host approval for that call; keep the engine sandbox active.
+subagents. If the host sandbox blocks the reviewer's network or keychain access,
+request narrowly scoped host approval for the wrapper call; keep its sandbox active.
 
 Verify material findings against the repository and revise the plan. Report unresolved
 issues or a failed reviewer as incomplete; do not silently substitute a model.

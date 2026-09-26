@@ -25,7 +25,7 @@ Run exactly three core roles: `reviewer-correctness`, `reviewer-cleanup`, and
 `reviewer-structural`. Default all three to Grok `grok-4.5` at `medium`. Honor an
 explicit whole-round engine override, such as `with all Grok lanes`, `with all Claude
 lanes`, or `with all Codex lanes`. Claude defaults to `high`, Codex to `xhigh`.
-Apply model/effort overrides to the whole round; the default is `grok-4.5` at `medium`.
+Apply model/effort overrides to the whole round.
 Do not use mixed per-role routing or YAML bindings. Dev invokes this same Review skill.
 
 Add `reviewer-security` when requested or when scope touches auth, permissions,
@@ -45,12 +45,14 @@ Write one neutral `<tmp>/brief.md`, identical for every lane:
 ## Review brief
 - Repo: <repo>
 - Files touched: <scope>
-- What was implemented / what to scrutinize: <the user's request>
+- Intended behavior and review focus: <task requirements and review scope>
 - Diff basis: <exact baseline or commit range>
 - Spec source: <task, plan, or doc; otherwise derive from code and tests>
 ```
 
-Keep suspicions and proposed verdicts out of the brief. Launch all selected dimensions
+Keep lane selection, model/effort settings, and report-only or fix instructions in the
+host context. Each lane reviews the supplied target under its rubric. Keep suspicions
+and proposed verdicts out of the brief. Launch all selected dimensions
 in parallel in retained background sessions:
 
 ```

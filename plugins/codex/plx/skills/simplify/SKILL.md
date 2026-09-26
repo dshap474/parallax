@@ -48,8 +48,10 @@ replaces the engine for all four. Honor an explicit model or effort, except that
 network or keychain access, request narrowly scoped host approval for that call; keep
 Claude safe mode active. Write the chosen shape to `<tmp>/shape.txt` before launch.
 
-Write one neutral `<tmp>/brief.md` beginning with `## Simplify brief`, followed by the
-target and requested outcome. Launch each lane:
+Write one neutral `<tmp>/brief.md` beginning with `## Simplify brief`, containing the
+target, constraints, and simplification goal. Keep lane selection, model/effort settings,
+and report-only or fix instructions in the host context; lanes only propose changes.
+Launch each lane:
 
 ```text
 <plugin-root>/bin/plx-engine --engine <engine> --mode ro --repo <repo> \

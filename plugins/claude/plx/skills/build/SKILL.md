@@ -45,7 +45,8 @@ plx-engine --engine claude --mode rw --repo <repo> \
 Full host access is limited to this writer for repository Git metadata. It grants no
 additional scope or publication authority. Use packaged wrappers and named rubrics;
 no raw engine commands, pasted rubrics, or subagents. Never `uv run` inside a sandbox.
-If the host sandbox blocks Claude or Grok network/keychain access, request narrowly scoped host approval for that call; keep each lane's specified transport.
+If the host sandbox blocks the worker's network or keychain access, request narrowly
+scoped host approval for the wrapper call; preserve its specified transport.
 
 Read the worker report and task-owned diff, including any commits since the baseline.
 Check spec coverage and verification evidence. Report failures, missing checks, or

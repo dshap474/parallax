@@ -46,14 +46,12 @@ Resolve `<repo>` with `git rev-parse --show-toplevel`. Snapshot Git status and r
 diffs to distinguish existing work. Create `<tmp>` with
 `mktemp -d "${TMPDIR:-/tmp}/plx-devin.XXXXXX"`.
 
-Write `<tmp>/prompt.md` with the task for Devin, preserving the user's substantive
-wording and constraints. Treat this skill invocation and host-directed wording such as
-"use a Devin agent to ..." as routing already fulfilled; omit that routing wording
-from the brief. In `## Context`, tell Devin it is the requested agent and should do the
-task directly. Add only necessary prior decisions, constraints, paths, and the
-full-access authority boundary above. For a question, plan, review, or explanation,
-instruct Devin not to edit files or mutate external systems. Keep your proposed solution
-out of the brief.
+Write the task to `<tmp>/prompt.md`, preserving its wording and constraints. Omit host
+routing such as this skill invocation or "use a Devin agent to ...". In `## Context`,
+tell Devin it is the requested agent and should perform the task directly. Include only
+necessary prior decisions, paths, and the full-access boundary above, without your own
+proposed solution. For questions, plans, reviews, and explanations, explicitly prohibit
+file edits and external mutations.
 
 Run one fresh process per attempt (at most three attempts total):
 
@@ -97,7 +95,7 @@ continuing; a clean Git diff alone cannot establish that an external action did 
 happen. If a side effect is ambiguous or replay could duplicate an action, stop and
 report what needs reconciliation instead of replaying it. Do not undo partial changes.
 
-Keep the original request and model unchanged. Add a concise recovery context with the
+Reuse the task and context from the first prompt and keep the same model. Append the
 attempt number, failure diagnostic, and observed partial work; instruct Devin to inspect
 that work and continue only the remaining task without repeating completed mutations.
 Use a fresh process, never an implicit latest-session resume. Keep all attempt evidence

@@ -11,7 +11,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | KISS | `/plx:kiss` | `$plx:kiss` | Load the user-authored KISS principles into the current context |
 | Orchestrate | `/plx:orchestrate` | `$plx:orchestrate` | Set a planner and worker-delegation posture without starting work |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
-| Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Claude may persist Codex context |
+| Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough; default model/effort can be explicitly overridden; Codex-hosted Claude has full host access |
 | Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; Grok 4.6 always uses medium effort |
 | Devin | `/plx:devin` | `$plx:devin` | One full-access Devin passthrough; SWE-2 High by default; no generic effort flag |
 | Init | `/plx:init` | `$plx:init` | Load the Parallax skill map and research defaults into context |
@@ -30,6 +30,11 @@ those settings into engine launch flags; omitted settings retain their defaults.
 4.6 is always normalized to medium. Devin accepts an exact model ID instead: medium,
 high, and max map to `swe-2-medium`, `swe-2-high`, and `swe-2-max`; a separate effort
 value is rejected.
+
+`$plx:claude` gives its Claude call full host filesystem and network access,
+including SSH credentials, using the explicit rubric-free passthrough flag.
+Claude receives its normal tools and user configuration. The request still
+governs edits and remote actions. Pipeline Claude lanes keep their own restrictions.
 
 Plan, Build, and Review own their model defaults in their skills. Dev calls them
 sequentially. Simplify alone reads engine bindings from `config/parallax.yaml`.

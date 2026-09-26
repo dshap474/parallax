@@ -41,12 +41,15 @@ Write `<tmp>/prompt.md` with the user's request verbatim. Add `## Context` only 
 necessary prior decisions, constraints, or paths from the conversation. Keep your own
 analysis and proposed solution out of the brief; the engine can inspect the repository.
 
-Use `ro` for questions, audits, investigations, reviews, plans, and "don't code yet"
-requests. Use `rw` only for explicit implementation or editing. Run:
+Use the full-access Claude passthrough for every request. It gives Claude the
+same host filesystem and network access as this Codex session, including SSH
+configuration and keys. The user's request still determines whether Claude may
+edit files or change a remote system. Run:
 
 ```
-<plugin-root>/bin/plx-engine --engine claude --mode <ro|rw> --repo <repo> \
-  --prompt-file <tmp>/prompt.md --model <model> --effort <effort> --stdout
+<plugin-root>/bin/plx-engine --engine claude --mode rw --claude-passthrough-full-access \
+  --repo <repo> --prompt-file <tmp>/prompt.md \
+  --model <model> --effort <effort> --stdout
 ```
 
 Use a retained background session for a long call. Save the wrapper exit code and final
@@ -54,9 +57,9 @@ output before status checks or cleanup. Trust exit codes: 0 success, 1 engine fa
 2 invocation error, 3 unavailable credentials. Surface the diagnostic on failure;
 credentials require user authentication.
 
-If the host sandbox blocks network or keychain access, request narrowly scoped host approval
-for the wrapper call. Keep the engine sandbox active. If credentials remain unavailable,
-ask the user to authenticate the CLI and stop.
+If the parent host blocks network or keychain access, request host approval for
+the wrapper call. If credentials remain unavailable, ask the user to authenticate
+the CLI and stop.
 
 ## Finish
 

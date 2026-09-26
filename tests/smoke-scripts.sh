@@ -796,6 +796,40 @@ assert_contains "--dangerously-skip-permissions" "$fake_claude_args" "Claude Bui
 assert_contains '"enabled":false' "$fake_claude_args" "Claude Build writer disables the Claude sandbox"
 assert_contains "only so this standalone Build worker can write repository Git metadata and launch its packaged review lanes" \
   "$fake_claude_prompt" "Claude full-access prompt preserves the task authority boundary"
+
+PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
+  PLX_CLAUDE_PROMPT_FILE="$fake_claude_prompt" \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode rw --repo "$REPO" \
+  --prompt-file "$fake_prompt" --claude-passthrough-full-access \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] &&
+   grep -qx -- '--dangerously-skip-permissions' "$fake_claude_args" &&
+   grep -Fq '"enabled":false' "$fake_claude_args" &&
+   ! grep -qxE -- '--safe-mode|--strict-mcp-config|--mcp-config|--tools|--allowedTools' "$fake_claude_args"; then
+  _pass "Claude passthrough has full host access and normal tools"
+else
+  _fail "Claude passthrough full access failed (exit $rc)"
+fi
+assert_contains "Full host access is available for this explicit Claude passthrough" \
+  "$fake_claude_prompt" "Claude passthrough keeps the user request as its authority"
+for invalid in 'codex rw' 'claude ro' 'claude rw worker'; do
+  set -- $invalid
+  invalid_engine="$1"
+  invalid_mode="$2"
+  invalid_rubric="${3:-}"
+  invalid_args=(--out "$fake_out" --log "$fake_log")
+  [ -z "$invalid_rubric" ] || invalid_args+=(--rubric "$invalid_rubric")
+  "$PLUGIN_ROOT/bin/plx-engine" --engine "$invalid_engine" --mode "$invalid_mode" --repo "$REPO" \
+    --prompt-file "$fake_prompt" --claude-passthrough-full-access \
+    "${invalid_args[@]}" >/dev/null 2>&1
+  rc=$?
+  if [ "$rc" -eq 2 ]; then
+    _pass "Claude passthrough full access rejects $invalid"
+  else
+    _fail "Claude passthrough full access accepted $invalid (exit $rc)"
+  fi
+done
 rm -f -- \
   "$REPO/ignored-guidance/AGENTS.md" \
   "$REPO/untracked-guidance/AGENTS.md" \

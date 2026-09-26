@@ -22,7 +22,8 @@
 #            disabled, with source-tree guidance listed in the prompt;
 #            ro = read-only tools, rw = sandboxed Bash without direct write
 #            tools; the standalone Build writer may explicitly disable the
-#            sandbox so it can create required local commits
+#            sandbox so it can create required local commits; the explicit
+#            Codex-hosted passthrough may request full host access
 #   gemini : auto model routing, sandbox enabled, extensions/MCP/hooks disabled;
 #            ro = read tools only, rw = auto_edit with file tools, no shell tools
 #   devin  : SWE-2 High by default, non-interactive print mode, generated
@@ -30,8 +31,8 @@
 #            documented dangerous permission mode with no OS sandbox. Devin
 #            therefore has full host access; repository-native Devin config can
 #            still load. ATIF export supplies the validated final response.
-# Full access is accepted for Devin, and for an rw worker- or build-worker-rubric
-# Codex or Claude lane.
+# Full access is accepted for Devin, an rw worker- or build-worker-rubric
+# Codex or Claude lane, and the explicit rubric-free Claude passthrough.
 # Never use Codex's approvals-and-sandbox bypass or --yolo.
 
 # --------------------------------------------------------------------------- #
@@ -56,7 +57,8 @@ Usage:
 What it does:
   One non-interactive engine turn with transport settings pinned per engine
   (see the header of this script). For codex/grok/claude, mode `ro` = the engine
-  cannot edit anything and `rw` = edits confined to --repo. Devin requires
+  cannot edit anything and `rw` = edits confined to --repo, except with an
+  explicit full-access flag. Devin requires
   `full-access`; it is unrestricted transport, not an enforced read/write
   profile. With --rubric, the named rubric from the plugin's
   prompts/ dir is injected ahead of your prompt (codex/grok: prepended to the
@@ -73,6 +75,8 @@ Flags:
   --build-writer-full-access
                         allow one rw worker/build-worker-rubric Codex/Claude lane to write
                         Git metadata; invalid for ro, Grok, or other rubrics
+  --claude-passthrough-full-access
+                        give one rubric-free rw Claude passthrough full host access
   --model <m>           codex: default gpt-6-sol · claude: default claude-opus-5-5 ·
                         grok: default grok-4.6 · devin: default swe-2-high · gemini: auto
   --effort <e>          codex: default medium · claude: default high ·
@@ -89,8 +93,8 @@ Flags:
 Caller notes:
   * Engine turns can be LONG (10-40+ min). Use a retained/background shell
     session with --out/--log rather than relying on a foreground timeout.
-  * claude/grok: the host may require narrowly scoped approval for network/keychain
-    access. The engine's own sandbox remains the confinement boundary.
+  * sandboxed claude/grok: the host may require narrowly scoped approval for
+    network/keychain access. The engine sandbox remains the confinement boundary.
   * gemini: read/file-edit tools only; no shell, MCP, hooks, or extensions.
     Gemini currently requires macOS Seatbelt. No effort flag.
   * grok only: TRUST THE EXIT CODE, not stderr — grok prints non-fatal
@@ -99,6 +103,8 @@ Caller notes:
   * --build-writer-full-access removes filesystem confinement. It changes the
     transport permission only; the accepted spec and repository rules remain
     the writer's complete authority boundary.
+  * --claude-passthrough-full-access removes Claude's sandbox and tool limits
+    for an explicit passthrough. The user's task still defines its authority.
   * Devin full-access mode likewise removes filesystem/network confinement and
     uses no OS sandbox. It does not grant publication or external-system authority.
     Repository-native Devin hooks, MCP servers, rules, and skills may still load.
@@ -133,6 +139,7 @@ OUT=""
 LOG=""
 STDOUT=0
 BUILD_WRITER_FULL_ACCESS=0
+CLAUDE_PASSTHROUGH_FULL_ACCESS=0
 TMP_DIR=""
 # SQLite trace capture (opt-in via PLX_TRACE_DB). Armed just before dispatch.
 EVAL_ARMED=0
@@ -198,6 +205,7 @@ while [[ $# -gt 0 ]]; do
     --log) need_value "$1" "${2:-}"; LOG="$2"; shift 2 ;;
     --stdout) STDOUT=1; shift ;;
     --build-writer-full-access) BUILD_WRITER_FULL_ACCESS=1; shift ;;
+    --claude-passthrough-full-access) CLAUDE_PASSTHROUGH_FULL_ACCESS=1; shift ;;
     --print-rubric)
       need_value "$1" "${2:-}"
       RF="$PROMPTS_DIR/$2.md"
@@ -237,6 +245,12 @@ if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
   }
   [[ "$ENGINE" == "codex" || "$ENGINE" == "claude" ]] || {
     echo "--build-writer-full-access supports only codex or claude" >&2
+    exit 2
+  }
+fi
+if [[ "$CLAUDE_PASSTHROUGH_FULL_ACCESS" -eq 1 ]]; then
+  [[ "$ENGINE" == "claude" && "$MODE" == "rw" && -z "$RUBRIC" && "$BUILD_WRITER_FULL_ACCESS" -eq 0 ]] || {
+    echo "--claude-passthrough-full-access requires rubric-free Claude --mode rw" >&2
     exit 2
   }
 fi
@@ -338,7 +352,7 @@ run_claude() {
   local -a flags guidance_paths
   local claude_prompt claude_settings path
   claude_prompt="$TMP_DIR/claude-prompt.md"
-  if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
+  if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 || "$CLAUDE_PASSTHROUGH_FULL_ACCESS" -eq 1 ]]; then
     claude_settings='{"sandbox":{"enabled":false}}'
   else
     claude_settings='{"sandbox":{"enabled":true,"failIfUnavailable":true,"autoAllowBashIfSandboxed":true,"allowUnsandboxedCommands":false,"network":{"allowedDomains":[],"strictAllowlist":true}}}'
@@ -346,26 +360,32 @@ run_claude() {
   flags=(
     --model "$MODEL"
     --effort "$EFFORT"
-    --safe-mode
     --no-session-persistence
-    --strict-mcp-config
-    --mcp-config '{"mcpServers":{}}'
     --settings "$claude_settings"
   )
+  if [[ "$CLAUDE_PASSTHROUGH_FULL_ACCESS" -eq 1 ]]; then
+    flags+=(--dangerously-skip-permissions)
+  else
+    flags+=(--safe-mode --strict-mcp-config --mcp-config '{"mcpServers":{}}')
+  fi
   if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
     flags+=(--dangerously-skip-permissions --tools "Read,Grep,Glob,Bash" --allowedTools "Read,Grep,Glob,Bash")
-  elif [[ "$MODE" == "ro" ]]; then
-    flags+=(--permission-mode dontAsk --tools "Read,Grep,Glob" --allowedTools "Read,Grep,Glob")
-  else
-    flags+=(--permission-mode acceptEdits --tools "Read,Grep,Glob,Bash" --allowedTools "Read,Grep,Glob,Bash")
+  elif [[ "$CLAUDE_PASSTHROUGH_FULL_ACCESS" -eq 0 ]]; then
+    if [[ "$MODE" == "ro" ]]; then
+      flags+=(--permission-mode dontAsk --tools "Read,Grep,Glob" --allowedTools "Read,Grep,Glob")
+    else
+      flags+=(--permission-mode acceptEdits --tools "Read,Grep,Glob,Bash" --allowedTools "Read,Grep,Glob,Bash")
+    fi
   fi
   [[ -n "$RUBRIC_FILE" ]] && flags+=(--append-system-prompt-file "$RUBRIC_FILE")
 
   cat "$EXEC_PROMPT" > "$claude_prompt"
   printf '\n\n## Parallax runtime boundary\n' >> "$claude_prompt"
-  printf '%s\n' \
-    'Safe mode disables automatic project customization. Before inspecting or changing a path, read the listed guidance that governs it. Root files apply repo-wide; nested files and .claude/rules apply only to their subtree or declared paths.' \
-    >> "$claude_prompt"
+  if [[ "$CLAUDE_PASSTHROUGH_FULL_ACCESS" -eq 0 ]]; then
+    printf '%s\n' \
+      'Safe mode disables automatic project customization. Before inspecting or changing a path, read the listed guidance that governs it. Root files apply repo-wide; nested files and .claude/rules apply only to their subtree or declared paths.' \
+      >> "$claude_prompt"
+  fi
   guidance_paths=()
   while IFS= read -r path; do
     [[ -f "$path" ]] || continue
@@ -389,6 +409,10 @@ run_claude() {
   if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
     printf '%s\n' \
       'Full host access is enabled only so this standalone Build worker can write repository Git metadata and launch its packaged review lanes. It does not expand task authority: work only inside this repository, follow the accepted spec and repository guidance, and do not publish or mutate external systems unless the spec explicitly authorizes the exact action and target. Direct Edit and Write tools are unavailable.' \
+      >> "$claude_prompt"
+  elif [[ "$CLAUDE_PASSTHROUGH_FULL_ACCESS" -eq 1 ]]; then
+    printf '%s\n' \
+      'Full host access is available for this explicit Claude passthrough. Use it only as needed for the user request. Follow repository guidance. Do not publish or change remote systems unless the request authorizes the action and target.' \
       >> "$claude_prompt"
   elif [[ "$MODE" == "rw" ]]; then
     printf '%s\n' \

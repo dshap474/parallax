@@ -59,9 +59,10 @@ no task or pipeline.
 ## Explicit model choices
 
 Parallax defaults to `claude-opus-5-5` for Claude lanes and `gpt-6-sol` for Codex
-lanes.
+pipeline lanes. The Claude-hosted `/plx:codex` passthrough defaults to `gpt-6.1-sol`
+at medium effort.
 For example, use `$plx:claude use claude-opus-5-5 at medium for <task>` in Codex,
-or `/plx:codex use gpt-6-sol at high for <task>` in Claude Code. Ask for
+or `/plx:codex use gpt-6.1-sol at high for <task>` in Claude Code. Ask for
 `gpt-6-luna` on a focused Codex task. Parallax rejects retired Opus 5 and GPT-5.6
 Sol/Luna IDs, including the unpinned `opus` and `gpt-5.6` aliases. The selected CLI
 must have access to the requested model. See the

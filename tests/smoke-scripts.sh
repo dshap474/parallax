@@ -695,7 +695,7 @@ if [ "${PLX_PACKAGE:-claude}" = "claude" ]; then
   if [ "$rc" -eq 0 ]; then _pass "persistent start exits 0"; else _fail "persistent start exits $rc"; fi
   assert_contains "--persistent" "$cxa_args" "start requests a persistent thread"
   assert_contains "inspect" "$cxa_args" "ro maps to inspect"
-  assert_contains "gpt-6-sol" "$cxa_args" "persistent Codex model defaults to GPT-6 Sol"
+  assert_contains "gpt-6.1-sol" "$cxa_args" "persistent Codex model defaults to GPT-6.1 Sol"
   assert_contains "medium" "$cxa_args" "persistent Codex effort defaults to medium"
   assert_contains "$PLUGIN_ROOT/bin/../tools/codex-app-client" "$cxa_args" "uses the packaged app client"
   assert_contains "$WORK/cache/parallax/codex-app-client" "$cxa_env" "uv environment stays outside the plugin"

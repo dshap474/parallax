@@ -169,6 +169,12 @@ if grep -Fq 'Defaults: `model=claude-opus-5-5`, `effort=medium`.' \
 else
   _fail "Codex-hosted Claude passthrough default effort drift"
 fi
+if grep -Fq 'Defaults: `model=gpt-6.1-sol`, `effort=medium`.' \
+     "$PLX_CLAUDE/skills/codex/SKILL.md"; then
+  _pass "Claude-hosted Codex passthrough defaults GPT-6.1 Sol effort to medium"
+else
+  _fail "Claude-hosted Codex passthrough default drift"
+fi
 
 claude_host_boundary_ok=1
 for skill in plan review simplify; do

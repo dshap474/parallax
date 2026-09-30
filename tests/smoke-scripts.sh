@@ -775,6 +775,9 @@ printf '%s\n' '#!/usr/bin/env bash' \
   'printf '\''%s\n'\'' "$@" > "$PLX_CLAUDE_ARGS_FILE"' \
   'cat > "$PLX_CLAUDE_PROMPT_FILE"' \
   'printf '\''OK\n'\''' \
+  'if [ -n "${PLX_FAKE_CLAUDE_STAGING:-}" ]; then mkdir -p .claude/.cc-writes; fi' \
+  'if [ "${PLX_FAKE_CLAUDE_STAGING:-}" = nonempty ]; then printf '\''keep\n'\'' > .claude/.cc-writes/keep; fi' \
+  'exit "${PLX_FAKE_CLAUDE_EXIT:-0}"' \
   > "$fake_bin/claude"
 chmod +x "$fake_bin/claude"
 
@@ -871,6 +874,34 @@ else
 fi
 assert_contains "Full host access is available for this explicit Claude passthrough" \
   "$fake_claude_prompt" "Claude passthrough keeps the user request as its authority"
+
+for fake_exit in 0 1; do
+  PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
+    PLX_CLAUDE_PROMPT_FILE="$fake_claude_prompt" PLX_FAKE_CLAUDE_STAGING=empty \
+    PLX_FAKE_CLAUDE_EXIT="$fake_exit" \
+    "$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode rw --repo "$REPO" \
+    --prompt-file "$fake_prompt" --claude-passthrough-full-access \
+    --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+  rc=$?
+  if [ "$rc" -eq "$fake_exit" ] && [ ! -e "$REPO/.claude/.cc-writes" ] &&
+     [ -f "$REPO/.claude/rules/review.md" ]; then
+    _pass "Claude exit $fake_exit removes only empty write staging"
+  else
+    _fail "Claude exit $fake_exit did not safely clean empty write staging (exit $rc)"
+  fi
+done
+
+PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
+  PLX_CLAUDE_PROMPT_FILE="$fake_claude_prompt" PLX_FAKE_CLAUDE_STAGING=nonempty \
+  "$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode rw --repo "$REPO" \
+  --prompt-file "$fake_prompt" --claude-passthrough-full-access \
+  --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 0 ] && [ -f "$REPO/.claude/.cc-writes/keep" ]; then
+  _pass "Claude preserves nonempty write staging"
+else
+  _fail "Claude removed nonempty write staging (exit $rc)"
+fi
 for invalid in 'codex rw' 'claude ro' 'claude rw worker'; do
   set -- $invalid
   invalid_engine="$1"

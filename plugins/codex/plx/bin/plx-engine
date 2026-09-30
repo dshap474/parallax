@@ -367,7 +367,7 @@ run_codex() {
 
 run_claude() {
   local -a flags guidance_paths
-  local claude_prompt claude_settings path
+  local claude_prompt claude_settings path claude_rc=0
   claude_prompt="$TMP_DIR/claude-prompt.md"
   if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 || "$CLAUDE_PASSTHROUGH_FULL_ACCESS" -eq 1 ]]; then
     claude_settings='{"sandbox":{"enabled":false}}'
@@ -452,7 +452,12 @@ run_claude() {
     EVAL_PROMPT_FILE="$claude_prompt"
   fi
 
-  if ! (cd "$REPO" && claude -p "${flags[@]}" < "$claude_prompt" > "$OUT" 2> "$LOG"); then
+  (cd "$REPO" && claude -p "${flags[@]}" < "$claude_prompt" > "$OUT" 2> "$LOG") || claude_rc=$?
+  # Claude Code can leave an empty write-staging directory in the checkout.
+  if [[ ! -L "$REPO/.claude" ]] && rmdir "$REPO/.claude/.cc-writes" 2>/dev/null; then
+    rmdir "$REPO/.claude" 2>/dev/null || true
+  fi
+  if [[ "$claude_rc" -ne 0 ]]; then
     if grep -qiE "not logged in|please run /login" "$OUT" "$LOG"; then
       echo "plx-engine: Claude credentials unavailable — if Claude works in a local terminal, retry this wrapper with narrowly scoped host approval; otherwise run \`claude /login\`." >&2
       exit 3

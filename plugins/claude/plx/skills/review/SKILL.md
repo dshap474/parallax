@@ -24,9 +24,11 @@ Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-review.XXXXXX"`. Write the r
 and scope to `<tmp>/task.md`; keep every lane prompt directly in `<tmp>`.
 
 Run exactly three core roles: `reviewer-correctness`, `reviewer-cleanup`, and
-`reviewer-structural`. Default all three to Grok `grok-4.5` at `medium`. Honor an
-explicit whole-round engine override, such as `with all Grok lanes`, `with all Claude
-lanes`, or `with all Codex lanes`. Claude defaults to `high`, Codex to `xhigh`.
+`reviewer-structural`. Default all three to Codex `gpt-6.1-sol` at `medium`, matching
+`/plx:codex`. Honor an explicit whole-round engine override, such as `with all Grok lanes`, `with all Claude
+lanes`, or `with all Codex lanes`. For engine-only overrides, Claude defaults to
+`claude-opus-5-5` at `medium`, Codex to `gpt-6.1-sol` at `medium`, and Grok to
+`grok-4.6` at `medium`.
 Apply model/effort overrides to the whole round.
 Do not use mixed per-role routing or YAML bindings. Dev invokes this same Review skill.
 

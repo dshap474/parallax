@@ -19,7 +19,7 @@ confirmed fixes, and performs the final gate. Each headless lane is one isolated
 
 Plan uses Astra as author and Fable 5.1 as its single reviewer in Codex. In Claude Code,
 Fable 5.1 authors and Astra reviews. Build uses one same-host worker: GPT-6 Sol High in
-Codex or Opus 5.5 Medium in Claude Code. Review runs Grok 4.5 Medium correctness,
+Codex or Opus 5.5 Medium in Claude Code. Review runs opposite-engine Medium correctness,
 cleanup, and structural lanes in parallel, adding security when triggered. Dev calls
 Plan, Build, and Review in sequence using those defaults.
 
@@ -54,13 +54,13 @@ Plan and Review lanes are read-only. Build uses one worker and has no fallback w
 Review fixes confirmed findings after its lanes return. Behavior-changing or ambiguous
 findings go back to the user.
 
-Simplify runs four independent Grok 4.6 Medium dimensions: reuse, simplification,
+Simplify runs four independent opposite-engine Medium dimensions: reuse, simplification,
 efficiency, and altitude. The host validates their findings and applies the smallest safe changes.
 It complements rather than replaces correctness review.
 
 ## Runtime and safety
 
-Pipeline lanes and default passthroughs use `plx-engine`. It pins:
+Pipeline lanes and passthroughs use `plx-engine`. Its generic engine defaults pin:
 
 - Codex: `gpt-6-sol`, user config ignored, approval policy `never`, ephemeral session,
   and an explicit filesystem sandbox;
@@ -71,7 +71,7 @@ Pipeline lanes and default passthroughs use `plx-engine`. It pins:
 - Devin: `swe-2-high`, one-shot print mode, generated config with supported imports,
   updates, and subagents disabled, dangerous permission mode, and no OS sandbox.
 
-These models are defaults. Explicit user-requested model and effort values pass through
+Skills pass their own model defaults to the wrapper. Explicit user-requested model and effort values pass through
 to the selected engine except that `grok-4.6` is always normalized to medium reasoning
 and retired Opus 5 and GPT-5.6 Sol/Luna IDs and aliases are rejected. The selected
 engine remains responsible for validating other values.

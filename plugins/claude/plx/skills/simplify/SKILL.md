@@ -45,10 +45,11 @@ correctness, security, validation, data safety, accessibility, error handling, o
 | `simplify-efficiency` | `simplify-efficiency` |
 | `simplify-altitude` | `simplify-altitude` |
 
-The default is four `grok-4.6` lanes at `medium`. `with all Codex|Claude|Grok lanes`
-replaces the engine for all four. Honor an explicit model or effort, except that
-`grok-4.6` always uses `medium`; otherwise use Grok `medium`, Claude `high`, or Codex
-`xhigh`. Preflight each selected engine once. Write the chosen
+The default is four Codex `gpt-6.1-sol` lanes at `medium`, matching `/plx:codex`.
+`with all Codex|Claude|Grok lanes` replaces the engine for all four. Honor an
+explicit model or effort, except that `grok-4.6` always uses `medium`. For engine-only
+overrides, use Codex `gpt-6.1-sol` at `medium`, Claude `claude-opus-5-5` at `medium`,
+or Grok `grok-4.6` at `medium`. Preflight each selected engine once. Write the chosen
 shape to `<tmp>/shape.txt` before launch.
 
 Write one neutral `<tmp>/brief.md` beginning with `## Simplify brief`, containing the

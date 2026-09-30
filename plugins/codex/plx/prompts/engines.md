@@ -58,7 +58,8 @@ IDs are rejected. The unpinned `opus` and `gpt-5.6` aliases are also rejected.
 Follow the selected skill on failure; do not silently substitute another model.
 
 Current explicit model choices include Claude `claude-opus-5-5` for long-running
-coding and knowledge work, Codex `gpt-6-sol` for complex coding, and Codex
+coding and knowledge work, Codex `gpt-6.1-sol` for opposite-engine review and
+simplification in Claude Code, Codex `gpt-6-sol` for Build, and Codex
 `gpt-6-luna` for focused tasks. Pass these exact IDs with `--model`; provider and
 account availability still determine whether a call succeeds. See the
 [Claude model list](https://platform.claude.com/docs/en/models/overview) and
@@ -67,8 +68,10 @@ account availability still determine whether a call succeeds. See the
 - Add the security lane when requested or when changes touch auth, permissions, secrets,
   shell/subprocess execution, sandboxing, network clients, dependencies, CI,
   deserialization, or another trust boundary. Otherwise report `Security: not run`.
-- Simplify always runs reuse, simplification, efficiency, and altitude on Grok 4.6 Medium,
-  unless the current request replaces the whole round with one engine.
+- Review and Simplify default to the host's opposite-engine passthrough model at medium:
+  Codex `gpt-6.1-sol` in Claude Code, Claude `claude-opus-5-5` in Codex. Simplify runs
+  reuse, simplification, efficiency, and altitude unless the current request replaces
+  the whole round with one engine.
 - Web research and documentation lookup use read-only GPT-6 Luna Max (`gpt-6-luna`,
   `max`) in Codex, or Sonnet Low (`sonnet`, `low`) in Claude Code.
 - Apply confirmed, small review fixes in the host after all lanes return. A build-sized or

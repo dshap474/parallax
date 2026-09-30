@@ -26,7 +26,7 @@ disabled. Claude skills use `/plx:*` namespaced commands and explicit-only front
 not mean identical prose: preserve host-native tools and Plan review polarity.
 Plan, Build, and Review define their model defaults in their skills; Dev calls those
 skills in sequence. Config supplies only Simplify's engine bindings. Review defines
-Grok defaults and whole-round overrides in its skill.
+opposite-engine defaults and whole-round overrides in its skill.
 
 Keep pipeline full access confined to the single standalone Build worker. Codex
 `danger-full-access` and Claude's sandbox-disabled permission bypass are transport

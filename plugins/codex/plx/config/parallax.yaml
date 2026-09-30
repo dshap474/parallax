@@ -2,7 +2,7 @@
 # Dev calls those skills sequentially.
 pipelines:
   simplify:
-    simplify-reuse: [grok]
-    simplify-simplification: [grok]
-    simplify-efficiency: [grok]
-    simplify-altitude: [grok]
+    simplify-reuse: [claude]
+    simplify-simplification: [claude]
+    simplify-efficiency: [claude]
+    simplify-altitude: [claude]

@@ -41,10 +41,10 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 - Codex-host Plan: GPT-6 Astra authors and one Fable 5.1 lane reviews.
 - Build: one GPT-6 Sol High worker in Codex or Opus 5.5 Medium worker in Claude Code
   implements and verifies the accepted spec.
-- Review: three Grok 4.5 Medium lanes run in parallel, with a security lane when
+- Review: three opposite-engine Medium lanes run in parallel, with a security lane when
   triggered. The host verifies findings and applies confirmed fixes.
 - Dev: Plan, Build, then Review run sequentially with those skill defaults.
-- Simplify runs four read-only Grok 4.6 Medium dimensions over a plan or code. An explicit
+- Simplify runs four read-only opposite-engine Medium dimensions over a plan or code. An explicit
   whole-round engine request replaces all four. The host applies only confirmed safe
   improvements.
 - KISS is an explicit-only skill that loads the user-authored principles in its body into

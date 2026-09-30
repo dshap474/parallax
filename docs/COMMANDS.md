@@ -6,8 +6,8 @@ Both packages expose the same core capabilities with platform-native invocation 
 | --- | --- | --- | --- |
 | Plan | `/plx:plan` | `$plx:plan` | Host authors; one opposite-host reviewer checks the plan; no code |
 | Build | `/plx:build` | `$plx:build` | One GPT-6 Sol High worker in Codex or Opus 5.5 Medium worker in Claude Code implements and verifies an accepted spec |
-| Review | `/plx:review` | `$plx:review` | Three Grok 4.5 Medium review lanes by default, synthesis, and one host-applied fix round |
-| Simplify | `/plx:simplify` | `$plx:simplify` | Four Grok 4.6 Medium lanes simplify a plan or code; the host applies safe improvements |
+| Review | `/plx:review` | `$plx:review` | Three opposite-engine Medium review lanes by default, synthesis, and one host-applied fix round |
+| Simplify | `/plx:simplify` | `$plx:simplify` | Four opposite-engine Medium lanes simplify a plan or code; the host applies safe improvements |
 | KISS | `/plx:kiss` | `$plx:kiss` | Load the user-authored KISS principles into the current context |
 | Orchestrate | `/plx:orchestrate` | `$plx:orchestrate` | Set a planner and worker-delegation posture without starting work |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
@@ -39,16 +39,18 @@ Pipeline lanes keep their own restrictions.
 Plan, Build, and Review own their model defaults in their skills. Dev calls them
 sequentially. Simplify alone reads engine bindings from `config/parallax.yaml`.
 Review runs its core lanes in parallel and accepts an explicit whole-round engine
-override.
+override. Claude Code defaults to Codex `gpt-6.1-sol` Medium; Codex defaults to
+Claude `claude-opus-5-5` Medium for both Review and Simplify.
 
 Standalone Build always uses one fresh same-host worker for implementation and
 verification: Claude Opus 5.5 Medium or Codex `gpt-6-sol` High, with no fallback or
-second writer. Simplify
-always runs reuse, simplification, efficiency, and altitude once each on Grok 4.6 Medium. A
+second writer. Simplify always runs reuse, simplification, efficiency, and altitude
+once each. A
 current-message instruction may replace the engine for the whole round.
 KISS is a context-only principles skill and launches no engine lanes.
 Orchestrate is also context-only. When invoked, it guides the host to plan and use
-native subagents for execution; it does not launch workers itself or change pipeline routing.
+Opus 5.5 Medium subagents in Claude Code or GPT-6.1 Sol Medium subagents in Codex;
+it does not launch workers itself or change pipeline routing.
 Standalone Build may create local commits when its accepted spec or the target
 repository's instructions explicitly require or authorize them. It stages only
 Build-owned work and reports every commit. Other skills retain their documented Git

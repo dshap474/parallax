@@ -1,5 +1,6 @@
 # Remove needless materialization while preserving iterable and numeric semantics.
-NEEDS: grok
+NEEDS: codex
+NEEDS_CODEX: claude
 FIXTURE: redundant
 TASK: Simplify total_squares in calc.py by removing unnecessary intermediate collections. Keep support for any finite iterable, including generators, and preserve empty, negative, and fractional input behavior. Scope is calc.py only. Do not commit.
 EXPECT_DIFF: ^-

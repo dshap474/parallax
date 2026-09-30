@@ -4,12 +4,12 @@ Parallax orchestrates local engine CLIs; it does not host or proxy models.
 
 | Host package | Required host | Required pipeline engines | Optional |
 | --- | --- | --- | --- |
-| Claude Code | authenticated `claude` | authenticated `codex` and `grok` | `devin` |
-| Codex | authenticated `codex` | authenticated `claude` and `grok` | `devin` |
+| Claude Code | authenticated `claude` | authenticated `codex` | `grok`, `devin` |
+| Codex | authenticated `codex` | authenticated `claude` | `grok`, `devin` |
 
-The Codex CLI and Claude Code CLI must be available on `PATH`. Review uses Grok 4.5;
-Simplify and the Grok passthrough use Grok 4.6. Grok requires a current CLI and
-`grok login` or `XAI_API_KEY`.
+The Codex CLI and Claude Code CLI must be available on `PATH`. Review and Simplify
+use the opposite engine by default. Grok overrides and the Grok passthrough use
+Grok 4.6 and require a current CLI and `grok login` or `XAI_API_KEY`.
 `/plx:devin` and `$plx:devin` additionally require the Devin CLI and
 `devin auth login`; Devin is not required by existing pipelines or preflight checks.
 

@@ -206,9 +206,9 @@ fi
 
 simplify_defaults_ok=1
 for role in reuse simplification efficiency altitude; do
-  grep -qx "    simplify-$role: \[grok\]" "$PLX_CODEX/config/parallax.yaml" ||
+  grep -qx "    simplify-$role: \[claude\]" "$PLX_CODEX/config/parallax.yaml" ||
     simplify_defaults_ok=0
-  grep -qx "    simplify-$role: \[grok\]" "$PLX_CLAUDE/config/parallax.yaml" ||
+  grep -qx "    simplify-$role: \[codex\]" "$PLX_CLAUDE/config/parallax.yaml" ||
     simplify_defaults_ok=0
 done
 
@@ -220,9 +220,15 @@ else
 fi
 
 simplify_contract_ok=1
-for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
+for package_host in "$PLX_CLAUDE:Codex:gpt-6.1-sol:/plx:codex" "$PLX_CODEX:Claude:claude-opus-5-5:\$plx:claude"; do
+  package="${package_host%%:*}"
+  settings="${package_host#*:}"
+  engine="${settings%%:*}"
+  settings="${settings#*:}"
+  model="${settings%%:*}"
+  passthrough="${settings#*:}"
   skill="$package/skills/simplify/SKILL.md"
-  grep -Fq 'default is four `grok-4.6` lanes at `medium`' "$skill" || simplify_contract_ok=0
+  grep -Fq "default is four $engine \`$model\` lanes at \`medium\`, matching \`$passthrough\`" "$skill" || simplify_contract_ok=0
   grep -Fq 'Run exactly these read-only roles' "$skill" || simplify_contract_ok=0
   grep -Fq 'Do not create repository runtime state' "$skill" || simplify_contract_ok=0
   grep -Fq -- '--model <model>' "$skill" || simplify_contract_ok=0
@@ -232,7 +238,7 @@ for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   done
 done
 if [ "$simplify_contract_ok" -eq 1 ]; then
-  _pass "Simplify keeps four Grok 4.6 Medium dimensions and host synthesis"
+  _pass "Simplify keeps four opposite-engine Medium dimensions and host synthesis"
 else
   _fail "Simplify fixed-shape contract drift"
 fi
@@ -259,6 +265,12 @@ if grep -Eq 'plx-engine|plx-eval|--mode (ro|rw)' \
 else
   _pass "Orchestrate is context-only"
 fi
+if grep -Fq 'scoped `gpt-6.1-sol` subagents at medium reasoning' \
+     "$PLX_CODEX/skills/orchestrate/SKILL.md"; then
+  _pass "Codex Orchestrate workers default to GPT-6.1 Sol Medium"
+else
+  _fail "Codex Orchestrate worker default drift"
+fi
 
 if grep -qE 'Codex review lanes|Standalone Codex plan critics|implementation critic \(codex' \
   "$PLX_ROOT/shared/prompts/engines.md"; then
@@ -269,14 +281,22 @@ fi
 
 # Check launch contracts and cross-host copies; prose wording is not a runtime API.
 review_contract_ok=1
-for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
+for package_host in "$PLX_CLAUDE:Codex:gpt-6.1-sol:/plx:codex" "$PLX_CODEX:Claude:claude-opus-5-5:\$plx:claude"; do
+  package="${package_host%%:*}"
+  settings="${package_host#*:}"
+  engine="${settings%%:*}"
+  settings="${settings#*:}"
+  model="${settings%%:*}"
+  passthrough="${settings#*:}"
   skill="$package/skills/review/SKILL.md"
   for role in correctness cleanup structural security; do
     grep -Fq "reviewer-$role" "$skill" || review_contract_ok=0
   done
-  for token in '--mode ro' '--model <model> --effort <effort>' 'grok-4.5' 'medium'; do
+  for token in '--mode ro' '--model <model> --effort <effort>'; do
     grep -Fq -- "$token" "$skill" || review_contract_ok=0
   done
+  grep -Fq "Default all three to $engine \`$model\` at \`medium\`, matching" "$skill" || review_contract_ok=0
+  grep -Fq "\`$passthrough\`" "$skill" || review_contract_ok=0
 done
 if [ "$review_contract_ok" -eq 1 ]; then
   _pass "standalone review supplies core and security roles with explicit read-only launch settings"
@@ -383,6 +403,9 @@ for name in ("build", "dev", "plan", "review", "unknown-unknowns"):
                 body = body.replace(f"--engine {opposite}", "--engine OPPOSITE").replace(f"--require-{opposite}", "--require-OPPOSITE")
             if name == "dev":
                 body = body.replace("`high`", "`REVIEW_EFFORT`") if host == "codex" else body.replace("`xhigh`", "`REVIEW_EFFORT`")
+            if name == "review":
+                body = body.replace("Codex `gpt-6.1-sol`", "OPPOSITE `MODEL`") if host == "claude" else body.replace("Claude `claude-opus-5-5`", "OPPOSITE `MODEL`", 1)
+                body = body.replace("`/plx:codex`", "`OPPOSITE_PASSTHROUGH`").replace("`/plx:claude`", "`OPPOSITE_PASSTHROUGH`")
         bodies.append(" ".join(body.split()))
     if bodies[0] != bodies[1]:
         errors.append(f"{name}: host-normalized workflow bodies differ")

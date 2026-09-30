@@ -49,18 +49,21 @@ Start a new Codex session, then use `$plx:dev`.
 Plan is authored by Astra in Codex or Fable 5.1 in Claude Code, then reviewed by
 one opposite-host model: Fable 5.1 or Astra respectively. Build uses one GPT-6 Sol
 High worker in Codex or Opus 5.5 Medium worker in Claude Code to implement and verify.
-Review runs correctness, cleanup, and structural lanes in parallel with Grok 4.5 Medium,
-adding security when triggered; the host verifies findings and applies targeted fixes.
+Review runs correctness, cleanup, and structural lanes in parallel with the opposite
+engine passthrough default: GPT-6.1 Sol Medium in Claude Code or Opus 5.5 Medium in
+Codex. It adds security when triggered; the host verifies findings and applies fixes.
 Dev calls Plan, then Build, then Review sequentially, using those skills' defaults.
-`simplify` retains four Grok 4.6 Medium lanes; `kiss` loads KISS principles into context.
-`orchestrate` loads a context-only planner posture with native subagent workers; it starts
-no task or pipeline.
+`simplify` runs four dimensions with the same opposite-engine default; `kiss` loads
+KISS principles into context.
+`orchestrate` loads a context-only planner posture with native subagent workers: Opus
+5.5 Medium in Claude Code or GPT-6.1 Sol Medium in Codex. It starts no task or pipeline.
 
 ## Explicit model choices
 
-Parallax defaults to `claude-opus-5-5` for Claude lanes and `gpt-6-sol` for Codex
-pipeline lanes. The Claude-hosted `/plx:codex` passthrough defaults to `gpt-6.1-sol`
-at medium effort.
+Parallax's Claude-hosted `/plx:codex` passthrough defaults to `gpt-6.1-sol` at medium
+effort; Codex-hosted `$plx:claude` defaults to `claude-opus-5-5` at medium. Review and
+Simplify use those respective opposite-engine defaults. Build retains its own worker
+defaults: Opus 5.5 Medium in Claude Code or GPT-6 Sol High in Codex.
 For example, use `$plx:claude use claude-opus-5-5 at medium for <task>` in Codex,
 or `/plx:codex use gpt-6.1-sol at high for <task>` in Claude Code. Ask for
 `gpt-6-luna` on a focused Codex task. Parallax rejects retired Opus 5 and GPT-5.6

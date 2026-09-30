@@ -12,7 +12,7 @@ flowchart TD
     P --> CR[One opposite-host plan review]
     CR --> B[One same-host Build worker]
     B --> V[Worker implements and verifies]
-    V --> R[Parallel Grok 4.5 Medium review lanes]
+    V --> R[Parallel opposite-engine Medium review lanes]
     R --> S[Host verifies findings and fixes confirmed issues]
 
     SB[(shared/bin + shared/prompts)] -. synchronized copies .-> C

@@ -50,10 +50,9 @@ PLX_PACKAGE=codex bash tests/smoke/run-smoke.sh --dry-run --skills
 PLX_PACKAGE=codex bash tests/smoke/run-smoke.sh --skill init # real Codex host
 ```
 
-`--with-grok` adds the L1 Grok probes and the Grok passthrough scenario only. The Build,
-Review, Simplify, and Dev scenarios require Grok; they skip when its authentication is
-unavailable, regardless of this flag. The Dev scenario covers its preferred writer;
-it does not exercise the Codex fallback.
+`--with-grok` adds the L1 Grok probes and the Grok passthrough scenario only. Review
+and Simplify require the opposite engine, and Dev requires both hosts; they skip when
+the required authentication is unavailable. Build requires its same-host worker.
 
 Engines that aren't installed/authed are **skipped** (via `plx-preflight`), never failed.
 Even a bare run spends model tokens for L1; use `--dry-run` for a model-free preview.
@@ -65,7 +64,7 @@ engine turns) — run it from a terminal, or via background Bash from an agent s
 | Skill | Tiny task | Passes when |
 |---|---|---|
 | `plan` | plan a `median()` addition | exit 0 · **no edits** · the delivered plan mentions `median` |
-| `build` | implement and locally commit an accepted `average([])` spec | exit 0 · calc.py changes · commit contains only calc.py · transcript contains the writer and three Grok review artifact names · final functional check passes |
+| `build` | implement and locally commit an accepted `average([])` spec | exit 0 · calc.py changes · commit contains only calc.py · final functional check passes |
 | `dev` | add `median()` to calc.py + a test | exit 0 · diff has `def median` · functional check green · transcript shows a review round |
 | `review` | review the buggy calc.py | exit 0 · a finding names the empty-list / `ZeroDivisionError` bug · **the fix is applied** (`average([]) == 0.0`) |
 | `codex` | guard `average([])` | exit 0 · calc.py edited · `average([]) == 0.0` |

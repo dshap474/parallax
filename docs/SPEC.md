@@ -1,6 +1,6 @@
 # Parallax package specification
 
-Status: v0.5.34
+Status: v0.5.35
 
 ## Required tree
 
@@ -15,7 +15,7 @@ shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
 
-Both manifests use plugin name `plx` and version `0.5.34`. Both marketplaces use
+Both manifests use plugin name `plx` and version `0.5.35`. Both marketplaces use
 `parallax-marketplace` and point to their platform package. Each package contains thirteen
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
@@ -116,7 +116,8 @@ shape, the context-only skill contracts, Plan/Build/Review routing and security 
 executable wrappers,
 rubric resolution, shared-copy agreement, fake-engine safety flags and current result
 envelopes, cleanup confinement, optional eval recorder contracts, and isolated
-`plx-link-claude` behavior. Official Claude and Codex validators must also pass.
+`plx-link-claude` behavior. The official Claude validator and an isolated Codex CLI
+install with exact source/cache comparison must also pass.
 
 ## Gemini engine
 

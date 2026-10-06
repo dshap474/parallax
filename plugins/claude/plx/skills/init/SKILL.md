@@ -21,6 +21,9 @@ it does not run commands, launch workers, record a run, or change files.
 | `/plx:kiss` | Loads KISS principles into context. |
 | `/plx:orchestrate` | Loads a planner posture that delegates coding to native workers. |
 | `/plx:unknown-unknowns` | Explores blind spots with the host. |
+| `/plx:fanout-and-synthesize` | Host-led Sonnet High lanes by lens or shard, then one synthesis. |
+| `/plx:adversarial-verification` | Sonnet High verifiers try to refute claims; the host keeps survivors. |
+| `/plx:generate-and-filter` | Sonnet High lanes generate ideas and judge finalists pairwise; the host recommends one. |
 | `/plx:codex`, `/plx:grok`, `/plx:gemini`, `/plx:devin` | Direct requests to another engine. |
 
 For web research and documentation lookup, use Sonnet at low reasoning (`sonnet`, `low`) in a read-only lane.

@@ -45,6 +45,9 @@ Start a new Codex session, then use `$plx:dev`.
 | Devin passthrough | `/plx:devin` | `$plx:devin` |
 | Session primer | `/plx:init` | `$plx:init` |
 | Blindspot work | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` |
+| Fanout and synthesize | `/plx:fanout-and-synthesize` | `$plx:fanout-and-synthesize` |
+| Adversarial verification | `/plx:adversarial-verification` | `$plx:adversarial-verification` |
+| Generate and filter | `/plx:generate-and-filter` | `$plx:generate-and-filter` |
 
 Plan is authored by Astra in Codex or Fable 5.1 in Claude Code, then reviewed by
 one opposite-host model: Fable 5.1 or Astra respectively. Build uses one GPT-6 Sol

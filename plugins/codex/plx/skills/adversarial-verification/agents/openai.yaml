@@ -1,0 +1,6 @@
+interface:
+  display_name: "PLX::AdversarialVerification"
+  short_description: "Have independent verifiers try to refute a claim or output"
+  default_prompt: "Use $plx:adversarial-verification to work through this task."
+policy:
+  allow_implicit_invocation: false

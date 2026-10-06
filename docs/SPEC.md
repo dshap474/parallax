@@ -16,7 +16,7 @@ scripts/sync-shared.sh
 ```
 
 Both manifests use plugin name `plx` and version `0.5.35`. Both marketplaces use
-`parallax-marketplace` and point to their platform package. Each package contains thirteen
+`parallax-marketplace` and point to their platform package. Each package contains sixteen
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
 ## Package contracts
@@ -111,7 +111,7 @@ state.
 ## Acceptance
 
 `bash tests/run.sh` must validate both manifests and marketplaces, version agreement,
-thirteen-skill inventories, explicit-only platform metadata, engine polarity, Simplify
+sixteen-skill inventories, explicit-only platform metadata, engine polarity, Simplify
 shape, the context-only skill contracts, Plan/Build/Review routing and security triggers,
 executable wrappers,
 rubric resolution, shared-copy agreement, fake-engine safety flags and current result

@@ -41,11 +41,11 @@ fi
 # Skill surfaces and polarity
 # --------------------------------------------------------------------------- #
 
-_head "Thirteen host-native skills per package"
+_head "Sixteen host-native skills per package"
 claude_count="$(find "$PLX_CLAUDE/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
 codex_count="$(find "$PLX_CODEX/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
-[ "$claude_count" = 13 ] && _pass "Claude skills: 13" || _fail "Claude skills: $claude_count"
-[ "$codex_count" = 13 ] && _pass "Codex skills: 13" || _fail "Codex skills: $codex_count"
+[ "$claude_count" = 16 ] && _pass "Claude skills: 16" || _fail "Claude skills: $claude_count"
+[ "$codex_count" = 16 ] && _pass "Codex skills: 16" || _fail "Codex skills: $codex_count"
 
 for skill in "$PLX_CLAUDE"/skills/*/SKILL.md; do
   name="$(basename "$(dirname "$skill")")"
@@ -90,6 +90,9 @@ for skill in "$PLX_CODEX"/skills/*/SKILL.md; do
     orchestrate) display_name="PLX::Orchestrate" ;;
     simplify) display_name="PLX::Simplify" ;;
     unknown-unknowns) display_name="PLX::UnknownUnknowns" ;;
+    fanout-and-synthesize) display_name="PLX::FanoutAndSynthesize" ;;
+    adversarial-verification) display_name="PLX::AdversarialVerification" ;;
+    generate-and-filter) display_name="PLX::GenerateAndFilter" ;;
     *) display_name="" ;;
   esac
   if [ -n "$display_name" ] && grep -qx "  display_name: \"$display_name\"" "$metadata"; then

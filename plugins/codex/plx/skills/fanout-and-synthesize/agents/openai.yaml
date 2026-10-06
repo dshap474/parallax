@@ -1,0 +1,6 @@
+interface:
+  display_name: "PLX::FanoutAndSynthesize"
+  short_description: "Fan out independent lanes, then synthesize one answer"
+  default_prompt: "Use $plx:fanout-and-synthesize to work through this task."
+policy:
+  allow_implicit_invocation: false

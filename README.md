@@ -121,7 +121,7 @@ See [Architecture](docs/ARCHITECTURE.md), [Commands](docs/COMMANDS.md),
 
 ## Status
 
-v0.5.35
+v0.5.36
 
 ## License
 

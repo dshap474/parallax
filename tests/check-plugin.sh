@@ -235,7 +235,7 @@ for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   grep -Fq "Load the user's KISS principles into the current context" "$skill" || kiss_principles_ok=0
   grep -Fq 'Simple means the smallest complete solution, not the fewest lines.' "$skill" || kiss_principles_ok=0
   grep -Fq 'Stop when the simplest complete solution works.' "$skill" || kiss_principles_ok=0
-  ! grep -Eq 'plx-engine|plx-eval|--mode (ro|rw)' "$skill" || kiss_principles_ok=0
+  ! grep -Eq 'plx-engine|--mode (ro|rw)' "$skill" || kiss_principles_ok=0
 done
 if [ "$kiss_principles_ok" -eq 1 ]; then
   _pass "KISS is a context-only principles skill"
@@ -243,7 +243,7 @@ else
   _fail "KISS principles contract drift"
 fi
 
-if grep -Eq 'plx-engine|plx-eval|--mode (ro|rw)' \
+if grep -Eq 'plx-engine|--mode (ro|rw)' \
      "$PLX_CLAUDE/skills/orchestrate/SKILL.md" \
      "$PLX_CODEX/skills/orchestrate/SKILL.md"; then
   _fail "Orchestrate must remain context-only"
@@ -483,7 +483,7 @@ rm -f -- "$atomic_source"
 
 for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   label="$(basename "$(dirname "$package")")"
-  for tool in plx-engine plx-preflight plx-skill plx-link-claude plx-eval plx-clean-temp; do
+  for tool in plx-engine plx-preflight plx-skill plx-link-claude plx-clean-temp; do
     [ -x "$package/bin/$tool" ] && _pass "$label bin/$tool" || _fail "$label bin/$tool"
   done
   for rubric in engines planner plan-critic worker build-worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security simplify-reuse simplify-simplification simplify-efficiency simplify-altitude; do

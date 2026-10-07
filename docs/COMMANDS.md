@@ -77,9 +77,3 @@ does not change any pipeline routing.
 | `plx-preflight` | Real probe of required/optional engines |
 | `plx-skill` | Print a pipeline skill or reference |
 | `plx-link-claude` | Mirror `AGENTS.md` → `CLAUDE.md` symlinks |
-| `plx-eval` | Optional local SQLite trace capture (`PLX_TRACE_DB`) |
-
-`plx-eval` commands: `lane`, `finish`, `doctor`. See `plx-eval --help` and
-[Architecture](ARCHITECTURE.md) for schema, privacy limits, grouped runs, and standalone
-fallback. If exporting `PLX_TRACE_DB` globally is undesirable, put the literal assignment
-in `~/.config/parallax/env`; it may symlink to a git-ignored checkout `.env`.

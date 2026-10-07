@@ -98,15 +98,7 @@ target-local artifacts required by an accepted spec are allowed.
 Persistent Codex access is passthrough-only and derives read or write scope for each
 turn; every pipeline lane remains isolated and ephemeral.
 
-Optional `PLX_TRACE_DB` collection writes local schema-v2 SQLite traces via `plx-eval`
-and migrates version 1 databases in place. Operational skills close a run;
-the context-only Init, KISS, and Orchestrate skills do not. `plx-engine` captures
-complete prompts, traces, outputs, and lane metadata, with
-grouped and standalone behavior. Recording failures never change engine results. When
-the process variable is unset, a deterministic
-non-executing parser reads the same literal assignment from the standard per-user
-Parallax config file. No host hooks, telemetry service, MCP, or target-repo `.parallax/`
-state.
+Parallax adds no host hooks, telemetry service, MCP, or target-repo `.parallax/` state.
 
 ## Acceptance
 

@@ -12,7 +12,6 @@ WORK="$(mktemp -d "${TMPDIR:-/tmp}/plx-gemini-test.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/bin" "$WORK/repo" "$WORK/config"
 export XDG_CONFIG_HOME="$WORK/config"
-unset PLX_TRACE_DB
 printf 'test brief\n' > "$WORK/prompt.md"
 cat > "$WORK/bin/uname" <<'FAKE_OS'
 #!/bin/sh

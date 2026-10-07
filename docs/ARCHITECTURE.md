@@ -102,28 +102,6 @@ path-scoped. Runtime briefs, logs, and outputs use
 `plx-`-prefixed temporary directories and the confined `plx-clean-temp` helper;
 Parallax creates no `.parallax/` state.
 
-### Optional trace capture
-
-When `PLX_TRACE_DB` names an absolute SQLite path, `plx-eval` stores schema-v2 skill runs
-and engine lanes for later routing and quality analysis. Records are local and opt-in,
-and include complete task, prompt, trace, and final-output text; treat the database as
-sensitive. With the variable unset, capture stays disabled unless
-`~/.config/parallax/env` (or the XDG equivalent) contains a literal `PLX_TRACE_DB=`
-assignment. That fallback is parsed, never shell-sourced, and an explicit process value
-takes precedence.
-
-`plx-engine` records each completed lane from its exit trap without changing the engine
-exit code. Prompt files directly under a `plx-<skill>.<suffix>` temp directory share that
-directory basename as their run ID. A direct engine call from any other directory creates
-and closes a standalone run. Every operational skill calls `plx-eval finish` once;
-host-only operational skills therefore produce a useful zero-lane run. The context-only
-Init, KISS, and Orchestrate skills perform no runtime work and create no trace. An interruption
-before `finish` leaves a grouped run incomplete. Connections enable foreign keys, WAL, and a
-five-second busy timeout. Version 1 databases migrate in place to version 2;
-`plx-eval doctor` checks integrity and counts. Parallax ships no host hooks, telemetry daemon, MCP, or target-repo
-`.parallax/` state. Persistent `plx-codex-thread` internals are not yet lane-captured, but
-their enclosing passthrough skill run is recorded.
-
 As a narrow exception, `/plx:codex` may use `plx-codex-thread` to start or resume a
 Codex app-server session. It is ephemeral by default, keeps no Parallax registry,
 returns the thread ID to the user, and re-derives `inspect` or `edit` access on every

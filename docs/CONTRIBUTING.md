@@ -15,9 +15,9 @@ package as a complete cache-safe unit.
 
 Skills carry their complete pipeline inline. Rubric text shared across runs stays in
 `prompts/` and is injected by bare rubric name. External engine execution belongs only
-in `plx-engine`. Optional evaluation provenance belongs in `plx-eval` (opt-in via
-`PLX_TRACE_DB`). Do not add subagent orchestration to operational pipelines; the
-context-only `orchestrate` skill is the explicit exception. Do not add plugin-root
+in `plx-engine`. Do not add subagent orchestration to operational pipelines; the
+host-led `orchestrate`, `fanout-and-synthesize`, `adversarial-verification`, and
+`generate-and-filter` skills are the explicit exceptions. Do not add plugin-root
 traversal, repo-local runtime state, hooks, telemetry services, or publishing behavior.
 
 Codex skills use bare capability names (such as `plan`) and `agents/openai.yaml` with implicit invocation

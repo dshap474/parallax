@@ -8,8 +8,8 @@ user-invocable: true
 
 # Parallax
 
-Parallax provides these explicit skills. Init only adds this information to context;
-it does not run commands, launch workers, record a run, or change files.
+Parallax provides these explicit skills. Init only loads this map; it runs nothing and
+changes no files.
 
 | Skill | Purpose |
 | --- | --- |
@@ -27,6 +27,5 @@ it does not run commands, launch workers, record a run, or change files.
 | `/plx:codex`, `/plx:grok`, `/plx:gemini`, `/plx:devin` | Direct requests to another engine. |
 
 For web research and documentation lookup, use Sonnet at low reasoning (`sonnet`, `low`) in a read-only lane.
-Skills own their execution instructions and use Parallax's packaged engine tools.
-Follow explicit user model choices. Recommend relevant skills; invoke them when the user
-requests them or as part of the Dev sequence. Briefly acknowledge that Parallax context is loaded.
+Follow explicit user model choices. Recommend relevant skills; invoke them only when the
+user asks. Briefly acknowledge that Parallax context is loaded.

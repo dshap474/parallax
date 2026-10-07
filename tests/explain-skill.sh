@@ -49,13 +49,6 @@ echo "skill: $SKILL_NAME"
 grep -m1 '^name:' "$SKILL"
 printf 'description: %s\n' "$(description_of "$SKILL")"
 echo
-PF="$(grep -oE 'plx-preflight[^`]*' "$SKILL" | head -1)"
-if [ -n "$PF" ]; then
-  echo "preflight: $PF"
-else
-  echo "preflight: (none — skipped by this skill)"
-fi
-echo
 echo "sections:"
 grep '^## ' "$SKILL" | sed 's/^## /  /'
 echo

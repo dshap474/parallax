@@ -10,13 +10,10 @@ user-invocable: true
 
 Surface gaps that could change the user's work. Search the repository, research external
 facts when useful, ask focused questions, and produce artifacts yourself. Do not launch
-engine lanes or subagents; no preflight is needed.
+engine lanes or subagents.
 
-Use the packaged helpers on PATH.
-
-Resolve `<repo>` with `git rev-parse --show-toplevel`. Read `.project/VISION.md` if it
-exists and preserve its constraints; never edit it. Use the existing build thread for
-persistent artifacts, or `.project/builds/YYYY-MM-DD_<thread-name>/` for a new effort.
+Read `.project/VISION.md` if it exists and preserve its constraints; never edit it.
+Use the existing build thread for persistent artifacts, or `.project/builds/YYYY-MM-DD_<thread-name>/` for a new effort.
 
 Infer the user's experience and phase from the request: exploring, about to implement,
 mid-implementation, or done and shipping. Ask one focused question if that context is
@@ -43,13 +40,4 @@ Leave the implementation plan to its owning skill.
 ## Return
 
 Report the gaps examined, discoveries, artifact paths, and an improved next prompt or
-skill invocation. Keep temporary runtime state out of the repository. Before every
-handled return, record the host-only run:
-
-```
-plx-eval finish --skill unknown-unknowns --host claude --repo <repo> \
-  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-  || echo "plx-eval finish failed (non-fatal)" >&2
-```
-
-Recorder failure is non-fatal.
+skill invocation. Keep temporary runtime state out of the repository.

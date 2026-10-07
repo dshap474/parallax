@@ -1,7 +1,7 @@
 ---
 name: simplify
 description: Review changed code or a plan for reuse, simplification, efficiency, and altitude with four parallel engine lanes, then apply the fixes. Use "report only" to skip edits.
-argument-hint: "<scope> [with all Codex|Claude|Grok lanes] [at <effort> effort] [report only]"
+argument-hint: "<scope> [report only]"
 disable-model-invocation: true
 user-invocable: true
 ---
@@ -23,14 +23,13 @@ uncommitted changes, or the range diff is empty, also run `git diff HEAD` and
 include the working-tree changes in scope. If a PR number, branch name, file path,
 or plan was passed as an argument, review that target instead.
 
-Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-simplify.XXXXXX"` and write the
-target and any user constraints to `<tmp>/brief.md` under `## Simplify brief`.
+Write the target and any user constraints to `<tmp>/brief.md` under `## Simplify brief`,
+in a fresh temp directory.
 
 ## Phase 1 — Review (4 cleanup lanes in parallel)
 
-Launch **4 independent read-only lanes** concurrently in the background, one per
-rubric: `simplify-reuse`, `simplify-simplification`, `simplify-efficiency`,
-`simplify-altitude`.
+Launch **4 independent lanes** concurrently in the background, one per rubric:
+`simplify-reuse`, `simplify-simplification`, `simplify-efficiency`, `simplify-altitude`.
 The default is four Codex `gpt-6.1-sol` lanes at `medium`, matching `/plx:codex`.
 `with all Codex|Claude|Grok lanes`, or an explicit model or effort, replaces it for all four.
 
@@ -41,7 +40,7 @@ plx-engine --engine <engine> --mode ro --repo <repo> --prompt-file <tmp>/brief.m
 ```
 
 Each lane returns findings with `file`, `line`, a one-line `summary`, and the
-concrete cost. If a lane fails, continue with the others and note it.
+concrete cost.
 
 ## Phase 2 — Apply the fixes
 
@@ -53,14 +52,7 @@ arguing with it. With `report only`, list the findings instead of fixing them.
 Finish with a brief summary of what was fixed and what was skipped (or confirm
 the code was already clean).
 
-Then record the run and clean up:
-
-```text
-plx-eval finish --skill simplify --host claude --repo <repo> --run-dir <tmp> \
-  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-  || echo "plx-eval finish failed (non-fatal)" >&2
-plx-clean-temp <tmp>
-```
+Then delete `<tmp>`.
 
 Request:
 

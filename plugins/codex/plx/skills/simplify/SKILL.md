@@ -22,14 +22,13 @@ uncommitted changes, or the range diff is empty, also run `git diff HEAD` and
 include the working-tree changes in scope. If a PR number, branch name, file path,
 or plan was passed as an argument, review that target instead.
 
-Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-simplify.XXXXXX"` and write the
-target and any user constraints to `<tmp>/brief.md` under `## Simplify brief`.
+Write the target and any user constraints to `<tmp>/brief.md` under `## Simplify brief`,
+in a fresh temp directory.
 
 ## Phase 1 — Review (4 cleanup lanes in parallel)
 
-Launch **4 independent read-only lanes** concurrently in the background, one per
-rubric: `simplify-reuse`, `simplify-simplification`, `simplify-efficiency`,
-`simplify-altitude`.
+Launch **4 independent lanes** concurrently in the background, one per rubric:
+`simplify-reuse`, `simplify-simplification`, `simplify-efficiency`, `simplify-altitude`.
 The default is four Claude `claude-opus-5-5` lanes at `medium`, matching `$plx:claude`.
 `with all Codex|Claude|Grok lanes`, or an explicit model or effort, replaces it for all four.
 If the host sandbox blocks Claude network or keychain access, request narrowly scoped host approval for that call; keep Claude safe mode active.
@@ -41,7 +40,7 @@ If the host sandbox blocks Claude network or keychain access, request narrowly s
 ```
 
 Each lane returns findings with `file`, `line`, a one-line `summary`, and the
-concrete cost. If a lane fails, continue with the others and note it.
+concrete cost.
 
 ## Phase 2 — Apply the fixes
 
@@ -53,14 +52,7 @@ arguing with it. With `report only`, list the findings instead of fixing them.
 Finish with a brief summary of what was fixed and what was skipped (or confirm
 the code was already clean).
 
-Then record the run and clean up:
-
-```text
-<plugin-root>/bin/plx-eval finish --skill simplify --host codex --repo <repo> --run-dir <tmp> \
-  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-  || echo "plx-eval finish failed (non-fatal)" >&2
-<plugin-root>/bin/plx-clean-temp <tmp>
-```
+Then delete `<tmp>`.
 
 Request:
 

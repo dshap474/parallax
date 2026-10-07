@@ -48,8 +48,7 @@ contract. State each rule once.
 
 Plan, Build, and Review define their model defaults in their skills. Dev follows
 Plan -> Build -> Review sequentially. Build performs implementation and verification;
-Review owns the parallel review lanes and host-applied fixes. Only Simplify reads
-engine bindings from package config. The wrapper's generic defaults do not override
+Review owns the parallel review lanes and host-applied fixes. The wrapper's generic defaults do not override
 explicit model flags supplied by a skill.
 
 An explicit current-message model or effort request

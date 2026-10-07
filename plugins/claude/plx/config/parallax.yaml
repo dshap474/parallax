@@ -1,8 +1,0 @@
-# Simplify engine bindings. Plan, Build, and Review own their defaults in SKILL.md.
-# Dev calls those skills sequentially.
-pipelines:
-  simplify:
-    simplify-reuse: [codex]
-    simplify-simplification: [codex]
-    simplify-efficiency: [codex]
-    simplify-altitude: [codex]

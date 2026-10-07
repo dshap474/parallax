@@ -9,7 +9,7 @@ Status: v0.5.36
 .agents/plugins/marketplace.json
 plugins/claude/plx/.claude-plugin/plugin.json
 plugins/codex/plx/.codex-plugin/plugin.json
-plugins/{claude,codex}/plx/{skills,config,bin,prompts}/
+plugins/{claude,codex}/plx/{skills,bin,prompts}/
 plugins/claude/plx/tools/codex-app-client/
 shared/{bin,prompts}/
 scripts/sync-shared.sh

@@ -207,21 +207,6 @@ else
   _fail "persistent Codex skill contract drift"
 fi
 
-simplify_defaults_ok=1
-for role in reuse simplification efficiency altitude; do
-  grep -qx "    simplify-$role: \[claude\]" "$PLX_CODEX/config/parallax.yaml" ||
-    simplify_defaults_ok=0
-  grep -qx "    simplify-$role: \[codex\]" "$PLX_CLAUDE/config/parallax.yaml" ||
-    simplify_defaults_ok=0
-done
-
-if [ "$simplify_defaults_ok" -eq 1 ] &&
-   ! grep -Eq '^  (plan|dev):' "$PLX_CODEX/config/parallax.yaml" "$PLX_CLAUDE/config/parallax.yaml"; then
-  _pass "only Simplify uses configured engine bindings"
-else
-  _fail "obsolete Plan or Dev bindings remain"
-fi
-
 simplify_contract_ok=1
 for package_host in "$PLX_CLAUDE:Codex:gpt-6.1-sol:/plx:codex" "$PLX_CODEX:Claude:claude-opus-5-5:\$plx:claude"; do
   package="${package_host%%:*}"
@@ -323,7 +308,7 @@ for package_host in "$PLX_CLAUDE:claude" "$PLX_CODEX:codex"; do
   host="${package_host##*:}"
   for skill in "$package"/skills/*/SKILL.md; do
     skill_name="$(basename "$(dirname "$skill")")"
-    if [ "$skill_name" = kiss ] || [ "$skill_name" = orchestrate ] || [ "$skill_name" = init ]; then
+    if [ "$skill_name" = kiss ] || [ "$skill_name" = orchestrate ] || [ "$skill_name" = init ] || [ "$skill_name" = simplify ]; then
       ! grep -Fq 'plx-eval finish' "$skill" || eval_contract_ok=0
       continue
     fi
@@ -331,7 +316,7 @@ for package_host in "$PLX_CLAUDE:claude" "$PLX_CODEX:codex"; do
     ! grep -Fq 'plx-eval begin' "$skill" || eval_contract_ok=0
     ! grep -Fq '.plx-eval-run' "$skill" || eval_contract_ok=0
   done
-  for pipeline in plan build dev review simplify; do
+  for pipeline in plan build dev review; do
     skill="$package/skills/$pipeline/SKILL.md"
     grep -Fq -- '--run-dir <tmp>' "$skill" || eval_contract_ok=0
   done
@@ -522,7 +507,7 @@ rm -f -- "$atomic_source"
 
 for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   label="$(basename "$(dirname "$package")")"
-  for tool in plx-engine plx-preflight plx-config plx-skill plx-link-claude plx-eval plx-clean-temp; do
+  for tool in plx-engine plx-preflight plx-skill plx-link-claude plx-eval plx-clean-temp; do
     [ -x "$package/bin/$tool" ] && _pass "$label bin/$tool" || _fail "$label bin/$tool"
   done
   for rubric in engines planner plan-critic worker build-worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security simplify-reuse simplify-simplification simplify-efficiency simplify-altitude; do
@@ -607,8 +592,7 @@ else
 fi
 
 explain_output="$("$PLX_ROOT/tests/explain-skill.sh" codex dev)"
-if printf '%s\n' "$explain_output" | grep -q 'config key: (none' &&
-   printf '%s\n' "$explain_output" | grep -q 'plx-skill plan' &&
+if printf '%s\n' "$explain_output" | grep -q 'plx-skill plan' &&
    printf '%s\n' "$explain_output" | grep -q 'plx-skill build' &&
    printf '%s\n' "$explain_output" | grep -q 'plx-skill review'; then
   _pass "skill explanation shows Dev composition"

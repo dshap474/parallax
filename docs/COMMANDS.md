@@ -40,7 +40,7 @@ normal user configuration. The request still governs edits and remote actions.
 Pipeline lanes keep their own restrictions.
 
 Plan, Build, and Review own their model defaults in their skills. Dev calls them
-sequentially. Simplify alone reads engine bindings from `config/parallax.yaml`.
+sequentially.
 Review runs its core lanes in parallel and accepts an explicit whole-round engine
 override. Claude Code defaults to Codex `gpt-6.1-sol` Medium; Codex defaults to
 Claude `claude-opus-5-5` Medium for both Review and Simplify.
@@ -75,7 +75,6 @@ does not change any pipeline routing.
 | --- | --- |
 | `plx-engine` | Headless engine wrapper (safety pinned) |
 | `plx-preflight` | Real probe of required/optional engines |
-| `plx-config` | Print `config/parallax.yaml` |
 | `plx-skill` | Print a pipeline skill or reference |
 | `plx-link-claude` | Mirror `AGENTS.md` → `CLAUDE.md` symlinks |
 | `plx-eval` | Optional local SQLite trace capture (`PLX_TRACE_DB`) |

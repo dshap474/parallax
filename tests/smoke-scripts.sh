@@ -26,7 +26,7 @@ echo "package: ${PLX_PACKAGE:-claude} ($PLUGIN_ROOT)"
 echo "tmp target repo: $REPO"
 
 _head "bin tools answer --help"
-for t in plx-engine plx-preflight plx-config plx-skill plx-link-claude plx-eval plx-clean-temp; do
+for t in plx-engine plx-preflight plx-skill plx-link-claude plx-eval plx-clean-temp; do
   out="$WORK/help-$t.txt"
   if "$PLUGIN_ROOT/bin/$t" --help > "$out" 2>&1 && grep -q "Usage:" "$out"; then
     _pass "$t --help"
@@ -1303,13 +1303,6 @@ else
 fi
 
 # Shared-copy check is covered by check-plugin; both packages smoke via run.sh.
-
-_head "plx-config prints the engine config"
-out="$WORK/config.txt"
-"$PLUGIN_ROOT/bin/plx-config" > "$out" 2>&1
-rc=$?
-if [ "$rc" -eq 0 ]; then _pass "exits 0"; else _fail "exit $rc"; fi
-assert_contains "pipelines:" "$out" "emits the pipelines map"
 
 _head "plx-skill prints a pipeline skill"
 out="$WORK/skill.txt"

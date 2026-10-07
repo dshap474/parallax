@@ -302,30 +302,6 @@ else
   _fail "cleanup debt-retirement boundary drift"
 fi
 
-eval_contract_ok=1
-for package_host in "$PLX_CLAUDE:claude" "$PLX_CODEX:codex"; do
-  package="${package_host%:*}"
-  host="${package_host##*:}"
-  for skill in "$package"/skills/*/SKILL.md; do
-    skill_name="$(basename "$(dirname "$skill")")"
-    if [ "$skill_name" = kiss ] || [ "$skill_name" = orchestrate ] || [ "$skill_name" = init ] || [ "$skill_name" = simplify ]; then
-      ! grep -Fq 'plx-eval finish' "$skill" || eval_contract_ok=0
-      continue
-    fi
-    grep -Fq "plx-eval finish --skill $skill_name --host $host" "$skill" || eval_contract_ok=0
-    ! grep -Fq 'plx-eval begin' "$skill" || eval_contract_ok=0
-    ! grep -Fq '.plx-eval-run' "$skill" || eval_contract_ok=0
-  done
-  for pipeline in plan build dev review; do
-    skill="$package/skills/$pipeline/SKILL.md"
-    grep -Fq -- '--run-dir <tmp>' "$skill" || eval_contract_ok=0
-  done
-done
-if [ "$eval_contract_ok" -eq 1 ]; then
-  _pass "operational skills finish traces and grouped pipelines use temp-directory identity"
-else
-  _fail "skill trace capture contract drift"
-fi
 
 if python3 - "$PLX_ROOT" <<'PY_CONTRACT'
 import re

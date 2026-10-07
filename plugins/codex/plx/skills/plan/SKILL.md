@@ -9,20 +9,15 @@ argument-hint: "<task to plan>"
 Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
 `/skills/plan/SKILL.md`. Use the packaged helpers in `<plugin-root>/bin/`.
 
-The current host authors the plan; one opposite-engine reviewer critiques it.
-Use one read-only opposite-host reviewer. Do not build, commit, or publish.
-
-Resolve `<repo>` with `git rev-parse --show-toplevel` and note existing changes.
-Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-plan.XXXXXX"`.
-Save the original request to `<tmp>/task.md` and the author/reviewer model choices to
-`<tmp>/shape.txt`. Run `<plugin-root>/bin/plx-preflight --repo <repo> --require-claude --model claude-fable-5-1`.
+Author the plan yourself, then have one read-only opposite-engine reviewer critique it
+once. Do not build, commit, or publish.
 
 Read relevant repository guidance, code, and tests. Ask only questions that materially
 change the plan. State scope, the proposed approach, and concrete `Done means:` checks.
 Keep the plan in the conversation unless persistence is useful; for a persisted spec,
 use `<plugin-root>/bin/plx-skill --ref plan/spec-template`. Never edit `.project/VISION.md`.
 
-Write `<tmp>/critic-brief.md` with:
+In a fresh temp directory `<tmp>`, write `<tmp>/critic-brief.md`:
 
 ```markdown
 ## Draft plan
@@ -43,27 +38,13 @@ Run the reviewer and wait for its result:
   --out <tmp>/critic.md --log <tmp>/critic.log
 ```
 
-Use packaged wrappers and named rubrics; no raw engine commands, pasted rubrics, or
-subagents. If the host sandbox blocks the reviewer's network or keychain access,
-request narrowly scoped host approval for the wrapper call; keep its sandbox active.
+If the host sandbox blocks the reviewer's network or keychain access, request
+narrowly scoped host approval for the wrapper call; keep its sandbox active.
 
-Verify material findings against the repository and revise the plan. Report unresolved
-issues or a failed reviewer as incomplete; do not silently substitute a model.
-Present the final plan and material review dispositions. Standalone Plan stops here.
-When called by Dev, return the plan and completion status to Dev.
-
-Before every handled return, record the outcome and clean up:
-
-```
-<plugin-root>/bin/plx-eval finish --skill plan --host codex --repo <repo> --run-dir <tmp> \
-  --host-model <actual host model if known, otherwise unknown> \
-  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
-  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-  || echo "plx-eval finish failed (non-fatal)" >&2
-<plugin-root>/bin/plx-clean-temp <tmp>
-```
-
-Recorder failure is non-fatal. Keep runtime files outside the repository.
+Verify material findings against the repository and revise the plan. If the reviewer
+fails, say the plan is unreviewed; do not substitute a model. Present the final plan and
+material review dispositions. When called by Dev, return the plan and its status to Dev.
+Delete `<tmp>` when done.
 
 Request:
 

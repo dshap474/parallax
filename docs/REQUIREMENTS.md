@@ -47,7 +47,7 @@ unattended approval mode, separate from its read-only or workspace filesystem sa
 Normal lanes remain read-only or workspace-constrained. The one standalone Build writer
 uses the explicit full-access transport needed for repository Git metadata and packaged
 review launches: Codex `danger-full-access`, or Claude's sandbox-disabled permission
-bypass. The wrapper rejects that mode outside an `rw` `worker`/`build-worker` lane, and
+bypass. The wrapper rejects that mode outside an `rw` `build-worker` lane, and
 the transport does not grant publication or external-system authority.
 
 Devin is intentionally different: the wrapper selects dangerous permission mode and no

@@ -32,7 +32,7 @@
 #            documented dangerous permission mode with no OS sandbox. Devin
 #            therefore has full host access; repository-native Devin config can
 #            still load. ATIF export supplies the validated final response.
-# Full access is accepted for Devin, an rw worker- or build-worker-rubric
+# Full access is accepted for Devin, an rw build-worker-rubric
 # Codex or Claude lane, and explicit rubric-free opposite-host passthroughs.
 # Never use Codex's approvals-and-sandbox bypass or --yolo.
 
@@ -64,7 +64,7 @@ What it does:
   profile. With --rubric, the named rubric from the plugin's
   prompts/ dir is injected ahead of your prompt (codex/grok: prepended to the
   prompt; claude: appended to the system prompt). Your prompt file should open
-  with the section header the rubric expects (see prompts/engines.md).
+  with the section header the rubric expects (`## Spec`, `## Review brief`, ...).
   Only the engine's FINAL message is emitted; progress/noise goes to the log.
 
 Flags:
@@ -74,7 +74,7 @@ Flags:
   --prompt-file <file>  file containing the brief/spec (required)
   --rubric <name>       lane rubric to inject (a file name under prompts/, no .md)
   --build-writer-full-access
-                        allow one rw worker/build-worker-rubric Codex/Claude lane to write
+                        allow one rw build-worker-rubric Codex/Claude lane to write
                         Git metadata; invalid for ro, Grok, or other rubrics
   --claude-passthrough-full-access
                         give one rubric-free rw Claude passthrough full host access
@@ -90,7 +90,7 @@ Flags:
                         value is rejected—choose a model variant instead.
   --stdout              print the final message to stdout; temp files auto-cleaned
   --out <f> --log <f>   instead of --stdout: write final message / full log to files
-  --print-rubric <n>    print the named rubric (e.g. reviewer-correctness, engines)
+  --print-rubric <n>    print the named rubric (e.g. reviewer-correctness)
   --help                this text
 
 Caller notes:
@@ -214,8 +214,8 @@ if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]; then
     echo "--build-writer-full-access requires --mode rw" >&2
     exit 2
   }
-  [[ "$RUBRIC" == "worker" || "$RUBRIC" == "build-worker" ]] || {
-    echo "--build-writer-full-access requires --rubric worker or build-worker" >&2
+  [[ "$RUBRIC" == "build-worker" ]] || {
+    echo "--build-writer-full-access requires --rubric build-worker" >&2
     exit 2
   }
   [[ "$ENGINE" == "codex" || "$ENGINE" == "claude" ]] || {

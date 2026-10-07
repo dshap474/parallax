@@ -528,7 +528,7 @@ done
 
 PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode rw --repo "$REPO" \
-  --prompt-file "$fake_prompt" --rubric worker --build-writer-full-access \
+  --prompt-file "$fake_prompt" --rubric build-worker --build-writer-full-access \
   --out "$fake_out" --log "$fake_log" >/dev/null
 rc=$?
 if [ "$rc" -eq 0 ]; then
@@ -581,7 +581,7 @@ else
 fi
 
 "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode ro --repo "$REPO" \
-  --prompt-file "$fake_prompt" --rubric worker --build-writer-full-access \
+  --prompt-file "$fake_prompt" --rubric build-worker --build-writer-full-access \
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
 rc=$?
 if [ "$rc" -eq 2 ]; then
@@ -599,7 +599,7 @@ else
   _fail "Build writer full access with reviewer rubric expected exit 2, got $rc"
 fi
 "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode rw --repo "$REPO" \
-  --prompt-file "$fake_prompt" --rubric worker --build-writer-full-access \
+  --prompt-file "$fake_prompt" --rubric build-worker --build-writer-full-access \
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
 rc=$?
 if [ "$rc" -eq 2 ]; then
@@ -811,7 +811,7 @@ fi
 PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
   PLX_CLAUDE_PROMPT_FILE="$fake_claude_prompt" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode rw --repo "$REPO" \
-  --prompt-file "$fake_prompt" --rubric worker --build-writer-full-access \
+  --prompt-file "$fake_prompt" --rubric build-worker --build-writer-full-access \
   --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
 rc=$?
 if [ "$rc" -eq 0 ]; then

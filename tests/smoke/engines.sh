@@ -79,10 +79,10 @@ run_engine() {
 
 # Free check first: rubric plumbing answers without a model call.
 _head "plx-engine --print-rubric (no model call)"
-if "$PLUGIN_ROOT/bin/plx-engine" --print-rubric engines | grep -q "Engines"; then
-  _pass "--print-rubric engines resolves prompts/"
+if "$PLUGIN_ROOT/bin/plx-engine" --print-rubric plan-critic | grep -q "Plan review"; then
+  _pass "--print-rubric plan-critic resolves prompts/"
 else
-  _fail "--print-rubric engines failed — prompts/ resolution broken"
+  _fail "--print-rubric plan-critic failed — prompts/ resolution broken"
 fi
 
 run_engine codex

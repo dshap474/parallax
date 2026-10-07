@@ -78,7 +78,7 @@ engine remains responsible for validating other values.
 Normal lanes use read-only or workspace-constrained execution. The one standalone Build
 writer intentionally uses full host access: Codex `danger-full-access`, or Claude with
 its sandbox disabled and `--dangerously-skip-permissions`. The wrapper accepts that mode
-only for an `rw` `worker`/`build-worker` lane. It is a transport requirement for Git
+only for an `rw` `build-worker` lane. It is a transport requirement for Git
 metadata and packaged review launches, not permission to expand the accepted spec,
 repository scope, or publication authority. Review lanes remain read-only. Codex never
 uses `--dangerously-bypass-approvals-and-sandbox` or `--yolo`.

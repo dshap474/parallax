@@ -257,13 +257,6 @@ else
   _fail "Codex Orchestrate worker default drift"
 fi
 
-if grep -qE 'Codex review lanes|Standalone Codex plan critics|implementation critic \(codex' \
-  "$PLX_ROOT/shared/prompts/engines.md"; then
-  _fail "shared engine guidance contains Claude-host assumptions"
-else
-  _pass "shared engine guidance is host-neutral"
-fi
-
 # Check launch contracts and cross-host copies; prose wording is not a runtime API.
 review_contract_ok=1
 for package_host in "$PLX_CLAUDE:Codex:gpt-6.1-sol:/plx:codex" "$PLX_CODEX:Claude:claude-opus-5-5:\$plx:claude"; do
@@ -405,7 +398,7 @@ for host in claude codex; do
     prompt_constraints_ok=0
   fi
   if grep -qE 'Return exactly|Final Report Format|recursive delegation' \
-      "$package/prompts/worker.md" "$package/prompts/build-worker.md" \
+      "$package/prompts/build-worker.md" \
       "$package/skills/plan/references/spec-template.md"; then
     prompt_constraints_ok=0
   fi
@@ -486,7 +479,7 @@ for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   for tool in plx-engine plx-preflight plx-skill plx-link-claude plx-clean-temp; do
     [ -x "$package/bin/$tool" ] && _pass "$label bin/$tool" || _fail "$label bin/$tool"
   done
-  for rubric in engines planner plan-critic worker build-worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security simplify-reuse simplify-simplification simplify-efficiency simplify-altitude; do
+  for rubric in plan-critic build-worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security simplify-reuse simplify-simplification simplify-efficiency simplify-altitude; do
     [ -s "$package/prompts/$rubric.md" ] || _fail "$label missing rubric $rubric"
   done
 done
@@ -518,7 +511,7 @@ if grep -RE '^[[:space:]]*[^#].*(dangerously-bypass-approvals-and-sandbox|--yolo
 elif [ "$(grep -Fc 'sandbox="danger-full-access"' "$PLX_ROOT/shared/bin/plx-engine")" -ne 1 ] ||
      [ "$(grep -Fc 'flags+=(--dangerously-skip-permissions' "$PLX_ROOT/shared/bin/plx-engine")" -ne 2 ] ||
      ! grep -Fq '[[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
-     ! grep -Fq '[[ "$RUBRIC" == "worker" || "$RUBRIC" == "build-worker" ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
+     ! grep -Fq '[[ "$RUBRIC" == "build-worker" ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
      ! grep -Fq '[[ "$ENGINE" == "claude" && "$MODE" == "rw" && -z "$RUBRIC" && "$BUILD_WRITER_FULL_ACCESS" -eq 0 ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
      ! grep -Fq '[[ "$ENGINE" == "codex" && "$MODE" == "rw" && -z "$RUBRIC" && "$BUILD_WRITER_FULL_ACCESS" -eq 0 ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
      find "$PLX_ROOT/shared/bin" -type f ! -name plx-engine -exec \

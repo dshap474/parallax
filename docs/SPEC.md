@@ -60,8 +60,8 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
 
 ## Runtime contracts
 
-Brief headers are `## Draft plan`, `## Task brief`, `## Review brief`, `## Simplify brief`,
-or `## Spec`, matching the injected rubric. Advisory lanes are read-only.
+Brief headers are `## Draft plan`, `## Review brief`, `## Simplify brief`, or `## Spec`,
+matching the injected rubric. Advisory lanes are read-only.
 Plans carry original request, confirmed decisions, candidate plan, and an observable
 done condition. Worker and host reports may use a compact natural format while retaining
 scope, findings, decisions, and verification evidence. Review hosts may read code to
@@ -72,7 +72,7 @@ Claude calls request host approval only when the host sandbox blocks required ac
 No skill constructs a raw external-engine command. Codex lanes pin unattended approval
 explicitly and never use the approvals-and-sandbox bypass or `--yolo`. Normal lanes use
 read-only or workspace-constrained execution. The single standalone Build writer is the
-deliberate exception: an `rw` `worker`/`build-worker` Codex or Claude lane receives full
+deliberate exception: an `rw` `build-worker` Codex or Claude lane receives full
 host access for repository Git metadata and packaged review launches. That transport does
 not expand task, target, external-system, or publication authority.
 

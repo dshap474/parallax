@@ -14,35 +14,27 @@ Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
 
 ## Prepare the round
 
-Resolve `<repo>` with `git rev-parse --show-toplevel`. Establish the requested files,
-scope mode (change review or whole-file audit), and any change range and baseline
-from the user and Git status/diffs. Read enough code to make
-the scope accurate. Save the status and diffs so fixes preserve existing work.
+Establish the requested files, scope mode (change review or whole-file audit), and any
+change range and baseline from the user and Git. Read enough code to make the scope
+accurate, and note existing uncommitted work so fixes preserve it.
 
-Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-review.XXXXXX"`. Write the request
-and scope to `<tmp>/task.md`; keep every lane prompt directly in `<tmp>`.
-
-Run exactly three core roles: `reviewer-correctness`, `reviewer-cleanup`, and
+Run three core roles: `reviewer-correctness`, `reviewer-cleanup`, and
 `reviewer-structural`. Default all three to Claude `claude-opus-5-5` at `medium`, matching
-`$plx:claude`. Honor an explicit whole-round engine override, such as `with all Grok lanes`, `with all Claude
-lanes`, or `with all Codex lanes`. For engine-only overrides, Claude defaults to
-`claude-opus-5-5` at `medium`, Codex to `gpt-6.1-sol` at `medium`, and Grok to
-`grok-4.6` at `medium`.
-Apply model/effort overrides to the whole round.
-Do not use mixed per-role routing or YAML bindings. Dev invokes this same Review skill.
+`$plx:claude`. An explicit engine, model, or effort (for example `with all Grok lanes`)
+applies to the whole round; engine-only overrides use `claude-opus-5-5`, `gpt-6.1-sol`,
+or `grok-4.6` at `medium`.
 
 Add `reviewer-security` when requested or when scope touches auth, permissions,
 secrets/config, shell/subprocess execution, sandboxing, network clients, dependencies,
 lockfiles, CI, deserialization, or another trust boundary. Otherwise report
 `Security: not run`.
 
-Declare the roles, engines, effort, and host-owned fixes; save to `<tmp>/shape.txt`.
-Run `<plugin-root>/bin/plx-preflight --repo <repo> --require-<engine> --model <model>` for the selected engine.
 If the host sandbox blocks Claude or Grok network/keychain access, request narrowly scoped host approval for that call; keep the engine sandbox active.
 
 ## Launch
 
-Write one neutral `<tmp>/brief.md`, identical for every lane:
+In a fresh temp directory `<tmp>`, write one neutral `<tmp>/brief.md`, identical for
+every lane:
 
 ```
 ## Review brief
@@ -54,10 +46,8 @@ Write one neutral `<tmp>/brief.md`, identical for every lane:
 - Spec source: <task, plan, or doc; otherwise derive from code and tests>
 ```
 
-Keep lane selection, model/effort settings, and report-only or fix instructions in the
-host context. Each lane reviews the supplied target under its rubric. Keep suspicions
-and proposed verdicts out of the brief. Launch all selected dimensions
-in parallel in retained background sessions:
+Keep your suspicions, proposed verdicts, and report-only or fix mode out of the brief.
+Launch all selected lanes in parallel in the background:
 
 ```
 <plugin-root>/bin/plx-engine --engine <e> --mode ro --repo <repo> --prompt-file <tmp>/brief.md \
@@ -65,54 +55,36 @@ in parallel in retained background sessions:
   --out <tmp>/<e>-<dimension>.md --log <tmp>/<e>-<dimension>.log
 ```
 
-Use packaged wrappers and named rubrics; no raw engine commands, pasted rubrics, or
-subagents. On exit 1, inspect the log; proceed with surviving lanes and disclose the
-omission. Correct exit-2 usage errors. Exit 3 requires authentication; report it.
-Missing required lanes make the round partial.
+If a lane fails, proceed with the others and disclose it; a missing core lane makes the
+round partial.
 
 ## Synthesize and fix
 
 Deduplicate by root cause and try to disprove each material finding against the code.
 Correctness determines which objects belong in scope before cleanup or structural
 remedies. Reject false positives with a reason. For change reviews, filter pre-existing
-issues and untouched code without a causal link to the change. Whole-file audits may report existing defects within the named target.
-In either mode, filter out-of-scope issues, linter-only style, generic test/doc wishes,
-speculative unreachable cases, and optimizations without material cost. Read further
-where the reports reveal a gap.
+issues and untouched code without a causal link to the change. Whole-file audits may
+report existing defects within the named target. In either mode, filter out-of-scope
+issues, linter-only style, generic test/doc wishes, speculative unreachable cases, and
+optimizations without material cost. Read further where the reports reveal a gap.
 
 If a core lane finds a concrete security risk, run the security lane if possible or
 retain the risk as a named residual. Rank confirmed findings by severity. Ask about
 remedies only when intent, behavior, scope, or an interface needs a user decision;
 batch those questions. For report-only requests, deliver findings and a repair plan.
 
-Fix directly after every lane has returned. Apply confirmed, unambiguous remedies in
-one bounded fix round, including approved answers. Correct failures introduced by those
-fixes and rerun affected checks until they pass or a concrete blocker remains. Preserve
-unrelated edits. Leave build-sized remedies and unrelated remaining issues as residuals
-and recommend `$plx:build`.
-Re-read your diff and run the relevant repository checks. Never `uv run` inside a sandbox.
-Follow repository instructions for local commits; this skill grants no publication authority.
+After every lane has returned, apply confirmed, unambiguous remedies in one bounded fix
+round, including approved answers. Fix failures your edits introduce and rerun affected
+checks until they pass or a concrete blocker remains. Preserve unrelated edits. Leave
+build-sized remedies and unrelated issues as residuals and recommend `$plx:build`.
+Re-read your diff and run the relevant repository checks. Never `uv run` inside a
+sandbox. Follow repository instructions for local commits; never publish.
 
 ## Finish
 
 Report scope and lane coverage, confirmed and rejected findings, security status, fixes,
-open decisions, residuals, and verification commands/results. Use a compact natural
-format; omit empty sections. Report-only verification may pass when all required lanes
-and finding checks completed.
-
-Keep runtime output out of the repo, including `.parallax/`. Before every handled return,
-including report-only and errors, finish the run and clean up:
-
-```
-<plugin-root>/bin/plx-eval finish --skill review --host codex --repo <repo> --run-dir <tmp> \
-  --host-model <actual host model if known, otherwise unknown> \
-  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
-  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-  || echo "plx-eval finish failed (non-fatal)" >&2
-<plugin-root>/bin/plx-clean-temp <tmp>
-```
-
-Recorder failure is non-fatal; an interrupted run may remain incomplete.
+open decisions, residuals, and verification commands and results. Omit empty sections.
+Delete `<tmp>` when done.
 
 Request:
 

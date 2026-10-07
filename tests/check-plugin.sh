@@ -349,7 +349,7 @@ for name in ("build", "dev", "plan", "review", "unknown-unknowns"):
         body = (root / f"plugins/{host}/plx/skills/{name}/SKILL.md").read_text().split("---", 2)[2]
         body = re.sub(r"Resolve `<plugin-root>` from this loaded `SKILL.md` path.*?Use (?:the packaged helpers in|its packaged helpers in) `<plugin-root>/bin/`\.", "Use the packaged helpers on PATH.", body, flags=re.S)
         body = re.sub(r"If the host sandbox blocks Claude or Grok network/keychain access,.*?(?:active|transport)\.", "HOST_BOUNDARY", body, flags=re.S)
-        body = re.sub(r"For Grok (?:calls and preflight|preflight and review calls),.*?active\.", "HOST_BOUNDARY", body, flags=re.S)
+        body = re.sub(r"For Grok calls,.*?active\.", "HOST_BOUNDARY", body, flags=re.S)
         body = body.replace("<plugin-root>/bin/", "").replace("$plx:", "/plx:")
         if name == "build":
             body = body.replace("gpt-6-sol", "claude-opus-5-5").replace("high", "medium")

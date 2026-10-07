@@ -107,7 +107,7 @@ sixteen-skill inventories, explicit-only platform metadata, engine polarity, Sim
 shape, the context-only skill contracts, Plan/Build/Review routing and security triggers,
 executable wrappers,
 rubric resolution, shared-copy agreement, fake-engine safety flags and current result
-envelopes, cleanup confinement, optional eval recorder contracts, and isolated
+envelopes, cleanup confinement, and isolated
 `plx-link-claude` behavior. The official Claude validator and an isolated Codex CLI
 install with exact source/cache comparison must also pass.
 

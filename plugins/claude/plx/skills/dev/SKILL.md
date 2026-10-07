@@ -18,34 +18,14 @@ Run these skills sequentially, using their own instructions and model defaults:
 3. After Build completes, load `plx-skill review` and follow `/plx:review`
    on the task-owned changes, including commits made during Build.
 
-Wait for each stage before starting the next. Review runs its own lanes in parallel.
-Invoking Dev authorizes this sequence without another routine approval between stages.
-Pause for unresolved material user decisions; stop on a failed or incomplete stage.
-Each stage owns its model selection, engine calls, verification, and trace recording.
-Do not duplicate those instructions or launch additional lanes from Dev.
-
-Resolve `<repo>` with `git rev-parse --show-toplevel`. Before Plan, create `<tmp>` with
-`mktemp -d "${TMPDIR:-/tmp}/plx-dev.XXXXXX"`, save the original request as
-`<tmp>/task.md`, and write `Plan -> Build -> Review (sequential)` to `<tmp>/shape.txt`.
-Save the initial commit, status, and diffs there so Review can distinguish task-owned
-changes from pre-existing work. Give each stage its own temporary run directory.
-Carry forward the original request, confirmed decisions, plan, baseline, and stage results.
+Before Plan, note the baseline commit and any pre-existing changes so Build and Review
+can separate task-owned work. Wait for each stage before starting the next, and carry
+forward the original request, confirmed decisions, plan, baseline, and stage results.
+Invoking Dev authorizes the whole sequence; pause only for unresolved material user
+decisions, and stop on a failed or incomplete stage. Do not launch lanes from Dev.
 
 Summarize the final result, verification, and any unresolved findings. Follow repository
-commit rules; Dev grants no additional publication authority.
-
-Before every handled return, record the outcome and clean up:
-
-```
-plx-eval finish --skill dev --host claude --repo <repo> --run-dir <tmp> \
-  --host-model <actual host model if known, otherwise unknown> \
-  --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
-  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-  || echo "plx-eval finish failed (non-fatal)" >&2
-plx-clean-temp <tmp>
-```
-
-Recorder failure is non-fatal. Keep runtime files outside the repository.
+commit rules; never publish.
 
 Request:
 

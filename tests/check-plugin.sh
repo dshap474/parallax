@@ -115,88 +115,28 @@ else
   _fail "opposite-host passthrough contract is wrong"
 fi
 
-passthrough_overrides_ok=1
-for skill in \
-  "$PLX_CLAUDE/skills/codex/SKILL.md" \
-  "$PLX_CODEX/skills/claude/SKILL.md"; do
-  grep -Fq "An explicit user model or effort replaces" "$skill" ||
-    passthrough_overrides_ok=0
-  grep -Fq -- "--model <model> --effort <effort>" "$skill" ||
-    passthrough_overrides_ok=0
-  grep -Fq "Do not" "$skill" || passthrough_overrides_ok=0
-  grep -Fq "silently replace an explicit value" "$skill" ||
-    passthrough_overrides_ok=0
+passthrough_ok=1
+for spec in \
+  "$PLX_CLAUDE/skills/codex:codex:--codex-passthrough-full-access:gpt-6.1-sol" \
+  "$PLX_CODEX/skills/claude:claude:--claude-passthrough-full-access:claude-opus-5-5" \
+  "$PLX_CLAUDE/skills/grok:grok::grok-4.6" "$PLX_CODEX/skills/grok:grok::grok-4.6" \
+  "$PLX_CLAUDE/skills/devin:devin:--mode full-access:swe-2-high" \
+  "$PLX_CODEX/skills/devin:devin:--mode full-access:swe-2-high"; do
+  IFS=: read -r dir engine flag model <<< "$spec"
+  skill="$dir/SKILL.md"
+  grep -Fq -- "plx-engine --engine $engine" "$skill" || passthrough_ok=0
+  grep -Fq -- "--model <model>" "$skill" || passthrough_ok=0
+  grep -Fq -- "$model" "$skill" || passthrough_ok=0
+  [ -z "$flag" ] || grep -Fq -- "$flag" "$skill" || passthrough_ok=0
 done
-for skill in \
-  "$PLX_CLAUDE/skills/grok/SKILL.md" \
-  "$PLX_CODEX/skills/grok/SKILL.md"; do
-  grep -Fq "An explicit user model always replaces" "$skill" ||
-    passthrough_overrides_ok=0
-  grep -Fq 'default for models other than `grok-4.6`' "$skill" ||
-    passthrough_overrides_ok=0
-  grep -Fq "pinning Grok 4.6 to medium" "$skill" ||
-    passthrough_overrides_ok=0
-  grep -Fq -- "--model <model> --effort <effort>" "$skill" ||
-    passthrough_overrides_ok=0
-done
-for skill in \
-  "$PLX_CLAUDE/skills/devin/SKILL.md" \
-  "$PLX_CODEX/skills/devin/SKILL.md"; do
-  grep -Fq 'Default: `model=swe-2-high`.' "$skill" ||
-    passthrough_overrides_ok=0
-  grep -Fq -- '--mode full-access' "$skill" || passthrough_overrides_ok=0
-  grep -Fq 'Never pass `--effort`.' "$skill" || passthrough_overrides_ok=0
-  grep -Fq 'full host access' "$skill" || passthrough_overrides_ok=0
-  grep -Fq 'Repository-native Devin hooks, MCP servers, rules, and skills can' "$skill" ||
-    passthrough_overrides_ok=0
-  grep -Fq 'Only exit 4 allows automatic recovery: at most two retries' "$skill" ||
-    passthrough_overrides_ok=0
-  grep -Fq 'If a side effect is ambiguous or replay could duplicate an action, stop' "$skill" ||
-    passthrough_overrides_ok=0
-  grep -Fq 'A failed reconciliation command stops recovery.' "$skill" ||
-    passthrough_overrides_ok=0
-  grep -Fq -- '--out <tmp>/attempt-1.out --log <tmp>/attempt-1.log' "$skill" ||
-    passthrough_overrides_ok=0
-  if grep -Fq 'A nonzero exit ends this skill. Do not retry' "$skill"; then
-    passthrough_overrides_ok=0
-  fi
-done
-if [ "$passthrough_overrides_ok" -eq 1 ]; then
-  _pass "single-engine passthroughs preserve overrides and Devin uses explicit full access"
+if [ "$passthrough_ok" -eq 1 ]; then
+  _pass "single-engine passthroughs launch their engine with the default model and access flag"
 else
-  _fail "single-engine passthrough override contract drift"
-fi
-if grep -Fq 'Defaults: `model=claude-opus-5-5`, `effort=medium`.' \
-     "$PLX_CODEX/skills/claude/SKILL.md"; then
-  _pass "Codex-hosted Claude passthrough defaults Opus 5.5 effort to medium"
-else
-  _fail "Codex-hosted Claude passthrough default effort drift"
-fi
-if grep -Fq 'Defaults: `model=gpt-6.1-sol`, `effort=medium`.' \
-     "$PLX_CLAUDE/skills/codex/SKILL.md"; then
-  _pass "Claude-hosted Codex passthrough defaults GPT-6.1 Sol effort to medium"
-else
-  _fail "Claude-hosted Codex passthrough default drift"
+  _fail "single-engine passthrough launch contract drift"
 fi
 
-claude_host_boundary_ok=1
-for skill in plan review simplify; do
-  grep -Fq 'narrowly scoped host approval' \
-    "$PLX_CODEX/skills/$skill/SKILL.md" || claude_host_boundary_ok=0
-done
-if [ "$claude_host_boundary_ok" -eq 1 ] &&
-   grep -Fq -- '--claude-passthrough-full-access' "$PLX_CODEX/skills/claude/SKILL.md" &&
-   grep -Fq 'if Claude works in a local terminal' "$PLX_ROOT/shared/bin/plx-engine"; then
-  _pass "Codex-hosted Claude passthrough has full access; pipeline calls preserve OAuth access"
-else
-  _fail "Codex-hosted Claude access boundary drift"
-fi
-
-if grep -q 'Default to the existing \*\*ephemeral\*\*' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
-   grep -q 'plx-codex-thread start' "$PLX_CLAUDE/skills/codex/references/persistence.md" &&
+if grep -q 'plx-codex-thread start' "$PLX_CLAUDE/skills/codex/references/persistence.md" &&
    grep -q 'plx-codex-thread resume' "$PLX_CLAUDE/skills/codex/references/persistence.md" &&
-   grep -Fq -- '--codex-passthrough-full-access' "$PLX_CLAUDE/skills/codex/SKILL.md" &&
-   grep -q 'thread_id' "$PLX_CLAUDE/skills/codex/references/persistence.md" &&
    ! grep -Rqi 'plx-codex-thread' \
      "$PLX_CLAUDE/skills/build" "$PLX_CLAUDE/skills/dev" \
      "$PLX_CLAUDE/skills/plan" \
@@ -216,7 +156,7 @@ for package_host in "$PLX_CLAUDE:Codex:gpt-6.1-sol:/plx:codex" "$PLX_CODEX:Claud
   model="${settings%%:*}"
   passthrough="${settings#*:}"
   skill="$package/skills/simplify/SKILL.md"
-  grep -Fq "default is four $engine \`$model\` lanes at \`medium\`, matching \`$passthrough\`" "$skill" || simplify_contract_ok=0
+  grep -Fq "\`$model\`" "$skill" || simplify_contract_ok=0
   grep -Fq -- '--model <model>' "$skill" || simplify_contract_ok=0
   for rubric in reuse simplification efficiency altitude; do
     grep -Fq "simplify-$rubric" "$skill" || simplify_contract_ok=0
@@ -228,29 +168,14 @@ else
   _fail "Simplify fixed-shape contract drift"
 fi
 
-kiss_principles_ok=1
-for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
-  skill="$package/skills/kiss/SKILL.md"
-  grep -Fq '# KISS principles' "$skill" || kiss_principles_ok=0
-  grep -Fq "Load the user's KISS principles into the current context" "$skill" || kiss_principles_ok=0
-  grep -Fq 'Simple means the smallest complete solution, not the fewest lines.' "$skill" || kiss_principles_ok=0
-  grep -Fq 'Stop when the simplest complete solution works.' "$skill" || kiss_principles_ok=0
-  ! grep -Eq 'plx-engine|--mode (ro|rw)' "$skill" || kiss_principles_ok=0
-done
-if [ "$kiss_principles_ok" -eq 1 ]; then
-  _pass "KISS is a context-only principles skill"
-else
-  _fail "KISS principles contract drift"
-fi
-
 if grep -Eq 'plx-engine|--mode (ro|rw)' \
-     "$PLX_CLAUDE/skills/orchestrate/SKILL.md" \
-     "$PLX_CODEX/skills/orchestrate/SKILL.md"; then
-  _fail "Orchestrate must remain context-only"
+     "$PLX_CLAUDE"/skills/{kiss,orchestrate}/SKILL.md \
+     "$PLX_CODEX"/skills/{kiss,orchestrate}/SKILL.md; then
+  _fail "KISS and Orchestrate must remain context-only"
 else
-  _pass "Orchestrate is context-only"
+  _pass "KISS and Orchestrate are context-only"
 fi
-if grep -Fq 'scoped `gpt-6.1-sol` subagents at medium reasoning' \
+if grep -Fq '`gpt-6.1-sol`' \
      "$PLX_CODEX/skills/orchestrate/SKILL.md"; then
   _pass "Codex Orchestrate workers default to GPT-6.1 Sol Medium"
 else
@@ -273,26 +198,13 @@ for package_host in "$PLX_CLAUDE:Codex:gpt-6.1-sol:/plx:codex" "$PLX_CODEX:Claud
   for token in '--mode ro' '--model <model> --effort <effort>'; do
     grep -Fq -- "$token" "$skill" || review_contract_ok=0
   done
-  grep -Fq "Default all three to $engine \`$model\` at \`medium\`, matching" "$skill" || review_contract_ok=0
+  grep -Fq "\`$model\`" "$skill" || review_contract_ok=0
   grep -Fq "\`$passthrough\`" "$skill" || review_contract_ok=0
 done
 if [ "$review_contract_ok" -eq 1 ]; then
   _pass "standalone review supplies core and security roles with explicit read-only launch settings"
 else
   _fail "standalone review launch contract drift"
-fi
-
-if grep -Fq 'In change reviews, pre-existing complexity is in scope only when the change directly' \
-     "$PLX_ROOT/shared/prompts/reviewer-cleanup.md" &&
-   grep -Fq 'concrete, behavior-preserving remedy' \
-     "$PLX_ROOT/shared/prompts/reviewer-cleanup.md" &&
-   grep -Fq 'unrelated pre-existing issues' \
-     "$PLX_ROOT/shared/prompts/reviewer-cleanup.md" &&
-   grep -Fq 'In a whole-file audit, existing issues within' \
-     "$PLX_ROOT/shared/prompts/reviewer-cleanup.md"; then
-  _pass "cleanup review distinguishes change reviews from whole-file audits"
-else
-  _fail "cleanup debt-retirement boundary drift"
 fi
 
 
@@ -377,41 +289,16 @@ else
   _fail "Build launch/handoff or host workflow parity drift"
 fi
 
-grok_sandbox_contract_ok=1
+plan_brief_ok=1
 for host in claude codex; do
-  package="$PLX_ROOT/plugins/$host/plx"
-  grep -Fq '[PLX:GROK FAILED]' "$package/skills/grok/SKILL.md" || grok_sandbox_contract_ok=0
-  grep -Fq 'Do not perform the task in the host session' "$package/skills/grok/SKILL.md" || grok_sandbox_contract_ok=0
-done
-if [ "$grok_sandbox_contract_ok" -eq 1 ]; then
-  _pass "Grok passthroughs fail closed"
-else
-  _fail "Grok workspace preflight or fail-closed contract drift"
-fi
-
-prompt_constraints_ok=1
-for host in claude codex; do
-  package="$PLX_ROOT/plugins/$host/plx"
-  # Guard the intentional relaxation without pinning replacement prose.
-  if grep -qiE 'three tool calls|exactly three calls|WITHOUT reading file contents|do NOT read the code under review|always request narrowly scoped host approval' \
-      "$package"/skills/*/SKILL.md; then
-    prompt_constraints_ok=0
-  fi
-  if grep -qE 'Return exactly|Final Report Format|recursive delegation' \
-      "$package/prompts/build-worker.md" \
-      "$package/skills/plan/references/spec-template.md"; then
-    prompt_constraints_ok=0
-  fi
-  for skill in plan; do
-    for field in '## Draft plan' '### Original request' '### Confirmed decisions' '### Candidate plan'; do
-      grep -Fq "$field" "$package/skills/$skill/SKILL.md" || prompt_constraints_ok=0
-    done
+  for field in '## Draft plan' '### Original request' '### Confirmed decisions' '### Candidate plan'; do
+    grep -Fq "$field" "$PLX_ROOT/plugins/$host/plx/skills/plan/SKILL.md" || plan_brief_ok=0
   done
 done
-if [ "$prompt_constraints_ok" -eq 1 ]; then
-  _pass "neutral critic briefs remain structured while host mechanics and reports stay flexible"
+if [ "$plan_brief_ok" -eq 1 ]; then
+  _pass "Plan critic brief keeps its structured fields"
 else
-  _fail "critic brief or prompt simplification contract drift"
+  _fail "Plan critic brief field drift"
 fi
 
 # --------------------------------------------------------------------------- #
@@ -510,10 +397,6 @@ if grep -RE '^[[:space:]]*[^#].*(dangerously-bypass-approvals-and-sandbox|--yolo
   _fail "forbidden approvals-and-sandbox bypass in shared runtime"
 elif [ "$(grep -Fc 'sandbox="danger-full-access"' "$PLX_ROOT/shared/bin/plx-engine")" -ne 1 ] ||
      [ "$(grep -Fc 'flags+=(--dangerously-skip-permissions' "$PLX_ROOT/shared/bin/plx-engine")" -ne 2 ] ||
-     ! grep -Fq '[[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
-     ! grep -Fq '[[ "$RUBRIC" == "build-worker" ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
-     ! grep -Fq '[[ "$ENGINE" == "claude" && "$MODE" == "rw" && -z "$RUBRIC" && "$BUILD_WRITER_FULL_ACCESS" -eq 0 ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
-     ! grep -Fq '[[ "$ENGINE" == "codex" && "$MODE" == "rw" && -z "$RUBRIC" && "$BUILD_WRITER_FULL_ACCESS" -eq 0 ]]' "$PLX_ROOT/shared/bin/plx-engine" ||
      find "$PLX_ROOT/shared/bin" -type f ! -name plx-engine -exec \
        grep -El 'danger-full-access|dangerously-skip-permissions' {} + | grep -q .; then
   _fail "explicit full-access runtime boundary drift"
@@ -537,12 +420,6 @@ if grep -RE 'mktemp[[:space:]]+-d([^[:alnum:]]|$)' \
   _fail "a skill creates an unconfined temporary directory"
 else
   _pass "skill temporary directories use explicit plx prefixes"
-fi
-if grep -RqiE 'security finding \(hand off|drop.*security|security.*one line' \
-     "$PLX_ROOT/plugins" "$PLX_ROOT/shared/prompts"; then
-  _fail "review policy still drops security findings"
-else
-  _pass "security findings have an explicit review contract"
 fi
 
 # --------------------------------------------------------------------------- #

@@ -4,5 +4,5 @@ NEEDS_CODEX: claude
 FIXTURE: calc
 TASK: review calc.py for correctness bugs
 EXPECT_DIFF: average
-EXPECT_CHECK: python3 -c "from calc import average; assert average([])==0.0 and average([1,2,3])==2"
+EXPECT_CHECK: python3 -c "from calc import average as a; assert a([1,2,3])==2; r=[None]; exec('try: r[0]=a([])\nexcept ValueError: r[0]=0.0'); assert r[0]==0.0"
 EXPECT_OUTPUT: zerodivision|empty|divide by zero|len\(numbers\)

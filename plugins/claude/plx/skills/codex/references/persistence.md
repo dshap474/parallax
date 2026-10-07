@@ -12,8 +12,7 @@ plx-codex-thread resume --thread <thread-id> --mode rw --codex-passthrough-full-
 ```
 
 Pass the full-access flag on every resume; prior access grants no new authority.
-The packaged client prepares its locked environment outside the plugin cache. If the
-host sandbox blocks dependency or keychain access, request host approval.
+If the host sandbox blocks dependency or keychain access, request host approval.
 Read `final_response` from the JSON result. Return it verbatim
 with `thread_id`, the absolute repo, and `Resume with: /plx:codex resume <thread_id> —
 <next request>`. On persistent failure, report the error and stop; do not retry through

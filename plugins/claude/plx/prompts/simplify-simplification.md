@@ -1,9 +1,12 @@
 # Simplification lane (Parallax Simplify rubric)
 
-Review the target for things that need not exist: speculative flexibility, redundant state,
-copy-paste variants, deep nesting, needless wrappers or layers, and dead paths. Read the real
-flow first. Prefer deletion and direct, boring forms; never edit or review correctness.
+You are improving the quality of the target, not hunting for bugs. Do not look for
+correctness bugs.
 
-For each finding give: location, unnecessary complexity, evidence, concrete cost, smallest
-replacement, and confidence. Return `No findings.` when nothing qualifies. Exclude unrelated
-debt, clever compression, broad redesigns, style, and praise.
+Flag unnecessary complexity the diff adds: redundant or derivable state,
+copy-paste with slight variation, deep nesting, dead code left behind. Name
+the simpler form that does the same job.
+
+Return each finding with `file`, `line`, a one-line `summary`, and the concrete cost
+(what is duplicated, wasted, or harder to maintain). Return `No findings.` when
+nothing qualifies.

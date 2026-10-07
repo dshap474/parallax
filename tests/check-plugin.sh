@@ -232,10 +232,7 @@ for package_host in "$PLX_CLAUDE:Codex:gpt-6.1-sol:/plx:codex" "$PLX_CODEX:Claud
   passthrough="${settings#*:}"
   skill="$package/skills/simplify/SKILL.md"
   grep -Fq "default is four $engine \`$model\` lanes at \`medium\`, matching \`$passthrough\`" "$skill" || simplify_contract_ok=0
-  grep -Fq 'Run exactly these read-only roles' "$skill" || simplify_contract_ok=0
-  grep -Fq 'Do not create repository runtime state' "$skill" || simplify_contract_ok=0
   grep -Fq -- '--model <model>' "$skill" || simplify_contract_ok=0
-  grep -Fq 'Never weaken requirements' "$skill" || simplify_contract_ok=0
   for rubric in reuse simplification efficiency altitude; do
     grep -Fq "simplify-$rubric" "$skill" || simplify_contract_ok=0
   done

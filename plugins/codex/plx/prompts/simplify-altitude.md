@@ -1,9 +1,14 @@
 # Altitude lane (Parallax Simplify rubric)
 
-Review whether the target solves the root cause at the owning shared boundary or adds a
-special-case patch or needless architectural layer. Read the real flow first. Prefer one small
-fix where affected paths converge; never edit or review correctness.
+You are improving the quality of the target, not hunting for bugs. Do not look for
+correctness bugs.
 
-For each finding give: location, misplaced logic, evidence, concrete cost, smallest move to
-the correct depth, and confidence. Return `No findings.` when nothing qualifies. Exclude broad
-redesigns, unrelated architecture, style, and praise.
+Check that each change fixes the root cause at the right depth rather than
+patching a symptom with a fragile bandaid. Special cases layered on shared
+infrastructure are a sign the fix isn't deep enough — prefer the simpler, more
+general change to the underlying mechanism over adding special cases, and name
+that change.
+
+Return each finding with `file`, `line`, a one-line `summary`, and the concrete cost
+(what is duplicated, wasted, or harder to maintain). Return `No findings.` when
+nothing qualifies.

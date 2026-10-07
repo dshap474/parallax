@@ -1,92 +1,66 @@
 ---
 name: simplify
-description: Simplify a plan or code with independent reviews. Use "report only" to skip edits.
+description: Review changed code or a plan for reuse, simplification, efficiency, and altitude with four parallel engine lanes, then apply the fixes. Use "report only" to skip edits.
 ---
 
-# $plx:simplify — simplify plans and code
+# $plx:simplify
 
-Review the supplied plan or code through four independent lanes. Resolve the target and
-report-only mode before starting. Draft or complete work first only when the request
-includes that work. In report-only mode, make no repository edits. The host launches
-lanes, verifies their claims, and applies and checks authorized improvements.
+`$plx:simplify → 4 cleanup lanes in parallel → apply the fixes`
 
-## Simplification principles
+You are improving the quality of the changed code, not hunting for bugs. Review
+it for reuse, simplification, efficiency, and altitude issues, then fix what you
+find. Do not look for correctness bugs — that is what `$plx:review` is for. If the
+target is a plan instead of code, review the plan and revise it the same way.
 
-Understand the work first. Then stop at the first option that fully works:
+Resolve `<plugin-root>` by removing `/skills/simplify/SKILL.md` from this file's path.
 
-1. Remove what need not exist.
-2. Reuse the repository.
-3. Use the standard library.
-4. Use the native platform.
-5. Use an installed dependency.
-6. Prefer direct code over a new abstraction.
-7. Otherwise add the minimum required.
+## Phase 0 — Gather the diff
 
-Prefer deletion, root-cause fixes, boring code, and fewer files. Never weaken requirements,
-correctness, security, validation, data safety, accessibility, error handling, or testing.
+Run `git diff @{upstream}...HEAD` (or `git diff main...HEAD` / `git diff HEAD~1`
+if there's no upstream) to get the unified diff under review. If there are
+uncommitted changes, or the range diff is empty, also run `git diff HEAD` and
+include the working-tree changes in scope. If a PR number, branch name, file path,
+or plan was passed as an argument, review that target instead.
 
-## Run
+Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-simplify.XXXXXX"` and write the
+target and any user constraints to `<tmp>/brief.md` under `## Simplify brief`.
 
-1. Resolve `<repo>` with `git rev-parse --show-toplevel`; save `git status --short`.
-2. Resolve `<plugin-root>` by removing `/skills/simplify/SKILL.md` from this file's path.
-3. Create `<tmp>` with `mktemp -d "${TMPDIR:-/tmp}/plx-simplify.XXXXXX"`; save the request
-   to `<tmp>/task.md`.
-4. Choose one target:
-   - planning: the current draft, included in `<tmp>/brief.md`;
-   - otherwise: the explicit scope, or upstream/main/last-commit diff plus working changes.
-5. Read config key `simplify`. Run exactly these read-only roles concurrently:
+## Phase 1 — Review (4 cleanup lanes in parallel)
 
-| Role | Rubric |
-| --- | --- |
-| `simplify-reuse` | `simplify-reuse` |
-| `simplify-simplification` | `simplify-simplification` |
-| `simplify-efficiency` | `simplify-efficiency` |
-| `simplify-altitude` | `simplify-altitude` |
-
+Launch **4 independent read-only lanes** concurrently in the background, one per
+rubric: `simplify-reuse`, `simplify-simplification`, `simplify-efficiency`,
+`simplify-altitude`.
 The default is four Claude `claude-opus-5-5` lanes at `medium`, matching `$plx:claude`.
-`with all Codex|Claude|Grok lanes` replaces the engine for all four. Honor an
-explicit model or effort, except that `grok-4.6` always uses `medium`. For engine-only
-overrides, use Codex `gpt-6.1-sol` at `medium`, Claude `claude-opus-5-5` at `medium`,
-or Grok `grok-4.6` at `medium`. Preflight each selected engine once. If the host sandbox
-blocks Claude network or keychain access, request narrowly scoped host approval for that call; keep
-Claude safe mode active. Write the chosen shape to `<tmp>/shape.txt` before launch.
-
-Write one neutral `<tmp>/brief.md` beginning with `## Simplify brief`, containing the
-target, constraints, and simplification goal. Keep lane selection, model/effort settings,
-and report-only or fix instructions in the host context; lanes only propose changes.
-Launch each lane:
+`with all Codex|Claude|Grok lanes`, or an explicit model or effort, replaces it for all four.
+If the host sandbox blocks Claude network or keychain access, request narrowly scoped host approval for that call; keep Claude safe mode active.
 
 ```text
-<plugin-root>/bin/plx-engine --engine <engine> --mode ro --repo <repo> \
-  --prompt-file <tmp>/brief.md --rubric <rubric> --model <model> \
-  --effort <effort> --out <tmp>/<engine>-<role>.md --log <tmp>/<engine>-<role>.log
+<plugin-root>/bin/plx-engine --engine <engine> --mode ro --repo <repo> --prompt-file <tmp>/brief.md \
+  --rubric <rubric> --model <model> --effort <effort> \
+  --out <tmp>/<rubric>.md --log <tmp>/<rubric>.log
 ```
 
-Use packaged tools and named rubrics only. Retry exit `1` once. Exit `2` is usage failure;
-exit `3` needs authentication. Continue as `partial` if at least one lane succeeds; never
-substitute an explicitly chosen engine.
+Each lane returns findings with `file`, `line`, a one-line `summary`, and the
+concrete cost. If a lane fails, continue with the others and note it.
 
-## Synthesize
+## Phase 2 — Apply the fixes
 
-Deduplicate findings, inspect their evidence, and try to disprove them. Reject unrelated
-debt, style opinions, clever compression, speculative optimization, broad rewrites, and
-anything that weakens the simplification boundaries above.
+Wait for all four lanes to complete, dedup findings that point at the same
+line or mechanism, and fix each remaining one directly. Skip any finding whose
+fix would change intended behavior, require changes well outside the reviewed
+diff, or that you judge to be a false positive — note the skip rather than
+arguing with it. With `report only`, list the findings instead of fixing them.
+Finish with a brief summary of what was fixed and what was skipped (or confirm
+the code was already clean).
 
-Unless `report only`, revise the draft or apply the smallest confirmed code fixes yourself.
-Lanes never write. Re-read the result and run proportionate checks.
-
-Finish the trace before cleanup:
+Then record the run and clean up:
 
 ```text
 <plugin-root>/bin/plx-eval finish --skill simplify --host codex --repo <repo> --run-dir <tmp> \
-  --host-model <model-or-unknown> --task-file <tmp>/task.md --shape-file <tmp>/shape.txt \
-  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run>
+  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
+  || echo "plx-eval finish failed (non-fatal)" >&2
+<plugin-root>/bin/plx-clean-temp <tmp>
 ```
-
-Recorder failure is non-fatal. Report the target, lane shape, accepted/rejected findings,
-changes, and verification. Clean only with `<plugin-root>/bin/plx-clean-temp <tmp>`.
-
-Do not create repository runtime state, commit, publish, or launch writer lanes.
 
 Request:
 

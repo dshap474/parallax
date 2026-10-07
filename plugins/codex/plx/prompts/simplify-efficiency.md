@@ -1,9 +1,16 @@
 # Efficiency lane (Parallax Simplify rubric)
 
-Review the target for unnecessary work: repeated computation or I/O, needless serialization,
-eager or blocking work, retained objects, and optimization without evidence. Read the real
-flow first. Prefer doing less with existing mechanisms; never edit or review correctness.
+You are improving the quality of the target, not hunting for bugs. Do not look for
+correctness bugs.
 
-For each finding give: location, wasted work, evidence, concrete cost, smallest replacement,
-and confidence. Return `No findings.` when nothing qualifies. Exclude hypothetical hot paths,
-micro-optimizations, unrelated debt, style, and praise.
+Flag wasted work the diff introduces: redundant computation or repeated I/O,
+independent operations run sequentially, blocking work added to startup or
+hot paths. Also flag long-lived objects built from closures or captured
+environments — they keep the entire enclosing scope alive for the object's
+lifetime (a memory leak when that scope holds large values); prefer a
+class/struct that copies only the fields it needs. Name the cheaper
+alternative.
+
+Return each finding with `file`, `line`, a one-line `summary`, and the concrete cost
+(what is duplicated, wasted, or harder to maintain). Return `No findings.` when
+nothing qualifies.

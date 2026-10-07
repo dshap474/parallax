@@ -1325,7 +1325,7 @@ out="$WORK/simplify-skill.txt"
 "$PLUGIN_ROOT/bin/plx-skill" simplify > "$out" 2>&1
 rc=$?
 if [ "$rc" -eq 0 ]; then _pass "simplify exits 0"; else _fail "simplify exit $rc"; fi
-assert_contains "## Simplification principles" "$out" "emits the Simplify pipeline"
+assert_contains "## Phase 1 — Review (4 cleanup lanes in parallel)" "$out" "emits the Simplify pipeline"
 out="$WORK/kiss-skill.txt"
 "$PLUGIN_ROOT/bin/plx-skill" kiss > "$out" 2>&1
 rc=$?

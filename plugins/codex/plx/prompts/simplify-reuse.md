@@ -1,9 +1,12 @@
 # Reuse lane (Parallax Simplify rubric)
 
-Review the target for code or machinery the repository, standard library, native platform,
-or an installed dependency already provides. Read the real flow first. Report only concrete,
-behavior-preserving replacements; never edit or review correctness.
+You are improving the quality of the target, not hunting for bugs. Do not look for
+correctness bugs.
 
-For each finding give: location, unnecessary code, evidence, concrete cost, smallest
-replacement, and confidence. Return `No findings.` when nothing qualifies. Exclude unrelated
-debt, speculative reuse, broad redesigns, style, and praise.
+Flag new code that re-implements something the codebase
+already has — Grep shared/utility modules and files adjacent to the change,
+and name the existing helper to call instead.
+
+Return each finding with `file`, `line`, a one-line `summary`, and the concrete cost
+(what is duplicated, wasted, or harder to maintain). Return `No findings.` when
+nothing qualifies.

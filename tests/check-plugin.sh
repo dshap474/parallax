@@ -323,7 +323,7 @@ for host, model, effort in (("claude", "claude-opus-5-5", "medium"), ("codex", "
     if "--rubric reviewer-" in build or "--require-grok" in build:
         errors.append(f"{host}: Build must not run its own review")
     for field in ("## Spec", "## Build run context", "Baseline commit:",
-                  "Baseline snapshots:", "Verification suite:", f"--require-{host}"):
+                  "Pre-existing changes:", "Verification suite:"):
         if field not in build:
             errors.append(f"{host}: Build handoff missing {field}")
     plan = (package / "skills/plan/SKILL.md").read_text()

@@ -4,7 +4,7 @@ Implement the accepted `## Spec` and run its acceptance checks and the relevant 
 verification suite from `## Build run context`. You are the single implementation worker.
 Do not launch reviewers or subagents; the separate Review skill owns review.
 
-Follow repository guidance, preserve pre-existing work recorded in the baseline snapshots,
+Follow repository guidance, preserve the pre-existing changes listed in `## Build run context`,
 and keep changes within the accepted scope. If a material behavior decision is missing,
 return `[NEEDS CLARIFICATION]` rather than guessing.
 

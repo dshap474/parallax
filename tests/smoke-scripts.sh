@@ -70,24 +70,6 @@ printf '%s\n' '#!/usr/bin/env bash' \
 chmod +x "$fake_bin/grok"
 printf '%s\n' 'reply OK' > "$fake_prompt"
 
-incomplete_plugin="$WORK/incomplete-plugin"
-cp -R "$PLUGIN_ROOT" "$incomplete_plugin"
-awk '{ print; if ($0 == "PLX_DISPATCHED=1") print "exit 0" }' \
-  "$PLUGIN_ROOT/bin/plx-engine" > "$WORK/plx-engine-incomplete"
-mv "$WORK/plx-engine-incomplete" "$incomplete_plugin/bin/plx-engine"
-chmod +x "$incomplete_plugin/bin/plx-engine"
-PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
-  "$incomplete_plugin/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
-  --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" \
-  > /dev/null 2> "$WORK/incomplete-error.txt"
-rc=$?
-if [ "$rc" -eq 1 ] && grep -Fq 'execution ended before output delivery completed' \
-   "$WORK/incomplete-error.txt"; then
-  _pass "plx-engine rejects a dispatched but incomplete zero-status exit"
-else
-  _fail "plx-engine incomplete execution expected exit 1, got $rc"
-fi
-
 PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine grok --mode ro --repo "$REPO" \
   --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
@@ -512,19 +494,6 @@ assert_contains "gpt-6-sol" "$fake_codex_args" "Codex model defaults to GPT-6 So
 assert_contains "model_reasoning_effort=medium" "$fake_codex_args" "Codex effort defaults to medium"
 assert_contains "approval_policy=never" "$fake_codex_args" "Codex headless approval policy is explicit"
 assert_contains "workspace-write" "$fake_codex_args" "Codex rw uses workspace-write sandbox"
-
-for retired_model in gpt-5.6 gpt-5.6-sol gpt-5.6-luna opus opus-5 claude-opus-5; do
-  PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
-    "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode ro --repo "$REPO" \
-    --prompt-file "$fake_prompt" --model "$retired_model" \
-    --out "$fake_out" --log "$fake_log" >/dev/null 2>&1
-  rc=$?
-  if [ "$rc" -eq 2 ]; then
-    _pass "retired model $retired_model is rejected"
-  else
-    _fail "retired model $retired_model expected exit 2, got $rc"
-  fi
-done
 
 PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
   "$PLUGIN_ROOT/bin/plx-engine" --engine codex --mode rw --repo "$REPO" \

@@ -37,16 +37,6 @@ verifiers to how costly a wrong item would be; you decide how many.
 If a verifier fails or returns nothing useful, respawn it once or proceed without it
 and say so. Stop any remaining lanes before finishing.
 
-## Trace
-Resolve `<plugin-root>` from this loaded `SKILL.md` path (two directories up).
-Before every handled return, record the run (failure is non-fatal):
-
-```
-<plugin-root>/bin/plx-eval finish --skill adversarial-verification --host codex --repo <repo> \
-  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-  || echo "plx-eval finish failed (non-fatal)" >&2
-```
-
 ## Report
 Survivors first, then refuted items with the refuting evidence, then uncertain items
 and what would settle them.

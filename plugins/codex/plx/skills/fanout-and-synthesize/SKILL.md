@@ -36,16 +36,6 @@ shape so results merge cleanly.
 If a lane fails or returns nothing useful, respawn it once with a sharpened brief or
 proceed without it and say so. Stop any remaining lanes before finishing.
 
-## Trace
-Resolve `<plugin-root>` from this loaded `SKILL.md` path (two directories up).
-Before every handled return, record the run (failure is non-fatal):
-
-```
-<plugin-root>/bin/plx-eval finish --skill fanout-and-synthesize --host codex --repo <repo> \
-  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-  || echo "plx-eval finish failed (non-fatal)" >&2
-```
-
 ## Per-lane brief
 Core task: <same task for every lane>
 Constraints and evidence: <same boundaries>

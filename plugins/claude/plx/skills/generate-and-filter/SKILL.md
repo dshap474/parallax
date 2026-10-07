@@ -50,15 +50,6 @@ If a lane fails or returns nothing useful, respawn it once or proceed without it
 say so. Report how many ideas were generated, merged, and cut. Stop any remaining
 lanes before finishing.
 
-## Trace
-Before every handled return, record the run (failure is non-fatal):
-
-```
-plx-eval finish --skill generate-and-filter --host claude --repo <repo> \
-  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-  || echo "plx-eval finish failed (non-fatal)" >&2
-```
-
 ## Per-generator brief
 Goal and constraints: <same for every generator>
 Rubric: <the rubric>

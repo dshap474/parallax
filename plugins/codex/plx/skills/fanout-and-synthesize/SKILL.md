@@ -19,7 +19,7 @@ Launch every lane as `gpt-6-luna` subagents at max reasoning. An explicit user m
 default. If that worker is unavailable, say so instead of silently substituting.
 
 ## Sizing
-Use at least two lanes; you decide how many. Split by lens (independent angles on the
+Use at least two lanes, 8 lanes max; you decide how many. Split by lens (independent angles on the
 same question) or by shard (non-overlapping pieces of the same work). Merge lanes that
 would do substantially the same work; never add lanes just to collect votes. For
 shards, give every lane the same objective, a disjoint shard, and the same output

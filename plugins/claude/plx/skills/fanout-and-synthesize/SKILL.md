@@ -21,7 +21,7 @@ Launch every lane as `claude-sonnet-5-5` subagents at high effort. An explicit u
 default. If that worker is unavailable, say so instead of silently substituting.
 
 ## Sizing
-Use at least two lanes; you decide how many. Split by lens (independent angles on the
+Use at least two lanes, 8 lanes max; you decide how many. Split by lens (independent angles on the
 same question) or by shard (non-overlapping pieces of the same work). Merge lanes that
 would do substantially the same work; never add lanes just to collect votes. For
 shards, give every lane the same objective, a disjoint shard, and the same output
@@ -37,15 +37,6 @@ shape so results merge cleanly.
 ## Stop rules
 If a lane fails or returns nothing useful, respawn it once with a sharpened brief or
 proceed without it and say so. Stop any remaining lanes before finishing.
-
-## Trace
-Before every handled return, record the run (failure is non-fatal):
-
-```
-plx-eval finish --skill fanout-and-synthesize --host claude --repo <repo> \
-  --outcome <pass|fail|partial|aborted> --verification <pass|fail|not-run> \
-  || echo "plx-eval finish failed (non-fatal)" >&2
-```
 
 ## Per-lane brief
 Core task: <same task for every lane>

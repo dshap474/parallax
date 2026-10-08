@@ -49,50 +49,16 @@ Start a new Codex session, then use `$plx:dev`.
 | Adversarial verification | `/plx:adversarial-verification` | `$plx:adversarial-verification` |
 | Generate and filter | `/plx:generate-and-filter` | `$plx:generate-and-filter` |
 
-Plan is authored by Astra in Codex or Fable 5.1 in Claude Code, then reviewed by
-one opposite-host model: Fable 5.1 or Astra respectively. Build uses one GPT-6 Sol
-High worker in Codex or Opus 5.5 Medium worker in Claude Code to implement and verify.
-Review runs correctness, cleanup, and structural lanes in parallel with the opposite
-engine passthrough default: GPT-6.1 Sol Medium in Claude Code or Opus 5.5 Medium in
-Codex. It adds security when triggered; the host verifies findings and applies fixes.
-Dev calls Plan, then Build, then Review sequentially, using those skills' defaults.
-`simplify` runs four dimensions with the same opposite-engine default; `kiss` loads
-KISS principles into context.
-`orchestrate` loads a context-only planner posture with native subagent workers: Opus
-5.5 Medium in Claude Code or GPT-6.1 Sol Medium in Codex. It starts no task or pipeline.
+Model defaults, override syntax, and per-skill behavior are in
+[Commands](docs/COMMANDS.md). For example, use `$plx:claude use claude-opus-5-5 at
+medium for <task>` in Codex or `/plx:codex use gpt-6.1-sol at high for <task>` in
+Claude Code. See the [Claude model list](https://platform.claude.com/docs/en/models/overview),
+[Codex model list](https://learn.chatgpt.com/docs/models), and
+[Gemini CLI documentation](https://geminicli.com/docs/).
 
-## Explicit model choices
-
-Parallax's Claude-hosted `/plx:codex` passthrough defaults to `gpt-6.1-sol` at medium
-effort; Codex-hosted `$plx:claude` defaults to `claude-opus-5-5` at medium. Review and
-Simplify use those respective opposite-engine defaults. Build retains its own worker
-defaults: Opus 5.5 Medium in Claude Code or GPT-6 Sol High in Codex.
-For example, use `$plx:claude use claude-opus-5-5 at medium for <task>` in Codex,
-or `/plx:codex use gpt-6.1-sol at high for <task>` in Claude Code. Ask for
-`gpt-6-luna` on a focused Codex task. Parallax rejects retired Opus 5 and GPT-5.6
-Sol/Luna IDs, including the unpinned `opus` and `gpt-5.6` aliases. The selected CLI
-must have access to the requested model. See the
-[Claude model list](https://platform.claude.com/docs/en/models/overview) and
-[Codex model list](https://learn.chatgpt.com/docs/models).
-
-The one standalone Build worker intentionally receives full host access so it can write
-repository Git metadata. That transport is limited
-to the Build worker and does not expand the accepted spec or authorize publication;
-review lanes remain read-only.
-
-`PLX::Gemini` uses Gemini CLI with `auto` model routing or an explicit model.
-Install `@google/gemini-cli` and authenticate with `gemini` before use. It supports
-read-only questions and sandboxed file edits; shell/test execution is disabled.
-This transport currently requires macOS Seatbelt. See the
-[Gemini CLI documentation](https://geminicli.com/docs/) for authentication and availability.
-
-`PLX::Devin` is a separate single-engine passthrough. It uses SWE-2 High by default and
-explicitly gives Devin full host access; questions and reviews carry a no-edit
-instruction, but no sandbox enforces it. Repository-native Devin hooks, MCP servers,
-rules, and skills may load. The user request and repository guidance remain the authority
-boundary, and deployment, publication, credential changes, or external mutations require
-exact user authorization. Explicitly retryable internal protocol failures allow up to
-two fresh retries after partial work is reconciled; other failures stop immediately.
+The standalone Build worker, the opposite-host passthroughs, and the Devin passthrough
+run with full host access; every other lane is read-only or workspace-confined. See
+[Architecture](docs/ARCHITECTURE.md#runtime-and-safety).
 
 ## Repository layout
 

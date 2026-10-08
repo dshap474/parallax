@@ -4,21 +4,22 @@ Parallax orchestrates local engine CLIs; it does not host or proxy models.
 
 | Host package | Required host | Required pipeline engines | Optional |
 | --- | --- | --- | --- |
-| Claude Code | authenticated `claude` | authenticated `codex` | `grok`, `devin` |
-| Codex | authenticated `codex` | authenticated `claude` | `grok`, `devin` |
+| Claude Code | authenticated `claude` | authenticated `codex` | `grok`, `gemini`, `devin` |
+| Codex | authenticated `codex` | authenticated `claude` | `grok`, `gemini`, `devin` |
 
 The Codex CLI and Claude Code CLI must be available on `PATH`. Review and Simplify
 use the opposite engine by default. Grok overrides and the Grok passthrough use
-Grok 4.6 and require a current CLI and `grok login` or `XAI_API_KEY`.
-`/plx:devin` and `$plx:devin` additionally require the Devin CLI and
-`devin auth login`; Devin is not required by existing pipelines or preflight checks.
+Grok 4.6 and require a current CLI and `grok login` or `XAI_API_KEY`. The Gemini
+passthrough requires `@google/gemini-cli`, authentication via `gemini`, and macOS. The
+Devin passthrough requires the Devin CLI and `devin auth login`. No pipeline requires
+Grok, Gemini, or Devin.
 
 ## Engine contract
 
 All packages invoke `bin/plx-engine` with:
 
 ```text
-plx-engine --engine codex|claude|grok --mode ro|rw --repo <absolute-path> \
+plx-engine --engine codex|claude|grok|gemini --mode ro|rw --repo <absolute-path> \
   --prompt-file <file> [--rubric <name>] [--model <model>] [--effort <level>] \
   (--stdout | --out <file> --log <file>)
 ```
@@ -31,33 +32,10 @@ plx-engine --engine devin --mode full-access --repo <absolute-path> \
   (--stdout | --out <file> --log <file>)
 ```
 
-Exit codes are `0` success, `1` engine failure, `2` usage error, and `3` authentication
-required.
-
-Codex runs ephemerally with `approval_policy=never` and a selected sandbox; it never uses
-the combined approvals-and-sandbox bypass. Claude runs in safe mode with ambient plugins,
-hooks, MCP servers, and automatic project customization disabled, so `plx-engine` lists
-the repository guidance files the lane must apply. Grok's `bypassPermissions` is an
-unattended approval mode, separate from its read-only or workspace filesystem sandbox.
-
-Normal lanes remain read-only or workspace-constrained. The one standalone Build writer
-uses the explicit full-access transport needed for repository Git metadata and packaged
-review launches: Codex `danger-full-access`, or Claude's sandbox-disabled permission
-bypass. The wrapper rejects that mode outside an `rw` `build-worker` lane, and
-the transport does not grant publication or external-system authority.
-
-Devin is intentionally different: the wrapper selects dangerous permission mode and no
-OS sandbox, so it has full filesystem and network access. The generated user config
-disables supported imports, automatic updates, and subagents, but repository-native
-hooks, MCP servers, rules, and skills may still load. The wrapper appends a deterministic
-list of ignored, untracked, and nested repository guidance, validates the terminal ATIF
-response, never retries a possibly mutating task, and stops its owned process group on
-interruption. Full access does not grant publication or external-system authority.
-
-Long engine calls should run in a retained/background shell session. Grok may require
-narrowly scoped host approval for network or keychain access; its own kernel sandbox
-remains the file-confinement boundary. A sandbox-initialization failure is named
-`PLX_GROK_SANDBOX_UNAVAILABLE` and never authorizes host-session substitution.
+Exit codes are `0` success, `1` engine failure, `2` usage error, `3` authentication
+required, and `4` a retryable Devin protocol failure. Long engine calls should run in a
+retained or background shell. Per-engine sandbox and permission settings are described
+in [Architecture](ARCHITECTURE.md#runtime-and-safety).
 
 ## Local development install
 

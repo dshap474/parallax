@@ -13,6 +13,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough with full host access; default model/effort can be overridden |
 | Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; Grok 4.6 always uses medium effort |
+| Gemini | `/plx:gemini` | `$plx:gemini` | One sandboxed Gemini CLI passthrough; `auto` model routing by default; no shell or effort flag |
 | Devin | `/plx:devin` | `$plx:devin` | One full-access Devin passthrough; SWE-2 High by default; no generic effort flag |
 | Init | `/plx:init` | `$plx:init` | Load the Parallax skill map and research defaults into context |
 | Unknowns | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` | Host-only blindspot and comprehension work |
@@ -24,47 +25,26 @@ All skills are explicit-only so an expensive pipeline never starts merely becaus
 prompt resembles its description. Codex uses `allow_implicit_invocation: false`; Claude
 uses `disable-model-invocation: true` with `user-invocable: true`.
 
+## Model defaults and overrides
+
+| Skill | Claude Code host | Codex host |
+| --- | --- | --- |
+| Plan | Fable 5.1 authors; `gpt-6-astra` reviews | `gpt-6-astra` authors; `claude-fable-5-1` reviews |
+| Build | `claude-opus-5-5` Medium worker | `gpt-6-sol` High worker |
+| Review, Simplify | Codex `gpt-6.1-sol` Medium | Claude `claude-opus-5-5` Medium |
+| Opposite-host passthrough | `/plx:codex`: `gpt-6.1-sol` Medium | `$plx:claude`: `claude-opus-5-5` Medium |
+| Orchestrate workers | Opus 5.5 Medium subagents | GPT-6.1 Sol Medium subagents |
+
 Codex, Claude, and Grok passthroughs accept explicit model and effort requests in natural
-language (for example, `$plx:claude ask fable medium for <task>`). The host converts
-those settings into engine launch flags; omitted settings retain their defaults. Grok
-4.6 is always normalized to medium. Devin accepts an exact model ID instead: medium,
-high, and max map to `swe-2-medium`, `swe-2-high`, and `swe-2-max`; a separate effort
-value is rejected.
+language (for example, `$plx:claude ask fable medium for <task>`); omitted settings keep
+their defaults. Grok 4.6 is always normalized to medium. Devin takes an exact model ID
+instead (`swe-2-medium`, `swe-2-high`, `swe-2-max`) and rejects a separate effort value;
+an explicitly retryable Devin protocol failure allows up to two fresh retries after
+partial work is reconciled. Review and Simplify accept a current-message instruction
+that replaces the engine for the whole round. The selected CLI must have access to the
+requested model.
 
-Both opposite-host passthroughs give their target engine full host filesystem
-and network access, including SSH credentials. Codex and Claude receive their
-normal user configuration. The request still governs edits and remote actions.
-Pipeline lanes keep their own restrictions.
-
-Plan, Build, and Review own their model defaults in their skills. Dev calls them
-sequentially.
-Review runs its core lanes in parallel and accepts an explicit whole-round engine
-override. Claude Code defaults to Codex `gpt-6.1-sol` Medium; Codex defaults to
-Claude `claude-opus-5-5` Medium for both Review and Simplify.
-
-Standalone Build always uses one fresh same-host worker for implementation and
-verification: Claude Opus 5.5 Medium or Codex `gpt-6-sol` High, with no fallback or
-second writer. Simplify always runs reuse, simplification, efficiency, and altitude
-once each. A
-current-message instruction may replace the engine for the whole round.
-KISS is a context-only principles skill and launches no engine lanes.
-Orchestrate is also context-only. When invoked, it guides the host to plan and use
-Opus 5.5 Medium subagents in Claude Code or GPT-6.1 Sol Medium subagents in Codex;
-it does not launch workers itself or change pipeline routing.
-Standalone Build may create local commits when its accepted spec or the target
-repository's instructions explicitly require or authorize them. It stages only
-Build-owned work and reports every commit. Other skills retain their documented Git
-policies. No skill pushes, opens a pull request, merges, tags, releases, deploys, or
-publishes externally without separate authority; target-local artifacts explicitly
-required by an accepted spec are allowed.
-
-The standalone Build worker uses full access. Codex uses
-`danger-full-access`; Claude disables its sandbox and uses its explicit permission
-bypass. Plan and Review lanes stay read-only; full access never expands the accepted
-task or publication authority.
-The standalone Devin passthrough is also explicitly full access, using Devin's dangerous
-permission mode without its OS sandbox. It is not a Build, review, or fallback lane and
-does not change any pipeline routing.
+Safety, full-access, and Git rules are in [Architecture](ARCHITECTURE.md#runtime-and-safety).
 
 ## Runtime tools (package-local `bin/`)
 

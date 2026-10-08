@@ -8,90 +8,70 @@ Claude Code host                         Codex host
       │                                        │
       └────────── package-local plx-engine ────┘
                     │
-             Codex · Claude · Grok · Devin
+        Codex · Claude · Grok · Gemini · Devin
 ```
 
 ## Host responsibilities
 
-The current host authors plans, delegates Build, synthesizes Review findings, applies
-confirmed fixes, and performs the final gate. Each headless lane is one isolated
-`plx-engine` process.
-
-Plan uses Astra as author and Fable 5.1 as its single reviewer in Codex. In Claude Code,
-Fable 5.1 authors and Astra reviews. Build uses one same-host worker: GPT-6 Sol High in
-Codex or Opus 5.5 Medium in Claude Code. Review runs opposite-engine Medium correctness,
-cleanup, and structural lanes in parallel, adding security when triggered. Dev calls
-Plan, Build, and Review in sequence using those defaults.
+The current host authors plans, delegates Build, synthesizes Review and Simplify
+findings, applies confirmed fixes, and performs the final gate. Each headless lane is
+one isolated `plx-engine` process. Model defaults per skill are listed in
+[Commands](COMMANDS.md).
 
 ## Package boundaries
 
-Each package contains its own manifest, skills, config, `bin/`, `prompts/`, and license.
-This is required because both plugin systems copy installed plugins into caches. Runtime
-paths therefore never traverse to repository-level shared files.
+Each package contains its own manifest, skills, `bin/`, `prompts/`, and license.
+Both plugin systems copy installed plugins into caches, so runtime paths never
+traverse to repository-level shared files.
 
-`shared/bin/` and `shared/prompts/` are canonical source files.
-`scripts/sync-shared.sh` copies them into both packages, while
-`scripts/sync-shared.sh --check` verifies byte-for-byte agreement. Skills and engine
-configs remain platform-specific because invocation syntax, host tools, and review
-polarity differ.
+`shared/bin/` and `shared/prompts/` are canonical. `scripts/sync-shared.sh` copies them
+into both packages and `--check` verifies byte-for-byte agreement. Skills stay
+platform-specific because invocation syntax, host tools, and review polarity differ.
 
 ## Pipeline
 
-`plan`, `build`, and `review` are separate workflows. `dev` invokes them in sequence
-and waits for each stage to finish. Build requires an accepted spec and delegates
-implementation and verification to one fresh worker. Review independently checks the
-result and the host applies confirmed fixes.
-`simplify` simplifies a plan or code. `kiss` loads the user-authored KISS principles into
-the host context. `orchestrate` loads a planner and native-worker posture without running
-tools or changing the packaged pipelines.
-
-Plan and Review lanes are read-only. Build uses one worker and has no fallback writer.
-Review fixes confirmed findings after its lanes return. Behavior-changing or ambiguous
-findings go back to the user.
-
-Simplify runs four independent opposite-engine Medium dimensions: reuse, simplification,
-efficiency, and altitude. The host validates their findings and applies the smallest safe changes.
-It complements rather than replaces correctness review.
+`plan`, `build`, and `review` are separate workflows; `dev` runs them in sequence.
+Plan and Review lanes are read-only. Build requires an accepted spec and delegates it to
+one fresh same-host worker with no fallback writer. Review verifies lane findings and
+the host fixes confirmed ones; behavior-changing or ambiguous findings go back to the
+user. Simplify runs four read-only dimensions (reuse, simplification, efficiency,
+altitude) and the host applies the smallest safe changes; it complements correctness
+review. `kiss`, `orchestrate`, and `init` load context only and launch no lanes.
 
 ## Runtime and safety
 
-Pipeline lanes and passthroughs use `plx-engine`. Its generic engine defaults pin:
+`plx-engine` pins transport settings per engine; callers choose only engine, mode,
+rubric, model, and effort.
 
-- Codex: `gpt-6-sol`, user config ignored, approval policy `never`, ephemeral session,
-  and an explicit filesystem sandbox;
-- Claude: `claude-opus-5-5`, safe mode, no session persistence, strict MCP/network isolation,
-  read-only tools or repo-confined sandboxed Bash;
-- Grok: `grok-4.6` at medium reasoning, unattended tool approval, no
-  planning/subagent/memory features, and an explicit read-only or workspace sandbox;
-- Devin: `swe-2-high`, one-shot print mode, generated config with supported imports,
-  updates, and subagents disabled, dangerous permission mode, and no OS sandbox.
+- Codex: user config ignored, approval policy `never`, ephemeral session, explicit
+  read-only or workspace-write sandbox. Never the approvals-and-sandbox bypass or `--yolo`.
+- Claude: safe mode, no session persistence, strict MCP/network isolation, read-only
+  tools or repo-confined sandboxed Bash. Safe mode disables guidance discovery, so the
+  wrapper lists physical `AGENTS.md`, `CLAUDE.md`, `CLAUDE.local.md`, and
+  `.claude/rules/*.md` files in the prompt, including ignored and untracked ones.
+- Grok: `grok-4.6` always at medium, unattended tool approval, no planning, subagent,
+  or memory features, and an explicit read-only or workspace kernel sandbox. A sandbox
+  startup failure prints `PLX_GROK_SANDBOX_UNAVAILABLE` and never authorizes
+  host-session substitution.
+- Gemini: `auto` routing by default, sandbox required (macOS Seatbelt), read tools in
+  `ro` and file-edit tools in `rw`; shell, extensions, MCP, and hooks disabled.
+- Devin: one-shot print mode, generated config with imports, updates, and subagents
+  disabled, dangerous permission mode, no OS sandbox. Repository-native Devin hooks,
+  MCP servers, rules, and skills may still load. The wrapper lists repository guidance,
+  requires a terminal ATIF response and exit 0, and stops its process group on
+  interruption.
 
-Skills pass their own model defaults to the wrapper. Explicit user-requested model and effort values pass through
-to the selected engine except that `grok-4.6` is always normalized to medium reasoning
-and retired Opus 5 and GPT-5.6 Sol/Luna IDs and aliases are rejected. The selected
-engine remains responsible for validating other values.
-Normal lanes use read-only or workspace-constrained execution. The one standalone Build
-writer intentionally uses full host access: Codex `danger-full-access`, or Claude with
-its sandbox disabled and `--dangerously-skip-permissions`. The wrapper accepts that mode
-only for an `rw` `build-worker` lane. It is a transport requirement for Git
-metadata and packaged review launches, not permission to expand the accepted spec,
-repository scope, or publication authority. Review lanes remain read-only. Codex never
-uses `--dangerously-bypass-approvals-and-sandbox` or `--yolo`.
-The explicit, rubric-free opposite-host passthroughs also use full host access.
-This access does not authorize edits or remote actions beyond the user request.
+Full host access exists on exactly three paths: the single standalone Build worker
+(`rw` `build-worker` lane, so it can write Git metadata and launch review lanes), the
+explicit rubric-free opposite-host passthroughs (`/plx:codex`, `$plx:claude`), and the
+Devin passthrough. Full access is a transport setting. It never expands the accepted
+spec or user request, and never authorizes publication or external mutations.
+Questions and reviews sent to full-access engines carry a no-edit instruction that no
+sandbox enforces.
 
-The standalone Devin passthrough is the other explicit full-access path. It does not
-join pipeline routing, retry, fall back, or launch a Parallax review. Its effective prompt
-lists physical source-tree guidance, including ignored and untracked nested instructions,
-while disclosing that repository-native Devin hooks, MCP servers, rules, and skills may
-still load. Questions and reviews include a no-edit instruction, but that is behavioral
-task scope rather than sandbox enforcement. A terminal ATIF response and native exit 0
-are both required for wrapper success; interruption terminates the owned process group.
-
-Claude safe mode disables automatic project customization, so the wrapper supplies a
-deterministic list of physical source-tree `AGENTS.md`, `CLAUDE.md`, `CLAUDE.local.md`,
-and `.claude/rules/*.md` files, including ignored and untracked guidance while excluding
-common dependency/cache trees. Root guidance is repo-wide; nested guidance is
-path-scoped. Runtime briefs, logs, and outputs use
-`plx-`-prefixed temporary directories and the confined `plx-clean-temp` helper;
-Parallax creates no `.parallax/` state.
+Standalone Build may create local commits that its accepted spec or the target
+repository's instructions require, staging only Build-owned work. No skill pushes,
+opens a pull request, merges, tags, releases, deploys, or publishes without separate
+authority. Runtime briefs, logs, and outputs live in `plx-`-prefixed temp directories
+removed by the confined `plx-clean-temp` helper. Parallax adds no hooks, telemetry,
+MCP, or target-repo `.parallax/` state.

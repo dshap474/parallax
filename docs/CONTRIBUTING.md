@@ -24,15 +24,8 @@ Codex skills use bare capability names (such as `plan`) and `agents/openai.yaml`
 disabled. Claude skills use `/plx:*` namespaced commands and explicit-only frontmatter
 (`disable-model-invocation: true`, `user-invocable: true`). Equivalent capability does
 not mean identical prose: preserve host-native tools and Plan review polarity.
-Plan, Build, and Review define their model defaults in their skills; Dev calls those
-skills in sequence. Config supplies only Simplify's engine bindings. Review defines
-opposite-engine defaults and whole-round overrides in its skill.
-
-Keep pipeline full access confined to the single standalone Build worker. Codex
-`danger-full-access` and Claude's sandbox-disabled permission bypass are transport
-requirements for Git metadata; they do not belong in review
-lanes or expand task/publication authority. The standalone Devin passthrough separately
-uses explicit full access and never joins a pipeline. Keep Codex's combined
+Each skill defines its own model defaults. Keep full host access to the three paths
+listed in [Architecture](ARCHITECTURE.md#runtime-and-safety), and keep Codex's combined
 approvals-and-sandbox bypass and `--yolo` prohibited.
 
 ## Verification

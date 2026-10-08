@@ -12,7 +12,7 @@ changes no files.
 | Skill | Purpose |
 | --- | --- |
 | `$plx:plan` | The current host plans; Fable 5.1 reviews. Produces a reviewed plan without coding. |
-| `$plx:build` | One GPT-6.1 Sol High worker implements and verifies the accepted plan. |
+| `$plx:build` | One GPT-6.1 Sol Medium worker implements and verifies the accepted plan. |
 | `$plx:review` | Parallel Opus 5.5 Medium lanes review correctness, cleanup, and structure; security when relevant. The host verifies findings and fixes confirmed issues. |
 | `$plx:dev` | Runs Plan → Build → Review sequentially. |
 | `$plx:simplify` | Four Opus 5.5 Medium lanes suggest simplifications; the host applies confirmed improvements. |

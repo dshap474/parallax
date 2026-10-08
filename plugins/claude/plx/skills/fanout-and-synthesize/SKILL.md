@@ -17,7 +17,7 @@ One evidence-weighted answer: consensus, meaningful disagreements, primary
 recommendation, remaining uncertainty.
 
 ## Workers
-Launch every lane as `claude-sonnet-5-5` subagents at high effort. An explicit user model or effort replaces this
+Launch every lane as `claude-haiku-5-5` subagents at medium effort. An explicit user model or effort replaces this
 default. If that worker is unavailable, say so instead of silently substituting.
 
 ## Sizing

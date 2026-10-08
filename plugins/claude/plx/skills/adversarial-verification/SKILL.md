@@ -17,7 +17,7 @@ conclusions, a factual draft, or your own earlier answer.
 A verdict per item: survived, refuted, or uncertain, with the deciding evidence.
 
 ## Workers
-Launch every verifier as `claude-sonnet-5-5` subagents at high effort. An explicit user model or effort replaces this
+Launch every verifier as `claude-haiku-5-5` subagents at medium effort. An explicit user model or effort replaces this
 default. If that worker is unavailable, say so instead of silently substituting.
 
 ## Sizing

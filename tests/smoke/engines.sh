@@ -3,7 +3,7 @@
 # (tiny) model calls. Proves the bottom layer: the wrapper actually runs each CLI,
 # --mode ro stays read-only and injects rubrics, --mode rw edits land inside the
 # repo and are correct.
-# Spends a little; gated on `plx-preflight --require-<engine>` (auth -> skip, not fail).
+# Spends a little; gated on a one-line probe per engine (unavailable -> skip, not fail).
 #
 #   engines.sh [--with-grok]
 set -uo pipefail
@@ -72,7 +72,7 @@ engine_rw() {
 }
 
 run_engine() {
-  if preflight_ok "$1"; then engine_ro "$1"; engine_rw "$1"
+  if engine_ok "$1"; then engine_ro "$1"; engine_rw "$1"
   else _head "plx-engine --engine $1"; _skip "$1 not installed/authed — L1 $1 skipped"
        smoke_summary_row "$RUNDIR" L1 "plx-engine $1" SKIP "no auth"; fi
 }

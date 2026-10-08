@@ -54,7 +54,7 @@ PLX_PACKAGE=codex bash tests/smoke/run-smoke.sh --skill init # real Codex host
 and Simplify require the opposite engine, and Dev requires both hosts; they skip when
 the required authentication is unavailable. Build requires its same-host worker.
 
-Engines that aren't installed/authed are **skipped** (via `plx-preflight`), never failed.
+Engines that aren't installed/authed are **skipped** (via a one-line probe), never failed.
 Even a bare run spends model tokens for L1; use `--dry-run` for a model-free preview.
 A full `--skills` run can take a long wall-clock time (each pipeline runs multiple
 engine turns) — run it from a terminal, or via background Bash from an agent session.

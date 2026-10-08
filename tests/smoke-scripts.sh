@@ -1,21 +1,14 @@
 #!/usr/bin/env bash
 # Smoke-test one packaged runtime against an ISOLATED temporary repository.
-# By default no engine (codex/grok) calls are made — preflight is run without
-# --require-* so it stays model-free. Pass --with-engines to also probe codex/grok.
-# Usage: PLX_PACKAGE=claude|codex tests/smoke-scripts.sh [--with-engines]
+# Uses fake engine executables only; no model calls.
+# Usage: PLX_PACKAGE=claude|codex tests/smoke-scripts.sh
 set -uo pipefail
 . "$(cd "$(dirname "$0")" && pwd)/lib.sh"
 
-WITH_ENGINES=0
-if [ "$#" -gt 1 ]; then
-  echo "usage: PLX_PACKAGE=claude|codex tests/smoke-scripts.sh [--with-engines]" >&2
+if [ "$#" -gt 0 ]; then
+  echo "usage: PLX_PACKAGE=claude|codex tests/smoke-scripts.sh" >&2
   exit 2
 fi
-case "${1:-}" in
-  "") ;;
-  --with-engines) WITH_ENGINES=1 ;;
-  *) echo "usage: PLX_PACKAGE=claude|codex tests/smoke-scripts.sh [--with-engines]" >&2; exit 2 ;;
-esac
 
 REPO="$(make_tmp_repo)"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/plx-smoke.XXXXXX")"
@@ -26,7 +19,7 @@ echo "package: ${PLX_PACKAGE:-claude} ($PLUGIN_ROOT)"
 echo "tmp target repo: $REPO"
 
 _head "bin tools answer --help"
-for t in plx-engine plx-preflight plx-skill plx-link-claude plx-clean-temp; do
+for t in plx-engine plx-skill plx-clean-temp; do
   out="$WORK/help-$t.txt"
   if "$PLUGIN_ROOT/bin/$t" --help > "$out" 2>&1 && grep -q "Usage:" "$out"; then
     _pass "$t --help"
@@ -816,136 +809,6 @@ if "$PLUGIN_ROOT/bin/plx-skill" team-dev >/dev/null 2>&1; then
   _fail "should reject a retired skill name (team-dev shipped in no release)"
 else
   _pass "non-zero exit on retired skill name"
-fi
-
-_head "plx-preflight (model-free)"
-out="$WORK/preflight.txt"
-"$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" > "$out" 2>&1
-rc=$?
-if [ "$rc" -eq 0 ]; then _pass "exits 0 with no required engines"; else _fail "exit $rc"; fi
-assert_contains "preflight_ok: yes" "$out" "reports preflight_ok: yes"
-
-_head "plx-preflight probes the requested Grok sandbox mode"
-if "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --model grok-4.5 >/dev/null 2>&1; then
-  _fail "--model without an engine selector should exit 2"
-else
-  rc=$?
-  if [ "$rc" -eq 2 ]; then _pass "--model requires one engine selector"; else _fail "expected exit 2, got $rc"; fi
-fi
-if "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --grok-mode rw >/dev/null 2>&1; then
-  _fail "--grok-mode without a Grok selector should exit 2"
-else
-  rc=$?
-  if [ "$rc" -eq 2 ]; then _pass "--grok-mode requires a Grok selector"; else _fail "expected exit 2, got $rc"; fi
-fi
-if "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --require-grok --grok-mode invalid >/dev/null 2>&1; then
-  _fail "invalid --grok-mode should exit 2"
-else
-  rc=$?
-  if [ "$rc" -eq 2 ]; then _pass "invalid --grok-mode exits 2"; else _fail "expected exit 2, got $rc"; fi
-fi
-printf '%s\n' '#!/usr/bin/env bash' \
-  '# Fake Grok CLI — records argv and returns one successful headless envelope.' \
-  'printf '\''%s\n'\'' "$@" > "$PLX_GROK_ARGS_FILE"' \
-  'printf '\''{"text":"OK","stopReason":"end_turn","sessionId":""}\n'\''' \
-  > "$fake_bin/grok"
-chmod +x "$fake_bin/grok"
-PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
-  "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --require-grok > "$out" 2>&1
-rc=$?
-ro_probe_repo="$(awk 'previous == "--cwd" { print; exit } { previous=$0 }' "$fake_args")"
-if [ "$rc" -eq 0 ] && [ "$ro_probe_repo" = "$REPO" ] &&
-   grep -qx "read-only" "$fake_args" &&
-   grep -Fq -- "- grok: ok (mode=ro)" "$out"; then
-  _pass "Grok read-only preflight keeps the requested repository"
-else
-  _fail "Grok read-only preflight mode drift"
-fi
-PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
-  "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --require-grok --model grok-4.5 > "$out" 2>&1
-rc=$?
-if [ "$rc" -eq 0 ] && grep -qx "grok-4.5" "$fake_args"; then
-  _pass "Grok preflight probes the selected review model"
-else
-  _fail "Grok preflight did not probe the selected review model"
-fi
-PATH="$fake_bin:$PATH" PLX_GROK_ARGS_FILE="$fake_args" \
-  "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --require-grok --grok-mode rw > "$out" 2>&1
-rc=$?
-rw_probe_repo="$(awk 'previous == "--cwd" { print; exit } { previous=$0 }' "$fake_args")"
-if [ "$rc" -eq 0 ] && [ "$rw_probe_repo" != "$REPO" ] &&
-   printf '%s\n' "$rw_probe_repo" | grep -q '/plx-preflight\.[^/]*/grok-workspace-probe$' &&
-   grep -qx "workspace" "$fake_args" &&
-   grep -Fq -- "- grok: ok (mode=rw)" "$out"; then
-  _pass "Grok workspace preflight uses a disposable repository"
-else
-  _fail "Grok workspace preflight did not isolate the target (repo=$rw_probe_repo)"
-fi
-
-_head "plx-preflight rejects a bad repo path"
-if "$PLUGIN_ROOT/bin/plx-preflight" --repo /no/such/repo >/dev/null 2>&1; then
-  _fail "should reject missing repo"
-else
-  _pass "non-zero exit on missing repo"
-fi
-
-_head "plx-link-claude mirrors CLAUDE.md symlinks"
-echo "# fixture root" > "$REPO/AGENTS.md"
-mkdir -p "$REPO/sub"
-echo "# nested" > "$REPO/sub/AGENTS.md"
-printf 'regular file\n' > "$REPO/sub/CLAUDE.md"
-out="$WORK/link.txt"
-"$PLUGIN_ROOT/bin/plx-link-claude" "$REPO" > "$out" 2>&1
-rc=$?
-if [ "$rc" -eq 3 ]; then _pass "exit 3 when a regular CLAUDE.md blocks"; else _fail "expected exit 3, got $rc"; fi
-if [ -L "$REPO/CLAUDE.md" ] && [ "$(readlink "$REPO/CLAUDE.md")" = "AGENTS.md" ]; then
-  _pass "root CLAUDE.md symlink created"
-else
-  _fail "root CLAUDE.md symlink missing or wrong"
-fi
-assert_contains "blocked" "$out" "reports the blocked nested CLAUDE.md"
-"$PLUGIN_ROOT/bin/plx-link-claude" "$REPO" --force > "$out" 2>&1
-rc=$?
-if [ "$rc" -eq 0 ] && [ -L "$REPO/sub/CLAUDE.md" ]; then _pass "--force replaces the regular file"; else _fail "--force failed (exit $rc)"; fi
-"$PLUGIN_ROOT/bin/plx-link-claude" "$REPO" > "$out" 2>&1
-rc=$?
-if [ "$rc" -eq 0 ] && grep -q "0 created, 0 relinked, 2 skipped, 0 blocked" "$out"; then
-  _pass "idempotent re-run (all skips)"
-else
-  _fail "re-run not idempotent (exit $rc)"
-fi
-if "$PLUGIN_ROOT/bin/plx-link-claude" --bogus >/dev/null 2>&1; then
-  _fail "should reject unknown flag"
-else
-  _pass "non-zero exit on unknown flag"
-fi
-
-if [ "$WITH_ENGINES" -eq 1 ]; then
-  _head "engine probes (--with-engines)"
-  if command -v codex >/dev/null 2>&1; then
-    if "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" --require-codex >/dev/null 2>&1; then
-      _pass "codex preflight ok"
-    else
-      _fail "codex present but preflight failed"
-    fi
-  else
-    _skip "codex not installed — skipped"
-  fi
-  if command -v grok >/dev/null 2>&1; then
-    for grok_mode in ro rw; do
-      if "$PLUGIN_ROOT/bin/plx-preflight" --repo "$REPO" \
-        --require-grok --grok-mode "$grok_mode" >/dev/null 2>&1; then
-        _pass "grok preflight $grok_mode ok"
-      else
-        _fail "grok present but $grok_mode preflight failed"
-      fi
-    done
-  else
-    _skip "grok not installed — skipped"
-  fi
-else
-  _head "engine probes"
-  _skip "skipped (pass --with-engines to probe codex/grok)"
 fi
 
 summary

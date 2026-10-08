@@ -98,10 +98,8 @@ Parallax adds no host hooks, telemetry service, MCP, or target-repo `.parallax/`
 `bash tests/run.sh` must validate both manifests and marketplaces, version agreement,
 sixteen-skill inventories, explicit-only platform metadata, engine polarity, Simplify
 shape, the context-only skill contracts, Plan/Build/Review routing and security triggers,
-executable wrappers,
-rubric resolution, shared-copy agreement, fake-engine safety flags and current result
-envelopes, cleanup confinement, and isolated
-`plx-link-claude` behavior. The official Claude validator and an isolated Codex CLI
+executable wrappers, rubric resolution, shared-copy agreement, fake-engine safety flags
+and current result envelopes, and cleanup confinement. The official Claude validator and an isolated Codex CLI
 install with exact source/cache comparison must also pass.
 
 ## Gemini engine

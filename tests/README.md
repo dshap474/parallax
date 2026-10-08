@@ -17,9 +17,7 @@ tests/explain-skill.sh claude dev
 tests/explain-skill.sh codex dev
 PLX_PACKAGE=claude tests/smoke-scripts.sh
 PLX_PACKAGE=codex tests/smoke-scripts.sh
-bash tests/run.sh --with-engines
 ```
 
-`--with-engines` performs small real authentication/model probes and is intentionally
-off by default. `tests/smoke/` contains the larger behavioral suite and should be run
+`tests/smoke/` contains the larger behavioral suite and should be run
 deliberately because it spends model tokens.

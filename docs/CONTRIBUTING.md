@@ -44,9 +44,7 @@ claude plugin validate .
 claude plugin validate plugins/claude/plx
 ```
 
-`tests/run.sh` is model-free by default. Pass `--with-engines` deliberately to spend
-small authenticated probe calls; when Grok is installed, this checks both its read-only
-and disposable workspace sandbox profiles. The behavioral suite under `tests/smoke/`
+`tests/run.sh` is model-free. The behavioral suite under `tests/smoke/`
 spends more tokens and is opt-in.
 The local release skill validates the Codex package by installing it with the Codex CLI
 inside a temporary `CODEX_HOME` and comparing the cache byte-for-byte with source.

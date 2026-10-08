@@ -344,7 +344,7 @@ rm -f -- "$atomic_source"
 
 for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   label="$(basename "$(dirname "$package")")"
-  for tool in plx-engine plx-preflight plx-skill plx-link-claude plx-clean-temp; do
+  for tool in plx-engine plx-skill plx-clean-temp; do
     [ -x "$package/bin/$tool" ] && _pass "$label bin/$tool" || _fail "$label bin/$tool"
   done
   for rubric in plan-critic build-worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security simplify-reuse simplify-simplification simplify-efficiency simplify-altitude; do
@@ -401,9 +401,7 @@ fi
 _head "Maintainer helper contracts"
 "$PLX_ROOT/tests/smoke-scripts.sh" codex >/dev/null 2>&1
 smoke_rc=$?
-"$PLX_ROOT/tests/smoke-scripts.sh" --with-engines codex >/dev/null 2>&1
-smoke_extra_rc=$?
-if [ "$smoke_rc" -eq 2 ] && [ "$smoke_extra_rc" -eq 2 ]; then
+if [ "$smoke_rc" -eq 2 ]; then
   _pass "smoke harness rejects positional package selectors"
 else
   _fail "smoke harness silently accepted a positional package selector"

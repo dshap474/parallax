@@ -32,11 +32,7 @@ plx-engine --engine devin --mode full-access --repo <absolute-path> \
 ```
 
 Exit codes are `0` success, `1` engine failure, `2` usage error, and `3` authentication
-required. `plx-preflight` sends a minimal real prompt to prove install, authentication,
-model availability, and the selected sandbox profile. Pass `--model <id>` when a skill
-selects a specific model so preflight checks that model. Grok writer selection uses
-`--grok-mode rw`, which probes its workspace sandbox against a disposable directory
-rather than the target repository.
+required.
 
 Codex runs ephemerally with `approval_policy=never` and a selected sandbox; it never uses
 the combined approvals-and-sandbox bypass. Claude runs in safe mode with ambient plugins,

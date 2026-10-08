@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Run model-free integrity, packaged runtime, and vendored client tests.
-# Usage: bash tests/run.sh [--with-engines]
+# Run model-free integrity and packaged runtime tests.
+# Usage: bash tests/run.sh
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
@@ -10,8 +10,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 
 rc=0
 bash "$HERE/check-plugin.sh" || rc=1
-PLX_PACKAGE=claude bash "$HERE/smoke-scripts.sh" "$@" || rc=1
-PLX_PACKAGE=codex bash "$HERE/smoke-scripts.sh" "$@" || rc=1
+PLX_PACKAGE=claude bash "$HERE/smoke-scripts.sh" || rc=1
+PLX_PACKAGE=codex bash "$HERE/smoke-scripts.sh" || rc=1
 
 bash "$HERE/gemini.sh" || rc=1
 

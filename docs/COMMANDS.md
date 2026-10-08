@@ -71,6 +71,4 @@ does not change any pipeline routing.
 | Tool | Role |
 | --- | --- |
 | `plx-engine` | Headless engine wrapper (safety pinned) |
-| `plx-preflight` | Real probe of required/optional engines |
 | `plx-skill` | Print a pipeline skill or reference |
-| `plx-link-claude` | Mirror `AGENTS.md` → `CLAUDE.md` symlinks |

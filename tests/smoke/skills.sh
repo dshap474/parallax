@@ -56,7 +56,7 @@ run_skill() {
 
   if [ "$DRY" -eq 0 ] && [ -n "$needs" ]; then
     for need in $needs; do
-      if ! preflight_ok "$need"; then
+      if ! engine_ok "$need"; then
         _skip "needs $need (not installed/authed) — skipped"
         smoke_summary_row "$RUNDIR" L2 "$skill" SKIP "no $need auth"; return
       fi

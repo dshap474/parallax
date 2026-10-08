@@ -442,7 +442,7 @@ JSON
     exec python3 -c \
       'import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' \
       env -u DEVIN_SANDBOX devin --config "$config" \
-      --permission-mode dangerous --model "$MODEL" \
+      --permission-mode dangerous --respect-workspace-trust false --model "$MODEL" \
       --prompt-file "$devin_prompt" --export "$export_file" -p </dev/null
   ) > "$raw" 2> "$LOG" &
   DEVIN_PID=$!

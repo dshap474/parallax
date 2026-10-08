@@ -56,7 +56,7 @@ rubric, model, and effort.
 - Gemini: `auto` routing by default, sandbox required (macOS Seatbelt), read tools in
   `ro` and file-edit tools in `rw`; shell, extensions, MCP, and hooks disabled.
 - Devin: one-shot print mode, generated config with imports, updates, and subagents
-  disabled, dangerous permission mode, no OS sandbox. Repository-native Devin hooks,
+  disabled, workspace-trust prompt skipped, dangerous permission mode, no OS sandbox. Repository-native Devin hooks,
   MCP servers, rules, and skills may still load. The wrapper lists repository guidance,
   requires a terminal ATIF response and exit 0, and stops its process group on
   interruption.

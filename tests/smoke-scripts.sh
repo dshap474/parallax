@@ -213,11 +213,15 @@ assert_contains "swe-2-high" "$fake_devin_args" "Devin model defaults to SWE-2 H
 assert_contains "dangerous" "$fake_devin_args" "Devin uses documented full-access permission mode"
 assert_contains "unset" "$fake_devin_sandbox_env" "Devin ignores inherited DEVIN_SANDBOX"
 if grep -qx -- '--sandbox' "$fake_devin_args" ||
-   grep -qxE -- '-r|--resume|-c|--continue' "$fake_devin_args" ||
-   grep -qx -- '--respect-workspace-trust' "$fake_devin_args"; then
-  _fail "Devin invocation includes sandbox, resume, or trust-bypass flags"
+   grep -qxE -- '-r|--resume|-c|--continue' "$fake_devin_args"; then
+  _fail "Devin invocation includes sandbox or resume flags"
 else
-  _pass "Devin invocation has no sandbox, resume, or trust-bypass flags"
+  _pass "Devin invocation has no sandbox or resume flags"
+fi
+if grep -A1 -x -- '--respect-workspace-trust' "$fake_devin_args" | grep -qx false; then
+  _pass "Devin skips the interactive-only workspace trust prompt"
+else
+  _fail "Devin print mode does not pass --respect-workspace-trust false"
 fi
 if python3 - "$fake_prompt" "$fake_devin_prompt" <<'PY'
 from pathlib import Path

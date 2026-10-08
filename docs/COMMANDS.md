@@ -5,7 +5,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Capability | Claude Code | Codex | Behavior |
 | --- | --- | --- | --- |
 | Plan | `/plx:plan` | `$plx:plan` | Host authors; one opposite-host reviewer checks the plan; no code |
-| Build | `/plx:build` | `$plx:build` | One GPT-6 Sol High worker in Codex or Opus 5.5 Medium worker in Claude Code implements and verifies an accepted spec |
+| Build | `/plx:build` | `$plx:build` | One GPT-6.1 Sol High worker in Codex or Opus 5.5 Medium worker in Claude Code implements and verifies an accepted spec |
 | Review | `/plx:review` | `$plx:review` | Three opposite-engine Medium review lanes by default, synthesis, and one host-applied fix round |
 | Simplify | `/plx:simplify` | `$plx:simplify` | Four opposite-engine Medium lanes simplify a plan or code; the host applies safe improvements |
 | KISS | `/plx:kiss` | `$plx:kiss` | Load the user-authored KISS principles into the current context |
@@ -30,7 +30,7 @@ uses `disable-model-invocation: true` with `user-invocable: true`.
 | Skill | Claude Code host | Codex host |
 | --- | --- | --- |
 | Plan | Fable 5.1 authors; `gpt-6-astra` reviews | `gpt-6-astra` authors; `claude-fable-5-1` reviews |
-| Build | `claude-opus-5-5` Medium worker | `gpt-6-sol` High worker |
+| Build | `claude-opus-5-5` Medium worker | `gpt-6.1-sol` High worker |
 | Review, Simplify | Codex `gpt-6.1-sol` Medium | Claude `claude-opus-5-5` Medium |
 | Opposite-host passthrough | `/plx:codex`: `gpt-6.1-sol` Medium | `$plx:claude`: `claude-opus-5-5` Medium |
 | Orchestrate workers | Opus 5.5 Medium subagents | GPT-6.1 Sol Medium subagents |

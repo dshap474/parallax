@@ -203,7 +203,7 @@ from pathlib import Path
 
 root = Path(sys.argv[1])
 errors = []
-for host, model, effort in (("claude", "claude-opus-5-5", "medium"), ("codex", "gpt-6-sol", "high")):
+for host, model, effort in (("claude", "claude-opus-5-5", "medium"), ("codex", "gpt-6.1-sol", "high")):
     package = root / "plugins" / host / "plx"
     build = (package / "skills/build/SKILL.md").read_text()
     commands = [" ".join(block.replace("\\\n", " ").split())
@@ -245,7 +245,7 @@ for name in ("build", "dev", "plan", "review", "unknown-unknowns"):
         body = re.sub(r"For Grok calls,.*?active\.", "HOST_BOUNDARY", body, flags=re.S)
         body = body.replace("<plugin-root>/bin/", "").replace("$plx:", "/plx:")
         if name == "build":
-            body = body.replace("gpt-6-sol", "claude-opus-5-5").replace("high", "medium")
+            body = body.replace("gpt-6.1-sol", "claude-opus-5-5").replace("high", "medium")
             body = body.replace("Codex", "Claude").replace("codex", "claude")
         else:
             body = body.replace(f"--host {host}", "--host HOST")

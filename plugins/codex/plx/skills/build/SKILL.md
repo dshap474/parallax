@@ -1,6 +1,6 @@
 ---
 name: build
-description: Implement and verify an accepted spec through one gpt-6-sol worker at high reasoning.
+description: Implement and verify an accepted spec through one gpt-6.1-sol worker at high reasoning.
 argument-hint: "<accepted spec path, or omit when an accepted spec is already in this conversation>"
 ---
 
@@ -31,7 +31,7 @@ Launch one worker and wait:
 ```
 <plugin-root>/bin/plx-engine --engine codex --mode rw --repo <repo> \
   --prompt-file <tmp>/writer-brief.md --rubric build-worker \
-  --build-writer-full-access --model gpt-6-sol --effort high \
+  --build-writer-full-access --model gpt-6.1-sol --effort high \
   --out <tmp>/writer.md --log <tmp>/writer.log
 ```
 

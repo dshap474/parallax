@@ -647,7 +647,9 @@ for flag in --safe-mode --no-session-persistence --strict-mcp-config --mcp-confi
   assert_contains "$flag" "$fake_claude_args" "Claude ro receives $flag"
 done
 assert_contains "dontAsk" "$fake_claude_args" "Claude ro cannot prompt for broader permissions"
-assert_contains "Read,Grep,Glob" "$fake_claude_args" "Claude ro exposes only read tools"
+assert_contains "Read,Grep,Glob,Bash" "$fake_claude_args" "Claude ro exposes read tools and sandboxed Bash"
+assert_contains "\"denyWrite\":[\"$REPO\"]" "$fake_claude_args" "Claude ro sandbox denies writes to the repo"
+assert_contains "The sandbox blocks writes to the repository" "$fake_claude_prompt" "Claude ro prompt explains its read-only Bash"
 assert_contains '"failIfUnavailable":true' "$fake_claude_args" "Claude sandbox fails closed"
 assert_contains '"strictAllowlist":true' "$fake_claude_args" "Claude network allowlist is strict"
 assert_contains '{"mcpServers":{}}' "$fake_claude_args" "Claude receives an empty MCP configuration"
@@ -659,10 +661,10 @@ if grep -qx -- '--setting-sources' "$fake_claude_args"; then
 else
   _pass "Claude loads no ambient setting sources"
 fi
-if grep -qx "Bash" "$fake_claude_args" || grep -q "Edit\\|Write" "$fake_claude_args"; then
-  _fail "Claude ro exposes a mutation tool"
+if grep -qxE 'Edit|Write|[^,]*Edit,[^,]*|[^,]*Write,[^,]*' "$fake_claude_args"; then
+  _fail "Claude ro exposes direct Edit or Write"
 else
-  _pass "Claude ro exposes no mutation tool"
+  _pass "Claude ro excludes direct Edit and Write"
 fi
 
 PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
@@ -674,6 +676,11 @@ if [ "$rc" -eq 0 ]; then _pass "Claude rw invocation exits 0"; else _fail "Claud
 assert_contains "Bash" "$fake_claude_args" "Claude rw exposes sandboxed Bash"
 assert_contains "acceptEdits" "$fake_claude_args" "Claude rw accepts sandboxed operations"
 assert_contains "use sandboxed Bash" "$fake_claude_prompt" "Claude rw prompt explains its write path"
+if grep -q "denyWrite" "$fake_claude_args"; then
+  _fail "Claude rw sandbox denies repo writes"
+else
+  _pass "Claude rw sandbox allows repo writes"
+fi
 if grep -qxE 'Edit|Write|[^,]*Edit,[^,]*|[^,]*Write,[^,]*' "$fake_claude_args"; then
   _fail "Claude rw exposes direct Edit or Write"
 else

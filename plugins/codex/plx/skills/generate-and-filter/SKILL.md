@@ -16,9 +16,26 @@ The requested number of genuinely different options (default three), each with i
 case and risks, plus one recommendation and why it beat the others.
 
 ## Workers
-Launch every generator and judge as `gpt-6-luna` subagents at max reasoning. An explicit user model or effort
-replaces this default. If that worker is unavailable, say so instead of silently
-substituting.
+Mix two models for coverage: split generators and judges roughly evenly between
+`gpt-6-luna` subagents at max reasoning and `claude-haiku-5-5` engine lanes at xhigh
+effort. Put generators with similar angles on different models, and alternate judges
+between models. Engine lanes are read-only; keep work that writes files or needs web
+research on subagents. An explicit user model or effort replaces this mix. If one worker
+is unavailable, say so and use the other for every lane.
+
+Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
+`/skills/generate-and-filter/SKILL.md`. Launch each engine lane in the background with
+its brief in a fresh temp directory `<tmp>`:
+
+```
+<plugin-root>/bin/plx-engine --engine claude --mode ro --repo <repo> \
+  --prompt-file <tmp>/<lane>-brief.md --model claude-haiku-5-5 --effort xhigh \
+  --out <tmp>/<lane>.md --log <tmp>/<lane>.log
+```
+
+If the host sandbox blocks the engine's network or keychain access, request narrowly
+scoped host approval for the wrapper call; keep its sandbox active. Delete `<tmp>` when
+done.
 
 ## Rubric
 Before generating, write a short rubric from the user's goal and constraints: what a

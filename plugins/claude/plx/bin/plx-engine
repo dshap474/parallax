@@ -286,12 +286,18 @@ list_guidance() {
 
 run_claude() {
   local -a flags
-  local claude_prompt claude_settings claude_rc=0
+  local claude_prompt claude_settings claude_fs="" repo_json claude_rc=0
   claude_prompt="$TMP_DIR/claude-prompt.md"
+  if [[ "$MODE" == "ro" ]]; then
+    # ro Bash may inspect but never write the checkout; the OS sandbox enforces it.
+    repo_json="${REPO//\\/\\\\}"
+    repo_json="${repo_json//\"/\\\"}"
+    claude_fs=",\"filesystem\":{\"denyWrite\":[\"$repo_json\"]}"
+  fi
   if [[ "$BUILD_WRITER_FULL_ACCESS" -eq 1 || "$CLAUDE_PASSTHROUGH_FULL_ACCESS" -eq 1 ]]; then
     claude_settings='{"sandbox":{"enabled":false}}'
   else
-    claude_settings='{"sandbox":{"enabled":true,"failIfUnavailable":true,"autoAllowBashIfSandboxed":true,"allowUnsandboxedCommands":false,"network":{"allowedDomains":[],"strictAllowlist":true}}}'
+    claude_settings='{"sandbox":{"enabled":true,"failIfUnavailable":true,"autoAllowBashIfSandboxed":true,"allowUnsandboxedCommands":false,"network":{"allowedDomains":[],"strictAllowlist":true}'"$claude_fs"'}}'
   fi
   flags=(
     --model "$MODEL"
@@ -308,7 +314,7 @@ run_claude() {
     flags+=(--dangerously-skip-permissions --tools "Read,Grep,Glob,Bash" --allowedTools "Read,Grep,Glob,Bash")
   elif [[ "$CLAUDE_PASSTHROUGH_FULL_ACCESS" -eq 0 ]]; then
     if [[ "$MODE" == "ro" ]]; then
-      flags+=(--permission-mode dontAsk --tools "Read,Grep,Glob" --allowedTools "Read,Grep,Glob")
+      flags+=(--permission-mode dontAsk --tools "Read,Grep,Glob,Bash" --allowedTools "Read,Grep,Glob,Bash")
     else
       flags+=(--permission-mode acceptEdits --tools "Read,Grep,Glob,Bash" --allowedTools "Read,Grep,Glob,Bash")
     fi
@@ -334,6 +340,10 @@ run_claude() {
   elif [[ "$MODE" == "rw" ]]; then
     printf '%s\n' \
       'For mutations, use sandboxed Bash commands confined to the repository. Direct Edit and Write tools are unavailable.' \
+      >> "$claude_prompt"
+  else
+    printf '%s\n' \
+      'Read-only: use Bash only to inspect (git, diff, search, read-only scripts). The sandbox blocks writes to the repository; use $TMPDIR for scratch files.' \
       >> "$claude_prompt"
   fi
 

@@ -19,9 +19,9 @@ changes no files.
 | `$plx:kiss` | Loads KISS principles into context. |
 | `$plx:orchestrate` | Loads a planner posture that delegates coding to native workers. |
 | `$plx:unknown-unknowns` | Explores blind spots with the host. |
-| `$plx:fanout-and-synthesize` | Host-led GPT-6 Luna Max lanes by lens or shard, then one synthesis. |
-| `$plx:adversarial-verification` | GPT-6 Luna Max verifiers try to refute claims; the host keeps survivors. |
-| `$plx:generate-and-filter` | GPT-6 Luna Max lanes generate ideas and judge finalists pairwise; the host recommends one. |
+| `$plx:fanout-and-synthesize` | Host-led mixed GPT-6 Luna Max and Haiku 5.5 xhigh lanes by lens or shard, then one synthesis. |
+| `$plx:adversarial-verification` | Mixed GPT-6 Luna Max and Haiku 5.5 xhigh verifiers try to refute claims; the host keeps survivors. |
+| `$plx:generate-and-filter` | Mixed GPT-6 Luna Max and Haiku 5.5 xhigh lanes generate ideas and judge finalists pairwise; the host recommends one. |
 | `$plx:claude`, `$plx:grok`, `$plx:gemini`, `$plx:devin` | Direct requests to another engine. |
 
 For web research and documentation lookup, use GPT-6 Luna at max reasoning (`gpt-6-luna`, `max`) in a read-only lane.

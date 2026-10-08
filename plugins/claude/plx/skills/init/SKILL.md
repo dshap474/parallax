@@ -21,9 +21,9 @@ changes no files.
 | `/plx:kiss` | Loads KISS principles into context. |
 | `/plx:orchestrate` | Loads a planner posture that delegates coding to native workers. |
 | `/plx:unknown-unknowns` | Explores blind spots with the host. |
-| `/plx:fanout-and-synthesize` | Host-led Haiku 5.5 xhigh lanes by lens or shard, then one synthesis. |
-| `/plx:adversarial-verification` | Haiku 5.5 xhigh verifiers try to refute claims; the host keeps survivors. |
-| `/plx:generate-and-filter` | Haiku 5.5 xhigh lanes generate ideas and judge finalists pairwise; the host recommends one. |
+| `/plx:fanout-and-synthesize` | Host-led mixed Haiku 5.5 xhigh and GPT-6 Luna Max lanes by lens or shard, then one synthesis. |
+| `/plx:adversarial-verification` | Mixed Haiku 5.5 xhigh and GPT-6 Luna Max verifiers try to refute claims; the host keeps survivors. |
+| `/plx:generate-and-filter` | Mixed Haiku 5.5 xhigh and GPT-6 Luna Max lanes generate ideas and judge finalists pairwise; the host recommends one. |
 | `/plx:codex`, `/plx:grok`, `/plx:gemini`, `/plx:devin` | Direct requests to another engine. |
 
 For web research and documentation lookup, use Haiku 5.5 at xhigh reasoning (`claude-haiku-5-5`, `xhigh`) in a read-only lane.

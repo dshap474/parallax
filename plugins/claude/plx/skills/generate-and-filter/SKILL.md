@@ -18,9 +18,25 @@ The requested number of genuinely different options (default three), each with i
 case and risks, plus one recommendation and why it beat the others.
 
 ## Workers
-Launch every generator and judge as `claude-haiku-5-5` subagents at xhigh effort. An explicit user model or effort
-replaces this default. If that worker is unavailable, say so instead of silently
-substituting.
+Mix two models for coverage: split generators and judges roughly evenly between
+`claude-haiku-5-5` subagents at xhigh effort and `gpt-6-luna` engine lanes at max
+effort. Put generators with similar angles on different models, and alternate judges
+between models. Engine lanes are read-only; keep work that writes files or needs web
+research on subagents. An explicit user model or effort replaces this mix. If one worker
+is unavailable, say so and use the other for every lane.
+
+Use the packaged helpers on PATH. Launch each engine lane in the background with its
+brief in a fresh temp directory `<tmp>`:
+
+```
+plx-engine --engine codex --mode ro --repo <repo> \
+  --prompt-file <tmp>/<lane>-brief.md --model gpt-6-luna --effort max \
+  --out <tmp>/<lane>.md --log <tmp>/<lane>.log
+```
+
+If the host sandbox blocks the engine's network or keychain access, request narrowly
+scoped host approval for the wrapper call; keep its sandbox active. Delete `<tmp>` when
+done.
 
 ## Rubric
 Before generating, write a short rubric from the user's goal and constraints: what a

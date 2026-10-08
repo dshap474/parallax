@@ -19,7 +19,11 @@ just that it's wired correctly.
 L2 defaults to `plugins/claude/plx` via `--plugin-dir`. Set `PLX_PACKAGE=codex` to
 run the Codex host through packaged `plx-engine`, with an explicit instruction to read
 this checkout's exact `SKILL.md`. This exercises workflow behavior from source; it does
-not verify installed Codex plugin discovery or desktop approval UI. Both hosts test
+not verify installed Codex plugin discovery or desktop approval UI. That host runs
+sandboxed with approvals off and ignores the user's Codex config, so any Claude lane it
+launches cannot reach Claude's keychain login and fails as "not logged in". Codex-host
+skills then fall back to Codex-only lanes. That failure is an artifact of the harness, not a
+bug: to check Codex→Claude lanes, run `codex exec` with your normal config instead. Both hosts test
 uncommitted changes. Claude skills launch their engine lanes as background shell calls inside that
 headless session, so the runner sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` — without
 it, headless `claude -p` stops waiting on background work after 10 minutes and long lanes

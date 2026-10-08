@@ -612,6 +612,7 @@ printf '%s\n' '#!/usr/bin/env bash' \
   '# Fake Claude CLI — records argv and returns one successful response.' \
   'printf '\''%s\n'\'' "$@" > "$PLX_CLAUDE_ARGS_FILE"' \
   'cat > "$PLX_CLAUDE_PROMPT_FILE"' \
+  'if [ -n "${PLX_FAKE_CLAUDE_LOGGED_OUT:-}" ]; then printf '\''Not logged in · Please run /login\n'\'' >&2; exit 1; fi' \
   'printf '\''OK\n'\''' \
   'if [ -n "${PLX_FAKE_CLAUDE_STAGING:-}" ]; then mkdir -p .claude/.cc-writes; fi' \
   'if [ "${PLX_FAKE_CLAUDE_STAGING:-}" = nonempty ]; then printf '\''keep\n'\'' > .claude/.cc-writes/keep; fi' \
@@ -747,6 +748,19 @@ if [ "$rc" -eq 0 ] && [ -f "$REPO/.claude/.cc-writes/keep" ]; then
 else
   _fail "Claude removed nonempty write staging (exit $rc)"
 fi
+for sandbox in seatbelt ""; do
+  PATH="$fake_bin:$PATH" PLX_CLAUDE_ARGS_FILE="$fake_claude_args" \
+    PLX_CLAUDE_PROMPT_FILE="$fake_claude_prompt" PLX_FAKE_CLAUDE_LOGGED_OUT=1 \
+    CODEX_SANDBOX="$sandbox" "$PLUGIN_ROOT/bin/plx-engine" --engine claude --mode ro --repo "$REPO" \
+    --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null 2> "$WORK/claude-auth.txt"
+  rc=$?
+  if [ -n "$sandbox" ]; then want="inside the Codex sandbox"; else want="claude /login"; fi
+  if [ "$rc" -eq 3 ] && grep -Fq "$want" "$WORK/claude-auth.txt"; then
+    _pass "Claude logged-out exit 3 explains '$want'"
+  else
+    _fail "Claude logged-out (CODEX_SANDBOX='$sandbox') did not explain '$want' (exit $rc)"
+  fi
+done
 for invalid in 'codex rw' 'claude ro' 'claude rw worker'; do
   set -- $invalid
   invalid_engine="$1"

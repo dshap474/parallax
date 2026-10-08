@@ -353,6 +353,12 @@ run_claude() {
     rmdir "$REPO/.claude" 2>/dev/null || true
   fi
   if grep -qiE "not logged in|please run /login" "$OUT" "$LOG"; then
+    # Codex's macOS sandbox hides the keychain that holds Claude's login, so a
+    # Claude lane launched from a sandboxed Codex host always looks logged out.
+    if [[ -n "${CODEX_SANDBOX:-}" ]]; then
+      echo "plx-engine: Claude login is unreachable from inside the Codex sandbox (CODEX_SANDBOX=$CODEX_SANDBOX), not missing — rerun this wrapper call with host approval or outside the sandbox. Headless Codex runs with approvals off cannot do this." >&2
+      exit 3
+    fi
     echo "plx-engine: Claude credentials unavailable — if Claude works in a local terminal, retry this wrapper with narrowly scoped host approval; otherwise run \`claude /login\`." >&2
     exit 3
   fi

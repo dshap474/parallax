@@ -22,11 +22,7 @@ Use the packaged helpers on PATH.
   Do not normalize or silently replace an explicit value; if Codex rejects it, surface
   the error.
 
-Always pass both values as `--model <model> --effort <effort>`, including on the persistent path.
-
-Default to the existing **ephemeral** `plx-engine` path. Use a persistent thread only when
-the user wants future continuation or repeated turns would materially benefit from
-retained repository context; then follow [the persistence procedure](references/persistence.md).
+Always pass both values as `--model <model> --effort <effort>`.
 
 ## Execute
 

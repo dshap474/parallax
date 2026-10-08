@@ -37,7 +37,7 @@ atomic_copy() {
 }
 
 sync_tree() {
-  local source="$1" destination="$2" preserve="${3:-}" relative source_file destination_file drift=0
+  local source="$1" destination="$2" relative source_file destination_file drift=0
 
   while IFS= read -r source_file; do
     relative="${source_file#"$source/"}"
@@ -56,9 +56,6 @@ sync_tree() {
   if [ -d "$destination" ]; then
     while IFS= read -r destination_file; do
       relative="${destination_file#"$destination/"}"
-      if [ "$relative" = "$preserve" ]; then
-        continue
-      fi
       source_file="$source/$relative"
       if [ ! -f "$source_file" ]; then
         if [ "$MODE" = "--check" ]; then
@@ -76,11 +73,7 @@ sync_tree() {
 
 rc=0
 for package in "$ROOT/plugins/claude/plx" "$ROOT/plugins/codex/plx"; do
-  preserve=""
-  if [ "$package" = "$ROOT/plugins/claude/plx" ]; then
-    preserve="plx-codex-thread"
-  fi
-  sync_tree "$ROOT/shared/bin" "$package/bin" "$preserve" || rc=1
+  sync_tree "$ROOT/shared/bin" "$package/bin" || rc=1
   sync_tree "$ROOT/shared/prompts" "$package/prompts" || rc=1
   if [ ! -f "$package/LICENSE" ] || ! cmp -s "$ROOT/LICENSE" "$package/LICENSE"; then
     if [ "$MODE" = "--check" ]; then

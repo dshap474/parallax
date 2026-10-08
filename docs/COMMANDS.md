@@ -24,9 +24,6 @@ All skills are explicit-only so an expensive pipeline never starts merely becaus
 prompt resembles its description. Codex uses `allow_implicit_invocation: false`; Claude
 uses `disable-model-invocation: true` with `user-invocable: true`.
 
-`/plx:codex` uses the one-shot engine path unless explicit continuation or
-likely multi-turn repository rediscovery justifies a persistent app-server thread. A
-resume requires a known thread ID, and every turn requests full host access.
 Codex, Claude, and Grok passthroughs accept explicit model and effort requests in natural
 language (for example, `$plx:claude ask fable medium for <task>`). The host converts
 those settings into engine launch flags; omitted settings retain their defaults. Grok

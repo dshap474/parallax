@@ -135,18 +135,6 @@ else
   _fail "single-engine passthrough launch contract drift"
 fi
 
-if grep -q 'plx-codex-thread start' "$PLX_CLAUDE/skills/codex/references/persistence.md" &&
-   grep -q 'plx-codex-thread resume' "$PLX_CLAUDE/skills/codex/references/persistence.md" &&
-   ! grep -Rqi 'plx-codex-thread' \
-     "$PLX_CLAUDE/skills/build" "$PLX_CLAUDE/skills/dev" \
-     "$PLX_CLAUDE/skills/plan" \
-     "$PLX_CLAUDE/skills/review" "$PLX_CLAUDE/skills/simplify" \
-     "$PLX_CLAUDE/skills/kiss"; then
-  _pass "persistent Codex is explicit, resumable, and passthrough-only"
-else
-  _fail "persistent Codex skill contract drift"
-fi
-
 simplify_contract_ok=1
 for package_host in "$PLX_CLAUDE:Codex:gpt-6.1-sol:/plx:codex" "$PLX_CODEX:Claude:claude-opus-5-5:\$plx:claude"; do
   package="${package_host%%:*}"
@@ -320,13 +308,6 @@ cp -R "$PLX_ROOT/shared" "$SYNC_REPO/shared"
 cp "$PLX_ROOT/LICENSE" "$SYNC_REPO/LICENSE"
 cp "$PLX_ROOT/scripts/sync-shared.sh" "$SYNC_REPO/scripts/sync-shared.sh"
 "$SYNC_REPO/scripts/sync-shared.sh" >/dev/null
-printf '#!/usr/bin/env bash\n' > "$SYNC_REPO/plugins/claude/plx/bin/plx-codex-thread"
-chmod +x "$SYNC_REPO/plugins/claude/plx/bin/plx-codex-thread"
-if "$SYNC_REPO/scripts/sync-shared.sh" --check >/dev/null 2>&1; then
-  _pass "shared check permits the Claude-only Codex thread wrapper"
-else
-  _fail "shared check rejects the Claude-only Codex thread wrapper"
-fi
 printf 'orphan\n' > "$SYNC_REPO/plugins/codex/plx/prompts/orphan.md"
 orphan_output="$("$SYNC_REPO/scripts/sync-shared.sh" --check 2>&1)"
 orphan_rc=$?
@@ -370,15 +351,6 @@ for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
     [ -s "$package/prompts/$rubric.md" ] || _fail "$label missing rubric $rubric"
   done
 done
-
-if [ -x "$PLX_CLAUDE/bin/plx-codex-thread" ] &&
-   [ -s "$PLX_CLAUDE/tools/codex-app-client/pyproject.toml" ] &&
-   [ -s "$PLX_CLAUDE/tools/codex-app-client/uv.lock" ] &&
-   [ ! -e "$PLX_CODEX/tools/codex-app-client" ]; then
-  _pass "persistent Codex runtime is packaged only with Claude"
-else
-  _fail "persistent Codex runtime packaging drift"
-fi
 
 if find "$PLX_CLAUDE/skills" "$PLX_CODEX/skills" -name SKILL.md \
      ! -path '*/skills/orchestrate/SKILL.md' -print0 |

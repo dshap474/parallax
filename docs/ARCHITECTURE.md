@@ -35,11 +35,6 @@ paths therefore never traverse to repository-level shared files.
 configs remain platform-specific because invocation syntax, host tools, and review
 polarity differ.
 
-The Claude package additionally vendors `codex-app-client` and a thin
-`plx-codex-thread` wrapper. They support optional persistence only for `/plx:codex`;
-the Codex package does not ship them. Shared synchronization explicitly preserves that
-one Claude-only wrapper.
-
 ## Pipeline
 
 `plan`, `build`, and `review` are separate workflows. `dev` invokes them in sequence
@@ -83,7 +78,6 @@ metadata and packaged review launches, not permission to expand the accepted spe
 repository scope, or publication authority. Review lanes remain read-only. Codex never
 uses `--dangerously-bypass-approvals-and-sandbox` or `--yolo`.
 The explicit, rubric-free opposite-host passthroughs also use full host access.
-Persistent `/plx:codex` applies the packaged client full-access gate on each turn.
 This access does not authorize edits or remote actions beyond the user request.
 
 The standalone Devin passthrough is the other explicit full-access path. It does not
@@ -101,8 +95,3 @@ common dependency/cache trees. Root guidance is repo-wide; nested guidance is
 path-scoped. Runtime briefs, logs, and outputs use
 `plx-`-prefixed temporary directories and the confined `plx-clean-temp` helper;
 Parallax creates no `.parallax/` state.
-
-As a narrow exception, `/plx:codex` may use `plx-codex-thread` to start or resume a
-Codex app-server session. It is ephemeral by default, keeps no Parallax registry,
-returns the thread ID to the user, and re-derives `inspect` or `edit` access on every
-turn. Plan, build, dev, review, and Simplify lanes never use this path.

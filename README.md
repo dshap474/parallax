@@ -94,10 +94,6 @@ boundary, and deployment, publication, credential changes, or external mutations
 exact user authorization. Explicitly retryable internal protocol failures allow up to
 two fresh retries after partial work is reconciled; other failures stop immediately.
 
-Claude's `/plx:codex` remains one-shot by default, but it may start or explicitly
-resume a persistent Codex app-server thread when later continuation will materially
-benefit from retained context. Pipeline lanes remain isolated and ephemeral.
-
 ## Repository layout
 
 ```text

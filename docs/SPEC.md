@@ -10,7 +10,6 @@ Status: v0.5.36
 plugins/claude/plx/.claude-plugin/plugin.json
 plugins/codex/plx/.codex-plugin/plugin.json
 plugins/{claude,codex}/plx/{skills,bin,prompts}/
-plugins/claude/plx/tools/codex-app-client/
 shared/{bin,prompts}/
 scripts/sync-shared.sh
 ```
@@ -29,14 +28,10 @@ skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime 
   `agents/openai.yaml` with `allow_implicit_invocation: false`.
 - The Codex opposite-host passthrough is `$plx:claude`; the Claude opposite-host
   passthrough is `plx:codex`. Both passthroughs have full host access through
-  their explicit rubric-free flags; persistent `plx:codex` uses the packaged
-  app client full-access gate on every turn. Pipeline lanes keep their own modes.
+  their explicit rubric-free flags. Pipeline lanes keep their own modes.
 - Both packages expose a standalone `devin` passthrough. It defaults to
   `swe-2-high`, accepts exact model overrides, rejects generic effort, and uses the
   explicit `full-access` wrapper mode without changing pipeline routing.
-- Claude `/plx:codex` is ephemeral by default and may start or resume a persistent
-  app-server thread only for explicit continuation or material multi-turn reuse. It
-  returns the thread ID and keeps no Parallax thread registry.
 - Claude-host Plan: Fable 5.1 authors and one GPT-6 Astra lane reviews.
 - Codex-host Plan: GPT-6 Astra authors and one Fable 5.1 lane reviews.
 - Build: one GPT-6 Sol High worker in Codex or Opus 5.5 Medium worker in Claude Code
@@ -95,8 +90,6 @@ Temporary artifacts are removed only through the confined cleanup helper. Standa
 Build follows the repository-governed local-commit contract above. No skill performs
 remote Git, deployment, release, or external publication without separate authority;
 target-local artifacts required by an accepted spec are allowed.
-Persistent Codex access is passthrough-only and derives read or write scope for each
-turn; every pipeline lane remains isolated and ephemeral.
 
 Parallax adds no host hooks, telemetry service, MCP, or target-repo `.parallax/` state.
 

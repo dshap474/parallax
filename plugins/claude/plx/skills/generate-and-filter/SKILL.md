@@ -18,7 +18,7 @@ The requested number of genuinely different options (default three), each with i
 case and risks, plus one recommendation and why it beat the others.
 
 ## Workers
-Launch every generator and judge as `claude-haiku-5-5` subagents at medium effort. An explicit user model or effort
+Launch every generator and judge as `claude-haiku-5-5` subagents at xhigh effort. An explicit user model or effort
 replaces this default. If that worker is unavailable, say so instead of silently
 substituting.
 

@@ -465,7 +465,7 @@ else
   _pass "non-zero exit on unknown rubric"
 fi
 
-_head "plx-engine defaults Codex to GPT-6 Sol at medium effort"
+_head "plx-engine defaults Codex to GPT-6.1 Sol at medium effort"
 fake_codex_args="$WORK/codex-args.txt"
 printf '%s\n' '#!/usr/bin/env bash' \
   '# Fake Codex CLI — records argv and writes the requested final output.' \
@@ -483,7 +483,7 @@ PATH="$fake_bin:$PATH" PLX_CODEX_ARGS_FILE="$fake_codex_args" \
   --prompt-file "$fake_prompt" --out "$fake_out" --log "$fake_log" >/dev/null
 rc=$?
 if [ "$rc" -eq 0 ]; then _pass "Codex default invocation exits 0"; else _fail "Codex default invocation exits $rc"; fi
-assert_contains "gpt-6-sol" "$fake_codex_args" "Codex model defaults to GPT-6 Sol"
+assert_contains "gpt-6.1-sol" "$fake_codex_args" "Codex model defaults to GPT-6.1 Sol"
 assert_contains "model_reasoning_effort=medium" "$fake_codex_args" "Codex effort defaults to medium"
 assert_contains "approval_policy=never" "$fake_codex_args" "Codex headless approval policy is explicit"
 assert_contains "workspace-write" "$fake_codex_args" "Codex rw uses workspace-write sandbox"

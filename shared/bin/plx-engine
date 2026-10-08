@@ -48,7 +48,7 @@ Flags:
                         give one rubric-free rw Claude passthrough full host access
   --codex-passthrough-full-access
                         give one rubric-free rw Codex passthrough full host access
-  --model <m>           codex: default gpt-6-sol · claude: default claude-opus-5-5 ·
+  --model <m>           codex: default gpt-6.1-sol · claude: default claude-opus-5-5 ·
                         grok: default grok-4.6 · devin: default swe-2-high · gemini: auto
   --effort <e>          codex: default medium · claude: default high ·
                         grok-4.6: always medium · other Grok models: default medium
@@ -190,7 +190,7 @@ if [[ "$ENGINE" == "grok" ]]; then
   [[ -n "$MODEL" ]] || MODEL="grok-4.6"
   [[ -n "$EFFORT" ]] || EFFORT="medium"
 elif [[ "$ENGINE" == "codex" ]]; then
-  [[ -n "$MODEL" ]] || MODEL="gpt-6-sol"
+  [[ -n "$MODEL" ]] || MODEL="gpt-6.1-sol"
   [[ -n "$EFFORT" ]] || EFFORT="medium"
 elif [[ "$ENGINE" == "claude" ]]; then
   [[ -n "$MODEL" ]] || MODEL="claude-opus-5-5"

@@ -15,7 +15,7 @@ flowchart TD
     V --> R[Parallel opposite-engine Medium review lanes]
     R --> S[Host verifies findings and fixes confirmed issues]
 
-    SB[(shared/bin + shared/prompts)] -. synchronized copies .-> C
+    SB[(shared/bin + shared/lib + shared/prompts)] -. synchronized copies .-> C
     SB -. synchronized copies .-> X
 
     classDef host fill:#1e3a5f,stroke:#78b7ff,color:#fff

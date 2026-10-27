@@ -5,7 +5,8 @@ package as a complete cache-safe unit.
 
 ## Where changes belong
 
-- Edit shared engine execution in `shared/bin/`.
+- Edit shared engine execution in `shared/bin/` (commands) and `shared/lib/` (the
+  `plx_engine` package).
 - Edit shared lane judgment in `shared/prompts/`.
 - Run `scripts/sync-shared.sh` after either change; never hand-edit generated copies.
 - Edit host-native skills and configs under `plugins/claude/plx/` or

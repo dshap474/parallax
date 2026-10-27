@@ -295,7 +295,7 @@ fi
 
 _head "Shared runtime copies"
 if "$PLX_ROOT/scripts/sync-shared.sh" --check >/dev/null; then
-  _pass "shared bin/prompts/license copies are current"
+  _pass "shared bin/lib/prompts/license copies are current"
 else
   _fail "shared runtime drift"
 fi
@@ -344,7 +344,7 @@ rm -f -- "$atomic_source"
 
 for package in "$PLX_CLAUDE" "$PLX_CODEX"; do
   label="$(basename "$(dirname "$package")")"
-  for tool in plx-engine plx-skill plx-clean-temp; do
+  for tool in plx-engine plx-skill; do
     [ -x "$package/bin/$tool" ] && _pass "$label bin/$tool" || _fail "$label bin/$tool"
   done
   for rubric in plan-critic build-worker reviewer-correctness reviewer-cleanup reviewer-structural reviewer-security simplify-reuse simplify-simplification simplify-efficiency simplify-altitude; do
@@ -365,26 +365,27 @@ else
   _pass "no .parallax runtime state"
 fi
 if grep -RE '^[[:space:]]*[^#].*(dangerously-bypass-approvals-and-sandbox|--yolo)' \
-  "$PLX_ROOT/shared/bin" >/dev/null; then
+  "$PLX_ROOT/shared/bin" "$PLX_ROOT/shared/lib" >/dev/null; then
   _fail "forbidden approvals-and-sandbox bypass in shared runtime"
-elif [ "$(grep -RF -- 'danger-full-access' "$PLX_ROOT/shared/bin" | wc -l)" -ne 1 ] ||
-     [ "$(grep -Fc 'sandbox = "danger-full-access"' "$PLX_ROOT/shared/bin/plx_engine/codex.py")" -ne 1 ] ||
-     [ "$(grep -RF -- '--dangerously-skip-permissions' "$PLX_ROOT/shared/bin" | wc -l)" -ne 2 ] ||
-     [ "$(grep -Fc 'flags += ["--dangerously-skip-permissions"' "$PLX_ROOT/shared/bin/plx_engine/claude.py")" -ne 2 ] ||
-     find "$PLX_ROOT/shared/bin" -type f ! -name codex.py ! -name claude.py -exec \
+elif [ "$(grep -RF -- 'danger-full-access' "$PLX_ROOT/shared/bin" "$PLX_ROOT/shared/lib" | wc -l)" -ne 1 ] ||
+     [ "$(grep -Fc 'sandbox = "danger-full-access"' "$PLX_ROOT/shared/lib/plx_engine/codex.py")" -ne 1 ] ||
+     [ "$(grep -RF -- '--dangerously-skip-permissions' "$PLX_ROOT/shared/bin" "$PLX_ROOT/shared/lib" | wc -l)" -ne 2 ] ||
+     [ "$(grep -Fc 'flags += ["--dangerously-skip-permissions"' "$PLX_ROOT/shared/lib/plx_engine/claude.py")" -ne 2 ] ||
+     find "$PLX_ROOT/shared/bin" "$PLX_ROOT/shared/lib" -type f ! -name codex.py ! -name claude.py -exec \
        grep -El 'danger-full-access|dangerously-skip-permissions' {} + | grep -q .; then
   _fail "explicit full-access runtime boundary drift"
-elif ! grep -Fq -- '"--permission-mode", "dangerous"' "$PLX_ROOT/shared/bin/plx_engine/devin.py" ||
-     ! grep -Fq 'Devin requires --mode full-access' "$PLX_ROOT/shared/bin/plx_engine/cli.py" ||
-     ! grep -Fq 'elif lane.mode == "full-access":' "$PLX_ROOT/shared/bin/plx_engine/cli.py" ||
-     ! grep -Fq 'usage_error("--mode full-access supports only Devin")' "$PLX_ROOT/shared/bin/plx_engine/cli.py"; then
+elif ! grep -Fq -- '"--permission-mode", "dangerous"' "$PLX_ROOT/shared/lib/plx_engine/devin.py" ||
+     ! grep -Fq 'Devin requires --mode full-access' "$PLX_ROOT/shared/lib/plx_engine/cli.py" ||
+     ! grep -Fq 'elif lane.mode == "full-access":' "$PLX_ROOT/shared/lib/plx_engine/cli.py" ||
+     ! grep -Fq 'usage_error("--mode full-access supports only Devin")' "$PLX_ROOT/shared/lib/plx_engine/cli.py"; then
   _fail "Devin full-access transport boundary drift"
 else
   _pass "full access is explicit for Build, opposite-host passthroughs, and Devin"
 fi
 if grep -RE '^[[:space:]]*[^#].*rm[[:space:]]+-rf' \
-     "$PLX_ROOT/shared/bin" "$PLX_ROOT/plugins/claude/plx/bin" \
-     "$PLX_ROOT/plugins/claude/plx/skills" "$PLX_ROOT/plugins/codex/plx/bin" \
+     "$PLX_ROOT/shared/bin" "$PLX_ROOT/shared/lib" "$PLX_ROOT/plugins/claude/plx/bin" \
+     "$PLX_ROOT/plugins/claude/plx/lib" "$PLX_ROOT/plugins/claude/plx/skills" \
+     "$PLX_ROOT/plugins/codex/plx/bin" "$PLX_ROOT/plugins/codex/plx/lib" \
      "$PLX_ROOT/plugins/codex/plx/skills" >/dev/null; then
   _fail "shipped runtime or skills contain policy-blocked recursive cleanup"
 else

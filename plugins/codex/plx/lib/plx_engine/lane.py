@@ -130,7 +130,7 @@ def truncate(path: str) -> None:
 
 @dataclass
 class Lane:
-    bin_dir: str
+    plugin_root: str
     engine: str = ""
     mode: str = ""
     repo: str = ""
@@ -153,7 +153,7 @@ class Lane:
 
     @property
     def prompts_dir(self) -> str:
-        return self.bin_dir + "/../prompts"
+        return self.plugin_root + "/prompts"
 
     def tmp(self, name: str) -> str:
         return self.tmp_dir + "/" + name
@@ -209,10 +209,37 @@ def make_temp_dir() -> str:
 
 
 def clean_temp(lane: Lane) -> None:
-    """Remove the lane temp dir through the confined helper, never recursively here."""
-    if lane.tmp_dir:
+    """Remove the lane temp dir, never recursively: only a real `plx-*` directory
+    directly under the physical temp root, one entry at a time, on one filesystem.
+    Symlinks are unlinked, never followed. A refusal leaves the tree in place."""
+    target = lane.tmp_dir
+    if not target:
+        return
+    if not target.startswith("/"):
+        say("plx-engine: temp cleanup target must be absolute")
+        return
+    if not os.path.lexists(target):
+        return
+    if os.path.islink(target) or not os.path.isdir(target):
+        say("plx-engine: temp cleanup target must be a real directory")
+        return
+    temp_root = os.path.realpath(os.environ.get("TMPDIR") or "/tmp")
+    parent = os.path.realpath(os.path.dirname(target))
+    if parent != temp_root or not os.path.basename(target).startswith("plx-"):
+        say(f"plx-engine: refusing non-Parallax temp target: {target}")
+        return
+    device = os.lstat(target).st_dev
+    for current, dirs, files in os.walk(target, topdown=False):
+        for name in files + [d for d in dirs if os.path.islink(current + "/" + d)]:
+            path = current + "/" + name
+            try:
+                if os.lstat(path).st_dev == device:
+                    os.unlink(path)
+            except OSError:
+                pass
         try:
-            subprocess.call([lane.bin_dir + "/plx-clean-temp", lane.tmp_dir])
+            if os.lstat(current).st_dev == device:
+                os.rmdir(current)
         except OSError:
             pass
 

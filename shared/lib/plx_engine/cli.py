@@ -4,7 +4,7 @@ Parses the wrapper's flags exactly as the original shell implementation did
 (order-sensitive `--help`/`--print-rubric`, `missing value` checks), validates
 the engine/mode/full-access combinations, resolves paths and defaults, creates
 the lane temp dir, runs one engine adapter, and on every exit path records the
-usage of a launched lane and removes the temp dir through `plx-clean-temp`.
+usage of a launched lane and removes the temp dir with the confined `clean_temp`.
 
 USAGE:
     from plx_engine.cli import main
@@ -303,8 +303,9 @@ def exit_code(code) -> int:
 
 
 def main(argv: List[str]) -> int:
-    bin_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    lane = Lane(bin_dir=bin_dir)
+    # <plugin-root>/lib/plx_engine/cli.py -> <plugin-root>
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    lane = Lane(plugin_root=root)
     init_signals()
     try:
         run(lane, argv)

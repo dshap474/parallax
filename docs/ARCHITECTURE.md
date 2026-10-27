@@ -24,7 +24,7 @@ Each package contains its own manifest, skills, `bin/`, `prompts/`, and license.
 Both plugin systems copy installed plugins into caches, so runtime paths never
 traverse to repository-level shared files.
 
-`shared/bin/` and `shared/prompts/` are canonical. `scripts/sync-shared.sh` copies them
+`shared/bin/`, `shared/lib/` and `shared/prompts/` are canonical. `scripts/sync-shared.sh` copies them
 into both packages and `--check` verifies byte-for-byte agreement. Skills stay
 platform-specific because invocation syntax, host tools, and review polarity differ.
 
@@ -40,8 +40,8 @@ review. `kiss`, `orchestrate`, and `init` load context only and launch no lanes.
 
 ## Runtime and safety
 
-`plx-engine` is a stdlib-only Python 3.9+ launcher over the `bin/plx_engine/` package
-(one adapter module per engine). It pins transport settings per engine; callers choose
+`plx-engine` is a stdlib-only Python 3.9+ launcher in `bin/` over the `lib/plx_engine/`
+package (one adapter module per engine). It pins transport settings per engine; callers choose
 only engine, mode, rubric, model, and effort.
 
 - Codex: user config and bundled skills ignored, approval policy `never`, ephemeral
@@ -81,5 +81,5 @@ Standalone Build may create local commits that its accepted spec or the target
 repository's instructions require, staging only Build-owned work. No skill pushes,
 opens a pull request, merges, tags, releases, deploys, or publishes without separate
 authority. Runtime briefs, logs, and outputs live in `plx-`-prefixed temp directories
-removed by the confined `plx-clean-temp` helper. Parallax adds no hooks, telemetry,
+removed by the engine's confined, non-recursive cleanup. Parallax adds no hooks, telemetry,
 MCP, or target-repo `.parallax/` state.

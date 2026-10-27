@@ -66,6 +66,10 @@ sync_tree() {
         fi
       fi
     done < <(find "$destination" -type f | sort)
+    # Drop directories that removing orphans left empty.
+    if [ "$MODE" != "--check" ]; then
+      find "$destination" -mindepth 1 -depth -type d -empty -exec rmdir {} \;
+    fi
   fi
 
   return "$drift"
@@ -74,6 +78,7 @@ sync_tree() {
 rc=0
 for package in "$ROOT/plugins/claude/plx" "$ROOT/plugins/codex/plx"; do
   sync_tree "$ROOT/shared/bin" "$package/bin" || rc=1
+  sync_tree "$ROOT/shared/lib" "$package/lib" || rc=1
   sync_tree "$ROOT/shared/prompts" "$package/prompts" || rc=1
   if [ ! -f "$package/LICENSE" ] || ! cmp -s "$ROOT/LICENSE" "$package/LICENSE"; then
     if [ "$MODE" = "--check" ]; then

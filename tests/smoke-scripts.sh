@@ -19,7 +19,7 @@ echo "package: ${PLX_PACKAGE:-claude} ($PLUGIN_ROOT)"
 echo "tmp target repo: $REPO"
 
 _head "bin tools answer --help"
-for t in plx-engine plx-skill plx-clean-temp; do
+for t in plx-engine plx-skill; do
   out="$WORK/help-$t.txt"
   if "$PLUGIN_ROOT/bin/$t" --help > "$out" 2>&1 && grep -q "Usage:" "$out"; then
     _pass "$t --help"
@@ -785,23 +785,6 @@ rm -f -- \
   "$REPO/.claude/rules/review.md"
 rmdir "$REPO/ignored-guidance" "$REPO/untracked-guidance" \
   "$REPO/.claude/rules" "$REPO/.claude"
-
-_head "plx-clean-temp confines recursive cleanup"
-clean_target="$(mktemp -d "${TMPDIR:-/tmp}/plx-clean-smoke.XXXXXX")"
-mkdir -p "$clean_target/a/b"
-printf '%s\n' x > "$clean_target/a/b/file"
-if "$PLUGIN_ROOT/bin/plx-clean-temp" "$clean_target" && [ ! -e "$clean_target" ]; then
-  _pass "plx-clean-temp removes a prefixed temp tree"
-else
-  _fail "plx-clean-temp failed to remove a valid tree"
-fi
-outside_target="$WORK/not-a-plx-temp"
-mkdir -p "$outside_target"
-if "$PLUGIN_ROOT/bin/plx-clean-temp" "$outside_target" >/dev/null 2>&1; then
-  _fail "plx-clean-temp accepted a non-temp target"
-else
-  _pass "plx-clean-temp refuses targets outside the temp root"
-fi
 
 # Shared-copy check is covered by check-plugin; both packages smoke via run.sh.
 

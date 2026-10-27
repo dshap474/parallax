@@ -2,7 +2,7 @@
 """plx-engine — Parallax engine API: the ONE wrapper that drives all engines headless.
 
 Runnable by path (or through a PATH symlink) under any python3 3.9+, stdlib only.
-The logic lives in the plx_engine package beside this file. Per-engine safety
+The logic lives in the plx_engine package under ../lib. Per-engine safety
 flags are pinned in the adapters, not chosen by callers.
 
 USAGE:
@@ -20,10 +20,10 @@ import sys
 # Entry point
 # --------------------------------------------------------------------------- #
 
-# The sync script copies every file under bin/, so never write __pycache__ here.
+# The sync script copies every file under lib/, so never write __pycache__ there.
 sys.dont_write_bytecode = True
-# Resolve symlinks so the package and prompts/ are found via a PATH symlink.
-sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+# Resolve symlinks so lib/ and prompts/ are found via a PATH symlink.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"))
 
 from plx_engine.cli import main  # noqa: E402
 

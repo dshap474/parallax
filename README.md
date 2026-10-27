@@ -83,7 +83,7 @@ See [Architecture](docs/ARCHITECTURE.md), [Commands](docs/COMMANDS.md),
 
 ## Status
 
-v0.5.41
+v0.5.42
 
 ## License
 

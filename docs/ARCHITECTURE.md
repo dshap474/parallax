@@ -40,8 +40,9 @@ review. `kiss`, `orchestrate`, and `init` load context only and launch no lanes.
 
 ## Runtime and safety
 
-`plx-engine` pins transport settings per engine; callers choose only engine, mode,
-rubric, model, and effort.
+`plx-engine` is a stdlib-only Python 3.9+ launcher over the `bin/plx_engine/` package
+(one adapter module per engine). It pins transport settings per engine; callers choose
+only engine, mode, rubric, model, and effort.
 
 - Codex: user config and bundled skills ignored, approval policy `never`, ephemeral
   session, JSONL event log, explicit read-only or workspace-write sandbox. Never the approvals-and-sandbox bypass or `--yolo`.

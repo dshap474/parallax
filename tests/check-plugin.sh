@@ -367,14 +367,17 @@ fi
 if grep -RE '^[[:space:]]*[^#].*(dangerously-bypass-approvals-and-sandbox|--yolo)' \
   "$PLX_ROOT/shared/bin" >/dev/null; then
   _fail "forbidden approvals-and-sandbox bypass in shared runtime"
-elif [ "$(grep -Fc 'sandbox="danger-full-access"' "$PLX_ROOT/shared/bin/plx-engine")" -ne 1 ] ||
-     [ "$(grep -Fc 'flags+=(--dangerously-skip-permissions' "$PLX_ROOT/shared/bin/plx-engine")" -ne 2 ] ||
-     find "$PLX_ROOT/shared/bin" -type f ! -name plx-engine -exec \
+elif [ "$(grep -RF -- 'danger-full-access' "$PLX_ROOT/shared/bin" | wc -l)" -ne 1 ] ||
+     [ "$(grep -Fc 'sandbox = "danger-full-access"' "$PLX_ROOT/shared/bin/plx_engine/codex.py")" -ne 1 ] ||
+     [ "$(grep -RF -- '--dangerously-skip-permissions' "$PLX_ROOT/shared/bin" | wc -l)" -ne 2 ] ||
+     [ "$(grep -Fc 'flags += ["--dangerously-skip-permissions"' "$PLX_ROOT/shared/bin/plx_engine/claude.py")" -ne 2 ] ||
+     find "$PLX_ROOT/shared/bin" -type f ! -name codex.py ! -name claude.py -exec \
        grep -El 'danger-full-access|dangerously-skip-permissions' {} + | grep -q .; then
   _fail "explicit full-access runtime boundary drift"
-elif ! grep -Fq -- '--permission-mode dangerous' "$PLX_ROOT/shared/bin/plx-engine" ||
-     ! grep -Fq 'Devin requires --mode full-access' "$PLX_ROOT/shared/bin/plx-engine" ||
-     ! grep -Fq 'elif [[ "$MODE" == "full-access" ]]' "$PLX_ROOT/shared/bin/plx-engine"; then
+elif ! grep -Fq -- '"--permission-mode", "dangerous"' "$PLX_ROOT/shared/bin/plx_engine/devin.py" ||
+     ! grep -Fq 'Devin requires --mode full-access' "$PLX_ROOT/shared/bin/plx_engine/cli.py" ||
+     ! grep -Fq 'elif lane.mode == "full-access":' "$PLX_ROOT/shared/bin/plx_engine/cli.py" ||
+     ! grep -Fq 'usage_error("--mode full-access supports only Devin")' "$PLX_ROOT/shared/bin/plx_engine/cli.py"; then
   _fail "Devin full-access transport boundary drift"
 else
   _pass "full access is explicit for Build, opposite-host passthroughs, and Devin"

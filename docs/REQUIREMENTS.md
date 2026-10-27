@@ -7,7 +7,8 @@ Parallax orchestrates local engine CLIs; it does not host or proxy models.
 | Claude Code | authenticated `claude` | authenticated `codex` | `grok`, `gemini`, `devin` |
 | Codex | authenticated `codex` | authenticated `claude` | `grok`, `gemini`, `devin` |
 
-The Codex CLI and Claude Code CLI must be available on `PATH`. Review and Simplify
+The Codex CLI and Claude Code CLI must be available on `PATH`, as must `python3`
+(3.9 or newer): `bin/plx-engine` is a stdlib-only Python program. Review and Simplify
 use the opposite engine by default. Grok overrides and the Grok passthrough use
 Grok 4.6 and require a current CLI and `grok login` or `XAI_API_KEY`. The Gemini
 passthrough requires `@google/gemini-cli`, authentication via `gemini`, and macOS. The

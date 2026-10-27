@@ -19,7 +19,7 @@ case and risks, plus one recommendation and why it beat the others.
 
 ## Workers
 Mix two models for coverage: split generators and judges roughly evenly between
-`claude-haiku-5-5` subagents at xhigh effort and `gpt-6-luna` engine lanes at max
+`claude-sonnet-5-5` subagents at high effort and `gpt-6.1-sol` engine lanes at low
 effort. Put generators with similar angles on different models, and alternate judges
 between models. Engine lanes are read-only; keep work that writes files or needs web
 research on subagents. An explicit user model or effort replaces this mix. If one worker
@@ -30,7 +30,7 @@ brief in a fresh temp directory `<tmp>`:
 
 ```
 plx-engine --engine codex --mode ro --repo <repo> \
-  --prompt-file <tmp>/<lane>-brief.md --model gpt-6-luna --effort max \
+  --prompt-file <tmp>/<lane>-brief.md --model gpt-6.1-sol --effort low \
   --out <tmp>/<lane>.md --log <tmp>/<lane>.log
 ```
 

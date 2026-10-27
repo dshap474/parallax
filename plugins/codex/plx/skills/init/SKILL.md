@@ -11,7 +11,7 @@ changes no files.
 
 | Skill | Purpose |
 | --- | --- |
-| `$plx:plan` | The current host plans; Fable 5.1 reviews. Produces a reviewed plan without coding. |
+| `$plx:plan` | The current host plans; Opus 5.5 reviews. Produces a reviewed plan without coding. |
 | `$plx:build` | One GPT-6.1 Sol Medium worker implements and verifies the accepted plan. |
 | `$plx:review` | Parallel Opus 5.5 Medium lanes review correctness, cleanup, and structure; security when relevant. The host verifies findings and fixes confirmed issues. |
 | `$plx:dev` | Runs Plan → Build → Review sequentially. |
@@ -19,9 +19,9 @@ changes no files.
 | `$plx:kiss` | Loads KISS principles into context. |
 | `$plx:orchestrate` | Loads a planner posture that delegates coding to native workers. |
 | `$plx:unknown-unknowns` | Explores blind spots with the host. |
-| `$plx:fanout-and-synthesize` | Host-led mixed GPT-6 Luna Max and Haiku 5.5 xhigh lanes by lens or shard, then one synthesis. |
-| `$plx:adversarial-verification` | Mixed GPT-6 Luna Max and Haiku 5.5 xhigh verifiers try to refute claims; the host keeps survivors. |
-| `$plx:generate-and-filter` | Mixed GPT-6 Luna Max and Haiku 5.5 xhigh lanes generate ideas and judge finalists pairwise; the host recommends one. |
+| `$plx:fanout-and-synthesize` | Host-led mixed GPT-6.1 Sol Low and Sonnet 5.5 High lanes by lens or shard, then one synthesis. |
+| `$plx:adversarial-verification` | Mixed GPT-6.1 Sol Low and Sonnet 5.5 High verifiers try to refute claims; the host keeps survivors. |
+| `$plx:generate-and-filter` | Mixed GPT-6.1 Sol Low and Sonnet 5.5 High lanes generate ideas and judge finalists pairwise; the host recommends one. |
 | `$plx:claude`, `$plx:grok`, `$plx:gemini`, `$plx:devin` | Direct requests to another engine. |
 
 For web research and documentation lookup, use GPT-6 Luna at max reasoning (`gpt-6-luna`, `max`) in a read-only lane.

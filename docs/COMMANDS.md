@@ -12,7 +12,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Orchestrate | `/plx:orchestrate` | `$plx:orchestrate` | Set a planner and worker-delegation posture without starting work |
 | Dev | `/plx:dev` | `$plx:dev` | Plan → build → review/fix → final gate |
 | Other host | `/plx:codex` | `$plx:claude` | Opposite-engine passthrough with full host access; default model/effort can be overridden |
-| Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; Grok 4.6 always uses medium effort |
+| Grok | `/plx:grok` | `$plx:grok` | One isolated Grok passthrough; Grok 4.7 at medium by default; explicit Grok 4.6 always uses medium |
 | Gemini | `/plx:gemini` | `$plx:gemini` | One sandboxed Gemini CLI passthrough; `auto` model routing by default; no shell or effort flag |
 | Devin | `/plx:devin` | `$plx:devin` | One full-access Devin passthrough; SWE-2 High by default; no generic effort flag |
 | Init | `/plx:init` | `$plx:init` | Load the Parallax skill map and research defaults into context |
@@ -29,7 +29,7 @@ uses `disable-model-invocation: true` with `user-invocable: true`.
 
 | Skill | Claude Code host | Codex host |
 | --- | --- | --- |
-| Plan | Fable 5.1 authors; `gpt-6-astra` reviews | `gpt-6-astra` authors; `claude-fable-5-1` reviews |
+| Plan | Fable 5.1 authors; `gpt-6-astra` reviews | `gpt-6-astra` authors; `claude-opus-5-5` reviews |
 | Build | `claude-opus-5-5` Medium worker | `gpt-6.1-sol` Medium worker |
 | Review, Simplify | Codex `gpt-6.1-sol` Medium | Claude `claude-opus-5-5` Medium |
 | Opposite-host passthrough | `/plx:codex`: `gpt-6.1-sol` Medium | `$plx:claude`: `claude-opus-5-5` Medium |

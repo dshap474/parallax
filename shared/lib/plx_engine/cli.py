@@ -56,8 +56,8 @@ Flags:
   --codex-passthrough-full-access
                         give one rubric-free rw Codex passthrough full host access
   --model <m>           codex: default gpt-6.1-sol · claude: default claude-opus-5-5 ·
-                        grok: default grok-4.6 · devin: default swe-2-high · gemini: auto
-  --effort <e>          codex: default medium · claude: default high ·
+                        grok: default grok-4.7 · devin: default swe-2-high · gemini: auto
+  --effort <e>          codex: default medium · claude: default medium ·
                         grok-4.6: always medium · other Grok models: default medium
                         Gemini and Devin reject --effort; choose a model instead.
   --stdout              print the final message to stdout; temp files auto-cleaned
@@ -96,9 +96,9 @@ ADAPTERS = {"codex": codex, "grok": grok, "claude": claude, "devin": devin, "gem
 
 # engine -> (default model, default effort); "" means the engine takes no effort.
 DEFAULTS = {
-    "grok": ("grok-4.6", "medium"),
+    "grok": ("grok-4.7", "medium"),
     "codex": ("gpt-6.1-sol", "medium"),
-    "claude": ("claude-opus-5-5", "high"),
+    "claude": ("claude-opus-5-5", "medium"),
     "gemini": ("auto", ""),
     "devin": ("swe-2-high", ""),
 }

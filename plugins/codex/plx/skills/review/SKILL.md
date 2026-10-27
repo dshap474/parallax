@@ -22,7 +22,7 @@ Run three core roles: `reviewer-correctness`, `reviewer-cleanup`, and
 `reviewer-structural`. Default all three to Claude `claude-opus-5-5` at `medium`, matching
 `$plx:claude`. An explicit engine, model, or effort (for example `with all Grok lanes`)
 applies to the whole round; engine-only overrides use `claude-opus-5-5`, `gpt-6.1-sol`,
-or `grok-4.6` at `medium`.
+or `grok-4.7` at `medium`.
 
 Add `reviewer-security` when requested or when scope touches auth, permissions,
 secrets/config, shell/subprocess execution, sandboxing, network clients, dependencies,

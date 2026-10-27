@@ -15,10 +15,10 @@ Use the packaged helpers on PATH.
 
 ## Launch settings
 
-- Defaults: `model=grok-4.6`, `effort=medium`.
+- Defaults: `model=grok-4.7`, `effort=medium`.
 - An explicit user model always replaces the default. An explicit effort replaces the
   default for models other than `grok-4.6`; Grok 4.6 always resolves to `medium`.
-  Natural wording is enough (`ask grok-composer-2.5-fast low for <task>`). Ignore model
+  Natural wording is enough (`ask grok-4.7-build-fast low for <task>`). Ignore model
   names that are only task content. Apart from
   pinning Grok 4.6 to medium, do not normalize or silently replace an explicit value;
   if Grok rejects it, surface the error.

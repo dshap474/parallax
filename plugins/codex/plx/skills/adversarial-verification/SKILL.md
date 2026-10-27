@@ -15,8 +15,8 @@ conclusions, a factual draft, or your own earlier answer.
 A verdict per item: survived, refuted, or uncertain, with the deciding evidence.
 
 ## Workers
-Mix two models for coverage: split verifiers roughly evenly between `gpt-6-luna`
-subagents at max reasoning and `claude-haiku-5-5` engine lanes at xhigh effort. Put each
+Mix two models for coverage: split verifiers roughly evenly between `gpt-6.1-sol`
+subagents at low reasoning and `claude-sonnet-5-5` engine lanes at high effort. Put each
 item's verifiers on different models. Engine lanes are read-only; keep work that writes
 files or needs web research on subagents. An explicit user model or effort replaces this
 mix. If one worker is unavailable, say so and use the other for every lane.
@@ -27,7 +27,7 @@ with its brief in a fresh temp directory `<tmp>`:
 
 ```
 <plugin-root>/bin/plx-engine --engine claude --mode ro --repo <repo> \
-  --prompt-file <tmp>/<lane>-brief.md --model claude-haiku-5-5 --effort xhigh \
+  --prompt-file <tmp>/<lane>-brief.md --model claude-sonnet-5-5 --effort high \
   --out <tmp>/<lane>.md --log <tmp>/<lane>.log
 ```
 

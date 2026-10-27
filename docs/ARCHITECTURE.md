@@ -52,12 +52,12 @@ only engine, mode, rubric, model, and effort.
   `is_error`. Safe mode disables guidance discovery, so the
   wrapper lists physical `AGENTS.md`, `CLAUDE.md`, `CLAUDE.local.md`, and
   `.claude/rules/*.md` files in the prompt, including ignored and untracked ones.
-- Grok: `grok-4.6` always at medium, unattended tool approval, no planning, subagent,
-  or memory features, Claude/Cursor/Codex customization imports disabled (repository
-  guidance is listed in the prompt instead), and an explicit read-only or workspace
-  kernel sandbox. A sandbox
-  startup failure prints `PLX_GROK_SANDBOX_UNAVAILABLE` and never authorizes
-  host-session substitution.
+- Grok: `grok-4.7` at medium by default (`grok-4.6` always at medium), unattended tool
+  approval, no planning, subagent, or memory features, Claude/Cursor/Codex
+  customization imports disabled (repository guidance is listed in the prompt
+  instead), and an explicit read-only or workspace kernel sandbox. A sandbox startup
+  failure prints `PLX_GROK_SANDBOX_UNAVAILABLE` and never authorizes host-session
+  substitution.
 - Gemini: `auto` routing by default, sandbox required (macOS Seatbelt), read tools in
   `ro` and file-edit tools in `rw`; shell, extensions, MCP, and hooks disabled.
 - Devin: one-shot print mode, generated config with imports, updates, and subagents

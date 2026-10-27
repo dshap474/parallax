@@ -15,8 +15,8 @@ One evidence-weighted answer: consensus, meaningful disagreements, primary
 recommendation, remaining uncertainty.
 
 ## Workers
-Mix two models for coverage: split lanes roughly evenly between `gpt-6-luna` subagents
-at max reasoning and `claude-haiku-5-5` engine lanes at xhigh effort. When two lanes
+Mix two models for coverage: split lanes roughly evenly between `gpt-6.1-sol` subagents
+at low reasoning and `claude-sonnet-5-5` engine lanes at high effort. When two lanes
 cover similar ground, put them on different models. Engine lanes are read-only; keep
 work that writes files or needs web research on subagents. An explicit user model or
 effort replaces this mix. If one worker is unavailable, say so and use the other for
@@ -28,7 +28,7 @@ its brief in a fresh temp directory `<tmp>`:
 
 ```
 <plugin-root>/bin/plx-engine --engine claude --mode ro --repo <repo> \
-  --prompt-file <tmp>/<lane>-brief.md --model claude-haiku-5-5 --effort xhigh \
+  --prompt-file <tmp>/<lane>-brief.md --model claude-sonnet-5-5 --effort high \
   --out <tmp>/<lane>.md --log <tmp>/<lane>.log
 ```
 

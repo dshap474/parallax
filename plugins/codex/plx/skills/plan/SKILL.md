@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Author a plan in the host and review it once with claude-fable-5-1. Write no code.
+description: Author a plan in the host and review it once with claude-opus-5-5. Write no code.
 argument-hint: "<task to plan>"
 ---
 
@@ -34,7 +34,7 @@ Run the reviewer and wait for its result:
 ```
 <plugin-root>/bin/plx-engine --engine claude --mode ro --repo <repo> \
   --prompt-file <tmp>/critic-brief.md --rubric plan-critic \
-  --model claude-fable-5-1 --effort high \
+  --model claude-opus-5-5 --effort high \
   --out <tmp>/critic.md --log <tmp>/critic.log
 ```
 

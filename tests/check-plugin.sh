@@ -119,7 +119,7 @@ passthrough_ok=1
 for spec in \
   "$PLX_CLAUDE/skills/codex:codex:--codex-passthrough-full-access:gpt-6.1-sol" \
   "$PLX_CODEX/skills/claude:claude:--claude-passthrough-full-access:claude-opus-5-5" \
-  "$PLX_CLAUDE/skills/grok:grok::grok-4.6" "$PLX_CODEX/skills/grok:grok::grok-4.6" \
+  "$PLX_CLAUDE/skills/grok:grok::grok-4.7" "$PLX_CODEX/skills/grok:grok::grok-4.7" \
   "$PLX_CLAUDE/skills/devin:devin:--mode full-access:swe-2-high" \
   "$PLX_CODEX/skills/devin:devin:--mode full-access:swe-2-high"; do
   IFS=: read -r dir engine flag model <<< "$spec"
@@ -221,7 +221,7 @@ for host, model, effort in (("claude", "claude-opus-5-5", "medium"), ("codex", "
             errors.append(f"{host}: Build handoff missing {field}")
     plan = (package / "skills/plan/SKILL.md").read_text()
     critic = "claude" if host == "codex" else "codex"
-    model = "claude-fable-5-1" if host == "codex" else "gpt-6-astra"
+    model = "claude-opus-5-5" if host == "codex" else "gpt-6-astra"
     commands = [" ".join(block.replace("\\\n", " ").split())
                 for block in re.findall(r"```[^\n]*\n(.*?)```", plan, re.S)]
     launches = [block for block in commands if "--rubric plan-critic" in block]
@@ -253,7 +253,7 @@ for name in ("build", "dev", "plan", "review", "unknown-unknowns"):
             body = body.replace(f"`{opposite}`", "`OPPOSITE`")
             body = body.replace("request_user_input", "AskUserQuestion")
             if name == "plan":
-                body = body.replace("claude-fable-5-1", "PLAN_REVIEWER").replace("gpt-6-astra", "PLAN_REVIEWER")
+                body = body.replace("claude-opus-5-5", "PLAN_REVIEWER").replace("gpt-6-astra", "PLAN_REVIEWER")
                 body = body.replace(f"--engine {opposite}", "--engine OPPOSITE").replace(f"--require-{opposite}", "--require-OPPOSITE")
             if name == "dev":
                 body = body.replace("`high`", "`REVIEW_EFFORT`") if host == "codex" else body.replace("`xhigh`", "`REVIEW_EFFORT`")

@@ -609,11 +609,11 @@ printf '%s\n' '# untracked nested guidance' > "$REPO/untracked-guidance/AGENTS.m
 ln -s AGENTS.md "$REPO/untracked-guidance/CLAUDE.md"
 printf '%s\n' '# path-scoped rule' > "$REPO/.claude/rules/review.md"
 printf '%s\n' '#!/usr/bin/env bash' \
-  '# Fake Claude CLI — records argv and returns one successful response.' \
+  '# Fake Claude CLI — records argv and returns one successful stream-json result.' \
   'printf '\''%s\n'\'' "$@" > "$PLX_CLAUDE_ARGS_FILE"' \
   'cat > "$PLX_CLAUDE_PROMPT_FILE"' \
   'if [ -n "${PLX_FAKE_CLAUDE_LOGGED_OUT:-}" ]; then printf '\''Not logged in · Please run /login\n'\'' >&2; exit 1; fi' \
-  'printf '\''OK\n'\''' \
+  'printf '\''%s\n'\'' '\''{"type":"result","subtype":"success","is_error":false,"result":"OK"}'\''' \
   'if [ -n "${PLX_FAKE_CLAUDE_STAGING:-}" ]; then mkdir -p .claude/.cc-writes; fi' \
   'if [ "${PLX_FAKE_CLAUDE_STAGING:-}" = nonempty ]; then printf '\''keep\n'\'' > .claude/.cc-writes/keep; fi' \
   'exit "${PLX_FAKE_CLAUDE_EXIT:-0}"' \

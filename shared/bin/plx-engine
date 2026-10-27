@@ -55,6 +55,8 @@ Flags:
                         Gemini and Devin reject --effort; choose a model instead.
   --stdout              print the final message to stdout; temp files auto-cleaned
   --out <f> --log <f>   instead of --stdout: write final message / full log to files
+  --usage <f>           write the lane usage record here (default with --out:
+                        <name>.usage.json beside <name>.out.md, else <out>.usage.json)
   --print-rubric <n>    print the named rubric (e.g. reviewer-correctness)
   --help                this text
 
@@ -62,6 +64,13 @@ Caller notes:
   * Engine turns can run 10-40+ min; prefer a background shell with --out/--log.
   * Grok prints non-fatal AuthorizationRequired lines to stderr; trust the exit code.
   * Full-access flags change transport permission only, never task authority.
+  * The usage record (JSON, written on failure and interruption too) holds the
+    requested and served models, wall time, tokens (prompt_tokens counts all
+    input incl. cache), and cost_usd with cost_source vendor|unknown. null means
+    the engine did not report it. Codex and Gemini report no cost.
+  * A served model that does not match --model prints a stderr warning; the
+    lane still succeeds. Codex does not report its served model.
+  * SIGTERM/SIGINT stop the engine process, record usage, and exit 143/130.
 
 Exit codes:
   0  success — stdout (or --out) holds the engine's final message
@@ -69,6 +78,7 @@ Exit codes:
   2  usage error — bad flags or missing/empty inputs
   3  not signed in — tell the user to log in (codex login / grok login / claude /login / devin auth login)
   4  Devin explicitly retryable internal protocol failure — reconcile partial work before retry
+  130/143  interrupted by SIGINT/SIGTERM — the engine process was stopped
 EOF
 }
 
@@ -96,15 +106,243 @@ BUILD_WRITER_FULL_ACCESS=0
 CLAUDE_PASSTHROUGH_FULL_ACCESS=0
 CODEX_PASSTHROUGH_FULL_ACCESS=0
 TMP_DIR=""
+USAGE=""
+USAGE_SRC=""
+START_TS=""
 
 plx_engine_exit() {
   local rc=$?
+  # Usage is recorded for every launched lane, including failures and interrupts.
+  if [[ -n "$START_TS" && -n "$USAGE" ]]; then
+    lane_meta usage "$ENGINE" "$USAGE_SRC" "$USAGE" "$MODEL" "$EFFORT" "$MODE" \
+      "$rc" "$(( $(date +%s) - START_TS ))" 2>/dev/null || true
+  fi
   if [[ -n "$TMP_DIR" ]]; then "$BIN_DIR/plx-clean-temp" "$TMP_DIR" || true; fi
   exit "$rc"
 }
 trap plx_engine_exit EXIT
 
 need_value() { [[ -n "${2:-}" ]] || { echo "missing value for $1" >&2; exit 2; }; }
+
+# Lane metadata from each engine's structured output:
+#   claude-result <stream> <out>   final text of a Claude stream-json run, or fail
+#   served <engine> <src> <model>  warn when the served model is not the requested one
+#   usage <engine> <src> <file> <model> <effort> <mode> <rc> <secs>
+read -r -d '' LANE_META_PY <<'PY' || true
+import json
+import os
+import sys
+from pathlib import Path
+
+
+def events(path):
+    try:
+        handle = open(path, errors="replace")
+    except OSError:
+        return
+    with handle:
+        for line in handle:
+            line = line.strip()
+            if not line.startswith("{"):
+                continue
+            try:
+                value = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(value, dict):
+                yield value
+
+
+def document(path):
+    try:
+        value = json.loads(Path(path).read_text(errors="replace"))
+    except (OSError, ValueError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def add(*parts):
+    return None if any(part is None for part in parts) else sum(parts)
+
+
+def tally(rows, keys):
+    """Sum per-model rows; a key nobody reported stays None."""
+    totals = {}
+    for key in keys:
+        values = [row.get(key) for row in rows if row.get(key) is not None]
+        totals[key] = sum(values) if values else None
+    return totals
+
+
+def claude(src):
+    result, served, messages = None, [], {}
+    for event in events(src):
+        kind = event.get("type")
+        if kind == "assistant":
+            message = event.get("message") or {}
+            if message.get("model"):
+                served.append(message["model"])
+            if message.get("id") and message.get("usage"):
+                messages[message["id"]] = message["usage"]
+        elif kind == "result":
+            result = event
+    if result and result.get("modelUsage"):
+        # modelUsage covers every model the run called and is what the cost sums.
+        rows = tally(result["modelUsage"].values(), ("inputTokens", "cacheReadInputTokens",
+                     "cacheCreationInputTokens", "outputTokens", "thinkingTokens"))
+        fresh, read, write = rows["inputTokens"], rows["cacheReadInputTokens"], rows["cacheCreationInputTokens"]
+        out, thinking = rows["outputTokens"], rows["thinkingTokens"]
+    else:
+        # Stopped before the result event: a message split over events repeats its usage.
+        rows = tally(messages.values(), ("input_tokens", "cache_read_input_tokens",
+                     "cache_creation_input_tokens", "output_tokens"))
+        fresh, read, write = rows["input_tokens"], rows["cache_read_input_tokens"], rows["cache_creation_input_tokens"]
+        out, thinking = rows["output_tokens"], None
+    # Anthropic input_tokens are the uncached part only.
+    return dict(served=served, prompt=add(fresh, read or 0, write or 0) if fresh is not None else None,
+                cached=read, cache_write=write, completion=out, reasoning=thinking,
+                cost=(result or {}).get("total_cost_usd"), turns=(result or {}).get("num_turns"),
+                source="claude stream-json" if result else "claude stream-json (no result event)")
+
+
+def codex(src):
+    usage, turns = {}, 0
+    for event in events(src):
+        if event.get("type") == "turn.completed" and event.get("usage"):
+            usage = event["usage"]
+        elif event.get("type") == "item.completed" and (event.get("item") or {}).get("type") == "command_execution":
+            turns += 1
+    # Codex input_tokens already include the cached subset; it reports no served model or cost.
+    return dict(served=[], prompt=usage.get("input_tokens"), cached=usage.get("cached_input_tokens"),
+                cache_write=usage.get("cache_write_input_tokens"), completion=usage.get("output_tokens"),
+                reasoning=usage.get("reasoning_output_tokens"), cost=None, turns=turns if usage else None,
+                source="codex turn.completed" if usage else "codex (no turn.completed event)")
+
+
+def grok(src):
+    envelope = document(src)
+    usage = envelope.get("usage") or {}
+    fresh, read = usage.get("input_tokens"), usage.get("cache_read_input_tokens")
+    write = usage.get("cache_creation_input_tokens")
+    return dict(served=list(envelope.get("modelUsage") or {}),
+                prompt=add(fresh, read or 0, write or 0) if fresh is not None else None,
+                cached=read, cache_write=write, completion=usage.get("output_tokens"),
+                reasoning=usage.get("reasoning_tokens"), cost=envelope.get("total_cost_usd"),
+                turns=envelope.get("num_turns"), source="grok json envelope")
+
+
+def devin(src):
+    export = document(src)
+    steps = [step for step in export.get("steps") or [] if isinstance(step, dict)]
+    agent = [step for step in steps if step.get("source") == "agent"]
+    metrics = export.get("final_metrics") or {}
+    return dict(served=[step["model_name"] for step in agent if step.get("model_name")],
+                prompt=metrics.get("total_prompt_tokens"), cached=metrics.get("total_cached_tokens"),
+                cache_write=None, completion=metrics.get("total_completion_tokens"), reasoning=None,
+                cost=metrics.get("total_cost_usd"), turns=len(agent) if export else None,
+                source="devin ATIF final_metrics")
+
+
+def gemini(src):
+    models = (document(src).get("stats") or {}).get("models") or {}
+    rows = tally([(value or {}).get("tokens") or {} for value in models.values()],
+                 ("prompt", "cached", "candidates", "thoughts"))
+    return dict(served=list(models), prompt=rows["prompt"], cached=rows["cached"], cache_write=None,
+                completion=rows["candidates"], reasoning=rows["thoughts"], cost=None, turns=None,
+                source="gemini json stats")
+
+
+PARSERS = dict(claude=claude, codex=codex, grok=grok, devin=devin, gemini=gemini)
+
+
+def mismatch(requested, served):
+    """True only when the engine named its models and none is the requested one."""
+    wanted = requested.split("[", 1)[0].lower()
+    return bool(served) and wanted != "auto" and not any(wanted in name.lower() for name in served)
+
+
+def claude_result(stream, out):
+    result = None
+    for event in events(stream):
+        if event.get("type") == "result":
+            result = event
+    if result is None:
+        sys.exit("claude stream has no result event")
+    text = result.get("result") or ""
+    if result.get("is_error") or result.get("subtype") not in (None, "success"):
+        sys.exit(f"claude result is an error (subtype {result.get('subtype')}): {text}")
+    if not text.strip():
+        sys.exit("claude produced an empty result")
+    Path(out).write_text(text.rstrip("\n") + "\n")
+
+
+def served(engine, src, model):
+    names = sorted(set(PARSERS[engine](src)["served"]))
+    if mismatch(model, names):
+        print(f"plx-engine: warning: requested {model} but {engine} served {', '.join(names)}",
+              file=sys.stderr)
+
+
+def usage(engine, src, target, model, effort, mode, rc, seconds):
+    lane = PARSERS[engine](src) if src else dict(served=[], source="none")
+    names = sorted(set(lane.get("served") or []))
+    cost = lane.get("cost")
+    record = dict(engine=engine, model=model, served_models=names or None,
+                  model_mismatch=mismatch(model, names), effort=effort or None, mode=mode,
+                  exit_code=int(rc), wall_seconds=int(seconds),
+                  prompt_tokens=lane.get("prompt"), cached_tokens=lane.get("cached"),
+                  cache_write_tokens=lane.get("cache_write"), completion_tokens=lane.get("completion"),
+                  reasoning_tokens=lane.get("reasoning"), cost_usd=cost,
+                  cost_source="vendor" if cost is not None else "unknown",
+                  num_turns=lane.get("turns"), source=lane.get("source"))
+    temporary = Path(target + ".tmp")
+    temporary.write_text(json.dumps(record, indent=2) + "\n")
+    os.replace(temporary, target)
+
+
+command, args = sys.argv[1], sys.argv[2:]
+if command == "claude-result":
+    claude_result(*args)
+elif command == "served":
+    served(*args)
+else:
+    usage(*args)
+PY
+lane_meta() { python3 -c "$LANE_META_PY" "$@"; }
+
+# Run engines as owned background children so a caller's SIGTERM/SIGINT stops
+# the engine (non-interactive bash ignores SIGINT in async children, so the
+# engine always gets SIGTERM) and the EXIT trap still records usage.
+OWNED_PID=""
+owned_interrupt() {
+  local state="" tries=0
+  trap - INT TERM
+  if [[ -n "$OWNED_PID" ]]; then
+    kill -TERM "$OWNED_PID" 2>/dev/null || true
+    state="$(ps -o stat= -p "$OWNED_PID" 2>/dev/null || true)"
+    while [[ -n "$state" && "$state" != Z* && "$tries" -lt 100 ]]; do
+      sleep 0.1
+      tries=$((tries + 1))
+      state="$(ps -o stat= -p "$OWNED_PID" 2>/dev/null || true)"
+    done
+    if [[ -n "$state" && "$state" != Z* ]]; then kill -KILL "$OWNED_PID" 2>/dev/null || true; fi
+    wait "$OWNED_PID" 2>/dev/null || true
+  fi
+  echo "plx-engine: $ENGINE lane interrupted by SIG$1; the engine process was stopped" >&2
+  if [[ "$1" == INT ]]; then exit 130; fi
+  exit 143
+}
+
+wait_owned() {
+  local rc=0
+  OWNED_PID="$1"
+  trap 'owned_interrupt TERM' TERM
+  trap 'owned_interrupt INT' INT
+  wait "$OWNED_PID" || rc=$?
+  OWNED_PID=""
+  trap - INT TERM
+  return "$rc"
+}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -117,6 +355,7 @@ while [[ $# -gt 0 ]]; do
     --effort) need_value "$1" "${2:-}"; EFFORT="$2"; shift 2 ;;
     --out) need_value "$1" "${2:-}"; OUT="$2"; shift 2 ;;
     --log) need_value "$1" "${2:-}"; LOG="$2"; shift 2 ;;
+    --usage) need_value "$1" "${2:-}"; USAGE="$2"; shift 2 ;;
     --stdout) STDOUT=1; shift ;;
     --build-writer-full-access) BUILD_WRITER_FULL_ACCESS=1; shift ;;
     --claude-passthrough-full-access) CLAUDE_PASSTHROUGH_FULL_ACCESS=1; shift ;;
@@ -185,6 +424,13 @@ REPO="$(cd "$REPO" && pwd)"
 PROMPT="$(abspath "$PROMPT")"
 [[ -n "$OUT" ]] && OUT="$(abspath "$OUT")"
 [[ -n "$LOG" ]] && LOG="$(abspath "$LOG")"
+[[ -n "$USAGE" ]] && USAGE="$(abspath "$USAGE")"
+if [[ -z "$USAGE" && -n "$OUT" && "$STDOUT" -eq 0 ]]; then
+  case "$OUT" in
+    *.out.md) USAGE="${OUT%.out.md}.usage.json" ;;
+    *) USAGE="$OUT.usage.json" ;;
+  esac
+fi
 
 if [[ "$ENGINE" == "grok" ]]; then
   [[ -n "$MODEL" ]] || MODEL="grok-4.6"
@@ -221,6 +467,7 @@ else
   [[ -n "$LOG" ]] || { echo "--log required (or use --stdout)" >&2; exit 2; }
 fi
 mkdir -p "$(dirname "$OUT")" "$(dirname "$LOG")"
+[[ -z "$USAGE" ]] || mkdir -p "$(dirname "$USAGE")"
 
 # codex/grok take one prompt stream: rubric (if any) prepended to the brief.
 # claude keeps them separate: rubric -> system prompt, brief -> user prompt.
@@ -242,13 +489,18 @@ run_codex() {
   else
     sandbox="workspace-write"
   fi
-  flags=(--sandbox "$sandbox" -c approval_policy=never --skip-git-repo-check
+  # --json makes the log a JSONL event stream; usage rides on turn.completed.
+  flags=(--json --sandbox "$sandbox" -c approval_policy=never --skip-git-repo-check
     -C "$REPO" -m "$MODEL" -c model_reasoning_effort="$EFFORT" --ephemeral
     -o "$OUT" -)
   if [[ "$CODEX_PASSTHROUGH_FULL_ACCESS" -eq 0 ]]; then
-    flags=(--ignore-user-config "${flags[@]}")
+    # Isolated lanes also skip the bundled skill list (~4.5 KB per request).
+    flags=(--ignore-user-config -c skills.bundled.enabled=false "${flags[@]}")
   fi
-  if ! codex exec "${flags[@]}" < "$EXEC_PROMPT" > "$LOG" 2>&1; then
+  USAGE_SRC="$LOG"
+  START_TS="$(date +%s)"
+  codex exec "${flags[@]}" < "$EXEC_PROMPT" > "$LOG" 2>&1 &
+  if ! wait_owned $!; then
     if grep -qiE "not logged in|401 unauthorized|codex login|invalid api key" "$LOG"; then
       echo "plx-engine: codex not authenticated — run \`codex login\` (or set CODEX_API_KEY), then retry." >&2
       exit 3
@@ -286,7 +538,8 @@ list_guidance() {
 
 run_claude() {
   local -a flags
-  local claude_prompt claude_settings claude_fs="" repo_json claude_rc=0
+  local claude_prompt claude_settings claude_fs="" repo_json claude_rc=0 result_rc=0
+  local claude_stream claude_error
   claude_prompt="$TMP_DIR/claude-prompt.md"
   if [[ "$MODE" == "ro" ]]; then
     # ro Bash may inspect but never write the checkout; the OS sandbox enforces it.
@@ -299,10 +552,16 @@ run_claude() {
   else
     claude_settings='{"sandbox":{"enabled":true,"failIfUnavailable":true,"autoAllowBashIfSandboxed":true,"allowUnsandboxedCommands":false,"network":{"allowedDomains":[],"strictAllowlist":true}'"$claude_fs"'}}'
   fi
+  # Dynamic sections (cwd, git status, memory paths) leave the system prompt so
+  # parallel lanes share one cached prefix. stream-json makes the log a full
+  # transcript whose terminal result event carries is_error, usage and cost.
   flags=(
     --model "$MODEL"
     --effort "$EFFORT"
     --no-session-persistence
+    --exclude-dynamic-system-prompt-sections
+    --output-format stream-json
+    --verbose
     --settings "$claude_settings"
   )
   if [[ "$CLAUDE_PASSTHROUGH_FULL_ACCESS" -eq 1 ]]; then
@@ -347,12 +606,25 @@ run_claude() {
       >> "$claude_prompt"
   fi
 
-  (cd "$REPO" && claude -p "${flags[@]}" < "$claude_prompt" > "$OUT" 2> "$LOG") || claude_rc=$?
+  claude_stream="$TMP_DIR/claude-stream.jsonl"
+  claude_error="$TMP_DIR/claude-result.err"
+  USAGE_SRC="$claude_stream"
+  START_TS="$(date +%s)"
+  : > "$OUT"
+  (cd "$REPO" && exec claude -p "${flags[@]}") < "$claude_prompt" > "$claude_stream" 2> "$LOG" &
+  wait_owned $! || claude_rc=$?
   # Claude Code can leave an empty write-staging directory in the checkout.
   if [[ ! -L "$REPO/.claude" ]] && rmdir "$REPO/.claude/.cc-writes" 2>/dev/null; then
     rmdir "$REPO/.claude" 2>/dev/null || true
   fi
-  if grep -qiE "not logged in|please run /login" "$OUT" "$LOG"; then
+  # Exit 0 alone is not success: the result event may report is_error.
+  lane_meta claude-result "$claude_stream" "$OUT" 2> "$claude_error" || result_rc=$?
+  if [[ -s "$claude_stream" ]]; then
+    printf '\n%s\n' '--- claude stream-json ---' >> "$LOG"
+    cat "$claude_stream" >> "$LOG"
+  fi
+  if [[ "$claude_rc" -ne 0 || "$result_rc" -ne 0 ]] &&
+     grep -qiE "not logged in|please run /login" "$LOG" "$claude_error"; then
     # Codex's macOS sandbox hides the keychain that holds Claude's login, so a
     # Claude lane launched from a sandboxed Codex host always looks logged out.
     if [[ -n "${CODEX_SANDBOX:-}" ]]; then
@@ -362,12 +634,13 @@ run_claude() {
     echo "plx-engine: Claude credentials unavailable — if Claude works in a local terminal, retry this wrapper with narrowly scoped host approval; otherwise run \`claude /login\`." >&2
     exit 3
   fi
-  if [[ "$claude_rc" -ne 0 ]]; then
-    echo "claude invocation failed" >&2
+  if [[ "$claude_rc" -ne 0 || "$result_rc" -ne 0 ]]; then
+    : > "$OUT"
+    echo "claude invocation failed (exit $claude_rc)" >&2
+    [[ -s "$claude_error" ]] && cat "$claude_error" >&2
     [[ -s "$LOG" ]] && sed -n '1,40p' "$LOG" >&2
     exit 1
   fi
-  [[ -s "$OUT" ]] || { echo "claude produced empty output: $OUT" >&2; exit 1; }
 }
 
 run_devin() {
@@ -450,6 +723,8 @@ JSON
     exit 1
   }
 
+  USAGE_SRC="$export_file"
+  START_TS="$(date +%s)"
   set +e
   DEVIN_PID=""
   trap devin_interrupt INT TERM
@@ -557,18 +832,35 @@ PY_ATIF
 }
 
 run_grok() {
-  local sandbox raw rc stop
+  local sandbox raw rc=0 stop grok_prompt vendor cell
+  local -a isolation=()
   [[ "$MODE" == "ro" ]] && sandbox="read-only" || sandbox="workspace"
   raw="$TMP_DIR/raw.json"
+  grok_prompt="$TMP_DIR/grok-prompt.md"
 
-  set +e
-  grok --no-auto-update --cwd "$REPO" \
+  # Grok imports Claude, Cursor and Codex customizations (including the user's
+  # ~/.claude rules, skills and MCP servers) unless each import is switched off.
+  # Repo guidance those imports would have carried is listed in the prompt instead.
+  for vendor in CLAUDE CURSOR CODEX; do
+    for cell in SKILLS RULES AGENTS MCPS HOOKS SESSIONS; do
+      isolation+=("GROK_${vendor}_${cell}_ENABLED=0")
+    done
+  done
+  cat "$EXEC_PROMPT" > "$grok_prompt"
+  printf '\n\n## Parallax runtime boundary\n' >> "$grok_prompt"
+  printf '%s\n' \
+    'Claude, Cursor and Codex customization imports are disabled. Before inspecting or changing a path, read the listed guidance that governs it. Root files apply repo-wide; nested files and rule files apply only to their subtree or declared paths.' \
+    >> "$grok_prompt"
+  list_guidance >> "$grok_prompt"
+
+  USAGE_SRC="$raw"
+  START_TS="$(date +%s)"
+  env "${isolation[@]}" grok --no-auto-update --cwd "$REPO" \
     --model "$MODEL" --effort "$EFFORT" \
     --permission-mode bypassPermissions --sandbox "$sandbox" \
     --no-plan --no-subagents --no-memory --no-alt-screen --output-format json \
-    --prompt-file "$EXEC_PROMPT" > "$raw" 2> "$LOG"
-  rc=$?
-  set -e
+    --prompt-file "$grok_prompt" < /dev/null > "$raw" 2> "$LOG" &
+  wait_owned $! || rc=$?
 
   # Genuine "not signed in" prints the OAuth sign-in prompt to stderr. This is
   # the real login signal — NOT the AuthorizationRequired worker noise, which
@@ -600,9 +892,29 @@ except Exception: print("")' "$raw")"
     echo "plx-engine: grok turn was cancelled — a tool call was gated, not auto-approved." >&2
     exit 1
   fi
-  python3 -c 'import json,sys
-try: sys.stdout.write(json.load(open(sys.argv[1])).get("text") or "")
-except Exception: sys.stdout.write(open(sys.argv[1]).read())' "$raw" > "$OUT"
+  # The envelope text can merge narration from before tool calls into the
+  # answer; the session store's last assistant message is the final answer.
+  python3 -c 'import json,os,sys,urllib.parse
+try:
+    envelope = json.load(open(sys.argv[1]))
+except Exception:
+    sys.stdout.write(open(sys.argv[1]).read())
+    sys.exit(0)
+text = envelope.get("text") or ""
+sid = envelope.get("sessionId") or ""
+history = os.path.join(os.path.expanduser("~/.grok/sessions"),
+                       urllib.parse.quote(os.path.realpath(sys.argv[2]), safe=""), sid,
+                       "chat_history.jsonl")
+try:
+    if sid and "/" not in sid and sid not in (".", ".."):
+        for line in open(history, errors="replace"):
+            message = json.loads(line) if line.strip() else {}
+            content = message.get("content") if message.get("type") == "assistant" else None
+            if isinstance(content, str) and content.strip():
+                text = content
+except (OSError, ValueError, AttributeError):
+    pass
+sys.stdout.write(text)' "$raw" "$REPO" > "$OUT"
   [[ -s "$OUT" ]] || { echo "plx-engine: grok empty output (stopReason=$stop)" >&2; exit 1; }
   printf '\n' >> "$OUT"
 
@@ -675,18 +987,19 @@ Path(sys.argv[1]).write_text(json.dumps({
     "telemetry": {"enabled": False}, "privacy": {"usageStatisticsEnabled": False}
 }))
 PY_SETTINGS
-  set +e
+  USAGE_SRC="$raw"
+  START_TS="$(date +%s)"
+  rc=0
   (
     cd "$REPO" || exit 1
     unset SANDBOX SANDBOX_FLAGS SANDBOX_MOUNTS SANDBOX_ENV BUILD_SANDBOX
     unset GEMINI_SANDBOX_PROXY_COMMAND GEMINI_SYSTEM_MD
     export GEMINI_CLI_SYSTEM_SETTINGS_PATH="$settings" GEMINI_CLI_SYSTEM_DEFAULTS_PATH="$settings"
     export GEMINI_SANDBOX="$sandbox" SEATBELT_PROFILE="permissive-open"
-    gemini --sandbox --extensions none --approval-mode "$approval" \
+    exec gemini --sandbox --extensions none --approval-mode "$approval" \
       --model "$MODEL" --output-format json < "$EXEC_PROMPT"
-  ) > "$raw" 2> "$LOG"
-  rc=$?
-  set -e
+  ) > "$raw" 2> "$LOG" &
+  wait_owned $! || rc=$?
   cat "$raw" >> "$LOG"
   if [[ "$rc" -ne 0 ]]; then
     if grep -qiE 'Please set an Auth method|Please set.*GEMINI_API_KEY|not authenticated|invalid API key|API key not valid|authentication required|ProjectIdRequiredError|Error authenticating' "$LOG"; then
@@ -727,6 +1040,9 @@ case "$ENGINE" in
   grok) run_grok ;;
   gemini) run_gemini ;;
 esac
+
+# Accept any model ID, but say so when the engine served a different one.
+lane_meta served "$ENGINE" "$USAGE_SRC" "$MODEL" || true
 
 if [[ "$STDOUT" -eq 1 ]]; then
   cat "$OUT"

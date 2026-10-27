@@ -21,20 +21,27 @@ All packages invoke `bin/plx-engine` with:
 ```text
 plx-engine --engine codex|claude|grok|gemini --mode ro|rw --repo <absolute-path> \
   --prompt-file <file> [--rubric <name>] [--model <model>] [--effort <level>] \
-  (--stdout | --out <file> --log <file>)
+  [--usage <file>] (--stdout | --out <file> --log <file>)
 ```
 
 Devin uses the same wrapper with its explicit transport contract:
 
 ```text
 plx-engine --engine devin --mode full-access --repo <absolute-path> \
-  --prompt-file <file> [--model <exact-model-id>] \
+  --prompt-file <file> [--model <exact-model-id>] [--usage <file>] \
   (--stdout | --out <file> --log <file>)
 ```
 
 Exit codes are `0` success, `1` engine failure, `2` usage error, `3` authentication
-required, and `4` a retryable Devin protocol failure. Long engine calls should run in a
-retained or background shell. Per-engine sandbox and permission settings are described
+required, `4` a retryable Devin protocol failure, and `130`/`143` when SIGINT/SIGTERM
+stopped the engine. Long engine calls should run in a retained or background shell.
+
+Any model ID passes through to the engine CLI unchanged; there is no model registry.
+When the engine reports which model it served and none matches `--model`, the wrapper
+warns on stderr and the lane still succeeds (Codex reports no served model). Each lane
+with `--out` (or an explicit `--usage`) writes a JSON usage record, on failure and
+interruption too: requested and served models, wall time, tokens, and vendor-reported
+cost (`null` when the engine does not report it; Codex and Gemini report no cost). Per-engine sandbox and permission settings are described
 in [Architecture](ARCHITECTURE.md#runtime-and-safety).
 
 ## Local development install

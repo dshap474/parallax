@@ -43,14 +43,18 @@ review. `kiss`, `orchestrate`, and `init` load context only and launch no lanes.
 `plx-engine` pins transport settings per engine; callers choose only engine, mode,
 rubric, model, and effort.
 
-- Codex: user config ignored, approval policy `never`, ephemeral session, explicit
-  read-only or workspace-write sandbox. Never the approvals-and-sandbox bypass or `--yolo`.
+- Codex: user config and bundled skills ignored, approval policy `never`, ephemeral
+  session, JSONL event log, explicit read-only or workspace-write sandbox. Never the approvals-and-sandbox bypass or `--yolo`.
 - Claude: safe mode, no session persistence, strict MCP/network isolation, read-only
-  tools or repo-confined sandboxed Bash. Safe mode disables guidance discovery, so the
+  tools or repo-confined sandboxed Bash. Dynamic system-prompt sections are excluded
+  so parallel lanes share one cached prefix; the stream-json result must not report
+  `is_error`. Safe mode disables guidance discovery, so the
   wrapper lists physical `AGENTS.md`, `CLAUDE.md`, `CLAUDE.local.md`, and
   `.claude/rules/*.md` files in the prompt, including ignored and untracked ones.
 - Grok: `grok-4.6` always at medium, unattended tool approval, no planning, subagent,
-  or memory features, and an explicit read-only or workspace kernel sandbox. A sandbox
+  or memory features, Claude/Cursor/Codex customization imports disabled (repository
+  guidance is listed in the prompt instead), and an explicit read-only or workspace
+  kernel sandbox. A sandbox
   startup failure prints `PLX_GROK_SANDBOX_UNAVAILABLE` and never authorizes
   host-session substitution.
 - Gemini: `auto` routing by default, sandbox required (macOS Seatbelt), read tools in
@@ -60,6 +64,9 @@ rubric, model, and effort.
   MCP servers, rules, and skills may still load. The wrapper lists repository guidance,
   requires a terminal ATIF response and exit 0, and stops its process group on
   interruption.
+
+Every engine runs as an owned child: SIGTERM/SIGINT to the wrapper stops the engine
+and still writes the lane's usage record (see [Requirements](REQUIREMENTS.md#engine-contract)).
 
 Full host access exists on exactly three paths: the single standalone Build worker
 (`rw` `build-worker` lane, so it can write Git metadata and launch review lanes), the

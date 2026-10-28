@@ -15,31 +15,14 @@ One evidence-weighted answer: consensus, meaningful disagreements, primary
 recommendation, remaining uncertainty.
 
 ## Workers
-Mix two models for coverage: split lanes roughly evenly between `gpt-6.1-sol` subagents
-at low reasoning and `claude-sonnet-5-5` engine lanes at high effort. When two lanes
-cover similar ground, put them on different models. Engine lanes are read-only; keep
-work that writes files or needs web research on subagents. An explicit user model or
-effort replaces this mix. If one worker is unavailable, say so and use the other for
-every lane.
-
-Resolve `<plugin-root>` from this loaded `SKILL.md` path by removing
-`/skills/fanout-and-synthesize/SKILL.md`. Launch each engine lane in the background with
-its brief in a fresh temp directory `<tmp>`:
-
-```
-<plugin-root>/bin/plx-engine --engine claude --mode ro --repo <repo> \
-  --prompt-file <tmp>/<lane>-brief.md --model claude-sonnet-5-5 --effort high \
-  --out <tmp>/<lane>.md --log <tmp>/<lane>.log
-```
-
-If the host sandbox blocks the engine's network or keychain access, request narrowly
-scoped host approval for the wrapper call; keep its sandbox active. Delete `<tmp>` when
-done.
+Run every lane as a native subagent on `gpt-6-luna` at max reasoning. Do not
+mix models or launch engine lanes. An explicit user model or effort replaces this
+default. Lanes that write files need explicitly owned paths (see Invariants).
 
 ## Sizing
 Use at least two lanes, 8 lanes max; you decide how many. Split by lens (independent angles on the
 same question) or by shard (non-overlapping pieces of the same work). Merge lanes that
-would do substantially the same work on the same model; never add lanes just to collect votes. For
+would do substantially the same work; never add lanes just to collect votes. For
 shards, give every lane the same objective, a disjoint shard, and the same output
 shape so results merge cleanly.
 

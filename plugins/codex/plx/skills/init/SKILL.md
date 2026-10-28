@@ -19,7 +19,7 @@ changes no files.
 | `$plx:kiss` | Loads KISS principles into context. |
 | `$plx:orchestrate` | Loads a planner posture that delegates coding to native workers. |
 | `$plx:unknown-unknowns` | Explores blind spots with the host. |
-| `$plx:fanout-and-synthesize` | Host-led mixed GPT-6.1 Sol Low and Sonnet 5.5 High lanes by lens or shard, then one synthesis. |
+| `$plx:fanout-and-synthesize` | Host-led GPT-6 Luna max subagent lanes by lens or shard, then one synthesis. |
 | `$plx:adversarial-verification` | Mixed GPT-6.1 Sol Low and Sonnet 5.5 High verifiers try to refute claims; the host keeps survivors. |
 | `$plx:generate-and-filter` | Mixed GPT-6.1 Sol Low and Sonnet 5.5 High lanes generate ideas and judge finalists pairwise; the host recommends one. |
 | `$plx:multi` | Runs the same task on each model the user names, in parallel, then synthesizes. |

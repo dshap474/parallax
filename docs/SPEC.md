@@ -15,7 +15,7 @@ scripts/sync-shared.sh
 ```
 
 Both manifests use plugin name `plx` and version `0.5.43`. Both marketplaces use
-`parallax-marketplace` and point to their platform package. Each package contains sixteen
+`parallax-marketplace` and point to their platform package. Each package contains seventeen
 skills and no hooks, agents/subagents, MCP servers, apps, or repo-local runtime store.
 
 ## Package contracts
@@ -43,7 +43,7 @@ constructs a raw external-engine command.
 ## Acceptance
 
 `bash tests/run.sh` must validate both manifests and marketplaces, version agreement,
-sixteen-skill inventories, explicit-only platform metadata, engine polarity, Simplify
+seventeen-skill inventories, explicit-only platform metadata, engine polarity, Simplify
 shape, the context-only skill contracts, Plan/Build/Review routing and security triggers,
 executable wrappers, rubric resolution, shared-copy agreement, fake-engine safety flags
 and current result envelopes, and cleanup confinement. The official Claude validator and an isolated Codex CLI

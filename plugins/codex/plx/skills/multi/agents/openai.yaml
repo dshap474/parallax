@@ -1,0 +1,6 @@
+interface:
+  display_name: "PLX::Multi"
+  short_description: "Run one task on several named models, then synthesize"
+  default_prompt: "Use $plx:multi to run this task across the models I name."
+policy:
+  allow_implicit_invocation: false

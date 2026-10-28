@@ -24,6 +24,7 @@ changes no files.
 | `/plx:fanout-and-synthesize` | Host-led mixed Sonnet 5.5 High and GPT-6.1 Sol Low lanes by lens or shard, then one synthesis. |
 | `/plx:adversarial-verification` | Mixed Sonnet 5.5 High and GPT-6.1 Sol Low verifiers try to refute claims; the host keeps survivors. |
 | `/plx:generate-and-filter` | Mixed Sonnet 5.5 High and GPT-6.1 Sol Low lanes generate ideas and judge finalists pairwise; the host recommends one. |
+| `/plx:multi` | Runs the same task on each model the user names, in parallel, then synthesizes. |
 | `/plx:codex`, `/plx:grok`, `/plx:gemini`, `/plx:devin` | Direct requests to another engine. |
 
 For web research and documentation lookup, use Haiku 5.5 at xhigh reasoning (`claude-haiku-5-5`, `xhigh`) in a read-only lane.

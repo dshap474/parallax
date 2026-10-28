@@ -20,6 +20,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Fanout | `/plx:fanout-and-synthesize` | `$plx:fanout-and-synthesize` | Host-led independent lanes by lens or shard, then one evidence-weighted synthesis |
 | Verify | `/plx:adversarial-verification` | `$plx:adversarial-verification` | Host-led verifier lanes try to refute claims; only survivors are kept |
 | Generate | `/plx:generate-and-filter` | `$plx:generate-and-filter` | Host-led idea generation, rubric filter, pairwise finalist judging, one recommendation |
+| Multi | `/plx:multi` | `$plx:multi` | The same task on each user-named model in parallel (read-only), then one host synthesis |
 
 All skills are explicit-only so an expensive pipeline never starts merely because a
 prompt resembles its description. Codex uses `allow_implicit_invocation: false`; Claude

@@ -22,6 +22,7 @@ changes no files.
 | `$plx:fanout-and-synthesize` | Host-led mixed GPT-6.1 Sol Low and Sonnet 5.5 High lanes by lens or shard, then one synthesis. |
 | `$plx:adversarial-verification` | Mixed GPT-6.1 Sol Low and Sonnet 5.5 High verifiers try to refute claims; the host keeps survivors. |
 | `$plx:generate-and-filter` | Mixed GPT-6.1 Sol Low and Sonnet 5.5 High lanes generate ideas and judge finalists pairwise; the host recommends one. |
+| `$plx:multi` | Runs the same task on each model the user names, in parallel, then synthesizes. |
 | `$plx:claude`, `$plx:grok`, `$plx:gemini`, `$plx:devin` | Direct requests to another engine. |
 
 For web research and documentation lookup, use GPT-6 Luna at max reasoning (`gpt-6-luna`, `max`) in a read-only lane.

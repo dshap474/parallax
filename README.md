@@ -48,6 +48,7 @@ Start a new Codex session, then use `$plx:dev`.
 | Fanout and synthesize | `/plx:fanout-and-synthesize` | `$plx:fanout-and-synthesize` |
 | Adversarial verification | `/plx:adversarial-verification` | `$plx:adversarial-verification` |
 | Generate and filter | `/plx:generate-and-filter` | `$plx:generate-and-filter` |
+| Multi-model | `/plx:multi` | `$plx:multi` |
 
 Model defaults, override syntax, and per-skill behavior are in
 [Commands](docs/COMMANDS.md). For example, use `$plx:claude use claude-opus-5-5 at

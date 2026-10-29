@@ -17,7 +17,7 @@ Both packages expose the same core capabilities with platform-native invocation 
 | Devin | `/plx:devin` | `$plx:devin` | One full-access Devin passthrough; SWE-2 High by default; no generic effort flag |
 | Init | `/plx:init` | `$plx:init` | Load the Parallax skill map and research defaults into context |
 | Unknowns | `/plx:unknown-unknowns` | `$plx:unknown-unknowns` | Host-only blindspot and comprehension work |
-| Fanout | `/plx:fanout-and-synthesize` | `$plx:fanout-and-synthesize` | Host-led single-model subagent lanes (Haiku 5.5 xhigh in Claude Code, GPT-6 Luna max in Codex) by lens or shard, then one evidence-weighted synthesis |
+| Fanout | `/plx:fanout-and-synthesize` | `$plx:fanout-and-synthesize` | Host-led single-model subagent lanes (Haiku 5.5 xhigh in Claude Code, GPT-6 Luna max in Codex; an optional first-argument model replaces it) by lens or shard, then one evidence-weighted synthesis |
 | Verify | `/plx:adversarial-verification` | `$plx:adversarial-verification` | Host-led verifier lanes try to refute claims; only survivors are kept |
 | Generate | `/plx:generate-and-filter` | `$plx:generate-and-filter` | Host-led idea generation, rubric filter, pairwise finalist judging, one recommendation |
 | Multi | `/plx:multi` | `$plx:multi` | The same task on each user-named model in parallel (read-only), then one host synthesis |

@@ -1,7 +1,7 @@
 ---
 name: fanout-and-synthesize
 description: Split a task into independent lenses or shards, run parallel worker lanes, then synthesize one evidence-weighted answer. Use only when the user invokes Fanout-and-Synthesize.
-argument-hint: "<task to split across independent lanes>"
+argument-hint: "[model] <task to split across independent lanes>"
 disable-model-invocation: true
 user-invocable: true
 ---
@@ -17,9 +17,19 @@ One evidence-weighted answer: consensus, meaningful disagreements, primary
 recommendation, remaining uncertainty.
 
 ## Workers
-Run every lane as a native subagent on `claude-haiku-5-5` at xhigh effort. Do not
-mix models or launch engine lanes. An explicit user model or effort replaces this
-default. Lanes that write files need explicitly owned paths (see Invariants).
+Every lane runs as a native subagent on one model. Do not mix models or launch engine
+lanes.
+
+- **Default:** `claude-haiku-5-5` at xhigh effort.
+- **First argument:** if the first word names a model, every lane uses it instead and
+  the rest is the task (`/plx:fanout-and-synthesize sonnet <task>`). Short names:
+  `haiku` → `claude-haiku-5-5`, `sonnet` → `claude-sonnet-5-5`, `opus` →
+  `claude-opus-5-5`, `fable` → `claude-fable-5-1`. A full model ID passes through
+  unchanged.
+- Effort stays xhigh unless the user names one. If the model is unavailable, say so and
+  stop; do not substitute.
+
+Lanes that write files need explicitly owned paths (see Invariants).
 
 ## Sizing
 Use at least two lanes, 8 lanes max; you decide how many. Split by lens (independent angles on the
